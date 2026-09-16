@@ -10,6 +10,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from debim.compiler import compile_to_ifc
 from debim.cost import estimate_cost, load_price_catalog
 from debim.qto import calculate_qto
 from debim.schema import load_manifest
@@ -251,11 +252,28 @@ def compile(
         Path("dist/model.ifc"), "--output", "-o", help="Output IFC file path"
     ),
 ):
-    """Compile project.yaml to standardized IFC4 format via IfcOpenShell"""
+    """Compile project.yaml to standardized IFC4 format via IfcOpenShell or STEP serializer"""
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        raise typer.Exit(code=1)
+
     console.print(
         f"[bold green]Compiling[/bold green] {manifest} -> [cyan]{output}[/cyan]"
     )
-    console.print("[yellow]IFC Compiler stub — assigned to Issue #5[/yellow]")
+    try:
+        out_path = compile_to_ifc(manifest, output)
+        file_size = out_path.stat().st_size
+        console.print(
+            Panel(
+                f"[bold green]IFC4 Compilation Successful![/bold green]\n"
+                f"[bold cyan]Output Path:[/bold cyan] {out_path}\n"
+                f"[bold cyan]File Size:[/bold cyan] {file_size} bytes",
+                title="[bold green]debim Compiler[/bold green]",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Compilation Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
 
 
 @app.command()
