@@ -1,0 +1,85 @@
+schema: IFC4-Minimal
+project:
+  id: PRJ-2026-001
+  name: "Townhouse-Feasibility"
+  units: { length: METER, area: SQUARE_METER, volume: CUBIC_METER }
+
+spatial_structure:
+  storeys:
+    - id: L1
+      name: "Level 1"
+      elevation: 0.00
+      height: 3.50
+    - id: L2
+      name: "Level 2"
+      elevation: 3.50
+      height: 3.20
+
+grids:
+  axes_x: { A: 0.00, B: 4.00, C: 8.00 }
+  axes_y: { 1: 0.00, 2: 5.00, 3: 10.00 }
+
+materials:
+  - id: CONC_240
+    name: "Concrete 240 ksc"
+    category: concrete
+    unit_cost_ref: "MAT-CONC-01"
+  - id: AAC_75
+    name: "AAC Block 7.5cm"
+    category: masonry
+    unit_cost_ref: "MAT-AAC-01"
+
+elements:
+  # Case A: Box geometric primitive (Column)
+  - class: IfcColumn
+    tag: C-A1
+    material: CONC_240
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement:
+      grid: [A, 1]
+      base_storey: L1
+      top_storey: L2
+    reinforcement:
+      main: "4-DB16"
+      stirrups: "RB6 @ 0.15m"
+
+  # Case B: Beam spanning between grid intersections
+  - class: IfcBeam
+    tag: B-A1_B1
+    material: CONC_240
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement:
+      from_grid: [A, 1]
+      to_grid: [B, 1]
+      storey: L2
+      offset_z: 0.00
+    reinforcement:
+      main_top: "2-DB16"
+      main_bottom: "3-DB20"
+      stirrups: "RB9 @ 0.15m"
+
+  # Case C: Wall with host-child door opening
+  - class: IfcWall
+    tag: W-A1_A2
+    material: AAC_75
+    thickness: 0.075
+    height: 3.10
+    placement:
+      from_grid: [A, 1]
+      to_grid: [A, 2]
+      storey: L1
+    children:
+      - class: IfcDoor
+        tag: D1
+        dimensions: { width: 0.90, height: 2.00 }
+        offset_distance: 1.20
+        sill_height: 0.00
+
+  # Case D: Fallback custom mesh asset
+  - class: IfcCustomElement
+    tag: ST-01
+    name: "Spiral Staircase"
+    source: "assets/stairs/spiral_stair.glb"
+    placement:
+      position: [2.00, 2.50, 0.00]
+      storey: L1

@@ -1,0 +1,29 @@
+{
+  "currency": "THB",
+  "items": {
+    "MAT-CONC-01": {
+      "name": "Concrete 240 ksc",
+      "unit": "m3",
+      "material_cost": 2100.0,
+      "labor_cost": 450.0
+    },
+    "MAT-AAC-01": {
+      "name": "AAC Block 7.5cm",
+      "unit": "m2",
+      "material_cost": 280.0,
+      "labor_cost": 120.0
+    },
+    "MAT-REBAR-DB16": {
+      "name": "Deformed Bar DB16 (SD40)",
+      "unit": "kg",
+      "material_cost": 27.5,
+      "labor_cost": 4.5
+    },
+    "MAT-FORMWORK": {
+      "name": "Timber Formwork",
+      "unit": "m2",
+      "material_cost": 350.0,
+      "labor_cost": 150.0
+    }
+  }
+}

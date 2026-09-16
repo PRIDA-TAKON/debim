@@ -1,0 +1,9 @@
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
+
+# 3D assets & binary formats
+*.glb binary
+*.gltf text
+*.ifc text
+*.png binary
+*.jpg binary

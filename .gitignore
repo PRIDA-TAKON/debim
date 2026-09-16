@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# CAD / BIM temporary / generated artifacts
+dist/
+*.ifc
+*.glb
+!examples/**/assets/*.glb
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
