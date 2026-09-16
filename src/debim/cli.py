@@ -64,14 +64,48 @@ def test(
     test_dir: Path = typer.Option(
         Path("tests"), "--tests", "-t", help="Directory containing compliance tests"
     ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Display verbose pytest output"
+    ),
 ):
-    """Run building law & compliance test suite via pytest"""
+    """Run building law & compliance test suite via pytest and report clean, descriptive rule checks"""
     import subprocess
     import sys
 
-    console.print(f"[bold blue]Running Compliance Tests in:[/bold blue] {test_dir}")
-    cmd = [sys.executable, "-m", "pytest", str(test_dir)]
-    res = subprocess.run(cmd)
+    console.print(
+        Panel(
+            f"[bold cyan]Automated Building Compliance Engine & Pytest Checker[/bold cyan]\n"
+            f"[dim]Running compliance rule suite in:[/dim] [yellow]{test_dir}[/yellow]",
+            title="[bold green]debim Compliance Engine[/bold green]",
+        )
+    )
+
+    cmd = [sys.executable, "-m", "pytest", str(test_dir), "-rA"]
+    if verbose:
+        cmd.append("-v")
+
+    res = subprocess.run(cmd, capture_output=True, text=True)
+
+    if res.stdout:
+        console.print(res.stdout)
+    if res.stderr:
+        console.print(f"[dim]{res.stderr}[/dim]")
+
+    if res.returncode == 0:
+        console.print(
+            Panel(
+                "[bold green]ALL COMPLIANCE RULES PASSED ACCORDING TO BUILDING CODES![/bold green]",
+                style="green",
+            )
+        )
+    else:
+        console.print(
+            Panel(
+                "[bold red]COMPLIANCE CHECKS FAILED! PLEASE REVIEW REGULATORY VIOLATIONS ABOVE.[/bold red]",
+                style="red",
+            )
+        )
+
     raise typer.Exit(code=res.returncode)
 
 
