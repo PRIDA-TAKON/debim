@@ -4,7 +4,9 @@ CLI interface for debim / bim
 
 from pathlib import Path
 import typer
+from pydantic import ValidationError
 from rich.console import Console
+from debim.schema import load_manifest
 
 app = typer.Typer(
     name="debim",
@@ -41,8 +43,12 @@ def validate(
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
         raise typer.Exit(code=1)
     console.print(f"[bold green]Validating:[/bold green] {manifest}")
-    # Jules will implement deep validation in Issue #1
-    console.print("[dim]Basic syntax check passed.[/dim]")
+    try:
+        load_manifest(manifest)
+        console.print("[bold green]Validation passed successfully.[/bold green]")
+    except (ValidationError, ValueError, Exception) as e:
+        console.print(f"[bold red]Validation Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
 
 
 @app.command()
