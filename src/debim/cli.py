@@ -13,6 +13,7 @@ from rich.table import Table
 from debim.cost import estimate_cost, load_price_catalog
 from debim.qto import calculate_qto
 from debim.schema import load_manifest
+from debim.viewer import generate_viewer_html, serve_viewer
 
 app = typer.Typer(
     name="debim",
@@ -263,12 +264,29 @@ def view(
         Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
     ),
     port: int = typer.Option(8000, "--port", "-p", help="Port to serve 3D viewer"),
+    no_browser: bool = typer.Option(
+        False, "--no-browser", help="Do not open web browser automatically"
+    ),
 ):
     """Launch lightweight local 3D preview server in browser"""
-    console.print(
-        f"[bold blue]Serving 3D preview at:[/bold blue] http://localhost:{port}"
-    )
-    console.print("[yellow]3D Viewer stub — assigned to Issue #4[/yellow]")
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        raise typer.Exit(code=1)
+
+    try:
+        html_content = generate_viewer_html(manifest)
+        url = f"http://localhost:{port}"
+        console.print(
+            Panel(
+                f"[bold green]Serving 3D Web Preview at:[/bold green] [cyan bold]{url}[/cyan bold]\n"
+                f"[dim]Press Ctrl+C in terminal to stop server.[/dim]",
+                title="[bold blue]debim 3D Viewer[/bold blue]",
+            )
+        )
+        serve_viewer(html_content, port=port, open_browser=not no_browser)
+    except Exception as e:
+        console.print(f"[bold red]Viewer Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":
