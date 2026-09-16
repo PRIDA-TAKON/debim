@@ -5,23 +5,38 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![BIM: IFC4](https://img.shields.io/badge/IFC-IFC4--Minimal-brightgreen.svg)](https://technical.buildingsmart.org/)
+[![Tests: 31 Passed](https://img.shields.io/badge/tests-31%20passed-success.svg)](tests/)
 
 ---
 
-## ✨ Highlights
+## 🎯 Why debim? (ทำไมเราถึงสร้าง debim ขึ้นมา?)
 
-- 📝 **Semantic Declarative Model:** Buildings defined in clean, human-readable YAML (`project.yaml`).
-- 🤖 **Agent-Friendly & Git-Native:** Version control your architecture like code. AI agents can easily parse, review, diff, and modify designs.
-- 📐 **Relative Spatial Placement:** Align elements by grid intersections (e.g. `grid: [A, 1]`) and storey elevations with zero cumulative measurement error.
-- 🧪 **Law-as-Code (Automated Compliance):** Building codes, setbacks, FAR, OSR, and clearance heights checked automatically using `pytest`.
-- 📊 **Instant QTO & Costing:** Calculate concrete volumes, formwork areas, rebar schedules, and cost estimates in seconds.
-- 📦 **Standard IFC4 Compilation:** Compile declarative models directly into standard IFC for Revit, FreeCAD, and Blender.
+Traditional BIM tools (like Revit or Archicad) were built over 25 years ago for humans clicking with computer mice. They lock architectural data in heavy, proprietary gigabyte files (`.rvt`), charge thousands of dollars in annual licenses, and remain completely opaque to modern automation and AI agents.
+
+**debim** introduces **Building-as-Code**:
+1. **Human-First & Git-Native:** Architecture is expressed as plain text in YAML (`project.yaml`). Files are kilobytes instead of gigabytes. You can version-control buildings with Git and inspect design changes line-by-line.
+2. **Agent-Friendly by Design:** LLMs and autonomous coding agents (Jules, Claude, Antigravity) can read, modify, and optimize building designs natively without needing proprietary APIs.
+3. **Law-as-Code:** Building regulations (e.g. ministerial setback laws, clear heights, FAR) are codified as automated unit tests (`pytest`). If a design change violates local building codes, tests fail in CI/CD before breaking ground.
+4. **Site-Reality Driven (Grid-Relative):** In real construction, builders pull measuring tapes from grid lines (`[A, 1] + offset`), not global Cartesian `(X, Y, Z)` coordinates. debim computes the math so humans and foremen don't have to.
+5. **Open Standard Interoperability:** Compile directly into standard **IFC4** files (`dist/model.ifc`) to continue 2D drafting and documentation in BlenderBIM, FreeCAD, or Revit.
 
 ---
 
-## 🚀 Quickstart
+## 🤖 AI-Agent Installation (ติดตั้งง่ายที่สุดในโลกด้วย AI ของคุณ)
 
-### Installation
+If you use an AI coding assistant (like **Antigravity, Cursor, Claude Code, Jules, or ChatGPT/Copilot**), you don't even need to install it manually!
+
+Just copy and send this prompt to your AI:
+
+> *"Please read https://github.com/PRIDA-TAKON/debim and `AGENTS.md`, install debim in my environment, and run `bim --help` to verify."*
+
+Your agent will inspect the repository, install the dependencies, and verify everything automatically.
+
+---
+
+## 🚀 Manual Quickstart
+
+### 1. Installation
 
 ```bash
 # Clone the repository
@@ -31,33 +46,33 @@ cd debim
 # Install in editable mode
 pip install -e .
 
-# Or with IFC compilation support
+# Or with full dev & IFC compiler tools
 pip install -e ".[ifc,dev]"
 ```
 
-### Basic Commands
+### 2. Basic Commands
 
 ```bash
-# Create a new project scaffold
+# Initialize a new project
 bim init my-project
 
-# Validate syntax and placement references
-bim validate
+# Validate schema syntax & grid references
+bim validate -m examples/townhouse/project.yaml
 
-# Run building code compliance tests
+# Run automated building code compliance checks (pytest)
 bim test
 
-# Calculate quantities of materials (QTO)
-bim qto
+# Calculate Quantitative Take-Off (Concrete vol, formwork, rebar schedule)
+bim qto -m examples/townhouse/project.yaml
 
-# Estimate project cost with price catalog
-bim cost
+# Estimate project budget & export BOQ to CSV
+bim cost -m examples/townhouse/project.yaml -p examples/townhouse/prices.json -o dist/boq.csv
 
-# Compile to IFC4 model
-bim compile -o dist/model.ifc
+# Preview 3D model in your browser (Three.js with OrbitControls)
+bim view -m examples/townhouse/project.yaml
 
-# Launch browser-based 3D preview
-bim view
+# Compile declarative YAML to standard IFC4 building model
+bim compile -m examples/townhouse/project.yaml -o dist/model.ifc
 ```
 
 ---
@@ -71,6 +86,7 @@ project:
   name: "Townhouse-Feasibility"
   units: { length: METER, area: SQUARE_METER, volume: CUBIC_METER }
 
+# 1. Spatial Structure
 spatial_structure:
   storeys:
     - id: L1
@@ -82,17 +98,25 @@ spatial_structure:
       elevation: 3.50
       height: 3.20
 
+# 2. Reference Grid Axes
 grids:
   axes_x: { A: 0.00, B: 4.00, C: 8.00 }
   axes_y: { 1: 0.00, 2: 5.00, 3: 10.00 }
 
+# 3. Materials
 materials:
   - id: CONC_240
     name: "Concrete 240 ksc"
     category: concrete
     unit_cost_ref: "MAT-CONC-01"
+  - id: AAC_75
+    name: "AAC Block 7.5cm"
+    category: masonry
+    unit_cost_ref: "MAT-AAC-01"
 
+# 4. Elements
 elements:
+  # Column placed at grid intersection [A, 1]
   - class: IfcColumn
     tag: C-A1
     material: CONC_240
@@ -101,7 +125,62 @@ elements:
       grid: [A, 1]
       base_storey: L1
       top_storey: L2
+    reinforcement:
+      main: "4-DB16"
+      stirrups: "RB6 @ 0.15m"
+
+  # Beam spanning between [A, 1] and [B, 1]
+  - class: IfcBeam
+    tag: B-A1_B1
+    material: CONC_240
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement:
+      from_grid: [A, 1]
+      to_grid: [B, 1]
+      storey: L2
+    reinforcement:
+      main_top: "2-DB16"
+      main_bottom: "3-DB20"
+      stirrups: "RB9 @ 0.15m"
+
+  # Wall with door host-child relationship
+  - class: IfcWall
+    tag: W-A1_A2
+    material: AAC_75
+    thickness: 0.075
+    height: 3.10
+    placement:
+      from_grid: [A, 1]
+      to_grid: [A, 2]
+      storey: L1
+    children:
+      - class: IfcDoor
+        tag: D1
+        dimensions: { width: 0.90, height: 2.00 }
+        offset_distance: 1.20
 ```
+
+---
+
+## ❓ Frequently Asked Questions (FAQ)
+
+<details>
+<summary><b>Why YAML instead of JSON, Python, or Excel?</b></summary>
+<br>
+YAML is clean, concise, supports nested hierarchies, and allows comments (essential for architectural notes). Unlike JSON, it has no noisy braces. Unlike Excel, it is 100% Git-friendly, diffable, and conflict-resolvable. It serves as a pure declarative DSL (Domain-Specific Language)—just like Kubernetes, Docker Compose, and GitHub Actions.
+</details>
+
+<details>
+<summary><b>How do I place off-grid items (internal partitions, cantilever beams)?</b></summary>
+<br>
+Use relative offsets: `placement: { grid: [A, 1], offset: [1.20, 0.50] }`. Just like pulling a tape measure on site from the nearest grid line.
+</details>
+
+<details>
+<summary><b>Does this replace Revit or AutoCAD?</b></summary>
+<br>
+No, it complements them. debim handles the early-stage upstream workload: rapid feasibility, parametric sizing, AI generation, instant QTO/costing, and automated building law validation. Once validated, run <code>bim compile</code> to export standard IFC4 and load it directly into BlenderBIM, FreeCAD, or Revit for 2D drafting and detail annotations.
+</details>
 
 ---
 
