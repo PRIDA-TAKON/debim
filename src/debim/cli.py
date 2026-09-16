@@ -99,8 +99,8 @@ def qto(
         table.add_column("Tag", style="bold yellow")
         table.add_column("Class", style="green")
         table.add_column("Material", style="magenta")
-        table.add_column("Concrete Vol (m³)", justify="right")
-        table.add_column("Formwork Area (m²)", justify="right")
+        table.add_column("Concrete Vol (m3)", justify="right")
+        table.add_column("Formwork Area (m2)", justify="right")
         table.add_column("Rebar Weight (kg)", justify="right")
 
         for eqto in project_qto.elements:
@@ -116,8 +116,8 @@ def qto(
         console.print(table)
 
         summary_text = (
-            f"[bold cyan]Total Concrete Volume:[/bold cyan] {project_qto.total_concrete_volume:.3f} m³\n"
-            f"[bold cyan]Total Formwork Area:[/bold cyan] {project_qto.total_formwork_area:.3f} m²\n"
+            f"[bold cyan]Total Concrete Volume:[/bold cyan] {project_qto.total_concrete_volume:.3f} m3\n"
+            f"[bold cyan]Total Formwork Area:[/bold cyan] {project_qto.total_formwork_area:.3f} m2\n"
             f"[bold cyan]Total Rebar Weight:[/bold cyan] {project_qto.total_rebar_weight:.3f} kg"
         )
         console.print(Panel(summary_text, title="[bold green]QTO Totals[/bold green]"))
