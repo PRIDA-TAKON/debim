@@ -1350,3 +1350,32 @@ elements:
       storey: L2_SECOND
     reinforcement:
       mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+  # ==========================================
+  # 8. STAIRS (บันได ค.ส.ล. - A-03 / S-06)
+  # ==========================================
+  - class: IfcStair
+    tag: ST-01
+    material: CONC_210
+    stair_type: DOG_LEG
+    width: 1.00
+    waist_thickness: 0.12
+    placement:
+      grid_anchor: ["2", "C"]
+      from_storey: L1_GROUND
+      to_storey: L2_SECOND
+      offset_x: 0.00
+      offset_y: 0.00
+      offset_z: 0.00
+      orientation: "+Y"
+    landing:
+      elevation: 1.875
+      depth: 1.00
+      thickness: 0.12
+    steps:
+      tread: 0.25
+      riser: 0.1875
+    reinforcement:
+      main: "DB12 @ 0.15m"
+      temperature: "RB9 @ 0.20m"
+

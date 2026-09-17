@@ -147,3 +147,51 @@ def test_resolver_slab(sample_project_path):
     # Area: width 4.0m x length 5.0m = 20.0 m2 (from Townhouse grid A-B: 5.0m, 1-2: 4.0m)
     assert res_slab.area == pytest.approx(20.0, rel=1e-2)
     assert len(res_slab.polygon) == 4
+
+
+def test_resolver_stair(sample_project_path):
+    from debim.schema import IfcStair, StairPlacement, StairLanding, StairStepConfig, StairReinforcement
+
+    manifest = load_manifest(sample_project_path)
+    stair = IfcStair(
+        **{
+            "class": "IfcStair",
+            "tag": "ST-TEST",
+            "material": "MAT_CONC",
+            "stair_type": "DOG_LEG",
+            "width": 1.00,
+            "waist_thickness": 0.12,
+            "placement": StairPlacement(
+                grid_anchor=("A", "1"),
+                from_storey="L1",
+                to_storey="L2",
+                offset_x=0.0,
+                offset_y=0.0,
+                offset_z=0.0,
+                orientation="+Y",
+            ),
+            "landing": StairLanding(
+                elevation=1.50,
+                depth=1.00,
+                thickness=0.12,
+            ),
+            "steps": StairStepConfig(
+                tread=0.25,
+                riser=0.1875,
+            ),
+        }
+    )
+    manifest.elements.append(stair)
+    resolver = SpatialResolver(manifest)
+    res_stair = resolver.resolve_stair(stair)
+
+    assert res_stair.tag == "ST-TEST"
+    assert res_stair.element.stair_type == "DOG_LEG"
+    assert len(res_stair.flights) == 2
+    assert res_stair.landing_polygon is not None
+    assert res_stair.landing_area > 0.0
+    assert res_stair.flights[0].n_risers > 0
+    assert res_stair.total_concrete_volume > 0.0
+    assert res_stair.total_formwork_area > 0.0
+
+

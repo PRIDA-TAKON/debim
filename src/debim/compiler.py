@@ -295,7 +295,24 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
-        # 4. Walls & Child Openings / Doors / Windows
+        # 4. Stairs
+        for stair in resolved.stairs:
+            st_id = stair.element.placement.from_storey
+            elem_ref = self.create_entity(
+                "IfcStair",
+                generate_ifc_guid(),
+                None,
+                stair.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        # 5. Walls & Child Openings / Doors / Windows
         for wall in resolved.walls:
             st_id = wall.element.placement.storey
             wall_ref = self.create_entity(
@@ -537,7 +554,16 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id in storey_products:
             storey_products[st_id].append(slab_obj)
 
-    # 4. Walls & Children
+    # 4. Stairs
+    for stair in resolved.stairs:
+        stair_obj = ifcopenshell.api.run(
+            "root.create_entity", model, ifc_class="IfcStair", name=stair.tag
+        )
+        st_id = stair.element.placement.from_storey
+        if st_id in storey_products:
+            storey_products[st_id].append(stair_obj)
+
+    # 5. Walls & Children
     for wall in resolved.walls:
         wall_obj = ifcopenshell.api.run(
             "root.create_entity", model, ifc_class="IfcWall", name=wall.tag

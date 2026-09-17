@@ -196,3 +196,83 @@ def test_slab_qto():
     assert eqto.formwork_area == pytest.approx(20.0, rel=1e-3)  # Soffit area
     assert eqto.total_rebar_weight > 0.0
 
+
+def test_stair_qto():
+    from debim.schema import IfcStair, StairPlacement, StairLanding, StairStepConfig, StairReinforcement
+    from debim.resolver import ResolvedStair, ResolvedStairFlight
+    from debim.qto import calculate_element_qto
+
+    stair_elem = IfcStair(
+        **{
+            "class": "IfcStair",
+            "tag": "ST-01",
+            "material": "MAT_CONC",
+            "stair_type": "DOG_LEG",
+            "width": 1.00,
+            "waist_thickness": 0.12,
+            "placement": StairPlacement(
+                grid_anchor=("1", "A"),
+                from_storey="L1",
+                to_storey="L2",
+            ),
+            "landing": StairLanding(
+                elevation=1.875,
+                depth=1.00,
+                thickness=0.12,
+            ),
+            "steps": StairStepConfig(
+                tread=0.25,
+                riser=0.1875,
+            ),
+            "reinforcement": StairReinforcement(
+                main="DB12 @ 0.15m",
+                temperature="RB9 @ 0.20m",
+            ),
+        }
+    )
+
+    resolved = ResolvedStair(
+        tag="ST-01",
+        element=stair_elem,
+        flights=[
+            ResolvedStairFlight(
+                tag="ST-01-F1",
+                start_point=(0.0, 0.0, 0.0),
+                end_point=(0.0, 2.50, 1.875),
+                width=1.00,
+                waist_thickness=0.12,
+                run_length=2.50,
+                rise_height=1.875,
+                slope_length=3.125,
+                n_risers=10,
+                tread=0.25,
+                riser=0.1875,
+            ),
+            ResolvedStairFlight(
+                tag="ST-01-F2",
+                start_point=(1.0, 3.50, 1.875),
+                end_point=(1.0, 1.00, 3.75),
+                width=1.00,
+                waist_thickness=0.12,
+                run_length=2.50,
+                rise_height=1.875,
+                slope_length=3.125,
+                n_risers=10,
+                tread=0.25,
+                riser=0.1875,
+            ),
+        ],
+        landing_polygon=[(0.0, 2.5, 1.875), (2.0, 2.5, 1.875), (2.0, 3.5, 1.875), (0.0, 3.5, 1.875)],
+        landing_thickness=0.12,
+        landing_area=2.0,
+        total_concrete_volume=1.25,
+        total_formwork_area=11.5,
+    )
+
+    eqto = calculate_element_qto(resolved)
+    assert eqto.concrete_volume == 1.25
+    assert eqto.formwork_area == 11.5
+    assert eqto.total_rebar_weight > 0.0
+
+
+

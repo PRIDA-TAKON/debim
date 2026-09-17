@@ -152,6 +152,57 @@ def generate_viewer_html(
             "opacity": 0.85,
         })
 
+    # Stairs (Flights + Landing)
+    for stair in resolved.stairs:
+        # Flights
+        for f_idx, flight in enumerate(stair.flights):
+            fcx = (flight.start_point[0] + flight.end_point[0]) / 2.0
+            fcy = (flight.start_point[1] + flight.end_point[1]) / 2.0
+            fcz = (flight.start_point[2] + flight.end_point[2]) / 2.0
+            fdx = flight.end_point[0] - flight.start_point[0]
+            fdy = flight.end_point[1] - flight.start_point[1]
+            yaw = math.atan2(fdy, fdx)
+            pitch = math.atan2(flight.rise_height, flight.run_length)
+
+            elements_data.append({
+                "tag": flight.tag,
+                "class": "IfcStair",
+                "material": stair.element.material,
+                "position": [fcx, fcy, fcz],
+                "rotation": [0, -pitch, yaw],
+                "dimensions": {
+                    "length": flight.slope_length,
+                    "width": flight.width,
+                    "depth": flight.waist_thickness,
+                },
+                "color": "#C4A482",  # Warm timber/concrete tone
+            })
+
+        # Landing
+        if stair.landing_polygon and len(stair.landing_polygon) >= 4:
+            l_xs = [p[0] for p in stair.landing_polygon]
+            l_ys = [p[1] for p in stair.landing_polygon]
+            l_z = stair.landing_polygon[0][2]
+            l_min_x, l_max_x = min(l_xs), max(l_xs)
+            l_min_y, l_max_y = min(l_ys), max(l_ys)
+            elements_data.append({
+                "tag": f"{stair.tag}-Landing",
+                "class": "IfcStair",
+                "material": stair.element.material,
+                "position": [
+                    (l_min_x + l_max_x) / 2.0,
+                    (l_min_y + l_max_y) / 2.0,
+                    l_z - stair.landing_thickness / 2.0,
+                ],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": l_max_x - l_min_x,
+                    "depth": l_max_y - l_min_y,
+                    "height": stair.landing_thickness,
+                },
+                "color": "#B39371",
+            })
+
     # Walls & Children
     for wall in resolved.walls:
         dx = wall.end_point[0] - wall.start_point[0]

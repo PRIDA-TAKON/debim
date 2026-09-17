@@ -15,6 +15,7 @@ from debim.schema import (
     IfcDoor,
     IfcFooting,
     IfcSlab,
+    IfcStair,
     IfcWall,
     IfcWindow,
     ProjectManifest,
@@ -126,12 +127,42 @@ class ResolvedSlab(BaseModel):
     center: Tuple[float, float, float]  # Centroid (cx, cy, cz)
 
 
+class ResolvedStairFlight(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    start_point: Tuple[float, float, float]  # (x, y, z) at bottom of flight
+    end_point: Tuple[float, float, float]    # (x, y, z) at top of flight
+    width: float
+    waist_thickness: float
+    run_length: float      # Horizontal run (m)
+    rise_height: float     # Vertical rise (m)
+    slope_length: float    # True sloped length (m)
+    n_risers: int
+    tread: float
+    riser: float
+
+
+class ResolvedStair(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcStair
+    flights: List[ResolvedStairFlight] = []
+    landing_polygon: Optional[List[Tuple[float, float, float]]] = None
+    landing_thickness: float = 0.12
+    landing_area: float = 0.0
+    total_concrete_volume: float = 0.0
+    total_formwork_area: float = 0.0
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
     ResolvedWall,
     ResolvedFooting,
     ResolvedSlab,
+    ResolvedStair,
     ResolvedCustomElement,
 ]
 
@@ -145,6 +176,7 @@ class ResolvedManifest(BaseModel):
     beams: List[ResolvedBeam] = []
     walls: List[ResolvedWall] = []
     slabs: List[ResolvedSlab] = []
+    stairs: List[ResolvedStair] = []
     doors: List[ResolvedDoor] = []
     windows: List[ResolvedWindow] = []
     custom_elements: List[ResolvedCustomElement] = []
@@ -439,6 +471,158 @@ class SpatialResolver:
             center=(cx, cy, z),
         )
 
+    def resolve_stair(self, stair: IfcStair) -> ResolvedStair:
+        from_st = self.get_storey(stair.placement.from_storey)
+        to_st = self.get_storey(stair.placement.to_storey)
+
+        z_bottom = from_st.elevation + stair.placement.offset_z
+        z_top = to_st.elevation
+        total_height = z_top - z_bottom
+
+        gx, gy = self.get_grid_xy(stair.placement.grid_anchor)
+        base_x = gx + stair.placement.offset_x
+        base_y = gy + stair.placement.offset_y
+
+        w = stair.width
+        waist_t = stair.waist_thickness
+
+        # Steps config
+        riser = stair.steps.riser if stair.steps else 0.1875
+        tread = stair.steps.tread if stair.steps else 0.25
+
+        flights: List[ResolvedStairFlight] = []
+        tot_conc_vol = 0.0
+        tot_formwork = 0.0
+
+        if stair.stair_type == "DOG_LEG":
+            # Dog-leg U-shape stair with mid-landing
+            landing_elev = (
+                stair.landing.elevation
+                if stair.landing
+                else total_height / 2.0
+            )
+            landing_depth = stair.landing.depth if stair.landing else 1.00
+            landing_t = stair.landing.thickness if stair.landing else 0.12
+
+            z_mid = z_bottom + landing_elev
+            rise_1 = landing_elev
+            rise_2 = total_height - landing_elev
+
+            n_risers_1 = max(1, int(round(rise_1 / riser)))
+            n_risers_2 = max(1, int(round(rise_2 / riser)))
+            run_1 = (n_risers_1 - 1) * tread
+            run_2 = (n_risers_2 - 1) * tread
+
+            slope_1 = math.hypot(run_1, rise_1)
+            slope_2 = math.hypot(run_2, rise_2)
+
+            # Flight 1: Bottom to Landing
+            # Orientation determines flight vector (+Y: runs in +Y direction)
+            if stair.placement.orientation == "+Y":
+                p1_start = (base_x, base_y, z_bottom)
+                p1_end = (base_x, base_y + run_1, z_mid)
+                p2_start = (base_x + w, base_y + run_1, z_mid)
+                p2_end = (base_x + w, base_y + run_1 - run_2, z_top)
+                landing_poly = [
+                    (base_x, base_y + run_1, z_mid),
+                    (base_x + 2 * w, base_y + run_1, z_mid),
+                    (base_x + 2 * w, base_y + run_1 + landing_depth, z_mid),
+                    (base_x, base_y + run_1 + landing_depth, z_mid),
+                ]
+            else:
+                p1_start = (base_x, base_y, z_bottom)
+                p1_end = (base_x + run_1, base_y, z_mid)
+                p2_start = (base_x + run_1, base_y + w, z_mid)
+                p2_end = (base_x + run_1 - run_2, base_y + w, z_top)
+                landing_poly = [
+                    (base_x + run_1, base_y, z_mid),
+                    (base_x + run_1, base_y + 2 * w, z_mid),
+                    (base_x + run_1 + landing_depth, base_y + 2 * w, z_mid),
+                    (base_x + run_1 + landing_depth, base_y, z_mid),
+                ]
+
+            f1 = ResolvedStairFlight(
+                tag=f"{stair.tag}-F1",
+                start_point=p1_start,
+                end_point=p1_end,
+                width=w,
+                waist_thickness=waist_t,
+                run_length=run_1,
+                rise_height=rise_1,
+                slope_length=slope_1,
+                n_risers=n_risers_1,
+                tread=tread,
+                riser=rise_1 / n_risers_1,
+            )
+            f2 = ResolvedStairFlight(
+                tag=f"{stair.tag}-F2",
+                start_point=p2_start,
+                end_point=p2_end,
+                width=w,
+                waist_thickness=waist_t,
+                run_length=run_2,
+                rise_height=rise_2,
+                slope_length=slope_2,
+                n_risers=n_risers_2,
+                tread=tread,
+                riser=rise_2 / n_risers_2,
+            )
+            flights.extend([f1, f2])
+
+            landing_area = (2.0 * w) * landing_depth
+            landing_vol = landing_area * landing_t
+
+            # Concrete volume: waist + steps triangles + landing
+            vol_f1 = (slope_1 * w * waist_t) + (n_risers_1 * 0.5 * tread * (rise_1 / n_risers_1) * w)
+            vol_f2 = (slope_2 * w * waist_t) + (n_risers_2 * 0.5 * tread * (rise_2 / n_risers_2) * w)
+            tot_conc_vol = vol_f1 + vol_f2 + landing_vol
+
+            # Formwork: soffit + riser faces + side edge
+            form_f1 = (slope_1 * w) + (n_risers_1 * (rise_1 / n_risers_1) * w) + (slope_1 * waist_t * 2)
+            form_f2 = (slope_2 * w) + (n_risers_2 * (rise_2 / n_risers_2) * w) + (slope_2 * waist_t * 2)
+            tot_formwork = form_f1 + form_f2 + landing_area
+
+        else:
+            # Straight flight
+            n_risers = max(1, int(round(total_height / riser)))
+            run = (n_risers - 1) * tread
+            slope = math.hypot(run, total_height)
+            p_start = (base_x, base_y, z_bottom)
+            p_end = (base_x, base_y + run, z_top)
+
+            f = ResolvedStairFlight(
+                tag=f"{stair.tag}-F1",
+                start_point=p_start,
+                end_point=p_end,
+                width=w,
+                waist_thickness=waist_t,
+                run_length=run,
+                rise_height=total_height,
+                slope_length=slope,
+                n_risers=n_risers,
+                tread=tread,
+                riser=total_height / n_risers,
+            )
+            flights.append(f)
+            landing_poly = None
+            landing_area = 0.0
+            landing_t = 0.0
+
+            vol_f = (slope * w * waist_t) + (n_risers * 0.5 * tread * (total_height / n_risers) * w)
+            tot_conc_vol = vol_f
+            tot_formwork = (slope * w) + (n_risers * (total_height / n_risers) * w) + (slope * waist_t * 2)
+
+        return ResolvedStair(
+            tag=stair.tag,
+            element=stair,
+            flights=flights,
+            landing_polygon=landing_poly,
+            landing_thickness=landing_t,
+            landing_area=landing_area,
+            total_concrete_volume=tot_conc_vol,
+            total_formwork_area=tot_formwork,
+        )
+
     def resolve(self) -> ResolvedManifest:
         resolved_manifest = ResolvedManifest(manifest=self.manifest)
 
@@ -451,6 +635,10 @@ class SpatialResolver:
                 r_slab = self.resolve_slab(elem)
                 resolved_manifest.slabs.append(r_slab)
                 resolved_manifest.elements.append(r_slab)
+            elif isinstance(elem, IfcStair):
+                r_stair = self.resolve_stair(elem)
+                resolved_manifest.stairs.append(r_stair)
+                resolved_manifest.elements.append(r_stair)
             elif isinstance(elem, IfcColumn):
                 r_col = self.resolve_column(elem)
                 resolved_manifest.columns.append(r_col)

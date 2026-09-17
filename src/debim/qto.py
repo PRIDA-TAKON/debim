@@ -16,6 +16,7 @@ from debim.resolver import (
     ResolvedFooting,
     ResolvedManifest,
     ResolvedSlab,
+    ResolvedStair,
     ResolvedWall,
     resolve_manifest,
 )
@@ -338,6 +339,39 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
             total_rebar_weight=total_rebar,
         )
 
+    elif isinstance(resolved, ResolvedStair):
+        elem = resolved.element
+        vol = resolved.total_concrete_volume
+        formwork = resolved.total_formwork_area
+
+        rebar_dict: Dict[str, float] = {}
+        total_rebar = 0.0
+
+        if elem.reinforcement:
+            # Estimate main rebar along stair slope
+            tot_slope = sum(f.slope_length for f in resolved.flights)
+            if elem.reinforcement.main:
+                m_dict, m_wt = parse_stirrups(elem.reinforcement.main, tot_slope, elem.width, 1.0)
+                for btype, wt in m_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                total_rebar += m_wt
+
+            if elem.reinforcement.temperature:
+                t_dict, t_wt = parse_stirrups(elem.reinforcement.temperature, elem.width, tot_slope, 1.0)
+                for btype, wt in t_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                total_rebar += t_wt
+
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=vol,
+            formwork_area=formwork,
+            rebar_weights=rebar_dict,
+            total_rebar_weight=total_rebar,
+        )
+
     elif isinstance(resolved, ResolvedCustomElement):
         elem = resolved.element
         vol = 0.0
@@ -427,7 +461,7 @@ def calculate_qto(
 
         # Include volume in concrete volume total if element's material category is concrete
         mat_cat = material_categories.get(eqto.material, "") if eqto.material else ""
-        if mat_cat == "concrete" or eqto.element_class in ("IfcColumn", "IfcBeam", "IfcSlab"):
+        if mat_cat == "concrete" or eqto.element_class in ("IfcColumn", "IfcBeam", "IfcSlab", "IfcStair"):
             total_conc_vol += eqto.concrete_volume
         elif "footing" in eqto.element_class.lower() or "f2" in eqto.tag.lower() or "footing" in eqto.tag.lower():
             total_conc_vol += eqto.concrete_volume

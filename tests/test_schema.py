@@ -137,3 +137,47 @@ def test_slab_schema():
     assert slab.thickness == 0.10
     assert slab.slab_type == "PRECAST_PLANK"
     assert len(slab.placement.boundary) == 4
+
+
+def test_ifcstair_schema():
+    from debim.schema import IfcStair, StairPlacement, StairLanding, StairStepConfig, StairReinforcement
+
+    stair = IfcStair(
+        **{
+            "class": "IfcStair",
+            "tag": "ST-01",
+            "material": "CONC_210",
+            "stair_type": "DOG_LEG",
+            "width": 1.00,
+            "waist_thickness": 0.12,
+            "placement": StairPlacement(
+                grid_anchor=("2", "C"),
+                from_storey="L1",
+                to_storey="L2",
+                offset_x=0.0,
+                offset_y=0.0,
+                offset_z=0.0,
+                orientation="+Y",
+            ),
+            "landing": StairLanding(
+                elevation=1.875,
+                depth=1.00,
+                thickness=0.12,
+            ),
+            "steps": StairStepConfig(
+                tread=0.25,
+                riser=0.1875,
+            ),
+            "reinforcement": StairReinforcement(
+                main="DB12 @ 0.15m",
+                temperature="RB9 @ 0.20m",
+            ),
+        }
+    )
+    assert stair.tag == "ST-01"
+    assert stair.stair_type == "DOG_LEG"
+    assert stair.width == 1.00
+    assert stair.steps.riser == 0.1875
+    assert stair.steps.tread == 0.25
+    assert stair.landing.depth == 1.00
+

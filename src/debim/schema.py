@@ -234,6 +234,54 @@ class IfcSlab(BaseModel):
     reinforcement: Optional[SlabReinforcement] = None
 
 
+# Stair placement & element
+class StairPlacement(BaseModel):
+    grid_anchor: Tuple[str, str]  # Starting grid intersection, e.g. ["2", "B"]
+    from_storey: str
+    to_storey: str
+    offset_x: float = 0.00
+    offset_y: float = 0.00
+    offset_z: float = 0.00
+    orientation: Literal["+X", "-X", "+Y", "-Y"] = "+Y"
+
+    @field_validator("grid_anchor", mode="before")
+    @classmethod
+    def convert_grid_anchor_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class StairLanding(BaseModel):
+    elevation: float  # Absolute height above from_storey elevation (m)
+    depth: float = 1.00  # Landing depth (m)
+    thickness: float = 0.12  # Landing slab thickness (m)
+
+
+class StairStepConfig(BaseModel):
+    tread: float = 0.25  # ลูกนอน (m)
+    riser: float = 0.1875  # ลูกตั้ง (m)
+    n_risers: Optional[int] = None  # Auto-calculated from floor-to-floor height if omitted
+
+
+class StairReinforcement(BaseModel):
+    main: Optional[str] = None  # e.g. "DB12 @ 0.15m"
+    temperature: Optional[str] = None  # e.g. "RB9 @ 0.20m"
+
+
+class IfcStair(BaseModel):
+    class_: Literal["IfcStair"] = Field(alias="class")
+    tag: str
+    material: str
+    stair_type: Literal["STRAIGHT", "DOG_LEG", "L_SHAPE"] = "DOG_LEG"
+    width: float = 1.00  # Clear flight width (m)
+    waist_thickness: float = 0.12  # Structural waist slab thickness (m)
+    placement: StairPlacement
+    landing: Optional[StairLanding] = None
+    steps: Optional[StairStepConfig] = None
+    reinforcement: Optional[StairReinforcement] = None
+
+
 # Custom element placement & element
 class CustomElementPlacement(BaseModel):
     position: Tuple[float, float, float]
@@ -249,7 +297,7 @@ class IfcCustomElement(BaseModel):
 
 
 Element = Annotated[
-    Union[IfcColumn, IfcBeam, IfcWall, IfcFooting, IfcSlab, IfcCustomElement],
+    Union[IfcColumn, IfcBeam, IfcWall, IfcFooting, IfcSlab, IfcStair, IfcCustomElement],
     Field(discriminator="class_"),
 ]
 
@@ -386,6 +434,25 @@ class ProjectManifest(BaseModel):
                         raise ValueError(
                             f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'"
                         )
+
+            elif isinstance(elem, IfcStair):
+                if elem.placement.from_storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown from_storey '{elem.placement.from_storey}'"
+                    )
+                if elem.placement.to_storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown to_storey '{elem.placement.to_storey}'"
+                    )
+                gx, gy = elem.placement.grid_anchor
+                if gx not in grid_x_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' grid_anchor references unknown X grid '{gx}'"
+                    )
+                if gy not in grid_y_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' grid_anchor references unknown Y grid '{gy}'"
+                    )
 
             elif isinstance(elem, IfcCustomElement):
                 if elem.placement.storey not in storey_ids:
