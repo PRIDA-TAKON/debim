@@ -158,7 +158,7 @@ def summary(
 
         site_table.add_row("X Range", f"{min_x:.2f} m to {max_x:.2f} m (Span: {span_x:.2f} m)")
         site_table.add_row("Y Range", f"{min_y:.2f} m to {max_y:.2f} m (Span: {span_y:.2f} m)")
-        site_table.add_row("Bounding Area", f"{bounding_area:.2f} m²")
+        site_table.add_row("Bounding Area", f"{bounding_area:.2f} m2")
 
         storeys_str = ", ".join([f"{s.name} (+{s.elevation:.2f}m)" for s in manifest_obj.spatial_structure.storeys])
         site_table.add_row("Storeys", storeys_str)
@@ -199,8 +199,8 @@ def summary(
                 pass
 
         qto_summary = (
-            f"[bold cyan]Total Concrete Volume:[/bold cyan] {project_qto.total_concrete_volume:.3f} m³\n"
-            f"[bold cyan]Total Formwork Area:[/bold cyan] {project_qto.total_formwork_area:.3f} m²\n"
+            f"[bold cyan]Total Concrete Volume:[/bold cyan] {project_qto.total_concrete_volume:.3f} m3\n"
+            f"[bold cyan]Total Formwork Area:[/bold cyan] {project_qto.total_formwork_area:.3f} m2\n"
             f"[bold cyan]Total Rebar Weight:[/bold cyan] {project_qto.total_rebar_weight:.3f} kg\n"
             f"[bold green]Estimated Budget:[/bold green] {cost_str}"
         )
@@ -591,8 +591,8 @@ def diff(
     qto_delta_table.add_column("Revision B", justify="right")
     qto_delta_table.add_column("Delta (Δ)", justify="right")
 
-    qto_delta_table.add_row("Concrete Volume (m³)", f"{qto_a.total_concrete_volume:.3f}", f"{qto_b.total_concrete_volume:.3f}", fmt_delta(d_conc, "m³"))
-    qto_delta_table.add_row("Formwork Area (m²)", f"{qto_a.total_formwork_area:.3f}", f"{qto_b.total_formwork_area:.3f}", fmt_delta(d_form, "m²"))
+    qto_delta_table.add_row("Concrete Volume (m3)", f"{qto_a.total_concrete_volume:.3f}", f"{qto_b.total_concrete_volume:.3f}", fmt_delta(d_conc, "m3"))
+    qto_delta_table.add_row("Formwork Area (m2)", f"{qto_a.total_formwork_area:.3f}", f"{qto_b.total_formwork_area:.3f}", fmt_delta(d_form, "m2"))
     qto_delta_table.add_row("Rebar Weight (kg)", f"{qto_a.total_rebar_weight:.3f}", f"{qto_b.total_rebar_weight:.3f}", fmt_delta(d_rebar, "kg"))
 
     console.print(qto_delta_table)
@@ -619,7 +619,7 @@ def diff(
     summary_msg = (
         f"[bold yellow]Elements Changed:[/bold yellow] [green]+{added_count} Added[/green] | "
         f"[red]-{removed_count} Removed[/red] | [yellow]~{modified_count} Modified[/yellow]\n"
-        f"[bold cyan]Net QTO Deltas:[/bold cyan] Δ Concrete: {d_conc:+.3f} m³, Δ Formwork: {d_form:+.3f} m², Δ Rebar: {d_rebar:+.3f} kg"
+        f"[bold cyan]Net QTO Deltas:[/bold cyan] Δ Concrete: {d_conc:+.3f} m3, Δ Formwork: {d_form:+.3f} m2, Δ Rebar: {d_rebar:+.3f} kg"
     )
     if cost_a and cost_b:
         summary_msg += f"\n[bold green]Net Budget Variance:[/bold green] {cost_b.grand_total - cost_a.grand_total:+,.2f} {cost_b.currency}"
