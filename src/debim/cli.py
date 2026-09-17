@@ -14,7 +14,8 @@ from rich.table import Table
 from debim.compiler import compile_to_ifc
 from debim.cost import estimate_cost, load_price_catalog
 from debim.qto import calculate_qto
-from debim.schema import load_manifest
+from debim.resolver import resolve_manifest
+from debim.schema import ProjectManifest, load_manifest
 from debim.viewer import generate_viewer_html, serve_viewer
 
 app = typer.Typer(
@@ -110,6 +111,104 @@ def test(
         )
 
     raise typer.Exit(code=res.returncode)
+
+
+@app.command(name="summary")
+@app.command(name="info", hidden=True)
+def summary(
+    manifest: Path = typer.Option(
+        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
+    ),
+    prices: Path = typer.Option(
+        Path("prices.json"), "--prices", "-p", help="Path to price catalog"
+    ),
+):
+    """Print high-level project summary table (Site bounds/area, footprint, storey elevations, element counts, cost)"""
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        raise typer.Exit(code=1)
+
+    try:
+        manifest_obj = load_manifest(manifest)
+        resolved = resolve_manifest(manifest_obj)
+        project_qto = calculate_qto(resolved)
+
+        proj = manifest_obj.project
+        console.print(
+            Panel(
+                f"[bold cyan]Project Name:[/bold cyan] {proj.name}\n"
+                f"[bold cyan]Project ID:[/bold cyan] {proj.id}\n"
+                f"[bold cyan]Units:[/bold cyan] length={proj.units.length}, area={proj.units.area}, volume={proj.units.volume}",
+                title="[bold green]Project Overview[/bold green]",
+            )
+        )
+
+        # Site & Grids
+        axes_x = list(manifest_obj.grids.axes_x.values())
+        axes_y = list(manifest_obj.grids.axes_y.values())
+        min_x, max_x = (min(axes_x), max(axes_x)) if axes_x else (0.0, 0.0)
+        min_y, max_y = (min(axes_y), max(axes_y)) if axes_y else (0.0, 0.0)
+        span_x = max_x - min_x
+        span_y = max_y - min_y
+        bounding_area = span_x * span_y
+
+        site_table = Table(title="Site Bounds & Spatial Structure", show_header=True, header_style="bold cyan")
+        site_table.add_column("Property", style="bold yellow")
+        site_table.add_column("Value", style="white")
+
+        site_table.add_row("X Range", f"{min_x:.2f} m to {max_x:.2f} m (Span: {span_x:.2f} m)")
+        site_table.add_row("Y Range", f"{min_y:.2f} m to {max_y:.2f} m (Span: {span_y:.2f} m)")
+        site_table.add_row("Bounding Area", f"{bounding_area:.2f} m²")
+
+        storeys_str = ", ".join([f"{s.name} (+{s.elevation:.2f}m)" for s in manifest_obj.spatial_structure.storeys])
+        site_table.add_row("Storeys", storeys_str)
+
+        console.print(site_table)
+
+        # Element Statistics Table
+        class_counts = {}
+        for elem in manifest_obj.elements:
+            cls = elem.class_
+            class_counts[cls] = class_counts.get(cls, 0) + 1
+
+        # Also count doors & windows if present in walls
+        door_count = len(resolved.doors)
+        window_count = len(resolved.windows)
+        if door_count > 0:
+            class_counts["IfcDoor"] = door_count
+        if window_count > 0:
+            class_counts["IfcWindow"] = window_count
+
+        elem_table = Table(title="Element Statistics Breakdown", show_header=True, header_style="bold cyan")
+        elem_table.add_column("IFC Class", style="bold green")
+        elem_table.add_column("Count", justify="right", style="bold yellow")
+
+        for cls, count in sorted(class_counts.items()):
+            elem_table.add_row(cls, str(count))
+
+        console.print(elem_table)
+
+        # QTO & Cost Snapshot
+        cost_str = "N/A (prices.json not found)"
+        if prices.exists():
+            try:
+                price_catalog = load_price_catalog(prices)
+                estimate = estimate_cost(project_qto, price_catalog, manifest_obj)
+                cost_str = f"{estimate.grand_total:,.2f} {estimate.currency}"
+            except Exception:
+                pass
+
+        qto_summary = (
+            f"[bold cyan]Total Concrete Volume:[/bold cyan] {project_qto.total_concrete_volume:.3f} m³\n"
+            f"[bold cyan]Total Formwork Area:[/bold cyan] {project_qto.total_formwork_area:.3f} m²\n"
+            f"[bold cyan]Total Rebar Weight:[/bold cyan] {project_qto.total_rebar_weight:.3f} kg\n"
+            f"[bold green]Estimated Budget:[/bold green] {cost_str}"
+        )
+        console.print(Panel(qto_summary, title="[bold green]QTO & Cost Snapshot[/bold green]"))
+
+    except Exception as e:
+        console.print(f"[bold red]Summary Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
 
 
 @app.command()
@@ -286,14 +385,31 @@ def view(
     no_browser: bool = typer.Option(
         False, "--no-browser", help="Do not open web browser automatically"
     ),
+    export: Optional[Path] = typer.Option(
+        None, "--export", "-e", help="Export standalone 3D/2D HTML viewer file without running HTTP server"
+    ),
 ):
-    """Launch lightweight local 3D preview server in browser"""
+    """Launch lightweight local 3D preview server in browser or export HTML viewer"""
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
         raise typer.Exit(code=1)
 
     try:
         html_content = generate_viewer_html(manifest)
+        if export:
+            export.parent.mkdir(parents=True, exist_ok=True)
+            export.write_text(html_content, encoding="utf-8")
+            file_size = export.stat().st_size
+            console.print(
+                Panel(
+                    f"[bold green]Viewer HTML Exported Successfully![/bold green]\n"
+                    f"[bold cyan]Export Path:[/bold cyan] {export}\n"
+                    f"[bold cyan]File Size:[/bold cyan] {file_size} bytes",
+                    title="[bold blue]debim 3D Viewer Export[/bold blue]",
+                )
+            )
+            return
+
         url = f"http://localhost:{port}"
         console.print(
             Panel(
@@ -342,6 +458,173 @@ def import_ifc(
     except Exception as e:
         console.print(f"[bold red]Import Error:[/bold red]\n{e}")
         raise typer.Exit(code=1)
+
+
+def _resolve_target_manifest(target_str: str) -> ProjectManifest:
+    path = Path(target_str)
+    if path.exists() and path.is_file():
+        return load_manifest(path)
+
+    import subprocess
+    if ":" in target_str:
+        rev, rel_path = target_str.split(":", 1)
+    else:
+        rev = target_str
+        rel_path = "project.yaml"
+
+    try:
+        res = subprocess.run(
+            ["git", "show", f"{rev}:{rel_path}"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        data = yaml.safe_load(res.stdout)
+        return ProjectManifest.model_validate(data)
+    except Exception as e:
+        raise ValueError(f"Could not load manifest from '{target_str}': {e}")
+
+
+@app.command()
+def diff(
+    target_a: str = typer.Argument(..., help="First target (file path or git rev e.g. HEAD~1)"),
+    target_b: str = typer.Argument(..., help="Second target (file path or git rev e.g. HEAD)"),
+    prices: Path = typer.Option(
+        Path("prices.json"), "--prices", "-p", help="Path to price catalog"
+    ),
+):
+    """Git-aware manifest comparison engine reporting element deltas, QTO deltas, and Cost variance"""
+    try:
+        manifest_a = _resolve_target_manifest(target_a)
+    except Exception as e:
+        console.print(f"[bold red]Error loading target A ({target_a}):[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+    try:
+        manifest_b = _resolve_target_manifest(target_b)
+    except Exception as e:
+        console.print(f"[bold red]Error loading target B ({target_b}):[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+    console.print(f"[bold cyan]Comparing BIM Revisions:[/bold cyan] [yellow]{target_a}[/yellow] ➔ [green]{target_b}[/green]\n")
+
+    # QTO calculations
+    qto_a = calculate_qto(manifest_a)
+    qto_b = calculate_qto(manifest_b)
+
+    # Cost calculations
+    cost_a = None
+    cost_b = None
+    if prices.exists():
+        try:
+            catalog = load_price_catalog(prices)
+            cost_a = estimate_cost(qto_a, catalog, manifest_a)
+            cost_b = estimate_cost(qto_b, catalog, manifest_b)
+        except Exception:
+            pass
+
+    # Element comparison
+    elems_a = {e.tag: e for e in manifest_a.elements}
+    elems_b = {e.tag: e for e in manifest_b.elements}
+
+    all_tags = sorted(list(set(elems_a.keys()) | set(elems_b.keys())))
+
+    elem_table = Table(
+        title="Element Changes Breakdown",
+        show_header=True,
+        header_style="bold cyan",
+    )
+    elem_table.add_column("Tag", style="bold yellow")
+    elem_table.add_column("Class", style="white")
+    elem_table.add_column("Change", justify="center")
+    elem_table.add_column("Details", style="dim")
+
+    added_count = 0
+    removed_count = 0
+    modified_count = 0
+
+    for tag in all_tags:
+        if tag in elems_b and tag not in elems_a:
+            elem = elems_b[tag]
+            elem_table.add_row(tag, elem.class_, "[bold green]+ Added[/bold green]", "New element introduced")
+            added_count += 1
+        elif tag in elems_a and tag not in elems_b:
+            elem = elems_a[tag]
+            elem_table.add_row(tag, elem.class_, "[bold red]- Removed[/bold red]", "Element deleted")
+            removed_count += 1
+        else:
+            elem_a = elems_a[tag]
+            elem_b = elems_b[tag]
+            if elem_a.model_dump() != elem_b.model_dump():
+                elem_table.add_row(tag, elem_b.class_, "[bold yellow]~ Modified[/bold yellow]", "Properties/geometry updated")
+                modified_count += 1
+
+    console.print(elem_table)
+
+    # Helper for delta formatting
+    def fmt_delta(val: float, unit: str = "", currency: str = "") -> str:
+        prefix = f"{currency} " if currency else ""
+        suffix = f" {unit}" if unit else ""
+        if val > 1e-6:
+            return f"[bold green]+{prefix}{val:,.3f}{suffix}[/bold green]"
+        elif val < -1e-6:
+            return f"[bold red]{prefix}{val:,.3f}{suffix}[/bold red]"
+        else:
+            return f"[dim]0.000{suffix}[/dim]"
+
+    def fmt_cost_delta(val: float, currency: str = "THB") -> str:
+        if val > 1e-2:
+            return f"[bold green]+{val:,.2f} {currency}[/bold green]"
+        elif val < -1e-2:
+            return f"[bold red]{val:,.2f} {currency}[/bold red]"
+        else:
+            return f"[dim]0.00 {currency}[/dim]"
+
+    # QTO Deltas
+    d_conc = qto_b.total_concrete_volume - qto_a.total_concrete_volume
+    d_form = qto_b.total_formwork_area - qto_a.total_formwork_area
+    d_rebar = qto_b.total_rebar_weight - qto_a.total_rebar_weight
+
+    qto_delta_table = Table(title="Quantity Take-Off (QTO) Deltas", show_header=True, header_style="bold cyan")
+    qto_delta_table.add_column("Metric", style="bold yellow")
+    qto_delta_table.add_column("Revision A", justify="right")
+    qto_delta_table.add_column("Revision B", justify="right")
+    qto_delta_table.add_column("Delta (Δ)", justify="right")
+
+    qto_delta_table.add_row("Concrete Volume (m³)", f"{qto_a.total_concrete_volume:.3f}", f"{qto_b.total_concrete_volume:.3f}", fmt_delta(d_conc, "m³"))
+    qto_delta_table.add_row("Formwork Area (m²)", f"{qto_a.total_formwork_area:.3f}", f"{qto_b.total_formwork_area:.3f}", fmt_delta(d_form, "m²"))
+    qto_delta_table.add_row("Rebar Weight (kg)", f"{qto_a.total_rebar_weight:.3f}", f"{qto_b.total_rebar_weight:.3f}", fmt_delta(d_rebar, "kg"))
+
+    console.print(qto_delta_table)
+
+    # Cost Variance Breakdown
+    if cost_a and cost_b:
+        d_mat = cost_b.total_material_cost - cost_a.total_material_cost
+        d_lab = cost_b.total_labor_cost - cost_a.total_labor_cost
+        d_tot = cost_b.grand_total - cost_a.grand_total
+        curr = cost_b.currency
+
+        cost_delta_table = Table(title=f"Cost Variance Breakdown ({curr})", show_header=True, header_style="bold cyan")
+        cost_delta_table.add_column("Cost Component", style="bold yellow")
+        cost_delta_table.add_column("Revision A", justify="right")
+        cost_delta_table.add_column("Revision B", justify="right")
+        cost_delta_table.add_column("Variance (Δ)", justify="right")
+
+        cost_delta_table.add_row("Material Cost", f"{cost_a.total_material_cost:,.2f}", f"{cost_b.total_material_cost:,.2f}", fmt_cost_delta(d_mat, curr))
+        cost_delta_table.add_row("Labor Cost", f"{cost_a.total_labor_cost:,.2f}", f"{cost_b.total_labor_cost:,.2f}", fmt_cost_delta(d_lab, curr))
+        cost_delta_table.add_row("Total Amount", f"{cost_a.grand_total:,.2f}", f"{cost_b.grand_total:,.2f}", fmt_cost_delta(d_tot, curr))
+
+        console.print(cost_delta_table)
+
+    summary_msg = (
+        f"[bold yellow]Elements Changed:[/bold yellow] [green]+{added_count} Added[/green] | "
+        f"[red]-{removed_count} Removed[/red] | [yellow]~{modified_count} Modified[/yellow]\n"
+        f"[bold cyan]Net QTO Deltas:[/bold cyan] Δ Concrete: {d_conc:+.3f} m³, Δ Formwork: {d_form:+.3f} m², Δ Rebar: {d_rebar:+.3f} kg"
+    )
+    if cost_a and cost_b:
+        summary_msg += f"\n[bold green]Net Budget Variance:[/bold green] {cost_b.grand_total - cost_a.grand_total:+,.2f} {cost_b.currency}"
+
+    console.print(Panel(summary_msg, title="[bold green]Diff Summary[/bold green]"))
 
 
 if __name__ == "__main__":
