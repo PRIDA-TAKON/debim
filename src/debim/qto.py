@@ -13,6 +13,7 @@ from debim.resolver import (
     ResolvedColumn,
     ResolvedCustomElement,
     ResolvedElement,
+    ResolvedFooting,
     ResolvedManifest,
     ResolvedWall,
     resolve_manifest,
@@ -149,7 +150,38 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
     rebar_dict: Dict[str, float] = {}
     total_rebar = 0.0
 
-    if isinstance(resolved, ResolvedColumn):
+    if isinstance(resolved, ResolvedFooting):
+        elem = resolved.element
+        w = resolved.width
+        d = resolved.depth
+        t = resolved.thickness
+        vol = w * d * t
+        formwork = 2.0 * (w + d) * t
+
+        rebar_dict: Dict[str, float] = {}
+        total_rebar = 0.0
+
+        if elem.reinforcement:
+            mx_dict, mx_wt = parse_main_bars(elem.reinforcement.mesh_x, w)
+            my_dict, my_wt = parse_main_bars(elem.reinforcement.mesh_y, d)
+
+            for btype, wt in mx_dict.items():
+                rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+            for btype, wt in my_dict.items():
+                rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+            total_rebar = mx_wt + my_wt
+
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=vol,
+            formwork_area=formwork,
+            rebar_weights=rebar_dict,
+            total_rebar_weight=total_rebar,
+        )
+
+    elif isinstance(resolved, ResolvedColumn):
         elem = resolved.element
         w = elem.profile.width
         d = elem.profile.depth

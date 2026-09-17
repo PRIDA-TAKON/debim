@@ -44,6 +44,26 @@ def generate_viewer_html(
 
     elements_data: List[Dict[str, Any]] = []
 
+    # Footings
+    for footing in resolved.footings:
+        elements_data.append({
+            "tag": footing.tag,
+            "class": "IfcFooting",
+            "material": footing.element.material,
+            "position": [
+                footing.position[0],
+                footing.position[1],
+                footing.position[2] + footing.thickness / 2.0,
+            ],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": footing.width,
+                "depth": footing.depth,
+                "height": footing.thickness,
+            },
+            "color": "#6A6A6A",
+        })
+
     # Columns
     for col in resolved.columns:
         elements_data.append({

@@ -1,0 +1,59 @@
+{
+  "currency": "THB",
+  "items": {
+    "MAT-CONC-210": {
+      "name": "Structural Concrete 210 ksc (1:2:4)",
+      "unit": "m3",
+      "material_cost": 2050.0,
+      "labor_cost": 450.0
+    },
+    "MAT-BRICK-01": {
+      "name": "Clay Brick Masonry Wall",
+      "unit": "m2",
+      "material_cost": 280.0,
+      "labor_cost": 120.0
+    },
+    "MAT-STEEL-01": {
+      "name": "Structural Steel Truss SS400",
+      "unit": "kg",
+      "material_cost": 32.0,
+      "labor_cost": 8.0
+    },
+    "MAT-FORMWORK": {
+      "name": "Timber Formwork",
+      "unit": "m2",
+      "material_cost": 350.0,
+      "labor_cost": 150.0
+    },
+    "MAT-REBAR-RB6": {
+      "name": "Round Bar RB6 (SR24)",
+      "unit": "kg",
+      "material_cost": 26.5,
+      "labor_cost": 4.0
+    },
+    "MAT-REBAR-RB9": {
+      "name": "Round Bar RB9 (SR24)",
+      "unit": "kg",
+      "material_cost": 26.5,
+      "labor_cost": 4.0
+    },
+    "MAT-REBAR-DB12": {
+      "name": "Deformed Bar DB12 (SD40)",
+      "unit": "kg",
+      "material_cost": 27.0,
+      "labor_cost": 4.5
+    },
+    "MAT-REBAR-DB16": {
+      "name": "Deformed Bar DB16 (SD40)",
+      "unit": "kg",
+      "material_cost": 27.5,
+      "labor_cost": 4.5
+    },
+    "MAT-REBAR-DB20": {
+      "name": "Deformed Bar DB20 (SD40)",
+      "unit": "kg",
+      "material_cost": 28.0,
+      "labor_cost": 4.5
+    }
+  }
+}

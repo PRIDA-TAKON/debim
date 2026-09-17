@@ -13,6 +13,7 @@ from debim.schema import (
     IfcColumn,
     IfcCustomElement,
     IfcDoor,
+    IfcFooting,
     IfcWall,
     IfcWindow,
     ProjectManifest,
@@ -90,10 +91,22 @@ class ResolvedCustomElement(BaseModel):
     position: Tuple[float, float, float]
 
 
+class ResolvedFooting(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcFooting
+    position: Tuple[float, float, float]
+    width: float
+    depth: float
+    thickness: float
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
     ResolvedWall,
+    ResolvedFooting,
     ResolvedCustomElement,
 ]
 
@@ -102,6 +115,7 @@ class ResolvedManifest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     manifest: ProjectManifest
+    footings: List[ResolvedFooting] = []
     columns: List[ResolvedColumn] = []
     beams: List[ResolvedBeam] = []
     walls: List[ResolvedWall] = []
@@ -272,11 +286,29 @@ class SpatialResolver:
             position=world_pos,
         )
 
+    def resolve_footing(self, footing: IfcFooting) -> ResolvedFooting:
+        gx, gy = self.get_grid_xy(footing.placement.grid)
+        storey = self.get_storey(footing.placement.storey)
+        z = storey.elevation + footing.placement.offset_z
+
+        return ResolvedFooting(
+            tag=footing.tag,
+            element=footing,
+            position=(gx, gy, z),
+            width=footing.profile.width,
+            depth=footing.profile.depth,
+            thickness=footing.profile.thickness,
+        )
+
     def resolve(self) -> ResolvedManifest:
         resolved_manifest = ResolvedManifest(manifest=self.manifest)
 
         for elem in self.manifest.elements:
-            if isinstance(elem, IfcColumn):
+            if isinstance(elem, IfcFooting):
+                r_footing = self.resolve_footing(elem)
+                resolved_manifest.footings.append(r_footing)
+                resolved_manifest.elements.append(r_footing)
+            elif isinstance(elem, IfcColumn):
                 r_col = self.resolve_column(elem)
                 resolved_manifest.columns.append(r_col)
                 resolved_manifest.elements.append(r_col)

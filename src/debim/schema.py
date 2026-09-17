@@ -77,6 +77,40 @@ class IfcColumn(BaseModel):
     reinforcement: Optional[ColumnReinforcement] = None
 
 
+class FootingProfile(BaseModel):
+    shape: Literal["BOX"] = "BOX"
+    width: float
+    depth: float
+    thickness: float
+
+
+class FootingPlacement(BaseModel):
+    grid: Tuple[str, str]
+    storey: str
+    offset_z: float = 0.00
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class FootingReinforcement(BaseModel):
+    mesh_x: Optional[str] = None
+    mesh_y: Optional[str] = None
+
+
+class IfcFooting(BaseModel):
+    class_: Literal["IfcFooting"] = Field(alias="class")
+    tag: str
+    material: str
+    profile: FootingProfile
+    placement: FootingPlacement
+    reinforcement: Optional[FootingReinforcement] = None
+
+
 # Beam placement & element
 class BeamPlacement(BaseModel):
     from_grid: Tuple[str, str]
@@ -171,7 +205,7 @@ class IfcCustomElement(BaseModel):
 
 
 Element = Annotated[
-    Union[IfcColumn, IfcBeam, IfcWall, IfcCustomElement],
+    Union[IfcColumn, IfcBeam, IfcWall, IfcFooting, IfcCustomElement],
     Field(discriminator="class_"),
 ]
 
@@ -272,6 +306,21 @@ class ProjectManifest(BaseModel):
                 if tgy not in grid_y_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' to_grid references unknown Y grid '{tgy}'"
+                    )
+
+            elif isinstance(elem, IfcFooting):
+                if elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                gx, gy = elem.placement.grid
+                if gx not in grid_x_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown X grid '{gx}'"
+                    )
+                if gy not in grid_y_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown Y grid '{gy}'"
                     )
 
             elif isinstance(elem, IfcCustomElement):

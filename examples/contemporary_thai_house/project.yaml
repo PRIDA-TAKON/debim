@@ -1,0 +1,1049 @@
+schema: IFC4-Minimal
+project:
+  id: PRJ-THAI-HOUSE-05
+  name: "Contemporary Thai House 5 (บ้านครอบครัวไทยร่วมสมัย ๕)"
+  units: { length: METER, area: SQUARE_METER, volume: CUBIC_METER }
+
+spatial_structure:
+  storeys:
+    - id: L0_FOUNDATION
+      name: "Foundation & Footing Level"
+      elevation: -1.50
+      height: 1.50
+    - id: L1_GROUND
+      name: "Level 1 Ground Floor"
+      elevation: 0.00
+      height: 3.75
+    - id: L2_SECOND
+      name: "Level 2 Second Floor"
+      elevation: 3.75
+      height: 2.90
+    - id: L3_ROOF
+      name: "Roof & Truss Level"
+      elevation: 6.65
+      height: 1.50
+
+grids:
+  axes_x:
+    "1": 0.00
+    "2": 4.00
+    "3": 6.00
+    "4": 9.00
+  axes_y:
+    "A": 0.00
+    "B": 1.80
+    "C": 5.50
+    "D": 7.70
+    "E": 11.40
+    "F": 13.40
+
+materials:
+  - id: CONC_210
+    name: "Structural Concrete 1:2:4 (fc' 210 ksc)"
+    category: concrete
+    unit_cost_ref: "MAT-CONC-210"
+  - id: BRICK_MON
+    name: "Clay Brick Wall (ผนังก่ออิฐมอญครึ่งแผ่น)"
+    category: masonry
+    unit_cost_ref: "MAT-BRICK-01"
+  - id: STEEL_SS400
+    name: "Structural Steel Truss (โครงหลังคาเหล็ก)"
+    category: steel
+    unit_cost_ref: "MAT-STEEL-01"
+
+elements:
+  # ==========================================
+  # 0. ISOLATED FOOTINGS (ฐานรากแผ่ ค.ส.ล. - S-02)
+  # F0.80x0.80, F1.00x1.00, F1.30x1.30, F1.50x1.50, F1.80x1.80
+  # ==========================================
+  # F0.80x0.80 (หนา 0.20 m, 4+4 RB9)
+  - class: IfcFooting
+    tag: F-A1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.80, depth: 0.80, thickness: 0.20 }
+    placement: { grid: ["1", "A"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "4-RB9", mesh_y: "4-RB9" }
+
+  - class: IfcFooting
+    tag: F-A2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.80, depth: 0.80, thickness: 0.20 }
+    placement: { grid: ["2", "A"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "4-RB9", mesh_y: "4-RB9" }
+
+  # F1.00x1.00 (หนา 0.20 m, 4+4 DB12)
+  - class: IfcFooting
+    tag: F-B4
+    material: CONC_210
+    profile: { shape: BOX, width: 1.00, depth: 1.00, thickness: 0.20 }
+    placement: { grid: ["4", "B"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "4-DB12", mesh_y: "4-DB12" }
+
+  - class: IfcFooting
+    tag: F-F2
+    material: CONC_210
+    profile: { shape: BOX, width: 1.00, depth: 1.00, thickness: 0.20 }
+    placement: { grid: ["2", "F"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "4-DB12", mesh_y: "4-DB12" }
+
+  - class: IfcFooting
+    tag: F-F4
+    material: CONC_210
+    profile: { shape: BOX, width: 1.00, depth: 1.00, thickness: 0.20 }
+    placement: { grid: ["4", "F"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "4-DB12", mesh_y: "4-DB12" }
+
+  # F1.30x1.30 (หนา 0.25 m, 6+6 DB12)
+  - class: IfcFooting
+    tag: F-B1
+    material: CONC_210
+    profile: { shape: BOX, width: 1.30, depth: 1.30, thickness: 0.25 }
+    placement: { grid: ["1", "B"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "6-DB12", mesh_y: "6-DB12" }
+
+  - class: IfcFooting
+    tag: F-D4
+    material: CONC_210
+    profile: { shape: BOX, width: 1.30, depth: 1.30, thickness: 0.25 }
+    placement: { grid: ["4", "D"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "6-DB12", mesh_y: "6-DB12" }
+
+  - class: IfcFooting
+    tag: F-E1
+    material: CONC_210
+    profile: { shape: BOX, width: 1.30, depth: 1.30, thickness: 0.25 }
+    placement: { grid: ["1", "E"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "6-DB12", mesh_y: "6-DB12" }
+
+  - class: IfcFooting
+    tag: F-E4
+    material: CONC_210
+    profile: { shape: BOX, width: 1.30, depth: 1.30, thickness: 0.25 }
+    placement: { grid: ["4", "E"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "6-DB12", mesh_y: "6-DB12" }
+
+  # F1.50x1.50 (หนา 0.30 m, 8+8 DB12)
+  - class: IfcFooting
+    tag: F-B2
+    material: CONC_210
+    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.30 }
+    placement: { grid: ["2", "B"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "8-DB12", mesh_y: "8-DB12" }
+
+  - class: IfcFooting
+    tag: F-C1
+    material: CONC_210
+    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.30 }
+    placement: { grid: ["1", "C"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "8-DB12", mesh_y: "8-DB12" }
+
+  - class: IfcFooting
+    tag: F-C4
+    material: CONC_210
+    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.30 }
+    placement: { grid: ["4", "C"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "8-DB12", mesh_y: "8-DB12" }
+
+  - class: IfcFooting
+    tag: F-D1
+    material: CONC_210
+    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.30 }
+    placement: { grid: ["1", "D"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "8-DB12", mesh_y: "8-DB12" }
+
+  - class: IfcFooting
+    tag: F-D3
+    material: CONC_210
+    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.30 }
+    placement: { grid: ["3", "D"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "8-DB12", mesh_y: "8-DB12" }
+
+  - class: IfcFooting
+    tag: F-E3
+    material: CONC_210
+    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.30 }
+    placement: { grid: ["3", "E"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "8-DB12", mesh_y: "8-DB12" }
+
+  # F1.80x1.80 (หนา 0.30 m, 14+14 DB12)
+  - class: IfcFooting
+    tag: F-C2
+    material: CONC_210
+    profile: { shape: BOX, width: 1.80, depth: 1.80, thickness: 0.30 }
+    placement: { grid: ["2", "C"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "14-DB12", mesh_y: "14-DB12" }
+
+  - class: IfcFooting
+    tag: F-E2
+    material: CONC_210
+    profile: { shape: BOX, width: 1.80, depth: 1.80, thickness: 0.30 }
+    placement: { grid: ["2", "E"], storey: L0_FOUNDATION }
+    reinforcement: { mesh_x: "14-DB12", mesh_y: "14-DB12" }
+
+  # ==========================================
+  # 1. GROUND COLUMNS & PIERS (ตอม่อ L0 -> L1)
+  # 0.20 x 0.20 m
+  # ==========================================
+  # Row A
+  - class: IfcColumn
+    tag: C0-A1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["1", "A"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C0-A2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["2", "A"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Row B
+  - class: IfcColumn
+    tag: C0-B1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["1", "B"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "6-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C0-B2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["2", "B"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "6-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C0-B4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["4", "B"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "6-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Row C
+  - class: IfcColumn
+    tag: C0-C1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["1", "C"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "6-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C0-C2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["2", "C"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "4-DB16 + 4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C0-C4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["4", "C"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "6-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Row D
+  - class: IfcColumn
+    tag: C0-D1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["1", "D"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "6-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C0-D3
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["3", "D"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "4-DB16 + 4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C0-D4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["4", "D"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "6-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Row E
+  - class: IfcColumn
+    tag: C0-E1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["1", "E"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C0-E2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["2", "E"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "4-DB16 + 4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C0-E3
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["3", "E"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C0-E4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["4", "E"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Row F
+  - class: IfcColumn
+    tag: C0-F2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["2", "F"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C0-F4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.20 }
+    placement: { grid: ["4", "F"], base_storey: L0_FOUNDATION, top_storey: L1_GROUND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # ==========================================
+  # 2. FIRST STOREY COLUMNS (เสาชั้น 1: L1 -> L2)
+  # 0.15 x 0.15 m
+  # ==========================================
+  # Row A
+  - class: IfcColumn
+    tag: C1-A1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["1", "A"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C1-A2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["2", "A"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Row B
+  - class: IfcColumn
+    tag: C1-B1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["1", "B"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C1-B2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["2", "B"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C1-B4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["4", "B"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Row C
+  - class: IfcColumn
+    tag: C1-C1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["1", "C"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C1-C2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["2", "C"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C1-C4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["4", "C"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Row D
+  - class: IfcColumn
+    tag: C1-D1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["1", "D"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C1-D3
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["3", "D"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C1-D4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["4", "D"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Row E
+  - class: IfcColumn
+    tag: C1-E1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["1", "E"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C1-E2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["2", "E"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C1-E3
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["3", "E"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C1-E4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["4", "E"], base_storey: L1_GROUND, top_storey: L2_SECOND }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # ==========================================
+  # 3. SECOND STOREY COLUMNS (เสาชั้น 2: L2 -> Roof)
+  # 0.15 x 0.15 m
+  # ==========================================
+  # Row B
+  - class: IfcColumn
+    tag: C2-B1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["1", "B"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C2-B2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["2", "B"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C2-B4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["4", "B"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Row C
+  - class: IfcColumn
+    tag: C2-C1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["1", "C"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C2-C2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["2", "C"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C2-C4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["4", "C"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Row D
+  - class: IfcColumn
+    tag: C2-D1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["1", "D"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C2-D3
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["3", "D"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C2-D4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["4", "D"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Row E
+  - class: IfcColumn
+    tag: C2-E1
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["1", "E"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C2-E2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["2", "E"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C2-E3
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["3", "E"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcColumn
+    tag: C2-E4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.15 }
+    placement: { grid: ["4", "E"], base_storey: L2_SECOND, top_storey: L3_ROOF }
+    reinforcement: { main: "4-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # ==========================================
+  # 4. GROUND BEAMS (คานคอดินชั้น 1 - S-04)
+  # ==========================================
+  # X-Direction Beams
+  - class: IfcBeam
+    tag: GB-A_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "A"], to_grid: ["2", "A"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-B_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "B"], to_grid: ["2", "B"], storey: L1_GROUND }
+    reinforcement: { main_top: "3-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-B_2-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["2", "B"], to_grid: ["4", "B"], storey: L1_GROUND }
+    reinforcement: { main_top: "3-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-C_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "C"], to_grid: ["2", "C"], storey: L1_GROUND }
+    reinforcement: { main_top: "3-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-C_2-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["2", "C"], to_grid: ["4", "C"], storey: L1_GROUND }
+    reinforcement: { main_top: "3-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-D_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "D"], to_grid: ["2", "D"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-D_2-3
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["2", "D"], to_grid: ["3", "D"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-D_3-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["3", "D"], to_grid: ["4", "D"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-E_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "E"], to_grid: ["2", "E"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-E_2-3
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["2", "E"], to_grid: ["3", "E"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-E_3-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["3", "E"], to_grid: ["4", "E"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-F_2-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["2", "F"], to_grid: ["4", "F"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  # Y-Direction Beams
+  - class: IfcBeam
+    tag: GB-1_A-B
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["1", "A"], to_grid: ["1", "B"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-1_B-C
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "B"], to_grid: ["1", "C"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-1_C-D
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "C"], to_grid: ["1", "D"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-1_D-E
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "D"], to_grid: ["1", "E"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-2_A-B
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["2", "A"], to_grid: ["2", "B"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-2_B-C
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["2", "B"], to_grid: ["2", "C"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-2_C-D
+    material: CONC_210
+    profile: { shape: BOX, width: 0.25, depth: 0.50 }
+    placement: { from_grid: ["2", "C"], to_grid: ["2", "D"], storey: L1_GROUND }
+    reinforcement: { main_top: "3-DB20", main_bottom: "3-DB20 + 2-DB20", stirrups: "RB6 @ 0.15m" }
+
+  - class: IfcBeam
+    tag: GB-2_D-E
+    material: CONC_210
+    profile: { shape: BOX, width: 0.25, depth: 0.50 }
+    placement: { from_grid: ["2", "D"], to_grid: ["2", "E"], storey: L1_GROUND }
+    reinforcement: { main_top: "3-DB20", main_bottom: "3-DB20 + 2-DB20", stirrups: "RB6 @ 0.15m" }
+
+  - class: IfcBeam
+    tag: GB-2_E-F
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["2", "E"], to_grid: ["2", "F"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-3_C-D
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["3", "C"], to_grid: ["3", "D"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-3_D-E
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["3", "D"], to_grid: ["3", "E"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-4_B-C
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["4", "B"], to_grid: ["4", "C"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-4_C-D
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["4", "C"], to_grid: ["4", "D"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-4_D-E
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["4", "D"], to_grid: ["4", "E"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: GB-4_E-F
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["4", "E"], to_grid: ["4", "F"], storey: L1_GROUND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  # ==========================================
+  # 5. SECOND STOREY BEAMS (คานชั้น 2 - S-05)
+  # ==========================================
+  # X-Direction Beams
+  - class: IfcBeam
+    tag: 2B-A_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "A"], to_grid: ["2", "A"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-B_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "B"], to_grid: ["2", "B"], storey: L2_SECOND }
+    reinforcement: { main_top: "3-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-B_2-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["2", "B"], to_grid: ["4", "B"], storey: L2_SECOND }
+    reinforcement: { main_top: "3-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-C_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "C"], to_grid: ["2", "C"], storey: L2_SECOND }
+    reinforcement: { main_top: "3-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-C_2-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["2", "C"], to_grid: ["4", "C"], storey: L2_SECOND }
+    reinforcement: { main_top: "3-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-D_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "D"], to_grid: ["2", "D"], storey: L2_SECOND }
+    reinforcement: { main_top: "3-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-D_2-3
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["2", "D"], to_grid: ["3", "D"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-D_3-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["3", "D"], to_grid: ["4", "D"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-E_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "E"], to_grid: ["2", "E"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-E_2-3
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["2", "E"], to_grid: ["3", "E"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-E_3-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["3", "E"], to_grid: ["4", "E"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-F_2-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["2", "F"], to_grid: ["4", "F"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  # Y-Direction Beams
+  - class: IfcBeam
+    tag: 2B-1_A-B
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "A"], to_grid: ["1", "B"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-1_B-C
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "B"], to_grid: ["1", "C"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-1_C-D
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "C"], to_grid: ["1", "D"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-1_D-E
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "D"], to_grid: ["1", "E"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-2_A-B
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["2", "A"], to_grid: ["2", "B"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-2_B-C
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["2", "B"], to_grid: ["2", "C"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-2_C-D
+    material: CONC_210
+    profile: { shape: BOX, width: 0.25, depth: 0.50 }
+    placement: { from_grid: ["2", "C"], to_grid: ["2", "D"], storey: L2_SECOND }
+    reinforcement: { main_top: "3-DB20", main_bottom: "3-DB20 + 2-DB20", stirrups: "RB6 @ 0.15m" }
+
+  - class: IfcBeam
+    tag: 2B-2_D-E
+    material: CONC_210
+    profile: { shape: BOX, width: 0.25, depth: 0.50 }
+    placement: { from_grid: ["2", "D"], to_grid: ["2", "E"], storey: L2_SECOND }
+    reinforcement: { main_top: "3-DB20", main_bottom: "3-DB20 + 2-DB20", stirrups: "RB6 @ 0.15m" }
+
+  - class: IfcBeam
+    tag: 2B-2_E-F
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["2", "E"], to_grid: ["2", "F"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-3_C-D
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["3", "C"], to_grid: ["3", "D"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-3_D-E
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["3", "D"], to_grid: ["3", "E"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-4_B-C
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["4", "B"], to_grid: ["4", "C"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-4_C-D
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["4", "C"], to_grid: ["4", "D"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-4_D-E
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["4", "D"], to_grid: ["4", "E"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "3-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: 2B-4_E-F
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["4", "E"], to_grid: ["4", "F"], storey: L2_SECOND }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  # ==========================================
+  # 6. ROOF BEAMS (คานอะเส - S-06)
+  # ==========================================
+  # X-Direction
+  - class: IfcBeam
+    tag: RB-B_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["1", "B"], to_grid: ["2", "B"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-B_2-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["2", "B"], to_grid: ["4", "B"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-C_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["1", "C"], to_grid: ["2", "C"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-C_2-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["2", "C"], to_grid: ["4", "C"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB16", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-D_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["1", "D"], to_grid: ["2", "D"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-D_2-3
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["2", "D"], to_grid: ["3", "D"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-D_3-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["3", "D"], to_grid: ["4", "D"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-E_1-2
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["1", "E"], to_grid: ["2", "E"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-E_2-3
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["2", "E"], to_grid: ["3", "E"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-E_3-4
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["3", "E"], to_grid: ["4", "E"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  # Y-Direction
+  - class: IfcBeam
+    tag: RB-1_B-C
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["1", "B"], to_grid: ["1", "C"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-1_C-D
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["1", "C"], to_grid: ["1", "D"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-1_D-E
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["1", "D"], to_grid: ["1", "E"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-2_B-C
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["2", "B"], to_grid: ["2", "C"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-2_C-D
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["2", "C"], to_grid: ["2", "D"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB20", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-2_D-E
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["2", "D"], to_grid: ["2", "E"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB16", main_bottom: "2-DB20", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-4_B-C
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["4", "B"], to_grid: ["4", "C"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-4_C-D
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["4", "C"], to_grid: ["4", "D"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
+
+  - class: IfcBeam
+    tag: RB-4_D-E
+    material: CONC_210
+    profile: { shape: BOX, width: 0.15, depth: 0.40 }
+    placement: { from_grid: ["4", "D"], to_grid: ["4", "E"], storey: L3_ROOF }
+    reinforcement: { main_top: "2-DB12", main_bottom: "2-DB12", stirrups: "RB6 @ 0.20m" }
