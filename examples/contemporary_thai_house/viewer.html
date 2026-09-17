@@ -191,8 +191,9 @@
 
     <div id="layer-toolbar">
         <span style="font-size: 0.75rem; color: #8888aa; align-self: center; margin-right: 4px;">เลเยอร์:</span>
-        <button class="layer-btn active" id="btn-layer-footings" onclick="toggleLayer('footings')">🔲 ฐานราก</button>
-        <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/โครงสร้าง</button>
+        <button class="layer-btn active" id="btn-layer-footings" onclick="toggleLayer('footings')">🔲 ฐานราก/เข็ม</button>
+        <button class="layer-btn active" id="btn-layer-slabs" onclick="toggleLayer('slabs')">🟧 พื้น (Slabs)</button>
+        <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/คาน</button>
         <button class="layer-btn active" id="btn-layer-grids" onclick="toggleLayer('grids')">📐 ผังกริด/แนวเขต</button>
     </div>
 
@@ -4434,6 +4435,443 @@
         "depth": 0.4
       },
       "color": "#9A9A9A"
+    },
+    {
+      "tag": "SLAB-L1-A1_B2",
+      "class": "IfcSlab",
+      "material": "CONC_210",
+      "position": [
+        2.0,
+        0.9,
+        -0.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.0,
+        "depth": 1.8,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L1-B1_C2",
+      "class": "IfcSlab",
+      "material": "CONC_210",
+      "position": [
+        2.0,
+        3.65,
+        -0.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.0,
+        "depth": 3.7,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L1-B2_C4",
+      "class": "IfcSlab",
+      "material": "CONC_210",
+      "position": [
+        6.5,
+        3.65,
+        -0.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 5.0,
+        "depth": 3.7,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L1-C1_D2",
+      "class": "IfcSlab",
+      "material": "CONC_210",
+      "position": [
+        2.0,
+        6.6,
+        -0.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.0,
+        "depth": 2.2,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L1-C2_D3",
+      "class": "IfcSlab",
+      "material": "CONC_210",
+      "position": [
+        5.0,
+        6.6,
+        -0.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 2.0,
+        "depth": 2.2,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L1-C3_D4",
+      "class": "IfcSlab",
+      "material": "CONC_210",
+      "position": [
+        7.5,
+        6.6,
+        -0.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 3.0,
+        "depth": 2.2,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L1-D1_E2",
+      "class": "IfcSlab",
+      "material": "CONC_210",
+      "position": [
+        2.0,
+        9.55,
+        -0.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.0,
+        "depth": 3.7,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L1-D2_E3",
+      "class": "IfcSlab",
+      "material": "CONC_210",
+      "position": [
+        5.0,
+        9.55,
+        -0.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 2.0,
+        "depth": 3.7,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L1-D3_E4",
+      "class": "IfcSlab",
+      "material": "CONC_210",
+      "position": [
+        7.5,
+        9.55,
+        -0.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 3.0,
+        "depth": 3.7,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L1-E2_F4",
+      "class": "IfcSlab",
+      "material": "CONC_210",
+      "position": [
+        6.5,
+        12.4,
+        -0.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 5.0,
+        "depth": 2.0,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L2-B1_C2",
+      "class": "IfcSlab",
+      "material": "CONC_PLANK",
+      "position": [
+        2.0,
+        3.65,
+        3.7
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.0,
+        "depth": 3.7,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L2-B2_C4",
+      "class": "IfcSlab",
+      "material": "CONC_PLANK",
+      "position": [
+        6.5,
+        3.65,
+        3.7
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 5.0,
+        "depth": 3.7,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L2-C1_D2",
+      "class": "IfcSlab",
+      "material": "CONC_PLANK",
+      "position": [
+        2.0,
+        6.6,
+        3.7
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.0,
+        "depth": 2.2,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L2-C2_D3",
+      "class": "IfcSlab",
+      "material": "CONC_PLANK",
+      "position": [
+        5.0,
+        6.6,
+        3.7
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 2.0,
+        "depth": 2.2,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L2-C3_D4",
+      "class": "IfcSlab",
+      "material": "CONC_PLANK",
+      "position": [
+        7.5,
+        6.6,
+        3.7
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 3.0,
+        "depth": 2.2,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L2-D1_E2",
+      "class": "IfcSlab",
+      "material": "CONC_PLANK",
+      "position": [
+        2.0,
+        9.55,
+        3.7
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.0,
+        "depth": 3.7,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L2-D2_E3",
+      "class": "IfcSlab",
+      "material": "CONC_PLANK",
+      "position": [
+        5.0,
+        9.55,
+        3.7
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 2.0,
+        "depth": 3.7,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L2-D3_E4",
+      "class": "IfcSlab",
+      "material": "CONC_PLANK",
+      "position": [
+        7.5,
+        9.55,
+        3.7
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 3.0,
+        "depth": 3.7,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SLAB-L2-E2_F4",
+      "class": "IfcSlab",
+      "material": "CONC_PLANK",
+      "position": [
+        6.5,
+        12.4,
+        3.7
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 5.0,
+        "depth": 2.0,
+        "height": 0.1
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85
     }
   ]
 };
@@ -4632,6 +5070,8 @@
             const tagUpper = (data.tag || "").toUpperCase();
             if (tagUpper.includes("F2") || tagUpper.includes("FOOTING") || data.class === "IfcFooting" || data.class === "IfcPile") {
                 mesh.userData.layer = "footings";
+            } else if (data.class === "IfcSlab" || tagUpper.includes("SLAB") || tagUpper.startsWith("S-") || tagUpper.startsWith("GS-")) {
+                mesh.userData.layer = "slabs";
             } else if (tagUpper.includes("PIN") || tagUpper.includes("BOUNDARY") || tagUpper.includes("LINE")) {
                 mesh.userData.layer = "grids";
             } else {

@@ -204,6 +204,36 @@ class IfcWall(BaseModel):
     children: List[WallChild] = Field(default_factory=list)
 
 
+# Slab placement & element
+class SlabPlacement(BaseModel):
+    boundary: List[Tuple[str, str]]  # List of grid intersections forming polygon, e.g. [["1", "A"], ["2", "A"], ["2", "B"], ["1", "B"]]
+    storey: str
+    offset_z: float = 0.00
+
+    @field_validator("boundary", mode="before")
+    @classmethod
+    def convert_boundary_to_str(cls, v):
+        if isinstance(v, list):
+            return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+
+class SlabReinforcement(BaseModel):
+    mesh: Optional[str] = None  # e.g., "Wire Mesh Ø 4mm @ 0.20m" or "RB9 @ 0.20m"
+    main_bottom: Optional[str] = None
+    main_top: Optional[str] = None
+
+
+class IfcSlab(BaseModel):
+    class_: Literal["IfcSlab"] = Field(alias="class")
+    tag: str
+    material: str
+    thickness: float  # Slab thickness in meters
+    slab_type: Literal["SOLID", "PRECAST_PLANK", "TOPPING", "GROUND_SLAB"] = "SOLID"
+    placement: SlabPlacement
+    reinforcement: Optional[SlabReinforcement] = None
+
+
 # Custom element placement & element
 class CustomElementPlacement(BaseModel):
     position: Tuple[float, float, float]
@@ -219,7 +249,7 @@ class IfcCustomElement(BaseModel):
 
 
 Element = Annotated[
-    Union[IfcColumn, IfcBeam, IfcWall, IfcFooting, IfcCustomElement],
+    Union[IfcColumn, IfcBeam, IfcWall, IfcFooting, IfcSlab, IfcCustomElement],
     Field(discriminator="class_"),
 ]
 
@@ -340,6 +370,22 @@ class ProjectManifest(BaseModel):
                     raise ValueError(
                         f"Element '{elem.tag}' piles references unknown material '{elem.piles.material}'"
                     )
+
+            elif isinstance(elem, IfcSlab):
+                if elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                for pt in elem.placement.boundary:
+                    gx, gy = pt
+                    if gx not in grid_x_ids:
+                        raise ValueError(
+                            f"Element '{elem.tag}' boundary references unknown X grid '{gx}'"
+                        )
+                    if gy not in grid_y_ids:
+                        raise ValueError(
+                            f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'"
+                        )
 
             elif isinstance(elem, IfcCustomElement):
                 if elem.placement.storey not in storey_ids:

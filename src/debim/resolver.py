@@ -14,6 +14,7 @@ from debim.schema import (
     IfcCustomElement,
     IfcDoor,
     IfcFooting,
+    IfcSlab,
     IfcWall,
     IfcWindow,
     ProjectManifest,
@@ -114,11 +115,23 @@ class ResolvedFooting(BaseModel):
     piles: List[ResolvedPile] = []
 
 
+class ResolvedSlab(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcSlab
+    polygon: List[Tuple[float, float, float]]  # Vertices in 3D (x, y, z)
+    thickness: float
+    area: float  # Top surface area (m2)
+    center: Tuple[float, float, float]  # Centroid (cx, cy, cz)
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
     ResolvedWall,
     ResolvedFooting,
+    ResolvedSlab,
     ResolvedCustomElement,
 ]
 
@@ -131,6 +144,7 @@ class ResolvedManifest(BaseModel):
     columns: List[ResolvedColumn] = []
     beams: List[ResolvedBeam] = []
     walls: List[ResolvedWall] = []
+    slabs: List[ResolvedSlab] = []
     doors: List[ResolvedDoor] = []
     windows: List[ResolvedWindow] = []
     custom_elements: List[ResolvedCustomElement] = []
@@ -387,6 +401,44 @@ class SpatialResolver:
             piles=resolved_piles,
         )
 
+    def resolve_slab(self, slab: IfcSlab) -> ResolvedSlab:
+        storey = self.get_storey(slab.placement.storey)
+        z = storey.elevation + slab.placement.offset_z
+
+        # Resolve polygon vertices in 2D and 3D
+        poly_3d: List[Tuple[float, float, float]] = []
+        pts_2d: List[Tuple[float, float]] = []
+        for grid_pt in slab.placement.boundary:
+            x, y = self.get_grid_xy(grid_pt)
+            pts_2d.append((x, y))
+            poly_3d.append((x, y, z))
+
+        # Calculate polygon area using Shoelace formula
+        n = len(pts_2d)
+        area = 0.0
+        if n >= 3:
+            for i in range(n):
+                j = (i + 1) % n
+                area += pts_2d[i][0] * pts_2d[j][1]
+                area -= pts_2d[j][0] * pts_2d[i][1]
+            area = abs(area) / 2.0
+
+        # Calculate centroid center
+        if n > 0:
+            cx = sum(p[0] for p in pts_2d) / n
+            cy = sum(p[1] for p in pts_2d) / n
+        else:
+            cx, cy = 0.0, 0.0
+
+        return ResolvedSlab(
+            tag=slab.tag,
+            element=slab,
+            polygon=poly_3d,
+            thickness=slab.thickness,
+            area=area,
+            center=(cx, cy, z),
+        )
+
     def resolve(self) -> ResolvedManifest:
         resolved_manifest = ResolvedManifest(manifest=self.manifest)
 
@@ -395,6 +447,10 @@ class SpatialResolver:
                 r_footing = self.resolve_footing(elem)
                 resolved_manifest.footings.append(r_footing)
                 resolved_manifest.elements.append(r_footing)
+            elif isinstance(elem, IfcSlab):
+                r_slab = self.resolve_slab(elem)
+                resolved_manifest.slabs.append(r_slab)
+                resolved_manifest.elements.append(r_slab)
             elif isinstance(elem, IfcColumn):
                 r_col = self.resolve_column(elem)
                 resolved_manifest.columns.append(r_col)

@@ -15,6 +15,7 @@ from debim.resolver import (
     ResolvedElement,
     ResolvedFooting,
     ResolvedManifest,
+    ResolvedSlab,
     ResolvedWall,
     resolve_manifest,
 )
@@ -283,6 +284,60 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
             total_rebar_weight=0.0,
         )
 
+    elif isinstance(resolved, ResolvedSlab):
+        elem = resolved.element
+        area = resolved.area
+        t = resolved.thickness
+        vol = area * t
+
+        # Formwork area: bottom soffit + side edges
+        # For PRECAST_PLANK or GROUND_SLAB, soffit formwork is typically 0
+        if elem.slab_type in ("PRECAST_PLANK", "GROUND_SLAB"):
+            formwork = 0.0
+        else:
+            formwork = area  # Bottom soffit formwork
+
+        rebar_dict: Dict[str, float] = {}
+        total_rebar = 0.0
+
+        if elem.reinforcement:
+            # Check for mesh, e.g., wire mesh or RB9 @ 0.20m
+            if elem.reinforcement.mesh:
+                m_str = elem.reinforcement.mesh
+                m_dict, m_wt = parse_stirrups(m_str, area, 1.0, 1.0)
+                if m_wt > 0:
+                    for btype, wt in m_dict.items():
+                        rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                    total_rebar += m_wt
+                else:
+                    # Fallback estimate: 2.5 kg/m2 for wire mesh if string contains wire mesh
+                    if "wire" in m_str.lower() or "mesh" in m_str.lower():
+                        wire_wt = area * 1.50
+                        rebar_dict["WIRE_MESH"] = wire_wt
+                        total_rebar += wire_wt
+
+            if elem.reinforcement.main_bottom:
+                mb_dict, mb_wt = parse_main_bars(elem.reinforcement.main_bottom, math.sqrt(area))
+                for btype, wt in mb_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                total_rebar += mb_wt
+
+            if elem.reinforcement.main_top:
+                mt_dict, mt_wt = parse_main_bars(elem.reinforcement.main_top, math.sqrt(area))
+                for btype, wt in mt_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                total_rebar += mt_wt
+
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=vol,
+            formwork_area=formwork,
+            rebar_weights=rebar_dict,
+            total_rebar_weight=total_rebar,
+        )
+
     elif isinstance(resolved, ResolvedCustomElement):
         elem = resolved.element
         vol = 0.0
@@ -372,7 +427,7 @@ def calculate_qto(
 
         # Include volume in concrete volume total if element's material category is concrete
         mat_cat = material_categories.get(eqto.material, "") if eqto.material else ""
-        if mat_cat == "concrete" or eqto.element_class in ("IfcColumn", "IfcBeam"):
+        if mat_cat == "concrete" or eqto.element_class in ("IfcColumn", "IfcBeam", "IfcSlab"):
             total_conc_vol += eqto.concrete_volume
         elif "footing" in eqto.element_class.lower() or "f2" in eqto.tag.lower() or "footing" in eqto.tag.lower():
             total_conc_vol += eqto.concrete_volume

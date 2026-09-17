@@ -24,15 +24,17 @@ def test_contemporary_thai_house_resolution_and_qto():
 
     # 17 footings
     assert len(resolved.footings) == 17
+    # 19 slabs (Level 1 ground slabs + Level 2 precast planks)
+    assert len(resolved.slabs) == 19
     # 17 columns per floor level (C0, C1, C2)
     assert len(resolved.columns) > 30
     assert len(resolved.beams) > 30
 
     qto_result = calculate_qto(manifest_path)
-    # Total concrete volume including 17 footings
-    assert 30.0 <= qto_result.total_concrete_volume <= 36.0
+    # Total concrete volume including 17 footings and 19 slabs
+    assert 50.0 <= qto_result.total_concrete_volume <= 56.0
     # Rebar weight verification
-    assert qto_result.total_rebar_weight > 2500.0
+    assert qto_result.total_rebar_weight > 3000.0
     # Piles verification: 63 piles total, 378.0 meters total length
     assert qto_result.total_pile_count == 63
     assert qto_result.total_pile_length == 378.0

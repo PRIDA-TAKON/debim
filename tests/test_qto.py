@@ -163,3 +163,36 @@ def test_ifcfooting_with_piles_qto():
     assert eqto.substructure.lean_concrete_volume == pytest.approx(1.20 * 1.20 * 0.10, rel=1e-3)
     assert eqto.substructure.sand_bedding_volume == pytest.approx(1.20 * 1.20 * 0.05, rel=1e-3)
 
+
+def test_slab_qto():
+    from debim.resolver import ResolvedSlab
+    from debim.schema import IfcSlab, SlabPlacement, SlabReinforcement
+    from debim.qto import calculate_element_qto
+
+    slab_elem = IfcSlab(
+        **{
+            "class": "IfcSlab",
+            "tag": "S-01",
+            "material": "MAT_CONC",
+            "thickness": 0.10,
+            "slab_type": "SOLID",
+            "placement": SlabPlacement(
+                boundary=[("1", "A"), ("2", "A"), ("2", "B"), ("1", "B")],
+                storey="L1",
+            ),
+            "reinforcement": SlabReinforcement(mesh="Wire Mesh Ø 4mm @ 0.20m"),
+        }
+    )
+    resolved = ResolvedSlab(
+        tag="S-01",
+        element=slab_elem,
+        polygon=[(0.0, 0.0, 3.5), (4.0, 0.0, 3.5), (4.0, 5.0, 3.5), (0.0, 5.0, 3.5)],
+        thickness=0.10,
+        area=20.0,
+        center=(2.0, 2.5, 3.5),
+    )
+    eqto = calculate_element_qto(resolved)
+    assert eqto.concrete_volume == pytest.approx(2.0, rel=1e-3)  # 20.0 m2 * 0.10m = 2.0 m3
+    assert eqto.formwork_area == pytest.approx(20.0, rel=1e-3)  # Soffit area
+    assert eqto.total_rebar_weight > 0.0
+

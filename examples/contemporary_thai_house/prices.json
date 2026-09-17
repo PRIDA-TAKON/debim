@@ -72,6 +72,18 @@
       "unit": "m3",
       "material_cost": 450.0,
       "labor_cost": 120.0
+    },
+    "MAT-SLAB-PLANK": {
+      "name": "Precast Concrete Plank 5cm",
+      "unit": "m2",
+      "material_cost": 185.0,
+      "labor_cost": 45.0
+    },
+    "MAT-WIRE-MESH": {
+      "name": "Welded Wire Mesh 4mm @ 0.20m",
+      "unit": "m2",
+      "material_cost": 38.0,
+      "labor_cost": 12.0
     }
   }
 }

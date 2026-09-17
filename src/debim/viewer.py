@@ -122,6 +122,36 @@ def generate_viewer_html(
             "color": "#9A9A9A",
         })
 
+    # Slabs
+    for slab in resolved.slabs:
+        # Bounding box of slab polygon
+        xs = [pt[0] for pt in slab.polygon]
+        ys = [pt[1] for pt in slab.polygon]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+        w = max_x - min_x
+        d = max_y - min_y
+        h = slab.thickness
+        cx = (min_x + max_x) / 2.0
+        cy = (min_y + max_y) / 2.0
+        cz = slab.center[2] - h / 2.0  # Top of slab flush with storey elevation
+
+        elements_data.append({
+            "tag": slab.tag,
+            "class": "IfcSlab",
+            "material": slab.element.material,
+            "position": [cx, cy, cz],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": w,
+                "depth": d,
+                "height": h,
+            },
+            "color": "#A8B2C1",
+            "transparent": True,
+            "opacity": 0.85,
+        })
+
     # Walls & Children
     for wall in resolved.walls:
         dx = wall.end_point[0] - wall.start_point[0]
@@ -427,8 +457,9 @@ def generate_viewer_html(
 
     <div id="layer-toolbar">
         <span style="font-size: 0.75rem; color: #8888aa; align-self: center; margin-right: 4px;">เลเยอร์:</span>
-        <button class="layer-btn active" id="btn-layer-footings" onclick="toggleLayer('footings')">🔲 ฐานราก</button>
-        <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/โครงสร้าง</button>
+        <button class="layer-btn active" id="btn-layer-footings" onclick="toggleLayer('footings')">🔲 ฐานราก/เข็ม</button>
+        <button class="layer-btn active" id="btn-layer-slabs" onclick="toggleLayer('slabs')">🟧 พื้น (Slabs)</button>
+        <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/คาน</button>
         <button class="layer-btn active" id="btn-layer-grids" onclick="toggleLayer('grids')">📐 ผังกริด/แนวเขต</button>
     </div>
 
@@ -656,6 +687,8 @@ def generate_viewer_html(
             const tagUpper = (data.tag || "").toUpperCase();
             if (tagUpper.includes("F2") || tagUpper.includes("FOOTING") || data.class === "IfcFooting" || data.class === "IfcPile") {{
                 mesh.userData.layer = "footings";
+            }} else if (data.class === "IfcSlab" || tagUpper.includes("SLAB") || tagUpper.startsWith("S-") || tagUpper.startsWith("GS-")) {{
+                mesh.userData.layer = "slabs";
             }} else if (tagUpper.includes("PIN") || tagUpper.includes("BOUNDARY") || tagUpper.includes("LINE")) {{
                 mesh.userData.layer = "grids";
             }} else {{

@@ -114,3 +114,26 @@ def test_piled_footing_schema():
     assert footing.piles.count == 4
     assert footing.piles.profile.shape == "HEXAGONAL"
     assert footing.piles.length == 6.00
+
+
+def test_slab_schema():
+    from debim.schema import IfcSlab, SlabPlacement, SlabReinforcement
+
+    slab = IfcSlab(
+        **{
+            "class": "IfcSlab",
+            "tag": "S-L2-01",
+            "material": "CONC_240",
+            "thickness": 0.10,
+            "slab_type": "PRECAST_PLANK",
+            "placement": SlabPlacement(
+                boundary=[("1", "A"), ("2", "A"), ("2", "B"), ("1", "B")],
+                storey="L1",
+            ),
+            "reinforcement": SlabReinforcement(mesh="Wire Mesh Ø 4mm @ 0.20m"),
+        }
+    )
+    assert slab.tag == "S-L2-01"
+    assert slab.thickness == 0.10
+    assert slab.slab_type == "PRECAST_PLANK"
+    assert len(slab.placement.boundary) == 4

@@ -119,3 +119,31 @@ def test_resolver_footing_with_piles(sample_project_path):
     assert (-0.30, 0.30, -1.00) in p_positions
     assert (0.30, 0.30, -1.00) in p_positions
     assert all(p.length == 6.00 for p in res_footing.piles)
+
+
+def test_resolver_slab(sample_project_path):
+    from debim.schema import IfcSlab, SlabPlacement, SlabReinforcement
+
+    manifest = load_manifest(sample_project_path)
+    slab = IfcSlab(
+        **{
+            "class": "IfcSlab",
+            "tag": "SLAB-TEST",
+            "material": "MAT_CONC",
+            "thickness": 0.12,
+            "slab_type": "SOLID",
+            "placement": SlabPlacement(
+                boundary=[("A", "1"), ("B", "1"), ("B", "2"), ("A", "2")],
+                storey="L1",
+            ),
+        }
+    )
+    manifest.elements.append(slab)
+    resolver = SpatialResolver(manifest)
+    res_slab = resolver.resolve_slab(slab)
+
+    assert res_slab.tag == "SLAB-TEST"
+    assert res_slab.thickness == 0.12
+    # Area: width 4.0m x length 5.0m = 20.0 m2 (from Townhouse grid A-B: 5.0m, 1-2: 4.0m)
+    assert res_slab.area == pytest.approx(20.0, rel=1e-2)
+    assert len(res_slab.polygon) == 4
