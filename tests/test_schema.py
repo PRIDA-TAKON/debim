@@ -89,3 +89,28 @@ def test_invalid_material_reference():
 def test_missing_file_raises_error():
     with pytest.raises(FileNotFoundError):
         load_manifest("non_existent_file.yaml")
+
+
+def test_piled_footing_schema():
+    from debim.schema import IfcFooting, FootingProfile, FootingPlacement, FootingPiles, PileProfile
+
+    footing = IfcFooting(
+        **{
+            "class": "IfcFooting",
+            "tag": "F4-01",
+            "material": "CONC_240",
+            "profile": FootingProfile(width=1.20, depth=1.20, thickness=0.40),
+            "placement": FootingPlacement(grid=("1", "A"), storey="L1"),
+            "piles": FootingPiles(
+                count=4,
+                profile=PileProfile(shape="HEXAGONAL", dimension=0.15),
+                length=6.00,
+                spacing=0.50,
+            ),
+        }
+    )
+    assert footing.tag == "F4-01"
+    assert footing.piles is not None
+    assert footing.piles.count == 4
+    assert footing.piles.profile.shape == "HEXAGONAL"
+    assert footing.piles.length == 6.00

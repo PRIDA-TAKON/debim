@@ -102,6 +102,19 @@ class FootingReinforcement(BaseModel):
     mesh_y: Optional[str] = None
 
 
+class PileProfile(BaseModel):
+    shape: Literal["HEXAGONAL", "I_SHAPE", "CIRCULAR", "SQUARE"] = "HEXAGONAL"
+    dimension: float  # Diameter, width, or depth (m)
+
+
+class FootingPiles(BaseModel):
+    count: int
+    profile: Optional[PileProfile] = None
+    length: float  # Length per pile (m)
+    material: Optional[str] = None
+    spacing: Optional[float] = None  # Spacing between piles if applicable (m)
+
+
 class IfcFooting(BaseModel):
     class_: Literal["IfcFooting"] = Field(alias="class")
     tag: str
@@ -109,6 +122,7 @@ class IfcFooting(BaseModel):
     profile: FootingProfile
     placement: FootingPlacement
     reinforcement: Optional[FootingReinforcement] = None
+    piles: Optional[FootingPiles] = None
 
 
 # Beam placement & element
@@ -321,6 +335,10 @@ class ProjectManifest(BaseModel):
                 if gy not in grid_y_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown Y grid '{gy}'"
+                    )
+                if elem.piles and elem.piles.material and elem.piles.material not in material_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' piles references unknown material '{elem.piles.material}'"
                     )
 
             elif isinstance(elem, IfcCustomElement):

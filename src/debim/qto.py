@@ -171,6 +171,20 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
                 rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
             total_rebar = mx_wt + my_wt
 
+        substructure = None
+        if elem.piles and elem.piles.count > 0:
+            pile_cnt = elem.piles.count
+            total_len = pile_cnt * elem.piles.length
+            pile_shape = elem.piles.profile.shape if elem.piles.profile else "HEXAGONAL"
+            pile_dim = elem.piles.profile.dimension if elem.piles.profile else 0.15
+            substructure = SubstructureQTO(
+                lean_concrete_volume=w * d * 0.10,
+                sand_bedding_volume=w * d * 0.05,
+                pile_count=pile_cnt,
+                pile_total_length=total_len,
+                pile_type=f"{pile_shape}-{pile_dim}",
+            )
+
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
@@ -179,6 +193,7 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
             formwork_area=formwork,
             rebar_weights=rebar_dict,
             total_rebar_weight=total_rebar,
+            substructure=substructure,
         )
 
     elif isinstance(resolved, ResolvedColumn):

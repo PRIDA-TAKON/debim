@@ -212,7 +212,7 @@ class StepSerializer:
         # Elements containment buckets
         storey_elements: Dict[str, List[str]] = {s_id: [] for s_id in storey_refs}
 
-        # 0. Footings
+        # 0. Footings & Piles
         for footing in resolved.footings:
             st_id = footing.element.placement.storey
             elem_ref = self.create_entity(
@@ -228,6 +228,21 @@ class StepSerializer:
             )
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
+
+            for pile in footing.piles:
+                p_ref = self.create_entity(
+                    "IfcPile",
+                    generate_ifc_guid(),
+                    None,
+                    pile.tag,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+                if st_id in storey_elements:
+                    storey_elements[st_id].append(p_ref)
 
         # 1. Columns
         for col in resolved.columns:
@@ -462,7 +477,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         s_id: [] for s_id in storey_objs
     }
 
-    # 0. Footings
+    # 0. Footings & Piles
     for footing in resolved.footings:
         footing_obj = ifcopenshell.api.run(
             "root.create_entity", model, ifc_class="IfcFooting", name=footing.tag
@@ -470,6 +485,13 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = footing.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(footing_obj)
+
+        for pile in footing.piles:
+            pile_obj = ifcopenshell.api.run(
+                "root.create_entity", model, ifc_class="IfcPile", name=pile.tag
+            )
+            if st_id in storey_products:
+                storey_products[st_id].append(pile_obj)
 
     # 1. Columns
     for col in resolved.columns:

@@ -82,3 +82,40 @@ def test_spatial_resolver_angled_beam_and_window(sample_project_path):
 
     with pytest.raises(ValueError, match="Storey 'L99' not found"):
         resolver.get_storey("L99")
+
+
+def test_resolver_footing_with_piles(sample_project_path):
+    from debim.schema import IfcFooting, FootingProfile, FootingPlacement, FootingPiles, PileProfile
+
+    manifest = load_manifest(sample_project_path)
+    piled_footing = IfcFooting(
+        **{
+            "class": "IfcFooting",
+            "tag": "F4-TEST",
+            "material": "MAT_CONC",
+            "profile": FootingProfile(width=1.20, depth=1.20, thickness=0.40),
+            "placement": FootingPlacement(grid=("A", "1"), storey="L1", offset_z=-1.00),
+            "piles": FootingPiles(
+                count=4,
+                profile=PileProfile(shape="HEXAGONAL", dimension=0.15),
+                length=6.00,
+                spacing=0.60,
+            ),
+        }
+    )
+    manifest.elements.append(piled_footing)
+    resolver = SpatialResolver(manifest)
+    res_footing = resolver.resolve_footing(piled_footing)
+
+    assert res_footing.tag == "F4-TEST"
+    assert res_footing.position == (0.0, 0.0, -1.00)
+    assert len(res_footing.piles) == 4
+
+    # Check pile coordinates (top of piles at footing cap bottom z=-1.00)
+    # spacing 0.60 -> offsets +/-0.30 in X and Y
+    p_positions = [p.position for p in res_footing.piles]
+    assert (-0.30, -0.30, -1.00) in p_positions
+    assert (0.30, -0.30, -1.00) in p_positions
+    assert (-0.30, 0.30, -1.00) in p_positions
+    assert (0.30, 0.30, -1.00) in p_positions
+    assert all(p.length == 6.00 for p in res_footing.piles)

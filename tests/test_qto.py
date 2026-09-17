@@ -116,3 +116,50 @@ def test_footing_substructure_qto():
     assert eqto.substructure.pile_count == 2
     assert eqto.substructure.pile_total_length == pytest.approx(24.0, rel=1e-2)
 
+
+def test_ifcfooting_with_piles_qto():
+    from debim.resolver import ResolvedFooting, ResolvedPile
+    from debim.schema import IfcFooting, FootingProfile, FootingPlacement, FootingPiles, PileProfile
+    from debim.qto import calculate_element_qto
+
+    footing_elem = IfcFooting(
+        **{
+            "class": "IfcFooting",
+            "tag": "F4-01",
+            "material": "CONC_240",
+            "profile": FootingProfile(width=1.20, depth=1.20, thickness=0.40),
+            "placement": FootingPlacement(grid=("1", "A"), storey="L1"),
+            "piles": FootingPiles(
+                count=4,
+                profile=PileProfile(shape="HEXAGONAL", dimension=0.15),
+                length=6.00,
+            ),
+        }
+    )
+    resolved = ResolvedFooting(
+        tag="F4-01",
+        element=footing_elem,
+        position=(0.0, 0.0, -1.50),
+        width=1.20,
+        depth=1.20,
+        thickness=0.40,
+        piles=[
+            ResolvedPile(
+                tag=f"F4-01-P{i+1}",
+                position=(0.0, 0.0, -1.50),
+                length=6.00,
+                dimension=0.15,
+                shape="HEXAGONAL",
+            )
+            for i in range(4)
+        ],
+    )
+    eqto = calculate_element_qto(resolved)
+    assert eqto.concrete_volume == pytest.approx(1.20 * 1.20 * 0.40, rel=1e-3)
+    assert eqto.formwork_area == pytest.approx(2.0 * (1.20 + 1.20) * 0.40, rel=1e-3)
+    assert eqto.substructure is not None
+    assert eqto.substructure.pile_count == 4
+    assert eqto.substructure.pile_total_length == pytest.approx(24.0, rel=1e-3)
+    assert eqto.substructure.lean_concrete_volume == pytest.approx(1.20 * 1.20 * 0.10, rel=1e-3)
+    assert eqto.substructure.sand_bedding_volume == pytest.approx(1.20 * 1.20 * 0.05, rel=1e-3)
+

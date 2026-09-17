@@ -5,7 +5,7 @@ and geometric dimensions.
 """
 
 import math
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, ConfigDict
 
 from debim.schema import (
@@ -91,6 +91,17 @@ class ResolvedCustomElement(BaseModel):
     position: Tuple[float, float, float]
 
 
+class ResolvedPile(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    position: Tuple[float, float, float]  # Top of pile (under footing cap)
+    length: float
+    dimension: float
+    shape: str = "HEXAGONAL"
+    material: Optional[str] = None
+
+
 class ResolvedFooting(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -100,6 +111,7 @@ class ResolvedFooting(BaseModel):
     width: float
     depth: float
     thickness: float
+    piles: List[ResolvedPile] = []
 
 
 ResolvedElement = Union[
@@ -291,6 +303,80 @@ class SpatialResolver:
         storey = self.get_storey(footing.placement.storey)
         z = storey.elevation + footing.placement.offset_z
 
+        resolved_piles: List[ResolvedPile] = []
+        if footing.piles and footing.piles.count > 0:
+            p_count = footing.piles.count
+            p_len = footing.piles.length
+            p_prof = footing.piles.profile
+            p_dim = p_prof.dimension if p_prof else 0.15
+            p_shape = p_prof.shape if p_prof else "HEXAGONAL"
+            p_mat = footing.piles.material or footing.material
+
+            # Determine pile positions relative to footing center
+            # Spacing between piles (default: 3 * dimension or 0.6m if not specified)
+            spacing = footing.piles.spacing if footing.piles.spacing else max(0.50, p_dim * 3.0)
+            half_s = spacing / 2.0
+
+            offsets: List[Tuple[float, float]] = []
+            if p_count == 1:
+                offsets = [(0.0, 0.0)]
+            elif p_count == 2:
+                offsets = [(0.0, -half_s), (0.0, half_s)]
+            elif p_count == 3:
+                # Triangular arrangement
+                r = spacing / math.sqrt(3.0)
+                offsets = [
+                    (0.0, r),
+                    (-spacing / 2.0, -r / 2.0),
+                    (spacing / 2.0, -r / 2.0),
+                ]
+            elif p_count == 4:
+                # 2x2 grid
+                offsets = [
+                    (-half_s, -half_s),
+                    (half_s, -half_s),
+                    (-half_s, half_s),
+                    (half_s, half_s),
+                ]
+            elif p_count == 5:
+                # 4 corners + 1 center
+                offsets = [
+                    (-half_s, -half_s),
+                    (half_s, -half_s),
+                    (-half_s, half_s),
+                    (half_s, half_s),
+                    (0.0, 0.0),
+                ]
+            elif p_count == 6:
+                # 2 rows of 3
+                offsets = [
+                    (-half_s, -spacing),
+                    (-half_s, 0.0),
+                    (-half_s, spacing),
+                    (half_s, -spacing),
+                    (half_s, 0.0),
+                    (half_s, spacing),
+                ]
+            else:
+                # General circular / grid distribution fallback
+                for i in range(p_count):
+                    angle = 2.0 * math.pi * i / p_count
+                    radius = spacing * 0.75
+                    offsets.append((radius * math.cos(angle), radius * math.sin(angle)))
+
+            # Piles start directly beneath the bottom face of the footing cap (z)
+            for idx, (ox, oy) in enumerate(offsets):
+                resolved_piles.append(
+                    ResolvedPile(
+                        tag=f"{footing.tag}-P{idx + 1}",
+                        position=(gx + ox, gy + oy, z),
+                        length=p_len,
+                        dimension=p_dim,
+                        shape=p_shape,
+                        material=p_mat,
+                    )
+                )
+
         return ResolvedFooting(
             tag=footing.tag,
             element=footing,
@@ -298,6 +384,7 @@ class SpatialResolver:
             width=footing.profile.width,
             depth=footing.profile.depth,
             thickness=footing.profile.thickness,
+            piles=resolved_piles,
         )
 
     def resolve(self) -> ResolvedManifest:

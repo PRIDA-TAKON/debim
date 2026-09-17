@@ -44,7 +44,7 @@ def generate_viewer_html(
 
     elements_data: List[Dict[str, Any]] = []
 
-    # Footings
+    # Footings & Piles
     for footing in resolved.footings:
         elements_data.append({
             "tag": footing.tag,
@@ -63,6 +63,25 @@ def generate_viewer_html(
             },
             "color": "#6A6A6A",
         })
+
+        for pile in footing.piles:
+            elements_data.append({
+                "tag": pile.tag,
+                "class": "IfcPile",
+                "material": pile.material or footing.element.material,
+                "position": [
+                    pile.position[0],
+                    pile.position[1],
+                    pile.position[2] - pile.length / 2.0,
+                ],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": pile.dimension,
+                    "depth": pile.dimension,
+                    "height": pile.length,
+                },
+                "color": "#4F4F4F",
+            })
 
     # Columns
     for col in resolved.columns:
@@ -635,7 +654,7 @@ def generate_viewer_html(
 
             // Layer assignment for filtering
             const tagUpper = (data.tag || "").toUpperCase();
-            if (tagUpper.includes("F2") || tagUpper.includes("FOOTING") || data.class === "IfcFooting") {{
+            if (tagUpper.includes("F2") || tagUpper.includes("FOOTING") || data.class === "IfcFooting" || data.class === "IfcPile") {{
                 mesh.userData.layer = "footings";
             }} else if (tagUpper.includes("PIN") || tagUpper.includes("BOUNDARY") || tagUpper.includes("LINE")) {{
                 mesh.userData.layer = "grids";
