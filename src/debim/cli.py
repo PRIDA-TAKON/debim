@@ -5,6 +5,7 @@ CLI interface for debim / bim
 from pathlib import Path
 from typing import Optional
 import typer
+import yaml
 from pydantic import ValidationError
 from rich.console import Console
 from rich.panel import Panel
@@ -307,5 +308,42 @@ def view(
         raise typer.Exit(code=1)
 
 
+@app.command(name="import")
+def import_ifc(
+    ifc_path: Path = typer.Argument(..., help="Path to input IFC file (.ifc)"),
+    output: Path = typer.Option(
+        Path("project.yaml"), "--output", "-o", help="Output project manifest path"
+    ),
+):
+    """Import an IFC4/IFC2X3 file and convert to declarative project.yaml for QTO & Cost estimation"""
+    if not ifc_path.exists():
+        console.print(f"[bold red]Error:[/bold red] IFC file '{ifc_path}' not found.")
+        raise typer.Exit(code=1)
+
+    console.print(f"[bold green]Importing IFC:[/bold green] {ifc_path} -> [cyan]{output}[/cyan]")
+    try:
+        from debim.importer import import_ifc_to_manifest
+        manifest = import_ifc_to_manifest(ifc_path)
+
+        import json
+        data = json.loads(manifest.model_dump_json(by_alias=True, exclude_none=True))
+        with open(output, "w", encoding="utf-8") as f:
+            yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+
+        console.print(
+            Panel(
+                f"[bold green]IFC Successfully Imported to Declarative BIM![/bold green]\n"
+                f"[cyan]Output YAML:[/cyan] {output}\n"
+                f"[yellow]Elements Extracted:[/yellow] {len(manifest.elements)} elements\n"
+                f"[dim]Run 'bim qto -m {output}' to calculate quantities & cost.[/dim]",
+                title="[bold green]debim IFC Importer[/bold green]",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Import Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
 if __name__ == "__main__":
     app()
+

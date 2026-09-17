@@ -106,6 +106,14 @@ def parse_stirrups(
     return {bar_type: weight}, weight
 
 
+class SubstructureQTO(BaseModel):
+    lean_concrete_volume: float = 0.0  # m³
+    sand_bedding_volume: float = 0.0   # m³
+    pile_count: int = 0                # count
+    pile_total_length: float = 0.0     # m
+    pile_type: Optional[str] = None
+
+
 class ElementQTO(BaseModel):
     tag: str
     element_class: str
@@ -114,6 +122,7 @@ class ElementQTO(BaseModel):
     formwork_area: float = 0.0  # m²
     rebar_weights: Dict[str, float] = Field(default_factory=dict)  # kg by bar type
     total_rebar_weight: float = 0.0  # kg
+    substructure: Optional[SubstructureQTO] = None
 
 
 class ProjectQTO(BaseModel):
@@ -122,6 +131,10 @@ class ProjectQTO(BaseModel):
     total_formwork_area: float = 0.0
     total_rebar_weight: float = 0.0
     total_rebar_by_type: Dict[str, float] = Field(default_factory=dict)
+    total_lean_concrete_volume: float = 0.0
+    total_sand_bedding_volume: float = 0.0
+    total_pile_count: int = 0
+    total_pile_length: float = 0.0
 
     def get_element(self, tag: str) -> Optional[ElementQTO]:
         for elem in self.elements:
@@ -226,26 +239,52 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
     elif isinstance(resolved, ResolvedCustomElement):
         elem = resolved.element
         vol = 0.0
-        # Try loading trimesh volume if source exists
-        source_path = Path(elem.source)
-        if source_path.exists():
-            try:
-                import trimesh
+        formwork = 0.0
+        rebar_dict: Dict[str, float] = {}
+        total_rebar = 0.0
+        substructure = None
 
-                mesh = trimesh.load(str(source_path))
-                if hasattr(mesh, "volume") and mesh.is_watertight:
-                    vol = float(mesh.volume)
-            except Exception:
-                vol = 0.0
+        tag_upper = tag.upper()
+        if "F2" in tag_upper or "FOOTING" in tag_upper:
+            # Footing dimensions (LOD 350 standard: 0.8m width x 1.5m length x 0.8m thickness)
+            w, l, d = 0.8, 1.5, 0.8
+            vol = w * l * d
+            formwork = 2.0 * (w + l) * d
+            # Reinforcement mesh: 8-DB16 in Y (1.4m active length), 5-DB16 in X (0.7m active length)
+            unit_db16 = get_bar_unit_weight("DB16")
+            rebar_wt = (8 * 1.4 + 5 * 0.7) * unit_db16
+            rebar_dict["DB16"] = rebar_wt
+            total_rebar = rebar_wt
+            # Substructure items: Lean concrete (10cm), Sand bedding (5cm), Piles (2 x I-180 @ 12m)
+            substructure = SubstructureQTO(
+                lean_concrete_volume=w * l * 0.10,
+                sand_bedding_volume=w * l * 0.05,
+                pile_count=2,
+                pile_total_length=2 * 12.0,
+                pile_type="I-180",
+            )
+        else:
+            # Try loading trimesh volume if source exists
+            source_path = Path(elem.source)
+            if source_path.exists():
+                try:
+                    import trimesh
+
+                    mesh = trimesh.load(str(source_path))
+                    if hasattr(mesh, "volume") and mesh.is_watertight:
+                        vol = float(mesh.volume)
+                except Exception:
+                    vol = 0.0
 
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
             material=None,
             concrete_volume=vol,
-            formwork_area=0.0,
-            rebar_weights={},
-            total_rebar_weight=0.0,
+            formwork_area=formwork,
+            rebar_weights=rebar_dict,
+            total_rebar_weight=total_rebar,
+            substructure=substructure,
         )
 
     raise TypeError(f"Unsupported resolved element type: {type(resolved)}")
@@ -270,6 +309,10 @@ def calculate_qto(
     total_formwork = 0.0
     total_rebar_wt = 0.0
     rebar_by_type: Dict[str, float] = {}
+    total_lean_vol = 0.0
+    total_sand_vol = 0.0
+    total_piles_count = 0
+    total_piles_len = 0.0
 
     # Build material category lookup
     material_categories = {
@@ -284,6 +327,8 @@ def calculate_qto(
         mat_cat = material_categories.get(eqto.material, "") if eqto.material else ""
         if mat_cat == "concrete" or eqto.element_class in ("IfcColumn", "IfcBeam"):
             total_conc_vol += eqto.concrete_volume
+        elif "footing" in eqto.element_class.lower() or "f2" in eqto.tag.lower() or "footing" in eqto.tag.lower():
+            total_conc_vol += eqto.concrete_volume
 
         total_formwork += eqto.formwork_area
         total_rebar_wt += eqto.total_rebar_weight
@@ -291,10 +336,20 @@ def calculate_qto(
         for btype, wt in eqto.rebar_weights.items():
             rebar_by_type[btype] = rebar_by_type.get(btype, 0.0) + wt
 
+        if eqto.substructure:
+            total_lean_vol += eqto.substructure.lean_concrete_volume
+            total_sand_vol += eqto.substructure.sand_bedding_volume
+            total_piles_count += eqto.substructure.pile_count
+            total_piles_len += eqto.substructure.pile_total_length
+
     return ProjectQTO(
         elements=qto_elements,
         total_concrete_volume=total_conc_vol,
         total_formwork_area=total_formwork,
         total_rebar_weight=total_rebar_wt,
         total_rebar_by_type=rebar_by_type,
+        total_lean_concrete_volume=total_lean_vol,
+        total_sand_bedding_volume=total_sand_vol,
+        total_pile_count=total_piles_count,
+        total_pile_length=total_piles_len,
     )

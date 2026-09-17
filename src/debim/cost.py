@@ -190,6 +190,46 @@ def estimate_cost(
                 quantities_by_code.get(rebar_code, 0.0) + wt
             )
 
+    # 4. Map substructure items (Lean concrete, Sand, Piles)
+    if qto.total_lean_concrete_volume > 0:
+        for code, item in catalog.items.items():
+            if "lean" in code.lower() or "lean" in item.name.lower():
+                quantities_by_code[code] = (
+                    quantities_by_code.get(code, 0.0) + qto.total_lean_concrete_volume
+                )
+                break
+
+    if qto.total_sand_bedding_volume > 0:
+        for code, item in catalog.items.items():
+            if "sand" in code.lower() or "sand" in item.name.lower():
+                quantities_by_code[code] = (
+                    quantities_by_code.get(code, 0.0) + qto.total_sand_bedding_volume
+                )
+                break
+
+    if qto.total_pile_length > 0:
+        for code, item in catalog.items.items():
+            if "pile" in code.lower() or "เข็ม" in item.name or "pile" in item.name.lower():
+                if "drive" not in code.lower() and "cut" not in code.lower() and "ตอก" not in item.name and "ตัด" not in item.name:
+                    quantities_by_code[code] = (
+                        quantities_by_code.get(code, 0.0) + qto.total_pile_length
+                    )
+                    break
+
+    if qto.total_pile_count > 0:
+        for code, item in catalog.items.items():
+            if "drive" in code.lower() or "ตอก" in item.name or "กด" in item.name:
+                quantities_by_code[code] = (
+                    quantities_by_code.get(code, 0.0) + qto.total_pile_count
+                )
+                break
+        for code, item in catalog.items.items():
+            if "cut" in code.lower() or "ตัด" in item.name:
+                quantities_by_code[code] = (
+                    quantities_by_code.get(code, 0.0) + qto.total_pile_count
+                )
+                break
+
     # Build line items
     line_items: List[CostLineItem] = []
     tot_mat_cost = 0.0

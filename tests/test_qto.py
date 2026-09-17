@@ -85,3 +85,34 @@ def test_townhouse_qto_calculations(sample_project_path):
 
     # Total Rebar Weight: 26.3544 + 58.3836 = 84.738 kg
     assert qto.total_rebar_weight == pytest.approx(84.738, rel=1e-2)
+
+
+def test_footing_substructure_qto():
+    from debim.resolver import ResolvedCustomElement
+    from debim.schema import IfcCustomElement, CustomElementPlacement
+    from debim.qto import calculate_element_qto
+
+    footing_elem = IfcCustomElement(
+        **{
+            "class": "IfcCustomElement",
+            "tag": "F2-TEST",
+            "name": "Footing F2",
+            "source": "assets/footing_f2.glb",
+            "placement": CustomElementPlacement(position=(0.0, 0.0, 0.0), storey="GL"),
+        }
+    )
+    resolved = ResolvedCustomElement(
+        tag="F2-TEST",
+        element=footing_elem,
+        position=(0.0, 0.0, 0.0),
+    )
+    eqto = calculate_element_qto(resolved)
+    assert eqto.concrete_volume == pytest.approx(0.960, rel=1e-2)
+    assert eqto.formwork_area == pytest.approx(3.680, rel=1e-2)
+    assert eqto.total_rebar_weight > 0.0
+    assert eqto.substructure is not None
+    assert eqto.substructure.lean_concrete_volume == pytest.approx(0.120, rel=1e-2)
+    assert eqto.substructure.sand_bedding_volume == pytest.approx(0.060, rel=1e-2)
+    assert eqto.substructure.pile_count == 2
+    assert eqto.substructure.pile_total_length == pytest.approx(24.0, rel=1e-2)
+

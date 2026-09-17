@@ -16,3 +16,10 @@ def test_cli_validate_missing_file():
     result = runner.invoke(app, ["validate", "--manifest", "non_existent.yaml"])
     assert result.exit_code == 1
     assert "Error" in result.output
+
+
+def test_cli_import_missing_file():
+    result = runner.invoke(app, ["import", "non_existent.ifc"])
+    assert result.exit_code == 1
+    assert "Error" in result.output
+

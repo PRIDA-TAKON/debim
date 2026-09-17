@@ -148,22 +148,40 @@ def generate_viewer_html(
 
     # Custom Elements
     for custom in resolved.custom_elements:
+        tag_upper = custom.tag.upper()
+        if "F2" in tag_upper or "FOOTING" in tag_upper:
+            w, d, h = 0.8, 1.5, 0.8
+            pos = [custom.position[0], custom.position[1], custom.position[2] - h / 2.0]
+            color = "#8A8A8E"
+        elif "PIN" in tag_upper:
+            w, d, h = 0.35, 0.35, 0.8
+            pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
+            color = "#E63946"
+        elif "TRUSS" in tag_upper:
+            w, d, h = 5.5, 0.8, 3.8
+            pos = [custom.position[0] - w / 2.0, custom.position[1], custom.position[2] + h / 2.0]
+            color = "#2A6F97"
+        elif "LINE" in tag_upper or "BOUNDARY" in tag_upper:
+            w, d, h = 134.0, 40.0, 0.05
+            pos = [67.0, 20.0, 0.025]
+            color = "#FFB703"
+        else:
+            w, d, h = 0.8, 0.8, 1.5
+            pos = [custom.position[0], custom.position[1], custom.position[2] + 0.75]
+            color = "#9370DB"
+
         elements_data.append({
             "tag": custom.tag,
             "class": "IfcCustomElement",
             "material": "Custom Asset",
-            "position": [
-                custom.position[0],
-                custom.position[1],
-                custom.position[2] + 0.75,
-            ],
+            "position": pos,
             "rotation": [0, 0, 0],
             "dimensions": {
-                "width": 0.8,
-                "depth": 0.8,
-                "height": 1.5,
+                "width": w,
+                "depth": d,
+                "height": h,
             },
-            "color": "#9370DB",
+            "color": color,
         })
 
     scene_json = json.dumps({
@@ -270,6 +288,80 @@ def generate_viewer_html(
             background: #2a3a4e;
             color: #66b2ff;
         }}
+        #view-toolbar {{
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            background: rgba(20, 24, 33, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 6px 12px;
+            border-radius: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }}
+        .view-btn {{
+            background: #2a3a4e;
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+        .view-btn:hover {{
+            background: #3b82f6;
+            color: #ffffff;
+        }}
+        #layer-toolbar {{
+            position: absolute;
+            top: 64px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            background: rgba(20, 24, 33, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 4px 10px;
+            border-radius: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }}
+        .layer-btn {{
+            background: #222d3d;
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 4px 10px;
+            border-radius: 14px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+        .layer-btn.active {{
+            background: #1e3a8a;
+            color: #60a5fa;
+            border-color: #3b82f6;
+        }}
+        #axes-legend {{
+            position: absolute;
+            bottom: 16px;
+            left: 20px;
+            background: rgba(20, 24, 33, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: #ddd;
+            z-index: 10;
+            pointer-events: none;
+        }}
         #instructions {{
             position: absolute;
             bottom: 16px;
@@ -286,6 +378,26 @@ def generate_viewer_html(
 </head>
 <body>
     <div id="canvas-container"></div>
+
+    <div id="view-toolbar">
+        <button class="view-btn" onclick="setView('top')">📐 ผังพื้น (Top View)</button>
+        <button class="view-btn" onclick="setView('iso')">🏢 3D Isometric</button>
+        <button class="view-btn" onclick="setView('front')">↔️ ด้านหน้า (Front)</button>
+        <button class="view-btn" onclick="setView('side')">↕️ ด้านข้าง (Side)</button>
+    </div>
+
+    <div id="layer-toolbar">
+        <span style="font-size: 0.75rem; color: #8888aa; align-self: center; margin-right: 4px;">เลเยอร์:</span>
+        <button class="layer-btn active" id="btn-layer-footings" onclick="toggleLayer('footings')">🔲 ฐานราก</button>
+        <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/โครงสร้าง</button>
+        <button class="layer-btn active" id="btn-layer-grids" onclick="toggleLayer('grids')">📐 ผังกริด/แนวเขต</button>
+    </div>
+
+    <div id="axes-legend">
+        <div><span style="color:#ff4d4d; font-weight:bold;">🔴 แกน X:</span> กริด 1 ถึง 15 (แนวนอน)</div>
+        <div><span style="color:#4dff4d; font-weight:bold;">🟢 แกน Y:</span> กริด E ถึง A (แนวตั้ง)</div>
+        <div><span style="color:#4da6ff; font-weight:bold;">🔵 แกน Z:</span> ระดับความสูง Elevation (+0.00)</div>
+    </div>
 
     <div id="info-panel" class="ui-panel">
         <h1>{proj.name}</h1>
@@ -334,15 +446,19 @@ def generate_viewer_html(
         controls.dampingFactor = 0.05;
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
         scene.add(ambientLight);
 
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444455, 0.6);
+        hemiLight.position.set(0, 0, 50);
+        scene.add(hemiLight);
+
         const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight1.position.set(20, -20, 30);
+        dirLight1.position.set(70, -20, 100);
         scene.add(dirLight1);
 
-        const dirLight2 = new THREE.DirectionalLight(0x88aaff, 0.3);
-        dirLight2.position.set(-20, 20, 10);
+        const dirLight2 = new THREE.DirectionalLight(0xaaccff, 0.4);
+        dirLight2.position.set(70, 60, 80);
         scene.add(dirLight2);
 
         // Build UI - Storeys list
@@ -354,23 +470,110 @@ def generate_viewer_html(
             storeysListEl.appendChild(row);
         }});
 
-        // Render Grid Lines & Ground
-        const maxGridX = Math.max(...Object.values(sceneData.grids.axes_x), 10);
-        const maxGridY = Math.max(...Object.values(sceneData.grids.axes_y), 10);
-        const gridSize = Math.max(maxGridX, maxGridY) * 2;
+        // Helper to create circular grid bubble sprites
+        function makeGridSprite(name, color) {{
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(25, 30, 42, 0.88)';
+            ctx.beginPath();
+            ctx.arc(64, 64, 52, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = color || '#38bdf8';
+            ctx.lineWidth = 6;
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 44px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(name, 64, 64);
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({{ map: texture, depthTest: false }});
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(4, 4, 1);
+            return sprite;
+        }}
 
-        const gridHelper = new THREE.GridHelper(gridSize, 20, 0x444466, 0x222233);
+        // Render Grid Lines & Ground
+        const allX = Object.values(sceneData.grids.axes_x);
+        const allY = Object.values(sceneData.grids.axes_y);
+        const minGridX = Math.min(...allX);
+        const maxGridX = Math.max(...allX);
+        const minGridY = Math.min(...allY);
+        const maxGridY = Math.max(...allY);
+        const centerX = (minGridX + maxGridX) / 2;
+        const centerY = (minGridY + maxGridY) / 2;
+        const gridSize = Math.max(maxGridX - minGridX, maxGridY - minGridY) * 1.4;
+
+        // Actual Project Grid Lines & Grids Group
+        const gridGroup = new THREE.Group();
+        scene.add(gridGroup);
+
+        const gridLineMat = new THREE.LineDashedMaterial({{
+            color: 0x475569,
+            dashSize: 1,
+            gapSize: 0.5,
+            linewidth: 1
+        }});
+
+        // X Grids (Vertical lines running along Y)
+        Object.entries(sceneData.grids.axes_x).forEach(([name, xVal]) => {{
+            const pts = [
+                new THREE.Vector3(xVal, minGridY - 6, 0),
+                new THREE.Vector3(xVal, maxGridY + 6, 0)
+            ];
+            const geom = new THREE.BufferGeometry().setFromPoints(pts);
+            const line = new THREE.Line(geom, gridLineMat);
+            line.computeLineDistances();
+            gridGroup.add(line);
+
+            // Bubble at top and bottom
+            const topBubble = makeGridSprite(name, '#38bdf8');
+            topBubble.position.set(xVal, maxGridY + 8, 0.1);
+            gridGroup.add(topBubble);
+            const botBubble = makeGridSprite(name, '#38bdf8');
+            botBubble.position.set(xVal, minGridY - 8, 0.1);
+            gridGroup.add(botBubble);
+        }});
+
+        // Y Grids (Horizontal lines running along X)
+        Object.entries(sceneData.grids.axes_y).forEach(([name, yVal]) => {{
+            const pts = [
+                new THREE.Vector3(minGridX - 6, yVal, 0),
+                new THREE.Vector3(maxGridX + 6, yVal, 0)
+            ];
+            const geom = new THREE.BufferGeometry().setFromPoints(pts);
+            const line = new THREE.Line(geom, gridLineMat);
+            line.computeLineDistances();
+            gridGroup.add(line);
+
+            // Bubble at left and right
+            const leftBubble = makeGridSprite(name, '#4ade80');
+            leftBubble.position.set(minGridX - 8, yVal, 0.1);
+            gridGroup.add(leftBubble);
+            const rightBubble = makeGridSprite(name, '#4ade80');
+            rightBubble.position.set(maxGridX + 8, yVal, 0.1);
+            gridGroup.add(rightBubble);
+        }});
+
+        // Visible Coordinate Axes (Red = X, Green = Y, Blue = Z)
+        const axesHelper = new THREE.AxesHelper(15);
+        axesHelper.position.set(0, 0, 0.05);
+        gridGroup.add(axesHelper);
+
+        const gridHelper = new THREE.GridHelper(gridSize, 20, 0x223046, 0x15202e);
         gridHelper.rotation.x = Math.PI / 2;
-        gridHelper.position.set(maxGridX / 2, maxGridY / 2, 0);
-        scene.add(gridHelper);
+        gridHelper.position.set(centerX, centerY, -0.05);
+        gridGroup.add(gridHelper);
 
         // Storey elevation guide planes / lines
         sceneData.storeys.forEach(s => {{
             if (s.elevation > 0) {{
                 const storeyGrid = new THREE.GridHelper(gridSize, 10, 0x334466, 0x112233);
                 storeyGrid.rotation.x = Math.PI / 2;
-                storeyGrid.position.set(maxGridX / 2, maxGridY / 2, s.elevation);
-                scene.add(storeyGrid);
+                storeyGrid.position.set(centerX, centerY, s.elevation);
+                gridGroup.add(storeyGrid);
             }}
         }});
 
@@ -410,6 +613,16 @@ def generate_viewer_html(
             mesh.rotation.set(...data.rotation);
             mesh.userData = data;
 
+            // Layer assignment for filtering
+            const tagUpper = (data.tag || "").toUpperCase();
+            if (tagUpper.includes("F2") || tagUpper.includes("FOOTING") || data.class === "IfcFooting") {{
+                mesh.userData.layer = "footings";
+            }} else if (tagUpper.includes("PIN") || tagUpper.includes("BOUNDARY") || tagUpper.includes("LINE")) {{
+                mesh.userData.layer = "grids";
+            }} else {{
+                mesh.userData.layer = "structure";
+            }}
+
             // Wireframe / Edges for visual clarity
             const edges = new THREE.EdgesGeometry(geometry);
             const line = new THREE.LineSegments(
@@ -422,12 +635,59 @@ def generate_viewer_html(
             pickableObjects.push(mesh);
         }});
 
-        // Camera position setup
-        const centerX = maxGridX / 2;
-        const centerY = maxGridY / 2;
-        camera.position.set(centerX + 15, centerY - 15, 12);
-        controls.target.set(centerX, centerY, 2);
+        // Camera position setup - Start with Top View (locked to 2D Plan View)
+        camera.position.set(centerX, centerY, 160);
+        camera.up.set(0, 1, 0);
+        controls.target.set(centerX, centerY, 0);
+        controls.minPolarAngle = 0;
+        controls.maxPolarAngle = 0; // 🔒 2D Plan view lock
         controls.update();
+
+        window.setView = function(mode) {{
+            if (mode === 'top') {{
+                camera.position.set(centerX, centerY, 160);
+                camera.up.set(0, 1, 0);
+                controls.target.set(centerX, centerY, 0);
+                controls.minPolarAngle = 0;
+                controls.maxPolarAngle = 0; // 🔒 Lock to true 2D Plan View
+            }} else if (mode === 'iso') {{
+                camera.position.set(centerX + 60, centerY - 80, 60);
+                camera.up.set(0, 0, 1);
+                controls.target.set(centerX, centerY, 0);
+                controls.minPolarAngle = 0;
+                controls.maxPolarAngle = Math.PI; // 🔓 Unlock 3D rotation
+            }} else if (mode === 'front') {{
+                camera.position.set(centerX, minGridY - 90, 15);
+                camera.up.set(0, 0, 1);
+                controls.target.set(centerX, centerY, 0);
+                controls.minPolarAngle = 0;
+                controls.maxPolarAngle = Math.PI;
+            }} else if (mode === 'side') {{
+                camera.position.set(maxGridX + 70, centerY, 15);
+                camera.up.set(0, 0, 1);
+                controls.target.set(centerX, centerY, 0);
+                controls.minPolarAngle = 0;
+                controls.maxPolarAngle = Math.PI;
+            }}
+            controls.update();
+        }};
+
+        window.toggleLayer = function(layerName) {{
+            const btn = document.getElementById('btn-layer-' + layerName);
+            const isActive = btn.classList.toggle('active');
+            if (layerName === 'grids') {{
+                gridGroup.visible = isActive;
+                pickableObjects.forEach(mesh => {{
+                    if (mesh.userData.layer === 'grids') mesh.visible = isActive;
+                }});
+            }} else {{
+                pickableObjects.forEach(mesh => {{
+                    if (mesh.userData.layer === layerName) {{
+                        mesh.visible = isActive;
+                    }}
+                }});
+            }}
+        }};
 
         // Select first element by default if available
         if (sceneData.elements.length > 0) {{
