@@ -54,6 +54,24 @@
       "unit": "kg",
       "material_cost": 28.0,
       "labor_cost": 4.5
+    },
+    "MAT-PILE-HEX15": {
+      "name": "Hollow Hexagonal Concrete Pile 0.15m",
+      "unit": "m",
+      "material_cost": 120.0,
+      "labor_cost": 40.0
+    },
+    "MAT-LEAN-CONC": {
+      "name": "Lean Concrete 1:3:5",
+      "unit": "m3",
+      "material_cost": 1750.0,
+      "labor_cost": 380.0
+    },
+    "MAT-SAND": {
+      "name": "Coarse Sand Bedding Under Footing",
+      "unit": "m3",
+      "material_cost": 450.0,
+      "labor_cost": 120.0
     }
   }
 }

@@ -30,9 +30,12 @@ def test_contemporary_thai_house_resolution_and_qto():
 
     qto_result = calculate_qto(manifest_path)
     # Total concrete volume including 17 footings
-    assert 28.0 <= qto_result.total_concrete_volume <= 32.0
+    assert 30.0 <= qto_result.total_concrete_volume <= 36.0
     # Rebar weight verification
     assert qto_result.total_rebar_weight > 2500.0
+    # Piles verification: 63 piles total, 378.0 meters total length
+    assert qto_result.total_pile_count == 63
+    assert qto_result.total_pile_length == 378.0
 
 
 def test_contemporary_thai_house_ifc_compilation(tmp_path):

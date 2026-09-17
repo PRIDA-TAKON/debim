@@ -53,132 +53,217 @@ materials:
 
 elements:
   # ==========================================
-  # 0. ISOLATED FOOTINGS (ฐานรากแผ่ ค.ส.ล. - S-02)
-  # F0.80x0.80, F1.00x1.00, F1.30x1.30, F1.50x1.50, F1.80x1.80
+  # 0. PILED FOOTINGS (ฐานรากเสาเข็ม ค.ส.ล. - S-15/S-16/S-17)
+  # เสาเข็มหกเหลี่ยมกลวง 0.15m ยาว 6.00m
   # ==========================================
-  # F0.80x0.80 (หนา 0.20 m, 4+4 RB9)
+  # F0.80x0.80 (2 Piles, หนา 0.25 m, 4+4 RB9)
   - class: IfcFooting
     tag: F-A1
     material: CONC_210
-    profile: { shape: BOX, width: 0.80, depth: 0.80, thickness: 0.20 }
+    profile: { shape: BOX, width: 0.80, depth: 0.80, thickness: 0.25 }
     placement: { grid: ["1", "A"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "4-RB9", mesh_y: "4-RB9" }
+    piles:
+      count: 2
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.50
 
   - class: IfcFooting
     tag: F-A2
     material: CONC_210
-    profile: { shape: BOX, width: 0.80, depth: 0.80, thickness: 0.20 }
+    profile: { shape: BOX, width: 0.80, depth: 0.80, thickness: 0.25 }
     placement: { grid: ["2", "A"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "4-RB9", mesh_y: "4-RB9" }
+    piles:
+      count: 2
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.50
 
-  # F1.00x1.00 (หนา 0.20 m, 4+4 DB12)
+  # F1.00x1.00 (3 Piles, หนา 0.30 m, 4+4 DB12)
   - class: IfcFooting
     tag: F-B4
     material: CONC_210
-    profile: { shape: BOX, width: 1.00, depth: 1.00, thickness: 0.20 }
+    profile: { shape: BOX, width: 1.00, depth: 1.00, thickness: 0.30 }
     placement: { grid: ["4", "B"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "4-DB12", mesh_y: "4-DB12" }
+    piles:
+      count: 3
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.50
 
   - class: IfcFooting
     tag: F-F2
     material: CONC_210
-    profile: { shape: BOX, width: 1.00, depth: 1.00, thickness: 0.20 }
+    profile: { shape: BOX, width: 1.00, depth: 1.00, thickness: 0.30 }
     placement: { grid: ["2", "F"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "4-DB12", mesh_y: "4-DB12" }
+    piles:
+      count: 3
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.50
 
   - class: IfcFooting
     tag: F-F4
     material: CONC_210
-    profile: { shape: BOX, width: 1.00, depth: 1.00, thickness: 0.20 }
+    profile: { shape: BOX, width: 1.00, depth: 1.00, thickness: 0.30 }
     placement: { grid: ["4", "F"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "4-DB12", mesh_y: "4-DB12" }
+    piles:
+      count: 3
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.50
 
-  # F1.30x1.30 (หนา 0.25 m, 6+6 DB12)
+  # F1.30x1.30 (4 Piles, หนา 0.35 m, 6+6 DB12)
   - class: IfcFooting
     tag: F-B1
     material: CONC_210
-    profile: { shape: BOX, width: 1.30, depth: 1.30, thickness: 0.25 }
+    profile: { shape: BOX, width: 1.30, depth: 1.30, thickness: 0.35 }
     placement: { grid: ["1", "B"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "6-DB12", mesh_y: "6-DB12" }
+    piles:
+      count: 4
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.50
 
   - class: IfcFooting
     tag: F-D4
     material: CONC_210
-    profile: { shape: BOX, width: 1.30, depth: 1.30, thickness: 0.25 }
+    profile: { shape: BOX, width: 1.30, depth: 1.30, thickness: 0.35 }
     placement: { grid: ["4", "D"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "6-DB12", mesh_y: "6-DB12" }
+    piles:
+      count: 4
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.50
 
   - class: IfcFooting
     tag: F-E1
     material: CONC_210
-    profile: { shape: BOX, width: 1.30, depth: 1.30, thickness: 0.25 }
+    profile: { shape: BOX, width: 1.30, depth: 1.30, thickness: 0.35 }
     placement: { grid: ["1", "E"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "6-DB12", mesh_y: "6-DB12" }
+    piles:
+      count: 4
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.50
 
   - class: IfcFooting
     tag: F-E4
     material: CONC_210
-    profile: { shape: BOX, width: 1.30, depth: 1.30, thickness: 0.25 }
+    profile: { shape: BOX, width: 1.30, depth: 1.30, thickness: 0.35 }
     placement: { grid: ["4", "E"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "6-DB12", mesh_y: "6-DB12" }
+    piles:
+      count: 4
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.50
 
-  # F1.50x1.50 (หนา 0.30 m, 8+8 DB12)
+  # F1.50x1.50 (4 Piles, หนา 0.40 m, 8+8 DB12)
   - class: IfcFooting
     tag: F-B2
     material: CONC_210
-    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.30 }
+    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.40 }
     placement: { grid: ["2", "B"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "8-DB12", mesh_y: "8-DB12" }
+    piles:
+      count: 4
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.60
 
   - class: IfcFooting
     tag: F-C1
     material: CONC_210
-    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.30 }
+    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.40 }
     placement: { grid: ["1", "C"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "8-DB12", mesh_y: "8-DB12" }
+    piles:
+      count: 4
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.60
 
   - class: IfcFooting
     tag: F-C4
     material: CONC_210
-    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.30 }
+    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.40 }
     placement: { grid: ["4", "C"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "8-DB12", mesh_y: "8-DB12" }
+    piles:
+      count: 4
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.60
 
   - class: IfcFooting
     tag: F-D1
     material: CONC_210
-    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.30 }
+    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.40 }
     placement: { grid: ["1", "D"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "8-DB12", mesh_y: "8-DB12" }
+    piles:
+      count: 4
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.60
 
   - class: IfcFooting
     tag: F-D3
     material: CONC_210
-    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.30 }
+    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.40 }
     placement: { grid: ["3", "D"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "8-DB12", mesh_y: "8-DB12" }
+    piles:
+      count: 4
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.60
 
   - class: IfcFooting
     tag: F-E3
     material: CONC_210
-    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.30 }
+    profile: { shape: BOX, width: 1.50, depth: 1.50, thickness: 0.40 }
     placement: { grid: ["3", "E"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "8-DB12", mesh_y: "8-DB12" }
+    piles:
+      count: 4
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.60
 
-  # F1.80x1.80 (หนา 0.30 m, 14+14 DB12)
+  # F1.80x1.80 (5 Piles, หนา 0.45 m, 14+14 DB12)
   - class: IfcFooting
     tag: F-C2
     material: CONC_210
-    profile: { shape: BOX, width: 1.80, depth: 1.80, thickness: 0.30 }
+    profile: { shape: BOX, width: 1.80, depth: 1.80, thickness: 0.45 }
     placement: { grid: ["2", "C"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "14-DB12", mesh_y: "14-DB12" }
+    piles:
+      count: 5
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.60
 
   - class: IfcFooting
     tag: F-E2
     material: CONC_210
-    profile: { shape: BOX, width: 1.80, depth: 1.80, thickness: 0.30 }
+    profile: { shape: BOX, width: 1.80, depth: 1.80, thickness: 0.45 }
     placement: { grid: ["2", "E"], storey: L0_FOUNDATION }
     reinforcement: { mesh_x: "14-DB12", mesh_y: "14-DB12" }
+    piles:
+      count: 5
+      profile: { shape: HEXAGONAL, dimension: 0.15 }
+      length: 6.00
+      spacing: 0.60
 
   # ==========================================
   # 1. GROUND COLUMNS & PIERS (ตอม่อ L0 -> L1)
