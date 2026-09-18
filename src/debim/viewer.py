@@ -231,8 +231,43 @@ def generate_viewer_html(
                 "color": "#BC6C25",  # Landing tone
             })
 
+            # Landing Edge Beams Wireframe (คานขอบชานพัก / เทหนาใต้ชานพัก: เส้นวิ่งรอบ + กรอบหน้าตัด)
+            for eb in stair.landing_edge_beams:
+                # Centerline of edge beam
+                elements_data.append({
+                    "tag": f"{eb.tag}-Centerline",
+                    "class": "IfcStairLanding",
+                    "geometry_type": "line",
+                    "points": [eb.start_point, eb.end_point],
+                    "color": "#1D4ED8",  # Deep royal blue for landing edge beam
+                    "linewidth": 3,
+                })
+                # Start profile loop
+                if eb.start_profile_corners and len(eb.start_profile_corners) == 4:
+                    c = eb.start_profile_corners
+                    elements_data.append({
+                        "tag": f"{eb.tag}-ProfileStart",
+                        "class": "IfcStairLanding",
+                        "geometry_type": "line_loop",
+                        "points": [c[0], c[1], c[2], c[3], c[0]],
+                        "color": "#1E40AF",
+                        "linewidth": 2,
+                    })
+                # End profile loop
+                if eb.end_profile_corners and len(eb.end_profile_corners) == 4:
+                    c = eb.end_profile_corners
+                    elements_data.append({
+                        "tag": f"{eb.tag}-ProfileEnd",
+                        "class": "IfcStairLanding",
+                        "geometry_type": "line_loop",
+                        "points": [c[0], c[1], c[2], c[3], c[0]],
+                        "color": "#1E40AF",
+                        "linewidth": 2,
+                    })
+
         # 4. Railing (ราวกันตก: เสาตั้งหัว-ท้าย + ราวเอียง)
         if stair.railing:
+
             # Vertical posts
             for p_idx, (p_base, p_top) in enumerate(stair.railing.posts):
                 elements_data.append({

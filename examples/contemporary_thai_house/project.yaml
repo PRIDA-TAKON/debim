@@ -1372,6 +1372,11 @@ elements:
       elevation: 1.875
       depth: 1.00
       thickness: 0.12
+      edge_beam:
+        width: 0.20
+        depth: 0.35
+        edges: "FRONT_REAR"
+
     steps:
       tread: 0.25
       riser: 0.1875

@@ -183,6 +183,21 @@ class ResolvedStairFlight(BaseModel):
     steps: List[ResolvedStairStep] = []
 
 
+class ResolvedLandingEdgeBeam(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    width: float
+    depth: float
+    length: float
+    concrete_volume: float
+    formwork_area: float
+    start_profile_corners: List[Tuple[float, float, float]] = []
+    end_profile_corners: List[Tuple[float, float, float]] = []
+
+
 class ResolvedStair(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -194,12 +209,14 @@ class ResolvedStair(BaseModel):
     landing_polygon: Optional[List[Tuple[float, float, float]]] = None
     landing_thickness: float = 0.12
     landing_area: float = 0.0
+    landing_edge_beams: List[ResolvedLandingEdgeBeam] = []
     railing: Optional[ResolvedStairRailing] = None
     nosing_length: float = 0.0
     total_tread_finish_area: float = 0.0
     total_riser_finish_area: float = 0.0
     total_concrete_volume: float = 0.0
     total_formwork_area: float = 0.0
+
 
 
 
@@ -812,17 +829,92 @@ class SpatialResolver:
             landing_area = (2.0 * w) * landing_depth
             landing_vol = landing_area * landing_t
 
-            # Concrete volume: waist + steps triangles + landing
+            # Landing edge beams calculation (คานขอบชานพัก / เทหนาพิเศษ)
+            landing_edge_beams: List[ResolvedLandingEdgeBeam] = []
+            if stair.landing and stair.landing.edge_beam and landing_poly:
+                eb_cfg = stair.landing.edge_beam
+                eb_w = eb_cfg.width
+                eb_d = eb_cfg.depth
+                # Extra depth below landing slab
+                drop_d = max(0.0, eb_d - landing_t)
+
+                # Edges of the landing polygon (4 edges)
+                poly_edges = [
+                    ("Edge-1", landing_poly[0], landing_poly[1]),
+                    ("Edge-2", landing_poly[1], landing_poly[2]),
+                    ("Edge-3", landing_poly[2], landing_poly[3]),
+                    ("Edge-4", landing_poly[3], landing_poly[0]),
+                ]
+
+                # Filter edges based on config: "ALL", "FRONT_REAR", "SIDES"
+                active_edges = poly_edges
+                if eb_cfg.edges == "FRONT_REAR":
+                    active_edges = [poly_edges[0], poly_edges[2]]
+                elif eb_cfg.edges == "SIDES":
+                    active_edges = [poly_edges[1], poly_edges[3]]
+
+                for e_tag, ep_start, ep_end in active_edges:
+                    e_len = math.dist(ep_start, ep_end)
+                    if e_len <= 0:
+                        continue
+                    # Extra concrete for this edge beam drop below landing slab
+                    eb_conc_vol = e_len * eb_w * drop_d
+                    # Formwork for soffit + 1 or 2 side faces
+                    eb_formwork = (e_len * eb_w) + (e_len * drop_d * 2.0)
+
+                    # Centerline of edge beam below landing
+                    eb_start = (ep_start[0], ep_start[1], z_mid - landing_t - drop_d / 2.0)
+                    eb_end = (ep_end[0], ep_end[1], z_mid - landing_t - drop_d / 2.0)
+
+                    # Cross section rectangle at start and end
+                    sdx = ep_end[0] - ep_start[0]
+                    sdy = ep_end[1] - ep_start[1]
+                    norm_len = math.hypot(sdx, sdy)
+                    # Perpendicular unit vector (nx, ny)
+                    nx = -sdy / norm_len if norm_len > 0 else 0
+                    ny = sdx / norm_len if norm_len > 0 else 0
+
+                    c_start = [
+                        (ep_start[0] - nx * eb_w / 2.0, ep_start[1] - ny * eb_w / 2.0, z_mid - landing_t - drop_d),
+                        (ep_start[0] + nx * eb_w / 2.0, ep_start[1] + ny * eb_w / 2.0, z_mid - landing_t - drop_d),
+                        (ep_start[0] + nx * eb_w / 2.0, ep_start[1] + ny * eb_w / 2.0, z_mid - landing_t),
+                        (ep_start[0] - nx * eb_w / 2.0, ep_start[1] - ny * eb_w / 2.0, z_mid - landing_t),
+                    ]
+                    c_end = [
+                        (ep_end[0] - nx * eb_w / 2.0, ep_end[1] - ny * eb_w / 2.0, z_mid - landing_t - drop_d),
+                        (ep_end[0] + nx * eb_w / 2.0, ep_end[1] + ny * eb_w / 2.0, z_mid - landing_t - drop_d),
+                        (ep_end[0] + nx * eb_w / 2.0, ep_end[1] + ny * eb_w / 2.0, z_mid - landing_t),
+                        (ep_end[0] - nx * eb_w / 2.0, ep_end[1] - ny * eb_w / 2.0, z_mid - landing_t),
+                    ]
+
+                    landing_edge_beams.append(ResolvedLandingEdgeBeam(
+                        tag=f"{stair.tag}-LandingBeam-{e_tag}",
+                        start_point=eb_start,
+                        end_point=eb_end,
+                        width=eb_w,
+                        depth=eb_d,
+                        length=e_len,
+                        concrete_volume=eb_conc_vol,
+                        formwork_area=eb_formwork,
+                        start_profile_corners=c_start,
+                        end_profile_corners=c_end,
+                    ))
+
+            # Concrete volume: waist + steps triangles + landing + landing edge beams
             vol_f1 = (slope_1 * w * waist_t) + (n_risers_1 * 0.5 * tread * actual_riser_1 * w)
             vol_f2 = (slope_2 * w * waist_t) + (n_risers_2 * 0.5 * tread * actual_riser_2 * w)
-            tot_conc_vol = vol_f1 + vol_f2 + landing_vol
+            eb_total_vol = sum(b.concrete_volume for b in landing_edge_beams)
+            tot_conc_vol = vol_f1 + vol_f2 + landing_vol + eb_total_vol
 
-            # Formwork: soffit + riser faces + side edge
+            # Formwork: soffit + riser faces + side edge + landing edge beams
             form_f1 = (slope_1 * w) + (n_risers_1 * actual_riser_1 * w) + (slope_1 * waist_t * 2)
             form_f2 = (slope_2 * w) + (n_risers_2 * actual_riser_2 * w) + (slope_2 * waist_t * 2)
-            tot_formwork = form_f1 + form_f2 + landing_area
+            eb_total_formwork = sum(b.formwork_area for b in landing_edge_beams)
+            tot_formwork = form_f1 + form_f2 + landing_area + eb_total_formwork
 
         else:
+            landing_edge_beams = []
+
             # Straight flight
             n_risers = max(1, int(round(total_height / riser)))
             run = (n_risers - 1) * tread
@@ -970,7 +1062,9 @@ class SpatialResolver:
             landing_polygon=landing_poly,
             landing_thickness=landing_t,
             landing_area=landing_area,
+            landing_edge_beams=landing_edge_beams,
             railing=resolved_railing,
+
             nosing_length=nosing_len,
             total_tread_finish_area=tot_tread_area,
             total_riser_finish_area=tot_riser_area,

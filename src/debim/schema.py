@@ -255,11 +255,20 @@ class StairPlacement(BaseModel):
         return v
 
 
+class LandingEdgeBeamConfig(BaseModel):
+    width: float = 0.20   # ความกว้างคานขอบชานพัก (m)
+    depth: float = 0.35   # ความลึกคานขอบชานพักรวมความหนาชานพัก (m)
+    material: Optional[str] = None
+    edges: Literal["ALL", "FRONT_REAR", "SIDES"] = "ALL"  # แนวขอบที่เทคาน
+
+
 class StairLanding(BaseModel):
     elevation: float  # Absolute height above from_storey elevation (m)
     depth: float = 1.00  # Landing depth (m)
     thickness: float = 0.12  # Landing slab thickness (m)
     material: Optional[str] = None
+    edge_beam: Optional[LandingEdgeBeamConfig] = None
+
 
 
 class StairStepConfig(BaseModel):
