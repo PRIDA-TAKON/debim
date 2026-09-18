@@ -26,9 +26,16 @@ def test_contemporary_thai_house_resolution_and_qto():
     assert len(resolved.footings) == 17
     # 19 slabs (Level 1 ground slabs + Level 2 precast planks)
     assert len(resolved.slabs) == 19
-    # 1 stair
+    # 1 stair assembly verification
     assert len(resolved.stairs) == 1
-    assert len(resolved.stairs[0].flights) == 2
+    stair = resolved.stairs[0]
+    assert len(stair.flights) == 2
+    assert len(stair.steps) == 20  # 10 steps flight 1 + 10 steps flight 2
+    assert len(stair.stringers) == 2  # Stringers for both flights
+    assert stair.railing is not None
+    assert stair.railing.total_length > 0.0
+    assert stair.nosing_length == 20 * 1.00  # 20 steps * 1.00m width = 20.0m
+
     # 17 columns per floor level (C0, C1, C2)
     assert len(resolved.columns) > 30
     assert len(resolved.beams) > 30
@@ -37,11 +44,16 @@ def test_contemporary_thai_house_resolution_and_qto():
     # Total concrete volume including 17 footings, 19 slabs, and 1 stair
     assert 50.0 <= qto_result.total_concrete_volume <= 58.0
 
+    # Stair architectural takeoffs
+    assert qto_result.total_nosing_length == 20.0
+    assert qto_result.total_railing_length > 5.0
+
     # Rebar weight verification
     assert qto_result.total_rebar_weight > 3000.0
     # Piles verification: 63 piles total, 378.0 meters total length
     assert qto_result.total_pile_count == 63
     assert qto_result.total_pile_length == 378.0
+
 
 
 def test_contemporary_thai_house_ifc_compilation(tmp_path):

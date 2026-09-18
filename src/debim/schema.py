@@ -234,6 +234,9 @@ class IfcSlab(BaseModel):
     reinforcement: Optional[SlabReinforcement] = None
 
 
+StairType = Literal["STRAIGHT", "DOG_LEG", "L_SHAPE", "SPIRAL", "LADDER"]
+
+
 # Stair placement & element
 class StairPlacement(BaseModel):
     grid_anchor: Tuple[str, str]  # Starting grid intersection, e.g. ["2", "B"]
@@ -256,12 +259,33 @@ class StairLanding(BaseModel):
     elevation: float  # Absolute height above from_storey elevation (m)
     depth: float = 1.00  # Landing depth (m)
     thickness: float = 0.12  # Landing slab thickness (m)
+    material: Optional[str] = None
 
 
 class StairStepConfig(BaseModel):
     tread: float = 0.25  # ลูกนอน (m)
     riser: float = 0.1875  # ลูกตั้ง (m)
     n_risers: Optional[int] = None  # Auto-calculated from floor-to-floor height if omitted
+
+
+class StairStringerConfig(BaseModel):
+    material: Optional[str] = None
+    width: float = 0.20
+    depth: float = 0.30
+    stringer_type: Literal["WAIST_SLAB", "SIDE_BEAMS", "CENTRAL_BEAM"] = "WAIST_SLAB"
+
+
+class StairFinishesConfig(BaseModel):
+    tread_finish: Optional[str] = None  # e.g. "WOOD_PLANK", "GRANITO", "CONCRETE_POLISHED"
+    riser_finish: Optional[str] = None
+    nosing: bool = False  # จมูกบันไดกันลื่น (คิดความยาวตามจำนวนขั้น x ความกว้าง)
+    nosing_type: Optional[str] = "ALUMINUM_STRIP"
+
+
+class StairRailingConfig(BaseModel):
+    height: float = 0.90  # ราวกันตกสูง (m)
+    type: str = "STEEL_HANDRAIL"  # ประเภทราวบันได
+    side: Literal["INNER", "OUTER", "BOTH"] = "INNER"
 
 
 class StairReinforcement(BaseModel):
@@ -273,13 +297,17 @@ class IfcStair(BaseModel):
     class_: Literal["IfcStair"] = Field(alias="class")
     tag: str
     material: str
-    stair_type: Literal["STRAIGHT", "DOG_LEG", "L_SHAPE"] = "DOG_LEG"
+    stair_type: StairType = "DOG_LEG"
     width: float = 1.00  # Clear flight width (m)
     waist_thickness: float = 0.12  # Structural waist slab thickness (m)
     placement: StairPlacement
     landing: Optional[StairLanding] = None
     steps: Optional[StairStepConfig] = None
+    stringer: Optional[StairStringerConfig] = None
+    finishes: Optional[StairFinishesConfig] = None
+    railing: Optional[StairRailingConfig] = None
     reinforcement: Optional[StairReinforcement] = None
+
 
 
 # Custom element placement & element

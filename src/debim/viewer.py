@@ -152,33 +152,52 @@ def generate_viewer_html(
             "opacity": 0.85,
         })
 
-    # Stairs (Flights + Landing)
+    # Stairs Assembly (Individual Steps, Stringers, Landing, Railing)
     for stair in resolved.stairs:
-        # Flights
-        for f_idx, flight in enumerate(stair.flights):
-            fcx = (flight.start_point[0] + flight.end_point[0]) / 2.0
-            fcy = (flight.start_point[1] + flight.end_point[1]) / 2.0
-            fcz = (flight.start_point[2] + flight.end_point[2]) / 2.0
-            fdx = flight.end_point[0] - flight.start_point[0]
-            fdy = flight.end_point[1] - flight.start_point[1]
-            yaw = math.atan2(fdy, fdx)
-            pitch = math.atan2(flight.rise_height, flight.run_length)
-
+        # 1. Individual Step Boxes (ลูกบันได: ลูกตั้ง + ลูกนอน เป็นขั้นจริง)
+        for step in stair.steps:
             elements_data.append({
-                "tag": flight.tag,
-                "class": "IfcStair",
-                "material": stair.element.material,
-                "position": [fcx, fcy, fcz],
-                "rotation": [0, -pitch, yaw],
+                "tag": f"{stair.tag}-Step-{step.step_index}",
+                "class": "IfcStairStep",
+                "material": stair.element.finishes.tread_finish if (stair.element.finishes and stair.element.finishes.tread_finish) else stair.element.material,
+                "position": [step.position[0], step.position[1], step.position[2]],
+                "rotation": [0, 0, 0],
                 "dimensions": {
-                    "length": flight.slope_length,
-                    "width": flight.width,
-                    "depth": flight.waist_thickness,
+                    "width": step.width,
+                    "depth": step.tread,
+                    "height": step.riser,
                 },
-                "color": "#C4A482",  # Warm timber/concrete tone
+                "color": "#D4A373",  # Warm timber tone for steps
             })
 
-        # Landing
+        # 2. Structural Stringer Beams / Waist (แม่บันได/ท้องคานเอียง)
+        for stringer in stair.stringers:
+            scx = (stringer.start_point[0] + stringer.end_point[0]) / 2.0
+            scy = (stringer.start_point[1] + stringer.end_point[1]) / 2.0
+            scz = (stringer.start_point[2] + stringer.end_point[2]) / 2.0
+            sdx = stringer.end_point[0] - stringer.start_point[0]
+            sdy = stringer.end_point[1] - stringer.start_point[1]
+            sdz = stringer.end_point[2] - stringer.start_point[2]
+            horiz_len = math.hypot(sdx, sdy)
+            yaw = math.atan2(sdy, sdx)
+            pitch = math.atan2(sdz, horiz_len)
+
+            # Offset slightly downwards so stringer sits beneath the steps
+            elements_data.append({
+                "tag": stringer.tag,
+                "class": "IfcStairStringer",
+                "material": stringer.material or stair.element.material,
+                "position": [scx, scy, scz - stringer.depth / 2.0],
+                "rotation": [0, -pitch, yaw],
+                "dimensions": {
+                    "length": stringer.length,
+                    "width": stringer.width,
+                    "depth": stringer.depth,
+                },
+                "color": "#8D99AE",  # Structural concrete/steel grey
+            })
+
+        # 3. Landing (ชานพักแบนราบ)
         if stair.landing_polygon and len(stair.landing_polygon) >= 4:
             l_xs = [p[0] for p in stair.landing_polygon]
             l_ys = [p[1] for p in stair.landing_polygon]
@@ -187,8 +206,8 @@ def generate_viewer_html(
             l_min_y, l_max_y = min(l_ys), max(l_ys)
             elements_data.append({
                 "tag": f"{stair.tag}-Landing",
-                "class": "IfcStair",
-                "material": stair.element.material,
+                "class": "IfcStairLanding",
+                "material": stair.element.landing.material if (stair.element.landing and stair.element.landing.material) else stair.element.material,
                 "position": [
                     (l_min_x + l_max_x) / 2.0,
                     (l_min_y + l_max_y) / 2.0,
@@ -200,8 +219,38 @@ def generate_viewer_html(
                     "depth": l_max_y - l_min_y,
                     "height": stair.landing_thickness,
                 },
-                "color": "#B39371",
+                "color": "#BC6C25",  # Landing tone
             })
+
+        # 4. Railing (ราวกันตกตลอดแนวทางเดิน)
+        if stair.railing and stair.railing.segments:
+            for s_idx, (p_from, p_to) in enumerate(stair.railing.segments):
+                seg_len = math.dist(p_from, p_to)
+                if seg_len < 0.05:
+                    continue
+                rcx = (p_from[0] + p_to[0]) / 2.0
+                rcy = (p_from[1] + p_to[1]) / 2.0
+                rcz = (p_from[2] + p_to[2]) / 2.0
+                rdx = p_to[0] - p_from[0]
+                rdy = p_to[1] - p_from[1]
+                rdz = p_to[2] - p_from[2]
+                r_horiz = math.hypot(rdx, rdy)
+                r_yaw = math.atan2(rdy, rdx)
+                r_pitch = math.atan2(rdz, r_horiz)
+
+                elements_data.append({
+                    "tag": f"{stair.tag}-Railing-Seg{s_idx+1}",
+                    "class": "IfcRailing",
+                    "material": stair.railing.railing_type,
+                    "position": [rcx, rcy, rcz],
+                    "rotation": [0, -r_pitch, r_yaw],
+                    "dimensions": {
+                        "length": seg_len,
+                        "width": 0.06,
+                        "depth": 0.06,
+                    },
+                    "color": "#1F2937",  # Dark metallic rail
+                })
 
     # Walls & Children
     for wall in resolved.walls:
@@ -510,6 +559,7 @@ def generate_viewer_html(
         <span style="font-size: 0.75rem; color: #8888aa; align-self: center; margin-right: 4px;">เลเยอร์:</span>
         <button class="layer-btn active" id="btn-layer-footings" onclick="toggleLayer('footings')">🔲 ฐานราก/เข็ม</button>
         <button class="layer-btn active" id="btn-layer-slabs" onclick="toggleLayer('slabs')">🟧 พื้น (Slabs)</button>
+        <button class="layer-btn active" id="btn-layer-stairs" onclick="toggleLayer('stairs')">🪜 บันได (Stairs)</button>
         <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/คาน</button>
         <button class="layer-btn active" id="btn-layer-grids" onclick="toggleLayer('grids')">📐 ผังกริด/แนวเขต</button>
     </div>
@@ -740,6 +790,8 @@ def generate_viewer_html(
                 mesh.userData.layer = "footings";
             }} else if (data.class === "IfcSlab" || tagUpper.includes("SLAB") || tagUpper.startsWith("S-") || tagUpper.startsWith("GS-")) {{
                 mesh.userData.layer = "slabs";
+            }} else if (data.class.startsWith("IfcStair") || data.class === "IfcRailing" || tagUpper.startsWith("ST-")) {{
+                mesh.userData.layer = "stairs";
             }} else if (tagUpper.includes("PIN") || tagUpper.includes("BOUNDARY") || tagUpper.includes("LINE")) {{
                 mesh.userData.layer = "grids";
             }} else {{

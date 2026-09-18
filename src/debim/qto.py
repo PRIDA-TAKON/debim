@@ -117,6 +117,15 @@ class SubstructureQTO(BaseModel):
     pile_type: Optional[str] = None
 
 
+class StairQTO(BaseModel):
+    total_steps: int = 0
+    tread_finish_area: float = 0.0     # m²
+    riser_finish_area: float = 0.0     # m²
+    nosing_length: float = 0.0         # m
+    railing_length: float = 0.0        # m
+    railing_type: Optional[str] = None
+
+
 class ElementQTO(BaseModel):
     tag: str
     element_class: str
@@ -126,6 +135,7 @@ class ElementQTO(BaseModel):
     rebar_weights: Dict[str, float] = Field(default_factory=dict)  # kg by bar type
     total_rebar_weight: float = 0.0  # kg
     substructure: Optional[SubstructureQTO] = None
+    stair_assembly: Optional[StairQTO] = None
 
 
 class ProjectQTO(BaseModel):
@@ -138,6 +148,9 @@ class ProjectQTO(BaseModel):
     total_sand_bedding_volume: float = 0.0
     total_pile_count: int = 0
     total_pile_length: float = 0.0
+    total_nosing_length: float = 0.0
+    total_railing_length: float = 0.0
+
 
     def get_element(self, tag: str) -> Optional[ElementQTO]:
         for elem in self.elements:
@@ -362,6 +375,15 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
                     rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
                 total_rebar += t_wt
 
+        stair_qto = StairQTO(
+            total_steps=len(resolved.steps),
+            tread_finish_area=resolved.total_tread_finish_area,
+            riser_finish_area=resolved.total_riser_finish_area,
+            nosing_length=resolved.nosing_length,
+            railing_length=resolved.railing.total_length if resolved.railing else 0.0,
+            railing_type=resolved.railing.railing_type if resolved.railing else None,
+        )
+
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
@@ -370,6 +392,7 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
             formwork_area=formwork,
             rebar_weights=rebar_dict,
             total_rebar_weight=total_rebar,
+            stair_assembly=stair_qto,
         )
 
     elif isinstance(resolved, ResolvedCustomElement):
@@ -449,6 +472,9 @@ def calculate_qto(
     total_sand_vol = 0.0
     total_piles_count = 0
     total_piles_len = 0.0
+    total_nosing_len = 0.0
+    total_railing_len = 0.0
+
 
     # Build material category lookup
     material_categories = {
@@ -478,6 +504,10 @@ def calculate_qto(
             total_piles_count += eqto.substructure.pile_count
             total_piles_len += eqto.substructure.pile_total_length
 
+        if eqto.stair_assembly:
+            total_nosing_len += eqto.stair_assembly.nosing_length
+            total_railing_len += eqto.stair_assembly.railing_length
+
     return ProjectQTO(
         elements=qto_elements,
         total_concrete_volume=total_conc_vol,
@@ -488,4 +518,6 @@ def calculate_qto(
         total_sand_bedding_volume=total_sand_vol,
         total_pile_count=total_piles_count,
         total_pile_length=total_piles_len,
+        total_nosing_length=total_nosing_len,
+        total_railing_length=total_railing_len,
     )

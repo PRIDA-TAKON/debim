@@ -1375,7 +1375,22 @@ elements:
     steps:
       tread: 0.25
       riser: 0.1875
+    stringer:
+      material: CONC_210
+      width: 0.20
+      depth: 0.25
+      stringer_type: WAIST_SLAB
+    finishes:
+      tread_finish: "WOOD_PLANK"
+      riser_finish: "PAINT_WHITE"
+      nosing: true
+      nosing_type: "ALUMINUM_STRIP"
+    railing:
+      height: 0.90
+      type: "STEEL_HANDRAIL"
+      side: "INNER"
     reinforcement:
       main: "DB12 @ 0.15m"
       temperature: "RB9 @ 0.20m"
+
 

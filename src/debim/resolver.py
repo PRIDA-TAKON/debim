@@ -127,6 +127,39 @@ class ResolvedSlab(BaseModel):
     center: Tuple[float, float, float]  # Centroid (cx, cy, cz)
 
 
+class ResolvedStairStep(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    step_index: int
+    flight_tag: str
+    position: Tuple[float, float, float]  # Center of step box (cx, cy, cz)
+    width: float   # Width across flight
+    tread: float   # Length along run (ลูกนอน)
+    riser: float   # Height (ลูกตั้ง)
+
+
+class ResolvedStairStringer(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    width: float
+    depth: float
+    length: float
+    material: Optional[str] = None
+
+
+class ResolvedStairRailing(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    segments: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []
+    total_length: float = 0.0
+    height: float = 0.90
+    railing_type: str = "STEEL_HANDRAIL"
+
+
 class ResolvedStairFlight(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -141,6 +174,7 @@ class ResolvedStairFlight(BaseModel):
     n_risers: int
     tread: float
     riser: float
+    steps: List[ResolvedStairStep] = []
 
 
 class ResolvedStair(BaseModel):
@@ -149,11 +183,18 @@ class ResolvedStair(BaseModel):
     tag: str
     element: IfcStair
     flights: List[ResolvedStairFlight] = []
+    steps: List[ResolvedStairStep] = []
+    stringers: List[ResolvedStairStringer] = []
     landing_polygon: Optional[List[Tuple[float, float, float]]] = None
     landing_thickness: float = 0.12
     landing_area: float = 0.0
+    railing: Optional[ResolvedStairRailing] = None
+    nosing_length: float = 0.0
+    total_tread_finish_area: float = 0.0
+    total_riser_finish_area: float = 0.0
     total_concrete_volume: float = 0.0
     total_formwork_area: float = 0.0
+
 
 
 ResolvedElement = Union[
@@ -491,6 +532,10 @@ class SpatialResolver:
         tread = stair.steps.tread if stair.steps else 0.25
 
         flights: List[ResolvedStairFlight] = []
+        all_steps: List[ResolvedStairStep] = []
+        stringers: List[ResolvedStairStringer] = []
+        railing_segments: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []
+
         tot_conc_vol = 0.0
         tot_formwork = 0.0
 
@@ -513,6 +558,9 @@ class SpatialResolver:
             run_1 = (n_risers_1 - 1) * tread
             run_2 = (n_risers_2 - 1) * tread
 
+            actual_riser_1 = rise_1 / n_risers_1
+            actual_riser_2 = rise_2 / n_risers_2
+
             slope_1 = math.hypot(run_1, rise_1)
             slope_2 = math.hypot(run_2, rise_2)
 
@@ -529,6 +577,59 @@ class SpatialResolver:
                     (base_x + 2 * w, base_y + run_1 + landing_depth, z_mid),
                     (base_x, base_y + run_1 + landing_depth, z_mid),
                 ]
+
+                # Step boxes generation for Flight 1 (+Y direction)
+                f1_steps: List[ResolvedStairStep] = []
+                for i in range(n_risers_1):
+                    scx = base_x + w / 2.0
+                    scy = base_y + i * tread + tread / 2.0
+                    scz = z_bottom + i * actual_riser_1 + actual_riser_1 / 2.0
+                    step = ResolvedStairStep(
+                        step_index=i + 1,
+                        flight_tag=f"{stair.tag}-F1",
+                        position=(scx, scy, scz),
+                        width=w,
+                        tread=tread,
+                        riser=actual_riser_1,
+                    )
+                    f1_steps.append(step)
+                    all_steps.append(step)
+
+                # Step boxes generation for Flight 2 (-Y direction)
+                f2_steps: List[ResolvedStairStep] = []
+                for j in range(n_risers_2):
+                    scx = (base_x + w) + w / 2.0
+                    scy = (base_y + run_1) - j * tread - tread / 2.0
+                    scz = z_mid + j * actual_riser_2 + actual_riser_2 / 2.0
+                    step = ResolvedStairStep(
+                        step_index=n_risers_1 + j + 1,
+                        flight_tag=f"{stair.tag}-F2",
+                        position=(scx, scy, scz),
+                        width=w,
+                        tread=tread,
+                        riser=actual_riser_2,
+                    )
+                    f2_steps.append(step)
+                    all_steps.append(step)
+
+                # Railing path (Inner side: along inner edge between flights)
+                rh = stair.railing.height if stair.railing else 0.90
+                # F1 inner handrail: (base_x + w, y, z + rh)
+                railing_segments.append((
+                    (base_x + w, base_y, z_bottom + rh),
+                    (base_x + w, base_y + run_1, z_mid + rh),
+                ))
+                # Landing handrail across inner void: (base_x + w, base_y + run_1, z_mid + rh)
+                railing_segments.append((
+                    (base_x + w, base_y + run_1, z_mid + rh),
+                    (base_x + w, base_y + run_1, z_mid + rh),
+                ))
+                # F2 inner handrail:
+                railing_segments.append((
+                    (base_x + w, base_y + run_1, z_mid + rh),
+                    (base_x + w, base_y + run_1 - run_2, z_top + rh),
+                ))
+
             else:
                 p1_start = (base_x, base_y, z_bottom)
                 p1_end = (base_x + run_1, base_y, z_mid)
@@ -541,6 +642,71 @@ class SpatialResolver:
                     (base_x + run_1 + landing_depth, base_y, z_mid),
                 ]
 
+                f1_steps = []
+                for i in range(n_risers_1):
+                    scx = base_x + i * tread + tread / 2.0
+                    scy = base_y + w / 2.0
+                    scz = z_bottom + i * actual_riser_1 + actual_riser_1 / 2.0
+                    step = ResolvedStairStep(
+                        step_index=i + 1,
+                        flight_tag=f"{stair.tag}-F1",
+                        position=(scx, scy, scz),
+                        width=w,
+                        tread=tread,
+                        riser=actual_riser_1,
+                    )
+                    f1_steps.append(step)
+                    all_steps.append(step)
+
+                f2_steps = []
+                for j in range(n_risers_2):
+                    scx = (base_x + run_1) - j * tread - tread / 2.0
+                    scy = (base_y + w) + w / 2.0
+                    scz = z_mid + j * actual_riser_2 + actual_riser_2 / 2.0
+                    step = ResolvedStairStep(
+                        step_index=n_risers_1 + j + 1,
+                        flight_tag=f"{stair.tag}-F2",
+                        position=(scx, scy, scz),
+                        width=w,
+                        tread=tread,
+                        riser=actual_riser_2,
+                    )
+                    f2_steps.append(step)
+                    all_steps.append(step)
+
+                rh = stair.railing.height if stair.railing else 0.90
+                railing_segments.append((
+                    (base_x, base_y + w, z_bottom + rh),
+                    (base_x + run_1, base_y + w, z_mid + rh),
+                ))
+                railing_segments.append((
+                    (base_x + run_1, base_y + w, z_mid + rh),
+                    (base_x + run_1 - run_2, base_y + w, z_top + rh),
+                ))
+
+            # Stringers (แม่บันได)
+            st_mat = (stair.stringer.material if stair.stringer else None) or stair.material
+            st_w = stair.stringer.width if stair.stringer else w
+            st_d = stair.stringer.depth if stair.stringer else waist_t
+            stringers.append(ResolvedStairStringer(
+                tag=f"{stair.tag}-Stringer-F1",
+                start_point=p1_start,
+                end_point=p1_end,
+                width=st_w,
+                depth=st_d,
+                length=slope_1,
+                material=st_mat,
+            ))
+            stringers.append(ResolvedStairStringer(
+                tag=f"{stair.tag}-Stringer-F2",
+                start_point=p2_start,
+                end_point=p2_end,
+                width=st_w,
+                depth=st_d,
+                length=slope_2,
+                material=st_mat,
+            ))
+
             f1 = ResolvedStairFlight(
                 tag=f"{stair.tag}-F1",
                 start_point=p1_start,
@@ -552,7 +718,8 @@ class SpatialResolver:
                 slope_length=slope_1,
                 n_risers=n_risers_1,
                 tread=tread,
-                riser=rise_1 / n_risers_1,
+                riser=actual_riser_1,
+                steps=f1_steps,
             )
             f2 = ResolvedStairFlight(
                 tag=f"{stair.tag}-F2",
@@ -565,7 +732,8 @@ class SpatialResolver:
                 slope_length=slope_2,
                 n_risers=n_risers_2,
                 tread=tread,
-                riser=rise_2 / n_risers_2,
+                riser=actual_riser_2,
+                steps=f2_steps,
             )
             flights.extend([f1, f2])
 
@@ -573,22 +741,39 @@ class SpatialResolver:
             landing_vol = landing_area * landing_t
 
             # Concrete volume: waist + steps triangles + landing
-            vol_f1 = (slope_1 * w * waist_t) + (n_risers_1 * 0.5 * tread * (rise_1 / n_risers_1) * w)
-            vol_f2 = (slope_2 * w * waist_t) + (n_risers_2 * 0.5 * tread * (rise_2 / n_risers_2) * w)
+            vol_f1 = (slope_1 * w * waist_t) + (n_risers_1 * 0.5 * tread * actual_riser_1 * w)
+            vol_f2 = (slope_2 * w * waist_t) + (n_risers_2 * 0.5 * tread * actual_riser_2 * w)
             tot_conc_vol = vol_f1 + vol_f2 + landing_vol
 
             # Formwork: soffit + riser faces + side edge
-            form_f1 = (slope_1 * w) + (n_risers_1 * (rise_1 / n_risers_1) * w) + (slope_1 * waist_t * 2)
-            form_f2 = (slope_2 * w) + (n_risers_2 * (rise_2 / n_risers_2) * w) + (slope_2 * waist_t * 2)
+            form_f1 = (slope_1 * w) + (n_risers_1 * actual_riser_1 * w) + (slope_1 * waist_t * 2)
+            form_f2 = (slope_2 * w) + (n_risers_2 * actual_riser_2 * w) + (slope_2 * waist_t * 2)
             tot_formwork = form_f1 + form_f2 + landing_area
 
         else:
             # Straight flight
             n_risers = max(1, int(round(total_height / riser)))
             run = (n_risers - 1) * tread
+            actual_riser = total_height / n_risers
             slope = math.hypot(run, total_height)
             p_start = (base_x, base_y, z_bottom)
             p_end = (base_x, base_y + run, z_top)
+
+            f1_steps = []
+            for i in range(n_risers):
+                scx = base_x + w / 2.0
+                scy = base_y + i * tread + tread / 2.0
+                scz = z_bottom + i * actual_riser + actual_riser / 2.0
+                step = ResolvedStairStep(
+                    step_index=i + 1,
+                    flight_tag=f"{stair.tag}-F1",
+                    position=(scx, scy, scz),
+                    width=w,
+                    tread=tread,
+                    riser=actual_riser,
+                )
+                f1_steps.append(step)
+                all_steps.append(step)
 
             f = ResolvedStairFlight(
                 tag=f"{stair.tag}-F1",
@@ -601,27 +786,72 @@ class SpatialResolver:
                 slope_length=slope,
                 n_risers=n_risers,
                 tread=tread,
-                riser=total_height / n_risers,
+                riser=actual_riser,
+                steps=f1_steps,
             )
             flights.append(f)
             landing_poly = None
             landing_area = 0.0
             landing_t = 0.0
 
-            vol_f = (slope * w * waist_t) + (n_risers * 0.5 * tread * (total_height / n_risers) * w)
+            st_mat = (stair.stringer.material if stair.stringer else None) or stair.material
+            st_w = stair.stringer.width if stair.stringer else w
+            st_d = stair.stringer.depth if stair.stringer else waist_t
+            stringers.append(ResolvedStairStringer(
+                tag=f"{stair.tag}-Stringer-F1",
+                start_point=p_start,
+                end_point=p_end,
+                width=st_w,
+                depth=st_d,
+                length=slope,
+                material=st_mat,
+            ))
+
+            rh = stair.railing.height if stair.railing else 0.90
+            railing_segments.append((
+                (base_x + w, base_y, z_bottom + rh),
+                (base_x + w, base_y + run, z_top + rh),
+            ))
+
+            vol_f = (slope * w * waist_t) + (n_risers * 0.5 * tread * actual_riser * w)
             tot_conc_vol = vol_f
-            tot_formwork = (slope * w) + (n_risers * (total_height / n_risers) * w) + (slope * waist_t * 2)
+            tot_formwork = (slope * w) + (n_risers * actual_riser * w) + (slope * waist_t * 2)
+
+        # Architectural Finishes & Railing calculations
+        tot_tread_area = sum(step.width * step.tread for step in all_steps)
+        tot_riser_area = sum(step.width * step.riser for step in all_steps)
+        nosing_len = len(all_steps) * w if (stair.finishes and stair.finishes.nosing) else 0.0
+
+        resolved_railing = None
+        if stair.railing and railing_segments:
+            r_tot_len = sum(
+                math.dist(seg[0], seg[1]) for seg in railing_segments
+            )
+            resolved_railing = ResolvedStairRailing(
+                tag=f"{stair.tag}-Railing",
+                segments=railing_segments,
+                total_length=r_tot_len,
+                height=stair.railing.height,
+                railing_type=stair.railing.type,
+            )
 
         return ResolvedStair(
             tag=stair.tag,
             element=stair,
             flights=flights,
+            steps=all_steps,
+            stringers=stringers,
             landing_polygon=landing_poly,
             landing_thickness=landing_t,
             landing_area=landing_area,
+            railing=resolved_railing,
+            nosing_length=nosing_len,
+            total_tread_finish_area=tot_tread_area,
+            total_riser_finish_area=tot_riser_area,
             total_concrete_volume=tot_conc_vol,
             total_formwork_area=tot_formwork,
         )
+
 
     def resolve(self) -> ResolvedManifest:
         resolved_manifest = ResolvedManifest(manifest=self.manifest)

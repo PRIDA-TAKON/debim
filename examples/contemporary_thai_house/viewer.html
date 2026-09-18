@@ -193,6 +193,7 @@
         <span style="font-size: 0.75rem; color: #8888aa; align-self: center; margin-right: 4px;">เลเยอร์:</span>
         <button class="layer-btn active" id="btn-layer-footings" onclick="toggleLayer('footings')">🔲 ฐานราก/เข็ม</button>
         <button class="layer-btn active" id="btn-layer-slabs" onclick="toggleLayer('slabs')">🟧 พื้น (Slabs)</button>
+        <button class="layer-btn active" id="btn-layer-stairs" onclick="toggleLayer('stairs')">🪜 บันได (Stairs)</button>
         <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/คาน</button>
         <button class="layer-btn active" id="btn-layer-grids" onclick="toggleLayer('grids')">📐 ผังกริด/แนวเขต</button>
     </div>
@@ -4874,13 +4875,433 @@
       "opacity": 0.85
     },
     {
-      "tag": "ST-01-F1",
-      "class": "IfcStair",
+      "tag": "ST-01-Step-1",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        4.5,
+        5.625,
+        0.09375
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-2",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        4.5,
+        5.875,
+        0.28125
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-3",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        4.5,
+        6.125,
+        0.46875
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-4",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        4.5,
+        6.375,
+        0.65625
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-5",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        4.5,
+        6.625,
+        0.84375
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-6",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        4.5,
+        6.875,
+        1.03125
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-7",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        4.5,
+        7.125,
+        1.21875
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-8",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        4.5,
+        7.375,
+        1.40625
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-9",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        4.5,
+        7.625,
+        1.59375
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-10",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        4.5,
+        7.875,
+        1.78125
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-11",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        5.5,
+        7.625,
+        1.96875
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-12",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        5.5,
+        7.375,
+        2.15625
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-13",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        5.5,
+        7.125,
+        2.34375
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-14",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        5.5,
+        6.875,
+        2.53125
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-15",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        5.5,
+        6.625,
+        2.71875
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-16",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        5.5,
+        6.375,
+        2.90625
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-17",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        5.5,
+        6.125,
+        3.09375
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-18",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        5.5,
+        5.875,
+        3.28125
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-19",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        5.5,
+        5.625,
+        3.46875
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Step-20",
+      "class": "IfcStairStep",
+      "material": "WOOD_PLANK",
+      "position": [
+        5.5,
+        5.375,
+        3.65625
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.25,
+        "height": 0.1875
+      },
+      "color": "#D4A373"
+    },
+    {
+      "tag": "ST-01-Stringer-F1",
+      "class": "IfcStairStringer",
       "material": "CONC_210",
       "position": [
         4.0,
         6.625,
-        0.9375
+        0.8125
       ],
       "rotation": [
         0,
@@ -4889,19 +5310,19 @@
       ],
       "dimensions": {
         "length": 2.9288436284649952,
-        "width": 1.0,
-        "depth": 0.12
+        "width": 0.2,
+        "depth": 0.25
       },
-      "color": "#C4A482"
+      "color": "#8D99AE"
     },
     {
-      "tag": "ST-01-F2",
-      "class": "IfcStair",
+      "tag": "ST-01-Stringer-F2",
+      "class": "IfcStairStringer",
       "material": "CONC_210",
       "position": [
         5.0,
         6.625,
-        2.8125
+        2.6875
       ],
       "rotation": [
         0,
@@ -4910,14 +5331,14 @@
       ],
       "dimensions": {
         "length": 2.9288436284649952,
-        "width": 1.0,
-        "depth": 0.12
+        "width": 0.2,
+        "depth": 0.25
       },
-      "color": "#C4A482"
+      "color": "#8D99AE"
     },
     {
       "tag": "ST-01-Landing",
-      "class": "IfcStair",
+      "class": "IfcStairLanding",
       "material": "CONC_210",
       "position": [
         5.0,
@@ -4934,7 +5355,49 @@
         "depth": 1.0,
         "height": 0.12
       },
-      "color": "#B39371"
+      "color": "#BC6C25"
+    },
+    {
+      "tag": "ST-01-Railing-Seg1",
+      "class": "IfcRailing",
+      "material": "STEEL_HANDRAIL",
+      "position": [
+        5.0,
+        6.625,
+        1.8375
+      ],
+      "rotation": [
+        0,
+        -0.6947382761967031,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 2.9288436284649952,
+        "width": 0.06,
+        "depth": 0.06
+      },
+      "color": "#1F2937"
+    },
+    {
+      "tag": "ST-01-Railing-Seg3",
+      "class": "IfcRailing",
+      "material": "STEEL_HANDRAIL",
+      "position": [
+        5.0,
+        6.625,
+        3.7125000000000004
+      ],
+      "rotation": [
+        0,
+        -0.6947382761967034,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 2.9288436284649957,
+        "width": 0.06,
+        "depth": 0.06
+      },
+      "color": "#1F2937"
     }
   ]
 };
@@ -5135,6 +5598,8 @@
                 mesh.userData.layer = "footings";
             } else if (data.class === "IfcSlab" || tagUpper.includes("SLAB") || tagUpper.startsWith("S-") || tagUpper.startsWith("GS-")) {
                 mesh.userData.layer = "slabs";
+            } else if (data.class.startsWith("IfcStair") || data.class === "IfcRailing" || tagUpper.startsWith("ST-")) {
+                mesh.userData.layer = "stairs";
             } else if (tagUpper.includes("PIN") || tagUpper.includes("BOUNDARY") || tagUpper.includes("LINE")) {
                 mesh.userData.layer = "grids";
             } else {
