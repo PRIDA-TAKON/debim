@@ -1388,7 +1388,9 @@ elements:
     railing:
       height: 0.90
       type: "STEEL_HANDRAIL"
-      side: "INNER"
+      side: "BOTH"
+      layout: "DOUBLE"
+
     reinforcement:
       main: "DB12 @ 0.15m"
       temperature: "RB9 @ 0.20m"

@@ -286,6 +286,8 @@ class StairRailingConfig(BaseModel):
     height: float = 0.90  # ราวกันตกสูง (m)
     type: str = "STEEL_HANDRAIL"  # ประเภทราวบันได
     side: Literal["INNER", "OUTER", "BOTH"] = "INNER"
+    layout: Literal["SINGLE", "DOUBLE"] = "SINGLE"  # ราวเดี่ยว (SINGLE) หรือราวคู่ (DOUBLE)
+
 
 
 class StairReinforcement(BaseModel):

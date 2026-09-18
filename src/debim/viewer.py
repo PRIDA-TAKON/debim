@@ -170,32 +170,41 @@ def generate_viewer_html(
                 "color": "#D4A373",  # Warm timber tone for steps
             })
 
-        # 2. Structural Stringer Beams / Waist (แม่บันได/ท้องคานเอียง)
+        # 2. Structural Stringer Beams / Waist (แม่บันได: เส้นแกนกลาง + กรอบหน้าตัดหัวท้าย)
         for stringer in stair.stringers:
-            scx = (stringer.start_point[0] + stringer.end_point[0]) / 2.0
-            scy = (stringer.start_point[1] + stringer.end_point[1]) / 2.0
-            scz = (stringer.start_point[2] + stringer.end_point[2]) / 2.0
-            sdx = stringer.end_point[0] - stringer.start_point[0]
-            sdy = stringer.end_point[1] - stringer.start_point[1]
-            sdz = stringer.end_point[2] - stringer.start_point[2]
-            horiz_len = math.hypot(sdx, sdy)
-            yaw = math.atan2(sdy, sdx)
-            pitch = math.atan2(sdz, horiz_len)
-
-            # Offset slightly downwards so stringer sits beneath the steps
+            # Centerline connecting start to end
             elements_data.append({
-                "tag": stringer.tag,
+                "tag": f"{stringer.tag}-Centerline",
                 "class": "IfcStairStringer",
-                "material": stringer.material or stair.element.material,
-                "position": [scx, scy, scz - stringer.depth / 2.0],
-                "rotation": [0, -pitch, yaw],
-                "dimensions": {
-                    "length": stringer.length,
-                    "width": stringer.width,
-                    "depth": stringer.depth,
-                },
-                "color": "#8D99AE",  # Structural concrete/steel grey
+                "geometry_type": "line",
+                "points": [stringer.start_point, stringer.end_point],
+                "color": "#3B82F6",  # Bright engineering blue
+                "linewidth": 3,
             })
+
+            # Start profile cross-section loop
+            if stringer.start_profile_corners and len(stringer.start_profile_corners) == 4:
+                sc = stringer.start_profile_corners
+                elements_data.append({
+                    "tag": f"{stringer.tag}-ProfileStart",
+                    "class": "IfcStairStringer",
+                    "geometry_type": "line_loop",
+                    "points": [sc[0], sc[1], sc[2], sc[3], sc[0]],
+                    "color": "#2563EB",
+                    "linewidth": 2,
+                })
+
+            # End profile cross-section loop
+            if stringer.end_profile_corners and len(stringer.end_profile_corners) == 4:
+                ec = stringer.end_profile_corners
+                elements_data.append({
+                    "tag": f"{stringer.tag}-ProfileEnd",
+                    "class": "IfcStairStringer",
+                    "geometry_type": "line_loop",
+                    "points": [ec[0], ec[1], ec[2], ec[3], ec[0]],
+                    "color": "#2563EB",
+                    "linewidth": 2,
+                })
 
         # 3. Landing (ชานพักแบนราบ)
         if stair.landing_polygon and len(stair.landing_polygon) >= 4:
@@ -222,34 +231,27 @@ def generate_viewer_html(
                 "color": "#BC6C25",  # Landing tone
             })
 
-        # 4. Railing (ราวกันตกตลอดแนวทางเดิน)
-        if stair.railing and stair.railing.segments:
-            for s_idx, (p_from, p_to) in enumerate(stair.railing.segments):
-                seg_len = math.dist(p_from, p_to)
-                if seg_len < 0.05:
-                    continue
-                rcx = (p_from[0] + p_to[0]) / 2.0
-                rcy = (p_from[1] + p_to[1]) / 2.0
-                rcz = (p_from[2] + p_to[2]) / 2.0
-                rdx = p_to[0] - p_from[0]
-                rdy = p_to[1] - p_from[1]
-                rdz = p_to[2] - p_from[2]
-                r_horiz = math.hypot(rdx, rdy)
-                r_yaw = math.atan2(rdy, rdx)
-                r_pitch = math.atan2(rdz, r_horiz)
-
+        # 4. Railing (ราวกันตก: เสาตั้งหัว-ท้าย + ราวเอียง)
+        if stair.railing:
+            # Vertical posts
+            for p_idx, (p_base, p_top) in enumerate(stair.railing.posts):
                 elements_data.append({
-                    "tag": f"{stair.tag}-Railing-Seg{s_idx+1}",
+                    "tag": f"{stair.tag}-Railing-Post-{p_idx+1}",
                     "class": "IfcRailing",
-                    "material": stair.railing.railing_type,
-                    "position": [rcx, rcy, rcz],
-                    "rotation": [0, -r_pitch, r_yaw],
-                    "dimensions": {
-                        "length": seg_len,
-                        "width": 0.06,
-                        "depth": 0.06,
-                    },
-                    "color": "#1F2937",  # Dark metallic rail
+                    "geometry_type": "line",
+                    "points": [p_base, p_top],
+                    "color": "#0F172A",  # Dark post line
+                    "linewidth": 3,
+                })
+            # Sloping rails connecting post tops
+            for r_idx, (r_start, r_end) in enumerate(stair.railing.rails):
+                elements_data.append({
+                    "tag": f"{stair.tag}-Railing-Rail-{r_idx+1}",
+                    "class": "IfcRailing",
+                    "geometry_type": "line",
+                    "points": [r_start, r_end],
+                    "color": "#E11D48",  # Bold crimson handrail line
+                    "linewidth": 4,
                 })
 
     # Walls & Children
@@ -752,62 +754,77 @@ def generate_viewer_html(
         const pickableObjects = [];
 
         sceneData.elements.forEach(data => {{
-            let geometry;
+            let object3D;
             const dim = data.dimensions;
 
-            if (data.class === "IfcColumn") {{
-                geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
-            }} else if (data.class === "IfcBeam") {{
-                geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
-            }} else if (data.class === "IfcWall") {{
-                geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
-            }} else if (data.class === "IfcDoor" || data.class === "IfcWindow") {{
-                geometry = new THREE.BoxGeometry(dim.width, dim.thickness, dim.height);
+            if (data.geometry_type === "line" || data.geometry_type === "line_loop") {{
+                const points = data.points.map(p => new THREE.Vector3(...p));
+                const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
+                const lineMat = new THREE.LineBasicMaterial({{
+                    color: new THREE.Color(data.color),
+                    linewidth: data.linewidth || 2,
+                }});
+                object3D = (data.geometry_type === "line_loop")
+                    ? new THREE.LineLoop(lineGeom, lineMat)
+                    : new THREE.Line(lineGeom, lineMat);
             }} else {{
-                geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
+                let geometry;
+                if (data.class === "IfcColumn") {{
+                    geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
+                }} else if (data.class === "IfcBeam") {{
+                    geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
+                }} else if (data.class === "IfcWall") {{
+                    geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
+                }} else if (data.class === "IfcDoor" || data.class === "IfcWindow") {{
+                    geometry = new THREE.BoxGeometry(dim.width, dim.thickness, dim.height);
+                }} else {{
+                    geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
+                }}
+
+                const matOptions = {{
+                    color: new THREE.Color(data.color),
+                    roughness: 0.5,
+                    metalness: 0.1
+                }};
+                if (data.transparent) {{
+                    matOptions.transparent = true;
+                    matOptions.opacity = data.opacity || 0.6;
+                }}
+
+                const material = new THREE.MeshStandardMaterial(matOptions);
+                const mesh = new THREE.Mesh(geometry, material);
+
+                mesh.position.set(...data.position);
+                mesh.rotation.set(...data.rotation);
+
+                // Wireframe / Edges for visual clarity
+                const edges = new THREE.EdgesGeometry(geometry);
+                const line = new THREE.LineSegments(
+                    edges,
+                    new THREE.LineBasicMaterial({{ color: 0x000000, linewidth: 1 }})
+                );
+                mesh.add(line);
+                object3D = mesh;
             }}
 
-            const matOptions = {{
-                color: new THREE.Color(data.color),
-                roughness: 0.5,
-                metalness: 0.1
-            }};
-            if (data.transparent) {{
-                matOptions.transparent = true;
-                matOptions.opacity = data.opacity || 0.6;
-            }}
-
-            const material = new THREE.MeshStandardMaterial(matOptions);
-            const mesh = new THREE.Mesh(geometry, material);
-
-            mesh.position.set(...data.position);
-            mesh.rotation.set(...data.rotation);
-            mesh.userData = data;
+            object3D.userData = data;
 
             // Layer assignment for filtering
             const tagUpper = (data.tag || "").toUpperCase();
             if (tagUpper.includes("F2") || tagUpper.includes("FOOTING") || data.class === "IfcFooting" || data.class === "IfcPile") {{
-                mesh.userData.layer = "footings";
+                object3D.userData.layer = "footings";
             }} else if (data.class === "IfcSlab" || tagUpper.includes("SLAB") || tagUpper.startsWith("S-") || tagUpper.startsWith("GS-")) {{
-                mesh.userData.layer = "slabs";
+                object3D.userData.layer = "slabs";
             }} else if (data.class.startsWith("IfcStair") || data.class === "IfcRailing" || tagUpper.startsWith("ST-")) {{
-                mesh.userData.layer = "stairs";
+                object3D.userData.layer = "stairs";
             }} else if (tagUpper.includes("PIN") || tagUpper.includes("BOUNDARY") || tagUpper.includes("LINE")) {{
-                mesh.userData.layer = "grids";
+                object3D.userData.layer = "grids";
             }} else {{
-                mesh.userData.layer = "structure";
+                object3D.userData.layer = "structure";
             }}
 
-            // Wireframe / Edges for visual clarity
-            const edges = new THREE.EdgesGeometry(geometry);
-            const line = new THREE.LineSegments(
-                edges,
-                new THREE.LineBasicMaterial({{ color: 0x000000, linewidth: 1 }})
-            );
-            mesh.add(line);
-
-            scene.add(mesh);
-            pickableObjects.push(mesh);
+            scene.add(object3D);
+            pickableObjects.push(object3D);
         }});
 
         // Camera position setup - Start with Top View (locked to 2D Plan View)

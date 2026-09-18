@@ -142,22 +142,28 @@ class ResolvedStairStringer(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     tag: str
-    start_point: Tuple[float, float, float]
-    end_point: Tuple[float, float, float]
+    start_point: Tuple[float, float, float]  # Center of start cross-section
+    end_point: Tuple[float, float, float]    # Center of end cross-section
     width: float
     depth: float
     length: float
     material: Optional[str] = None
+    start_profile_corners: List[Tuple[float, float, float]] = []  # 4 vertices of rectangular cross-section at start
+    end_profile_corners: List[Tuple[float, float, float]] = []    # 4 vertices of rectangular cross-section at end
 
 
 class ResolvedStairRailing(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     tag: str
+    posts: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []  # List of vertical posts (base, top)
+    rails: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []  # List of sloping/horizontal rails (start, end)
     segments: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []
     total_length: float = 0.0
     height: float = 0.90
     railing_type: str = "STEEL_HANDRAIL"
+    layout: str = "SINGLE"
+
 
 
 class ResolvedStairFlight(BaseModel):
@@ -684,27 +690,93 @@ class SpatialResolver:
                     (base_x + run_1 - run_2, base_y + w, z_top + rh),
                 ))
 
-            # Stringers (แม่บันได)
+            # Stringers (แม่บันได) - Centerline and end-profile corners
             st_mat = (stair.stringer.material if stair.stringer else None) or stair.material
             st_w = stair.stringer.width if stair.stringer else w
             st_d = stair.stringer.depth if stair.stringer else waist_t
+
+            # F1 Stringer: under Flight 1
+            if stair.placement.orientation == "+Y":
+                s1_start = (base_x + w / 2.0, base_y, z_bottom - st_d / 2.0)
+                s1_end = (base_x + w / 2.0, base_y + run_1, z_mid - st_d / 2.0)
+                s1_start_corners = [
+                    (base_x + (w - st_w) / 2.0, base_y, z_bottom - st_d),
+                    (base_x + (w + st_w) / 2.0, base_y, z_bottom - st_d),
+                    (base_x + (w + st_w) / 2.0, base_y, z_bottom),
+                    (base_x + (w - st_w) / 2.0, base_y, z_bottom),
+                ]
+                s1_end_corners = [
+                    (base_x + (w - st_w) / 2.0, base_y + run_1, z_mid - st_d),
+                    (base_x + (w + st_w) / 2.0, base_y + run_1, z_mid - st_d),
+                    (base_x + (w + st_w) / 2.0, base_y + run_1, z_mid),
+                    (base_x + (w - st_w) / 2.0, base_y + run_1, z_mid),
+                ]
+                # F2 Stringer: under Flight 2
+                s2_start = (base_x + w + w / 2.0, base_y + run_1, z_mid - st_d / 2.0)
+                s2_end = (base_x + w + w / 2.0, base_y + run_1 - run_2, z_top - st_d / 2.0)
+                s2_start_corners = [
+                    (base_x + w + (w - st_w) / 2.0, base_y + run_1, z_mid - st_d),
+                    (base_x + w + (w + st_w) / 2.0, base_y + run_1, z_mid - st_d),
+                    (base_x + w + (w + st_w) / 2.0, base_y + run_1, z_mid),
+                    (base_x + w + (w - st_w) / 2.0, base_y + run_1, z_mid),
+                ]
+                s2_end_corners = [
+                    (base_x + w + (w - st_w) / 2.0, base_y + run_1 - run_2, z_top - st_d),
+                    (base_x + w + (w + st_w) / 2.0, base_y + run_1 - run_2, z_top - st_d),
+                    (base_x + w + (w + st_w) / 2.0, base_y + run_1 - run_2, z_top),
+                    (base_x + w + (w - st_w) / 2.0, base_y + run_1 - run_2, z_top),
+                ]
+            else:
+                s1_start = (base_x, base_y + w / 2.0, z_bottom - st_d / 2.0)
+                s1_end = (base_x + run_1, base_y + w / 2.0, z_mid - st_d / 2.0)
+                s1_start_corners = [
+                    (base_x, base_y + (w - st_w) / 2.0, z_bottom - st_d),
+                    (base_x, base_y + (w + st_w) / 2.0, z_bottom - st_d),
+                    (base_x, base_y + (w + st_w) / 2.0, z_bottom),
+                    (base_x, base_y + (w - st_w) / 2.0, z_bottom),
+                ]
+                s1_end_corners = [
+                    (base_x + run_1, base_y + (w - st_w) / 2.0, z_mid - st_d),
+                    (base_x + run_1, base_y + (w + st_w) / 2.0, z_mid - st_d),
+                    (base_x + run_1, base_y + (w + st_w) / 2.0, z_mid),
+                    (base_x + run_1, base_y + (w - st_w) / 2.0, z_mid),
+                ]
+                s2_start = (base_x + run_1, base_y + w + w / 2.0, z_mid - st_d / 2.0)
+                s2_end = (base_x + run_1 - run_2, base_y + w + w / 2.0, z_top - st_d / 2.0)
+                s2_start_corners = [
+                    (base_x + run_1, base_y + w + (w - st_w) / 2.0, z_mid - st_d),
+                    (base_x + run_1, base_y + w + (w + st_w) / 2.0, z_mid - st_d),
+                    (base_x + run_1, base_y + w + (w + st_w) / 2.0, z_mid),
+                    (base_x + run_1, base_y + w + (w - st_w) / 2.0, z_mid),
+                ]
+                s2_end_corners = [
+                    (base_x + run_1 - run_2, base_y + w + (w - st_w) / 2.0, z_top - st_d),
+                    (base_x + run_1 - run_2, base_y + w + (w + st_w) / 2.0, z_top - st_d),
+                    (base_x + run_1 - run_2, base_y + w + (w + st_w) / 2.0, z_top),
+                    (base_x + run_1 - run_2, base_y + w + (w - st_w) / 2.0, z_top),
+                ]
+
             stringers.append(ResolvedStairStringer(
                 tag=f"{stair.tag}-Stringer-F1",
-                start_point=p1_start,
-                end_point=p1_end,
+                start_point=s1_start,
+                end_point=s1_end,
                 width=st_w,
                 depth=st_d,
                 length=slope_1,
                 material=st_mat,
+                start_profile_corners=s1_start_corners,
+                end_profile_corners=s1_end_corners,
             ))
             stringers.append(ResolvedStairStringer(
                 tag=f"{stair.tag}-Stringer-F2",
-                start_point=p2_start,
-                end_point=p2_end,
+                start_point=s2_start,
+                end_point=s2_end,
                 width=st_w,
                 depth=st_d,
                 length=slope_2,
                 material=st_mat,
+                start_profile_corners=s2_start_corners,
+                end_profile_corners=s2_end_corners,
             ))
 
             f1 = ResolvedStairFlight(
@@ -797,14 +869,30 @@ class SpatialResolver:
             st_mat = (stair.stringer.material if stair.stringer else None) or stair.material
             st_w = stair.stringer.width if stair.stringer else w
             st_d = stair.stringer.depth if stair.stringer else waist_t
+            s_start = (base_x + w / 2.0, base_y, z_bottom - st_d / 2.0)
+            s_end = (base_x + w / 2.0, base_y + run, z_top - st_d / 2.0)
+            s_start_corners = [
+                (base_x + (w - st_w) / 2.0, base_y, z_bottom - st_d),
+                (base_x + (w + st_w) / 2.0, base_y, z_bottom - st_d),
+                (base_x + (w + st_w) / 2.0, base_y, z_bottom),
+                (base_x + (w - st_w) / 2.0, base_y, z_bottom),
+            ]
+            s_end_corners = [
+                (base_x + (w - st_w) / 2.0, base_y + run, z_top - st_d),
+                (base_x + (w + st_w) / 2.0, base_y + run, z_top - st_d),
+                (base_x + (w + st_w) / 2.0, base_y + run, z_top),
+                (base_x + (w - st_w) / 2.0, base_y + run, z_top),
+            ]
             stringers.append(ResolvedStairStringer(
                 tag=f"{stair.tag}-Stringer-F1",
-                start_point=p_start,
-                end_point=p_end,
+                start_point=s_start,
+                end_point=s_end,
                 width=st_w,
                 depth=st_d,
                 length=slope,
                 material=st_mat,
+                start_profile_corners=s_start_corners,
+                end_profile_corners=s_end_corners,
             ))
 
             rh = stair.railing.height if stair.railing else 0.90
@@ -823,16 +911,54 @@ class SpatialResolver:
         nosing_len = len(all_steps) * w if (stair.finishes and stair.finishes.nosing) else 0.0
 
         resolved_railing = None
-        if stair.railing and railing_segments:
-            r_tot_len = sum(
-                math.dist(seg[0], seg[1]) for seg in railing_segments
-            )
+        if stair.railing:
+            rh = stair.railing.height
+            rlayout = stair.railing.layout  # "SINGLE" or "DOUBLE"
+            railing_posts: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []
+            railing_rails: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []
+
+            for f in flights:
+                if not f.steps:
+                    continue
+                first_step = f.steps[0]
+                last_step = f.steps[-1]
+
+                # Determine post X offsets across width
+                x_offsets = []
+                if rlayout == "DOUBLE":
+                    x_offsets = [-first_step.width / 2.0 + 0.05, first_step.width / 2.0 - 0.05]
+                elif stair.railing.side == "OUTER":
+                    x_offsets = [-first_step.width / 2.0 + 0.05]
+                else:  # "INNER" default
+                    x_offsets = [first_step.width / 2.0 - 0.05]
+
+                for x_off in x_offsets:
+                    # First step post
+                    p1_base = (first_step.position[0] + x_off, first_step.position[1], first_step.position[2] + first_step.riser / 2.0)
+                    p1_top = (p1_base[0], p1_base[1], p1_base[2] + rh)
+                    railing_posts.append((p1_base, p1_top))
+
+                    # Last step post
+                    p2_base = (last_step.position[0] + x_off, last_step.position[1], last_step.position[2] + last_step.riser / 2.0)
+                    p2_top = (p2_base[0], p2_base[1], p2_base[2] + rh)
+                    railing_posts.append((p2_base, p2_top))
+
+                    # Sloping handrail between the two posts
+                    railing_rails.append((p1_top, p2_top))
+
+            # Railing segments include posts + rails for total length calculation
+            all_r_segs = railing_posts + railing_rails
+            r_tot_len = sum(math.dist(seg[0], seg[1]) for seg in all_r_segs)
+
             resolved_railing = ResolvedStairRailing(
                 tag=f"{stair.tag}-Railing",
-                segments=railing_segments,
+                posts=railing_posts,
+                rails=railing_rails,
+                segments=all_r_segs,
                 total_length=r_tot_len,
                 height=stair.railing.height,
                 railing_type=stair.railing.type,
+                layout=rlayout,
             )
 
         return ResolvedStair(
