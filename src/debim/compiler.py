@@ -15,6 +15,7 @@ from debim.resolver import (
     ResolvedCustomElement,
     ResolvedDoor,
     ResolvedManifest,
+    ResolvedTerminal,
     ResolvedWall,
     ResolvedWindow,
     resolve_manifest,
@@ -243,6 +244,26 @@ class StepSerializer:
                 )
                 if st_id in storey_elements:
                     storey_elements[st_id].append(p_ref)
+
+        # 6. MEP Terminals
+        for term in resolved.terminals:
+            st_id = term.element.placement.storey or (
+                term.hosting_wall.element.placement.storey if term.hosting_wall else None
+            )
+            ifc_cls = term.element.class_
+            elem_ref = self.create_entity(
+                ifc_cls,
+                generate_ifc_guid(),
+                None,
+                term.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
 
         # 1. Columns
         for col in resolved.columns:
@@ -622,6 +643,21 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = custom.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(custom_obj)
+
+    # 6. MEP Terminals
+    for term in resolved.terminals:
+        st_id = term.element.placement.storey or (
+            term.hosting_wall.element.placement.storey if term.hosting_wall else None
+        )
+        ifc_cls = term.element.class_
+        term_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class=ifc_cls,
+            name=term.tag,
+        )
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(term_obj)
 
     # Assign containment
     for st_id, products in storey_products.items():

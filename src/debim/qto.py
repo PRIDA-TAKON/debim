@@ -17,6 +17,7 @@ from debim.resolver import (
     ResolvedManifest,
     ResolvedSlab,
     ResolvedStair,
+    ResolvedTerminal,
     ResolvedWall,
     resolve_manifest,
 )
@@ -444,6 +445,18 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
             rebar_weights=rebar_dict,
             total_rebar_weight=total_rebar,
             substructure=substructure,
+        )
+
+    elif isinstance(resolved, ResolvedTerminal):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
         )
 
     raise TypeError(f"Unsupported resolved element type: {type(resolved)}")

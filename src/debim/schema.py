@@ -335,8 +335,112 @@ class IfcCustomElement(BaseModel):
     placement: CustomElementPlacement
 
 
+# MEP Terminal placement & elements
+class TerminalPlacement(BaseModel):
+    # Existing grid-based fields (Optional when wall is specified)
+    grid: Optional[Tuple[str, str]] = None
+    storey: Optional[str] = None  # Optional if wall is provided (inherits from wall's storey)
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0  # Mounting elevation above storey level
+    rotation: Optional[float] = None  # Auto-calculated if None and wall-hosted
+
+    # NEW: Wall-hosted placement fields
+    wall: Optional[str] = None  # Tag of the hosting IfcWall, e.g. "WALL-L1-3_D-E"
+    distance: float = 0.0  # Distance along wall baseline from start_point in meters
+    side: Literal["INTERIOR", "EXTERIOR", "CENTER"] = "INTERIOR"
+    standoff: float = 0.0  # Gap between back of fixture and wall surface (0.0 = flush)
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @model_validator(mode="after")
+    def check_grid_or_wall(self) -> "TerminalPlacement":
+        if not self.grid and not self.wall:
+            raise ValueError("Either grid or wall must be provided for TerminalPlacement.")
+        return self
+
+
+class IfcSanitaryTerminal(BaseModel):
+    class_: Literal["IfcSanitaryTerminal"] = Field(alias="class")
+    tag: str
+    material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
+    placement: TerminalPlacement
+
+
+class IfcDistributionBoard(BaseModel):
+    class_: Literal["IfcDistributionBoard"] = Field(alias="class")
+    tag: str
+    material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
+    placement: TerminalPlacement
+
+
+class IfcSwitchingDevice(BaseModel):
+    class_: Literal["IfcSwitchingDevice"] = Field(alias="class")
+    tag: str
+    material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
+    placement: TerminalPlacement
+
+
+class IfcOutlet(BaseModel):
+    class_: Literal["IfcOutlet"] = Field(alias="class")
+    tag: str
+    material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
+    placement: TerminalPlacement
+
+
+class IfcUnitaryEquipment(BaseModel):
+    class_: Literal["IfcUnitaryEquipment"] = Field(alias="class")
+    tag: str
+    material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
+    placement: TerminalPlacement
+
+
+class IfcAirTerminal(BaseModel):
+    class_: Literal["IfcAirTerminal"] = Field(alias="class")
+    tag: str
+    material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
+    placement: TerminalPlacement
+
+
 Element = Annotated[
-    Union[IfcColumn, IfcBeam, IfcWall, IfcFooting, IfcSlab, IfcStair, IfcCustomElement],
+    Union[
+        IfcColumn,
+        IfcBeam,
+        IfcWall,
+        IfcFooting,
+        IfcSlab,
+        IfcStair,
+        IfcCustomElement,
+        IfcSanitaryTerminal,
+        IfcDistributionBoard,
+        IfcSwitchingDevice,
+        IfcOutlet,
+        IfcUnitaryEquipment,
+        IfcAirTerminal,
+    ],
     Field(discriminator="class_"),
 ]
 
@@ -498,6 +602,22 @@ class ProjectManifest(BaseModel):
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
                     )
+
+            elif isinstance(elem, (IfcSanitaryTerminal, IfcDistributionBoard, IfcSwitchingDevice, IfcOutlet, IfcUnitaryEquipment, IfcAirTerminal)):
+                if elem.placement.storey and elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                if elem.placement.grid:
+                    gx, gy = elem.placement.grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(
+                            f"Element '{elem.tag}' references unknown X grid '{gx}'"
+                        )
+                    if gy not in grid_y_ids:
+                        raise ValueError(
+                            f"Element '{elem.tag}' references unknown Y grid '{gy}'"
+                        )
 
         return self
 

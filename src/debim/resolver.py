@@ -9,18 +9,33 @@ from typing import Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, ConfigDict
 
 from debim.schema import (
+    IfcAirTerminal,
     IfcBeam,
     IfcColumn,
     IfcCustomElement,
+    IfcDistributionBoard,
     IfcDoor,
     IfcFooting,
+    IfcOutlet,
+    IfcSanitaryTerminal,
     IfcSlab,
     IfcStair,
+    IfcSwitchingDevice,
+    IfcUnitaryEquipment,
     IfcWall,
     IfcWindow,
     ProjectManifest,
     Storey,
 )
+
+TerminalElement = Union[
+    IfcSanitaryTerminal,
+    IfcDistributionBoard,
+    IfcSwitchingDevice,
+    IfcOutlet,
+    IfcUnitaryEquipment,
+    IfcAirTerminal,
+]
 
 
 class ResolvedColumn(BaseModel):
@@ -91,6 +106,16 @@ class ResolvedCustomElement(BaseModel):
     tag: str
     element: IfcCustomElement
     position: Tuple[float, float, float]
+
+
+class ResolvedTerminal(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: TerminalElement
+    position: Tuple[float, float, float]
+    rotation_angle: float
+    hosting_wall: Optional[ResolvedWall] = None
 
 
 class ResolvedPile(BaseModel):
@@ -228,6 +253,7 @@ ResolvedElement = Union[
     ResolvedSlab,
     ResolvedStair,
     ResolvedCustomElement,
+    ResolvedTerminal,
 ]
 
 
@@ -244,6 +270,7 @@ class ResolvedManifest(BaseModel):
     doors: List[ResolvedDoor] = []
     windows: List[ResolvedWindow] = []
     custom_elements: List[ResolvedCustomElement] = []
+    terminals: List[ResolvedTerminal] = []
     elements: List[ResolvedElement] = []
 
     def get_element_by_tag(self, tag: str) -> Union[ResolvedElement, None]:
@@ -261,6 +288,7 @@ class SpatialResolver:
         }
         self.axes_x: Dict[str, float] = manifest.grids.axes_x
         self.axes_y: Dict[str, float] = manifest.grids.axes_y
+        self.walls_by_tag: Dict[str, ResolvedWall] = {}
 
     def get_grid_xy(self, grid_ref: Tuple[str, str]) -> Tuple[float, float]:
         gx, gy = grid_ref
@@ -1072,10 +1100,105 @@ class SpatialResolver:
             total_formwork_area=tot_formwork,
         )
 
+    def resolve_terminal(self, terminal: TerminalElement) -> ResolvedTerminal:
+        placement = terminal.placement
+
+        if placement.wall:
+            if placement.wall not in self.walls_by_tag:
+                raise ValueError(f"Hosting wall '{placement.wall}' not found.")
+
+            r_wall = self.walls_by_tag[placement.wall]
+            wall_elem = r_wall.element
+
+            # Inherit storey from wall if omitted
+            storey_id = placement.storey or wall_elem.placement.storey
+            storey = self.get_storey(storey_id)
+
+            x1, y1, _ = r_wall.start_point
+            x2, y2, _ = r_wall.end_point
+            wall_len = r_wall.length
+            thickness = r_wall.thickness
+
+            if wall_len > 0:
+                ux = (x2 - x1) / wall_len
+                uy = (y2 - y1) / wall_len
+            else:
+                ux, uy = 1.0, 0.0
+
+            # Normal vector perpendicular to wall: n = (-uy, ux)
+            nx, ny = -uy, ux
+
+            # Base point along wall
+            p_base_x = x1 + placement.distance * ux
+            p_base_y = y1 + placement.distance * uy
+
+            fixture_depth = getattr(terminal, "depth", 0.0) or 0.0
+            standoff = placement.standoff
+
+            # Offset distance from wall centerline
+            if placement.side == "CENTER":
+                offset_dist = 0.0
+            elif placement.side == "EXTERIOR":
+                offset_dist = -(thickness / 2.0 + standoff + fixture_depth / 2.0)
+            else:  # INTERIOR
+                offset_dist = +(thickness / 2.0 + standoff + fixture_depth / 2.0)
+
+            px = p_base_x + offset_dist * nx
+            py = p_base_y + offset_dist * ny
+            pz = storey.elevation + placement.offset_z
+
+            if placement.rotation is not None:
+                rot_angle = placement.rotation
+            else:
+                # Auto-calculate rotation angle so the fixture faces away from wall into room
+                # For INTERIOR, outward direction is n = (-uy, ux) -> angle = math.atan2(ny, nx)
+                # For EXTERIOR, outward direction is -n = (uy, -ux) -> angle = math.atan2(-ny, -nx)
+                if placement.side == "EXTERIOR":
+                    rot_angle = math.degrees(math.atan2(-ny, -nx))
+                else:  # INTERIOR or CENTER default
+                    rot_angle = math.degrees(math.atan2(ny, nx))
+
+            return ResolvedTerminal(
+                tag=terminal.tag,
+                element=terminal,
+                position=(px, py, pz),
+                rotation_angle=rot_angle,
+                hosting_wall=r_wall,
+            )
+
+        elif placement.grid:
+            if not placement.storey:
+                raise ValueError(f"Terminal '{terminal.tag}' with grid placement must specify a storey.")
+
+            gx, gy = self.get_grid_xy(placement.grid)
+            storey = self.get_storey(placement.storey)
+
+            px = gx + placement.offset_x
+            py = gy + placement.offset_y
+            pz = storey.elevation + placement.offset_z
+            rot_angle = placement.rotation if placement.rotation is not None else 0.0
+
+            return ResolvedTerminal(
+                tag=terminal.tag,
+                element=terminal,
+                position=(px, py, pz),
+                rotation_angle=rot_angle,
+                hosting_wall=None,
+            )
+
+        else:
+            raise ValueError(f"Terminal '{terminal.tag}' placement must specify either wall or grid.")
 
     def resolve(self) -> ResolvedManifest:
         resolved_manifest = ResolvedManifest(manifest=self.manifest)
 
+        # Pass 1: Resolve all walls first and store in lookup mapping
+        for elem in self.manifest.elements:
+            if isinstance(elem, IfcWall):
+                r_wall, doors, windows = self.resolve_wall(elem)
+                self.walls_by_tag[elem.tag] = r_wall
+
+        # Pass 2: Resolve all elements in order
         for elem in self.manifest.elements:
             if isinstance(elem, IfcFooting):
                 r_footing = self.resolve_footing(elem)
@@ -1098,7 +1221,10 @@ class SpatialResolver:
                 resolved_manifest.beams.append(r_beam)
                 resolved_manifest.elements.append(r_beam)
             elif isinstance(elem, IfcWall):
-                r_wall, doors, windows = self.resolve_wall(elem)
+                r_wall = self.walls_by_tag[elem.tag]
+                # Doors and windows were extracted during resolve_wall
+                # We can re-extract or reuse doors/windows
+                _, doors, windows = self.resolve_wall(elem)
                 resolved_manifest.walls.append(r_wall)
                 resolved_manifest.doors.extend(doors)
                 resolved_manifest.windows.extend(windows)
@@ -1107,6 +1233,10 @@ class SpatialResolver:
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)
                 resolved_manifest.elements.append(r_custom)
+            elif isinstance(elem, (IfcSanitaryTerminal, IfcDistributionBoard, IfcSwitchingDevice, IfcOutlet, IfcUnitaryEquipment, IfcAirTerminal)):
+                r_term = self.resolve_terminal(elem)
+                resolved_manifest.terminals.append(r_term)
+                resolved_manifest.elements.append(r_term)
 
         return resolved_manifest
 

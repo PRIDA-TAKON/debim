@@ -352,6 +352,31 @@ def generate_viewer_html(
                     "opacity": 0.6,
                 })
 
+    # MEP Terminals
+    for term in resolved.terminals:
+        w = getattr(term.element, "width", 0.0) or 0.3
+        d = getattr(term.element, "depth", 0.0) or 0.3
+        h = getattr(term.element, "height", 0.0) or 0.3
+        rot_rad = math.radians(term.rotation_angle)
+
+        elements_data.append({
+            "tag": term.tag,
+            "class": term.element.class_,
+            "material": term.element.material or "MEP Fixture",
+            "position": [
+                term.position[0],
+                term.position[1],
+                term.position[2] + h / 2.0,
+            ],
+            "rotation": [0, 0, rot_rad],
+            "dimensions": {
+                "width": w,
+                "depth": d,
+                "height": h,
+            },
+            "color": "#FF8C00",  # Dark Orange for MEP terminals
+        })
+
     # Custom Elements
     for custom in resolved.custom_elements:
         tag_upper = custom.tag.upper()
