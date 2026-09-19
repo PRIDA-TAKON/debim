@@ -347,7 +347,6 @@ class IfcCustomElement(BaseModel):
     placement: CustomElementPlacement
 
 
-
 # Roof element definitions
 RoofType = Literal["GABLE", "HIP", "SHED", "FLAT", "MANSARD"]
 RidgeOrientation = Literal["X", "Y", "ALONG_LENGTH", "ALONG_WIDTH"]
@@ -488,13 +487,21 @@ class TerminalDimensions(BaseModel):
     height: float = 0.50
 
 
+# MEP Terminal placement & elements
 class TerminalPlacement(BaseModel):
-    grid: Tuple[str, str]
-    storey: str
+    # Existing grid-based fields (Optional when wall is specified)
+    grid: Optional[Tuple[str, str]] = None
+    storey: Optional[str] = None  # Optional if wall is provided (inherits from wall's storey)
     offset_x: float = 0.0
     offset_y: float = 0.0
-    offset_z: float = 0.0
-    rotation: float = 0.0  # Rotation in degrees around Z-axis
+    offset_z: float = 0.0  # Mounting elevation above storey level
+    rotation: Optional[float] = None  # Auto-calculated if None and wall-hosted
+
+    # NEW: Wall-hosted placement fields
+    wall: Optional[str] = None  # Tag of the hosting IfcWall, e.g. "WALL-L1-3_D-E"
+    distance: float = 0.0  # Distance along wall baseline from start_point in meters
+    side: Literal["INTERIOR", "EXTERIOR", "CENTER"] = "INTERIOR"
+    standoff: float = 0.0  # Gap between back of fixture and wall surface (0.0 = flush)
 
     @field_validator("grid", mode="before")
     @classmethod
@@ -503,12 +510,21 @@ class TerminalPlacement(BaseModel):
             return tuple(str(x) for x in v)
         return v
 
+    @model_validator(mode="after")
+    def check_grid_or_wall(self) -> "TerminalPlacement":
+        if not self.grid and not self.wall:
+            raise ValueError("Either grid or wall must be provided for TerminalPlacement.")
+        return self
+
 
 class IfcSanitaryTerminal(BaseModel):
     class_: Literal["IfcSanitaryTerminal"] = Field(alias="class", default="IfcSanitaryTerminal")
     tag: str
     terminal_type: SanitaryTerminalType = "WATER_CLOSET"
     material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
 
@@ -518,6 +534,9 @@ class IfcDistributionBoard(BaseModel):
     tag: str
     board_type: BoardType = "CONSUMER_UNIT"
     material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     circuits_count: int = 12
@@ -528,6 +547,9 @@ class IfcLightFixture(BaseModel):
     tag: str
     fixture_type: LightFixtureType = "DOWNLIGHT"
     material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     wattage: Optional[float] = 12.0
@@ -538,6 +560,9 @@ class IfcSwitchingDevice(BaseModel):
     tag: str
     switch_type: SwitchType = "ONE_WAY"
     material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     gangs: int = 1
@@ -548,6 +573,9 @@ class IfcOutlet(BaseModel):
     tag: str
     outlet_type: OutletType = "DUPLEX_GROUNDED"
     material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
 
@@ -567,6 +595,9 @@ class IfcAirTerminal(BaseModel):
     tag: str
     terminal_type: AirTerminalType = "EXHAUST_FAN_CEILING"
     material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     flow_rate_cfm: Optional[float] = None
@@ -577,6 +608,9 @@ class IfcUnitaryEquipment(BaseModel):
     tag: str
     equipment_type: HvacEquipmentType = "AC_INDOOR_WALL"
     material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     cooling_capacity_btu: Optional[float] = 12000.0
@@ -806,15 +840,20 @@ class ProjectManifest(BaseModel):
                                 raise ValueError(f"Element '{elem.tag}' path references unknown Y grid '{gy}'")
 
             elif isinstance(elem, (IfcSanitaryTerminal, IfcDistributionBoard, IfcLightFixture, IfcSwitchingDevice, IfcOutlet, IfcAirTerminal, IfcUnitaryEquipment)):
-                if elem.placement.storey not in storey_ids:
+                if elem.placement.storey and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
                     )
-                gx, gy = elem.placement.grid
-                if gx not in grid_x_ids:
-                    raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
-                if gy not in grid_y_ids:
-                    raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
+                if elem.placement.grid:
+                    gx, gy = elem.placement.grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(
+                            f"Element '{elem.tag}' references unknown X grid '{gx}'"
+                        )
+                    if gy not in grid_y_ids:
+                        raise ValueError(
+                            f"Element '{elem.tag}' references unknown Y grid '{gy}'"
+                        )
 
             elif isinstance(elem, IfcCustomElement):
                 if elem.placement.storey not in storey_ids:

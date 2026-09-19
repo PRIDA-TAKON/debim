@@ -33,6 +33,16 @@ from debim.schema import (
     Storey,
 )
 
+TerminalElement = Union[
+    IfcSanitaryTerminal,
+    IfcDistributionBoard,
+    IfcLightFixture,
+    IfcSwitchingDevice,
+    IfcOutlet,
+    IfcUnitaryEquipment,
+    IfcAirTerminal,
+]
+
 
 def _calc_polygon_3d(pts: List[Tuple[float, float, float]]) -> Tuple[float, Tuple[float, float, float]]:
     """Calculates 3D surface area and normal vector for a planar polygon in 3D."""
@@ -174,6 +184,16 @@ class ResolvedCustomElement(BaseModel):
     tag: str
     element: IfcCustomElement
     position: Tuple[float, float, float]
+
+
+class ResolvedTerminal(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: TerminalElement
+    position: Tuple[float, float, float]
+    rotation_angle: float
+    hosting_wall: Optional[ResolvedWall] = None
 
 
 class ResolvedPile(BaseModel):
@@ -507,7 +527,8 @@ class ResolvedSanitaryTerminal(BaseModel):
     element: IfcSanitaryTerminal
     terminal_type: str
     position: Tuple[float, float, float]
-    rotation: float
+    rotation: float = 0.0
+    rotation_angle: float = 0.0
     dimensions: Tuple[float, float, float]  # width, depth, height
     color: str
 
@@ -519,7 +540,8 @@ class ResolvedDistributionBoard(BaseModel):
     element: IfcDistributionBoard
     board_type: str
     position: Tuple[float, float, float]
-    rotation: float
+    rotation: float = 0.0
+    rotation_angle: float = 0.0
     dimensions: Tuple[float, float, float]
     color: str
     circuits_count: int
@@ -532,6 +554,8 @@ class ResolvedLightFixture(BaseModel):
     element: IfcLightFixture
     fixture_type: str
     position: Tuple[float, float, float]
+    rotation: float = 0.0
+    rotation_angle: float = 0.0
     dimensions: Tuple[float, float, float]
     color: str
     wattage: float
@@ -544,6 +568,8 @@ class ResolvedSwitchingDevice(BaseModel):
     element: IfcSwitchingDevice
     switch_type: str
     position: Tuple[float, float, float]
+    rotation: float = 0.0
+    rotation_angle: float = 0.0
     dimensions: Tuple[float, float, float]
     color: str
     gangs: int
@@ -556,6 +582,8 @@ class ResolvedOutlet(BaseModel):
     element: IfcOutlet
     outlet_type: str
     position: Tuple[float, float, float]
+    rotation: float = 0.0
+    rotation_angle: float = 0.0
     dimensions: Tuple[float, float, float]
     color: str
 
@@ -583,7 +611,8 @@ class ResolvedAirTerminal(BaseModel):
     element: IfcAirTerminal
     terminal_type: str
     position: Tuple[float, float, float]
-    rotation: float
+    rotation: float = 0.0
+    rotation_angle: float = 0.0
     dimensions: Tuple[float, float, float]
     color: str
     flow_rate_cfm: Optional[float] = None
@@ -596,7 +625,8 @@ class ResolvedUnitaryEquipment(BaseModel):
     element: IfcUnitaryEquipment
     equipment_type: str
     position: Tuple[float, float, float]
-    rotation: float
+    rotation: float = 0.0
+    rotation_angle: float = 0.0
     dimensions: Tuple[float, float, float]
     color: str
     cooling_capacity_btu: Optional[float] = None
@@ -621,6 +651,7 @@ ResolvedElement = Union[
     ResolvedAirTerminal,
     ResolvedUnitaryEquipment,
     ResolvedCustomElement,
+    ResolvedTerminal,
 ]
 
 
@@ -648,6 +679,7 @@ class ResolvedManifest(BaseModel):
     air_terminals: List[ResolvedAirTerminal] = []
     unitary_equipments: List[ResolvedUnitaryEquipment] = []
     custom_elements: List[ResolvedCustomElement] = []
+    terminals: List[ResolvedTerminal] = []
     elements: List[ResolvedElement] = []
 
     def get_element_by_tag(self, tag: str) -> Union[ResolvedElement, None]:
@@ -665,6 +697,7 @@ class SpatialResolver:
         }
         self.axes_x: Dict[str, float] = manifest.grids.axes_x
         self.axes_y: Dict[str, float] = manifest.grids.axes_y
+        self.walls_by_tag: Dict[str, ResolvedWall] = {}
 
     def get_grid_xy(self, grid_ref: Tuple[str, str]) -> Tuple[float, float]:
         gx, gy = grid_ref
@@ -1476,6 +1509,96 @@ class SpatialResolver:
             total_formwork_area=tot_formwork,
         )
 
+    def resolve_terminal(self, terminal: TerminalElement) -> ResolvedTerminal:
+        placement = terminal.placement
+
+        if placement.wall:
+            if placement.wall not in self.walls_by_tag:
+                raise ValueError(f"Hosting wall '{placement.wall}' not found.")
+
+            r_wall = self.walls_by_tag[placement.wall]
+            wall_elem = r_wall.element
+
+            # Inherit storey from wall if omitted
+            storey_id = placement.storey or wall_elem.placement.storey
+            storey = self.get_storey(storey_id)
+
+            x1, y1, _ = r_wall.start_point
+            x2, y2, _ = r_wall.end_point
+            wall_len = r_wall.length
+            thickness = r_wall.thickness
+
+            if wall_len > 0:
+                ux = (x2 - x1) / wall_len
+                uy = (y2 - y1) / wall_len
+            else:
+                ux, uy = 1.0, 0.0
+
+            # Normal vector perpendicular to wall: n = (-uy, ux)
+            nx, ny = -uy, ux
+
+            # Base point along wall
+            p_base_x = x1 + placement.distance * ux
+            p_base_y = y1 + placement.distance * uy
+
+            fixture_depth = getattr(terminal, "depth", 0.0) or 0.0
+            if fixture_depth == 0.0 and getattr(terminal, "dimensions", None):
+                fixture_depth = terminal.dimensions.depth
+            standoff = placement.standoff
+
+            # Offset distance from wall centerline
+            if placement.side == "CENTER":
+                offset_dist = 0.0
+            elif placement.side == "EXTERIOR":
+                offset_dist = -(thickness / 2.0 + standoff + fixture_depth / 2.0)
+            else:  # INTERIOR
+                offset_dist = +(thickness / 2.0 + standoff + fixture_depth / 2.0)
+
+            px = p_base_x + offset_dist * nx
+            py = p_base_y + offset_dist * ny
+            pz = storey.elevation + placement.offset_z
+
+            if placement.rotation is not None:
+                rot_angle = placement.rotation
+            else:
+                # Auto-calculate rotation angle so the fixture faces away from wall into room
+                # For INTERIOR, outward direction is n = (-uy, ux) -> angle = math.atan2(ny, nx)
+                # For EXTERIOR, outward direction is -n = (uy, -ux) -> angle = math.atan2(-ny, -nx)
+                if placement.side == "EXTERIOR":
+                    rot_angle = math.degrees(math.atan2(-ny, -nx))
+                else:  # INTERIOR or CENTER default
+                    rot_angle = math.degrees(math.atan2(ny, nx))
+
+            return ResolvedTerminal(
+                tag=terminal.tag,
+                element=terminal,
+                position=(px, py, pz),
+                rotation_angle=rot_angle,
+                hosting_wall=r_wall,
+            )
+
+        elif placement.grid:
+            if not placement.storey:
+                raise ValueError(f"Terminal '{terminal.tag}' with grid placement must specify a storey.")
+
+            gx, gy = self.get_grid_xy(placement.grid)
+            storey = self.get_storey(placement.storey)
+
+            px = gx + placement.offset_x
+            py = gy + placement.offset_y
+            pz = storey.elevation + placement.offset_z
+            rot_angle = placement.rotation if placement.rotation is not None else 0.0
+
+            return ResolvedTerminal(
+                tag=terminal.tag,
+                element=terminal,
+                position=(px, py, pz),
+                rotation_angle=rot_angle,
+                hosting_wall=None,
+            )
+
+        else:
+            raise ValueError(f"Terminal '{terminal.tag}' placement must specify either wall or grid.")
 
     def resolve_roof(self, roof: IfcRoof) -> ResolvedRoof:
         xs = []
@@ -2104,16 +2227,12 @@ class SpatialResolver:
         )
 
     def resolve_sanitary_terminal(self, term: IfcSanitaryTerminal) -> ResolvedSanitaryTerminal:
-        z_base = self.storeys[term.placement.storey].elevation
-        gx, gy = term.placement.grid
-        pos = (
-            self.axes_x[gx] + term.placement.offset_x,
-            self.axes_y[gy] + term.placement.offset_y,
-            z_base + term.placement.offset_z,
-        )
+        r_term = self.resolve_terminal(term)
         dims = (
             (term.dimensions.width, term.dimensions.depth, term.dimensions.height)
             if term.dimensions
+            else (term.width, term.depth, term.height)
+            if (term.width or term.depth or term.height)
             else DEFAULT_TERMINAL_DIMENSIONS.get(term.terminal_type, (0.50, 0.50, 0.50))
         )
         color = DEFAULT_TERMINAL_COLORS.get(term.terminal_type, "#F8FAFC")
@@ -2121,23 +2240,20 @@ class SpatialResolver:
             tag=term.tag,
             element=term,
             terminal_type=term.terminal_type,
-            position=pos,
-            rotation=term.placement.rotation,
+            position=r_term.position,
+            rotation=r_term.rotation_angle,
+            rotation_angle=r_term.rotation_angle,
             dimensions=dims,
             color=color,
         )
 
     def resolve_distribution_board(self, board: IfcDistributionBoard) -> ResolvedDistributionBoard:
-        z_base = self.storeys[board.placement.storey].elevation
-        gx, gy = board.placement.grid
-        pos = (
-            self.axes_x[gx] + board.placement.offset_x,
-            self.axes_y[gy] + board.placement.offset_y,
-            z_base + board.placement.offset_z,
-        )
+        r_term = self.resolve_terminal(board)
         dims = (
             (board.dimensions.width, board.dimensions.depth, board.dimensions.height)
             if board.dimensions
+            else (board.width, board.depth, board.height)
+            if (board.width or board.depth or board.height)
             else DEFAULT_TERMINAL_DIMENSIONS.get(board.board_type, (0.35, 0.12, 0.45))
         )
         color = DEFAULT_TERMINAL_COLORS.get(board.board_type, "#334155")
@@ -2145,24 +2261,21 @@ class SpatialResolver:
             tag=board.tag,
             element=board,
             board_type=board.board_type,
-            position=pos,
-            rotation=board.placement.rotation,
+            position=r_term.position,
+            rotation=r_term.rotation_angle,
+            rotation_angle=r_term.rotation_angle,
             dimensions=dims,
             color=color,
             circuits_count=board.circuits_count,
         )
 
     def resolve_light_fixture(self, fixture: IfcLightFixture) -> ResolvedLightFixture:
-        z_base = self.storeys[fixture.placement.storey].elevation
-        gx, gy = fixture.placement.grid
-        pos = (
-            self.axes_x[gx] + fixture.placement.offset_x,
-            self.axes_y[gy] + fixture.placement.offset_y,
-            z_base + fixture.placement.offset_z,
-        )
+        r_term = self.resolve_terminal(fixture)
         dims = (
             (fixture.dimensions.width, fixture.dimensions.depth, fixture.dimensions.height)
             if fixture.dimensions
+            else (fixture.width, fixture.depth, fixture.height)
+            if (fixture.width or fixture.depth or fixture.height)
             else DEFAULT_TERMINAL_DIMENSIONS.get(fixture.fixture_type, (0.15, 0.15, 0.05))
         )
         color = DEFAULT_TERMINAL_COLORS.get(fixture.fixture_type, "#FEF08A")
@@ -2170,23 +2283,21 @@ class SpatialResolver:
             tag=fixture.tag,
             element=fixture,
             fixture_type=fixture.fixture_type,
-            position=pos,
+            position=r_term.position,
+            rotation=r_term.rotation_angle,
+            rotation_angle=r_term.rotation_angle,
             dimensions=dims,
             color=color,
             wattage=fixture.wattage or 12.0,
         )
 
     def resolve_switch(self, sw: IfcSwitchingDevice) -> ResolvedSwitchingDevice:
-        z_base = self.storeys[sw.placement.storey].elevation
-        gx, gy = sw.placement.grid
-        pos = (
-            self.axes_x[gx] + sw.placement.offset_x,
-            self.axes_y[gy] + sw.placement.offset_y,
-            z_base + sw.placement.offset_z,
-        )
+        r_term = self.resolve_terminal(sw)
         dims = (
             (sw.dimensions.width, sw.dimensions.depth, sw.dimensions.height)
             if sw.dimensions
+            else (sw.width, sw.depth, sw.height)
+            if (sw.width or sw.depth or sw.height)
             else DEFAULT_TERMINAL_DIMENSIONS.get(sw.switch_type, (0.07, 0.04, 0.12))
         )
         color = DEFAULT_TERMINAL_COLORS.get(sw.switch_type, "#E2E8F0")
@@ -2194,23 +2305,21 @@ class SpatialResolver:
             tag=sw.tag,
             element=sw,
             switch_type=sw.switch_type,
-            position=pos,
+            position=r_term.position,
+            rotation=r_term.rotation_angle,
+            rotation_angle=r_term.rotation_angle,
             dimensions=dims,
             color=color,
             gangs=sw.gangs,
         )
 
     def resolve_outlet(self, out: IfcOutlet) -> ResolvedOutlet:
-        z_base = self.storeys[out.placement.storey].elevation
-        gx, gy = out.placement.grid
-        pos = (
-            self.axes_x[gx] + out.placement.offset_x,
-            self.axes_y[gy] + out.placement.offset_y,
-            z_base + out.placement.offset_z,
-        )
+        r_term = self.resolve_terminal(out)
         dims = (
             (out.dimensions.width, out.dimensions.depth, out.dimensions.height)
             if out.dimensions
+            else (out.width, out.depth, out.height)
+            if (out.width or out.depth or out.height)
             else DEFAULT_TERMINAL_DIMENSIONS.get(out.outlet_type, (0.07, 0.04, 0.12))
         )
         color = DEFAULT_TERMINAL_COLORS.get(out.outlet_type, "#E2E8F0")
@@ -2218,7 +2327,9 @@ class SpatialResolver:
             tag=out.tag,
             element=out,
             outlet_type=out.outlet_type,
-            position=pos,
+            position=r_term.position,
+            rotation=r_term.rotation_angle,
+            rotation_angle=r_term.rotation_angle,
             dimensions=dims,
             color=color,
         )
@@ -2276,16 +2387,12 @@ class SpatialResolver:
         )
 
     def resolve_air_terminal(self, term: IfcAirTerminal) -> ResolvedAirTerminal:
-        z_base = self.storeys[term.placement.storey].elevation
-        gx, gy = term.placement.grid
-        pos = (
-            self.axes_x[gx] + term.placement.offset_x,
-            self.axes_y[gy] + term.placement.offset_y,
-            z_base + term.placement.offset_z,
-        )
+        r_term = self.resolve_terminal(term)
         dims = (
             (term.dimensions.width, term.dimensions.depth, term.dimensions.height)
             if term.dimensions
+            else (term.width, term.depth, term.height)
+            if (term.width or term.depth or term.height)
             else DEFAULT_TERMINAL_DIMENSIONS.get(term.terminal_type, (0.30, 0.30, 0.20))
         )
         color = DEFAULT_TERMINAL_COLORS.get(term.terminal_type, "#F1F5F9")
@@ -2293,24 +2400,21 @@ class SpatialResolver:
             tag=term.tag,
             element=term,
             terminal_type=term.terminal_type,
-            position=pos,
-            rotation=term.placement.rotation,
+            position=r_term.position,
+            rotation=r_term.rotation_angle,
+            rotation_angle=r_term.rotation_angle,
             dimensions=dims,
             color=color,
             flow_rate_cfm=term.flow_rate_cfm,
         )
 
     def resolve_unitary_equipment(self, equip: IfcUnitaryEquipment) -> ResolvedUnitaryEquipment:
-        z_base = self.storeys[equip.placement.storey].elevation
-        gx, gy = equip.placement.grid
-        pos = (
-            self.axes_x[gx] + equip.placement.offset_x,
-            self.axes_y[gy] + equip.placement.offset_y,
-            z_base + equip.placement.offset_z,
-        )
+        r_term = self.resolve_terminal(equip)
         dims = (
             (equip.dimensions.width, equip.dimensions.depth, equip.dimensions.height)
             if equip.dimensions
+            else (equip.width, equip.depth, equip.height)
+            if (equip.width or equip.depth or equip.height)
             else DEFAULT_TERMINAL_DIMENSIONS.get(equip.equipment_type, (0.85, 0.22, 0.30))
         )
         color = DEFAULT_TERMINAL_COLORS.get(equip.equipment_type, "#FFFFFF")
@@ -2318,8 +2422,9 @@ class SpatialResolver:
             tag=equip.tag,
             element=equip,
             equipment_type=equip.equipment_type,
-            position=pos,
-            rotation=equip.placement.rotation,
+            position=r_term.position,
+            rotation=r_term.rotation_angle,
+            rotation_angle=r_term.rotation_angle,
             dimensions=dims,
             color=color,
             cooling_capacity_btu=equip.cooling_capacity_btu,
@@ -2328,6 +2433,13 @@ class SpatialResolver:
     def resolve(self) -> ResolvedManifest:
         resolved_manifest = ResolvedManifest(manifest=self.manifest)
 
+        # Pass 1: Resolve all walls first and store in lookup mapping
+        for elem in self.manifest.elements:
+            if isinstance(elem, IfcWall):
+                r_wall, doors, windows = self.resolve_wall(elem)
+                self.walls_by_tag[elem.tag] = r_wall
+
+        # Pass 2: Resolve all elements in order
         for elem in self.manifest.elements:
             if isinstance(elem, IfcFooting):
                 r_footing = self.resolve_footing(elem)
@@ -2354,7 +2466,10 @@ class SpatialResolver:
                 resolved_manifest.beams.append(r_beam)
                 resolved_manifest.elements.append(r_beam)
             elif isinstance(elem, IfcWall):
-                r_wall, doors, windows = self.resolve_wall(elem)
+                r_wall = self.walls_by_tag[elem.tag]
+                # Doors and windows were extracted during resolve_wall
+                # We can re-extract or reuse doors/windows
+                _, doors, windows = self.resolve_wall(elem)
                 resolved_manifest.walls.append(r_wall)
                 resolved_manifest.doors.extend(doors)
                 resolved_manifest.windows.extend(windows)
@@ -2375,30 +2490,37 @@ class SpatialResolver:
                 r_term = self.resolve_sanitary_terminal(elem)
                 resolved_manifest.sanitary_terminals.append(r_term)
                 resolved_manifest.elements.append(r_term)
+                resolved_manifest.terminals.append(self.resolve_terminal(elem))
             elif isinstance(elem, IfcDistributionBoard):
                 r_board = self.resolve_distribution_board(elem)
                 resolved_manifest.distribution_boards.append(r_board)
                 resolved_manifest.elements.append(r_board)
+                resolved_manifest.terminals.append(self.resolve_terminal(elem))
             elif isinstance(elem, IfcLightFixture):
                 r_light = self.resolve_light_fixture(elem)
                 resolved_manifest.light_fixtures.append(r_light)
                 resolved_manifest.elements.append(r_light)
+                resolved_manifest.terminals.append(self.resolve_terminal(elem))
             elif isinstance(elem, IfcSwitchingDevice):
                 r_sw = self.resolve_switch(elem)
                 resolved_manifest.switches.append(r_sw)
                 resolved_manifest.elements.append(r_sw)
+                resolved_manifest.terminals.append(self.resolve_terminal(elem))
             elif isinstance(elem, IfcOutlet):
                 r_out = self.resolve_outlet(elem)
                 resolved_manifest.outlets.append(r_out)
                 resolved_manifest.elements.append(r_out)
+                resolved_manifest.terminals.append(self.resolve_terminal(elem))
             elif isinstance(elem, IfcAirTerminal):
                 r_air = self.resolve_air_terminal(elem)
                 resolved_manifest.air_terminals.append(r_air)
                 resolved_manifest.elements.append(r_air)
+                resolved_manifest.terminals.append(self.resolve_terminal(elem))
             elif isinstance(elem, IfcUnitaryEquipment):
                 r_eq = self.resolve_unitary_equipment(elem)
                 resolved_manifest.unitary_equipments.append(r_eq)
                 resolved_manifest.elements.append(r_eq)
+                resolved_manifest.terminals.append(self.resolve_terminal(elem))
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

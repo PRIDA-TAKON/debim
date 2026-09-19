@@ -28,6 +28,7 @@ from debim.resolver import (
     ResolvedStair,
     ResolvedSwitchingDevice,
     ResolvedUnitaryEquipment,
+    ResolvedTerminal,
     ResolvedWall,
     resolve_manifest,
 )
@@ -584,6 +585,22 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
             rebar_weights={},
             total_rebar_weight=0.0,
             roof=roof_qto,
+        )
+
+    elif isinstance(resolved, ResolvedTerminal):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type=getattr(elem, "terminal_type", getattr(elem, "equipment_type", getattr(elem, "board_type", getattr(elem, "switch_type", getattr(elem, "outlet_type", getattr(elem, "fixture_type", "TERMINAL")))))),
+                count=1,
+            ),
         )
 
     elif isinstance(resolved, ResolvedPipeSegment):
