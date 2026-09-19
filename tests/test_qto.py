@@ -275,4 +275,73 @@ def test_stair_qto():
     assert eqto.total_rebar_weight > 0.0
 
 
+def test_wall_finishes_qto():
+    from debim.resolver import ResolvedWall, ResolvedDoor
+    from debim.schema import IfcWall, WallPlacement, WallFinishesConfig, IfcDoor, Dimensions
+    from debim.qto import calculate_element_qto
+
+    wall_elem = IfcWall(
+        **{
+            "class": "IfcWall",
+            "tag": "WALL-TEST-01",
+            "material": "BRICK_MON",
+            "thickness": 0.10,
+            "height": 3.00,
+            "placement": WallPlacement(from_grid=("1", "A"), to_grid=("2", "A"), storey="L1"),
+            "children": [
+                IfcDoor(
+                    **{
+                        "class": "IfcDoor",
+                        "tag": "D-01",
+                        "dimensions": Dimensions(width=1.00, height=2.00),
+                        "offset_distance": 1.00,
+                        "sill_height": 0.0,
+                    }
+                )
+            ],
+            "finishes": WallFinishesConfig(
+                plaster="BOTH",
+                interior_finish="TILES",
+                exterior_finish="PAINT",
+                tile_height=2.00,
+            ),
+        }
+    )
+
+    resolved = ResolvedWall(
+        tag="WALL-TEST-01",
+        element=wall_elem,
+        start_point=(0.0, 0.0, 0.0),
+        end_point=(4.0, 0.0, 0.0),
+        length=4.00,
+        thickness=0.10,
+        height=3.00,
+        children=[
+            ResolvedDoor(
+                tag="D-01",
+                element=wall_elem.children[0],
+                position=(1.0, 0.0, 0.0),
+                width=1.00,
+                height=2.00,
+                offset_distance=1.00,
+                sill_height=0.0,
+            )
+        ],
+    )
+
+    eqto = calculate_element_qto(resolved)
+    # Net wall area one side = (4.0 * 3.0) - (1.0 * 2.0) = 12.0 - 2.0 = 10.0 m²
+    assert eqto.wall_finishes is not None
+    assert eqto.wall_finishes.net_area_one_side == pytest.approx(10.0)
+    # Plaster both sides = 2 * 10.0 = 20.0 m²
+    assert eqto.wall_finishes.plaster_area == pytest.approx(20.0)
+    # Exterior paint = 10.0 m²
+    assert eqto.wall_finishes.paint_exterior_area == pytest.approx(10.0)
+    # Tile height is 2.00 out of 3.00m = ratio 2/3 of 10.0 m² = 6.667 m²
+    assert eqto.wall_finishes.tile_area == pytest.approx(10.0 * (2.0 / 3.0))
+    # Interior paint is remaining 1/3 = 3.333 m²
+    assert eqto.wall_finishes.paint_interior_area == pytest.approx(10.0 * (1.0 / 3.0))
+
+
+
 

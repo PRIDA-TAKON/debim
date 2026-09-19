@@ -256,6 +256,46 @@ def qto(
             f"[bold cyan]Total Formwork Area:[/bold cyan] {project_qto.total_formwork_area:.3f} m2\n"
             f"[bold cyan]Total Rebar Weight:[/bold cyan] {project_qto.total_rebar_weight:.3f} kg"
         )
+        if project_qto.total_roof_covering_area > 0:
+            summary_text += (
+                f"\n[bold cyan]Roof Covering Tiles:[/bold cyan] {project_qto.total_roof_covering_area:.2f} m2\n"
+                f"[bold cyan]Roof Structural Steel:[/bold cyan] {project_qto.total_roof_steel_weight:.2f} kg\n"
+                f"[bold cyan]Roof Ridge/Hip Caps:[/bold cyan] {project_qto.total_roof_ridge_length + project_qto.total_roof_hip_length:.2f} m\n"
+                f"[bold cyan]Roof Eaves Perimeter:[/bold cyan] {project_qto.total_roof_eaves_length:.2f} m"
+            )
+        total_pipe = (
+            project_qto.total_cold_water_pipe_length
+            + project_qto.total_soil_pipe_length
+            + project_qto.total_waste_pipe_length
+            + project_qto.total_vent_pipe_length
+            + project_qto.total_drainage_pipe_length
+            + project_qto.total_refrigerant_pipe_length
+            + project_qto.total_condensate_pipe_length
+        )
+        if (
+            total_pipe > 0
+            or project_qto.total_sanitary_terminals_count > 0
+            or project_qto.total_conduit_length > 0
+            or project_qto.total_duct_length > 0
+            or project_qto.total_air_terminals_count > 0
+            or project_qto.total_unitary_equipment_count > 0
+        ):
+            summary_text += (
+                f"\n[bold magenta]--- MEP System Totals ---[/bold magenta]\n"
+                f"[bold cyan]Cold Water Pipe (ท่อน้ำดี):[/bold cyan] {project_qto.total_cold_water_pipe_length:.2f} m\n"
+                f"[bold cyan]Soil & Waste Pipe (ท่อโสโครก/น้ำทิ้ง):[/bold cyan] {project_qto.total_soil_pipe_length + project_qto.total_waste_pipe_length:.2f} m\n"
+                f"[bold cyan]Vent Pipe (ท่อระบายอากาศ):[/bold cyan] {project_qto.total_vent_pipe_length:.2f} m\n"
+                f"[bold cyan]Pipe Fittings & Valves (ข้อต่อท่อ):[/bold cyan] {project_qto.total_pipe_fittings_count} items\n"
+                f"[bold cyan]Sanitary Fixtures (สุขภัณฑ์/อุปกรณ์):[/bold cyan] {project_qto.total_sanitary_terminals_count} sets\n"
+                f"[bold cyan]Electrical Conduits (ท่อร้อยสายไฟ):[/bold cyan] {project_qto.total_conduit_length:.2f} m\n"
+                f"[bold cyan]Distribution Boards (ตู้ควบคุมไฟ):[/bold cyan] {project_qto.total_distribution_boards_count} sets\n"
+                f"[bold cyan]Lighting Fixtures (ดวงโคม):[/bold cyan] {project_qto.total_lighting_fixtures_count} sets\n"
+                f"[bold cyan]Switches & Outlets (สวิตช์/เต้ารับ):[/bold cyan] {project_qto.total_switches_count + project_qto.total_outlets_count} sets\n"
+                f"[bold cyan]Refrigerant Pipe (ท่อน้ำยาแอร์):[/bold cyan] {project_qto.total_refrigerant_pipe_length:.2f} m\n"
+                f"[bold cyan]HVAC Ducts (ท่อลมระบายอากาศ):[/bold cyan] {project_qto.total_duct_length:.2f} m\n"
+                f"[bold cyan]Air Conditioners (เครื่องปรับอากาศ):[/bold cyan] {project_qto.total_unitary_equipment_count} sets\n"
+                f"[bold cyan]Ventilation Fans & Hoods (พัดลมดูด/ฮูด):[/bold cyan] {project_qto.total_air_terminals_count} sets"
+            )
         console.print(Panel(summary_text, title="[bold green]QTO Totals[/bold green]"))
 
     except Exception as e:

@@ -440,6 +440,184 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        # 6. Roofs
+        for roof in resolved.roofs:
+            st_id = roof.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcRoof",
+                generate_ifc_guid(),
+                None,
+                roof.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        # 7. MEP Elements (Pipes, Conduits, Terminals, Electrical)
+        for pipe in resolved.pipes:
+            st_id = pipe.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcPipeSegment",
+                generate_ifc_guid(),
+                None,
+                pipe.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for conduit in resolved.conduits:
+            st_id = conduit.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcCableCarrierSegment",
+                generate_ifc_guid(),
+                None,
+                conduit.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for term in resolved.sanitary_terminals:
+            st_id = term.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcSanitaryTerminal",
+                generate_ifc_guid(),
+                None,
+                term.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for board in resolved.distribution_boards:
+            st_id = board.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcDistributionBoard",
+                generate_ifc_guid(),
+                None,
+                board.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for light in resolved.light_fixtures:
+            st_id = light.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcLightFixture",
+                generate_ifc_guid(),
+                None,
+                light.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for sw in resolved.switches:
+            st_id = sw.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcSwitchingDevice",
+                generate_ifc_guid(),
+                None,
+                sw.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for out in resolved.outlets:
+            st_id = out.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcOutlet",
+                generate_ifc_guid(),
+                None,
+                out.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for duct in resolved.ducts:
+            st_id = duct.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcDuctSegment",
+                generate_ifc_guid(),
+                None,
+                duct.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for air in resolved.air_terminals:
+            st_id = air.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcAirTerminal",
+                generate_ifc_guid(),
+                None,
+                air.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for eq in resolved.unitary_equipments:
+            st_id = eq.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcUnitaryEquipment",
+                generate_ifc_guid(),
+                None,
+                eq.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
         # Spatial containment (IfcRelContainedInSpatialStructure)
         for st_id, elem_refs in storey_elements.items():
             if elem_refs and st_id in storey_refs:
@@ -622,6 +800,131 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = custom.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(custom_obj)
+
+    # 6. Roofs
+    for roof in resolved.roofs:
+        pred_type = roof.element.roof_type if roof.element.roof_type in ("GABLE_ROOF", "HIP_ROOF", "SHED_ROOF", "FLAT_ROOF") else "NOTDEFINED"
+        roof_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcRoof",
+            name=roof.tag,
+            predefined_type=pred_type,
+        )
+        st_id = roof.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(roof_obj)
+
+    # 7. MEP Elements (Pipes, Conduits, Terminals, Electrical)
+    for pipe in resolved.pipes:
+        pipe_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcPipeSegment",
+            name=pipe.tag,
+        )
+        st_id = pipe.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(pipe_obj)
+
+    for conduit in resolved.conduits:
+        conduit_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcCableCarrierSegment",
+            name=conduit.tag,
+        )
+        st_id = conduit.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(conduit_obj)
+
+    for term in resolved.sanitary_terminals:
+        term_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcSanitaryTerminal",
+            name=term.tag,
+        )
+        st_id = term.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(term_obj)
+
+    for board in resolved.distribution_boards:
+        board_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcDistributionBoard",
+            name=board.tag,
+        )
+        st_id = board.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(board_obj)
+
+    for light in resolved.light_fixtures:
+        light_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcLightFixture",
+            name=light.tag,
+        )
+        st_id = light.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(light_obj)
+
+    for sw in resolved.switches:
+        sw_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcSwitchingDevice",
+            name=sw.tag,
+        )
+        st_id = sw.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(sw_obj)
+
+    for out in resolved.outlets:
+        out_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcOutlet",
+            name=out.tag,
+        )
+        st_id = out.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(out_obj)
+
+    for duct in resolved.ducts:
+        duct_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcDuctSegment",
+            name=duct.tag,
+        )
+        st_id = duct.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(duct_obj)
+
+    for air in resolved.air_terminals:
+        air_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcAirTerminal",
+            name=air.tag,
+        )
+        st_id = air.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(air_obj)
+
+    for eq in resolved.unitary_equipments:
+        eq_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcUnitaryEquipment",
+            name=eq.tag,
+        )
+        st_id = eq.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(eq_obj)
 
     # Assign containment
     for st_id, products in storey_products.items():

@@ -352,6 +352,61 @@ def generate_viewer_html(
                     "opacity": 0.6,
                 })
 
+    # Roofs (Covering Planes & Framing Members)
+    for roof in resolved.roofs:
+        # Sloped facet planes (Roof Covering - กระเบื้องมุงหลังคา)
+        for plane in roof.planes:
+            elements_data.append({
+                "tag": plane.tag,
+                "class": "IfcRoofCovering",
+                "geometry_type": "polygon",
+                "points": plane.polygon,
+                "material": roof.element.covering.tile_type if roof.element.covering else "Roof Tiles",
+                "color": "#9E4734",  # Warm terracotta tile color
+                "layer": "roof_covering",
+                "member_name": "กระเบื้องมุงหลังคา (Roof Covering)",
+                "dimensions": {
+                    "area": plane.area,
+                    "slope_degrees": plane.slope_degrees,
+                },
+            })
+
+        # Framing members (โครงสร้างหลังคาแยกชิ้น: อกไก่, ตะเข้สัน, เสาดั้ง, อะเส, ขื่อ, จันทัน, แป)
+        for member in roof.framing_members:
+            elements_data.append({
+                "tag": member.tag,
+                "class": "IfcRoofFraming",
+                "geometry_type": "line",
+                "points": [member.start_point, member.end_point],
+                "color": member.color,
+                "linewidth": 3 if member.member_type in ("RIDGE_BEAM", "HIP_RAFTER", "KING_POST", "WALL_PLATE") else 2,
+                "layer": "roof_framing",
+                "member_type": member.member_type,
+                "member_name": member.name_th,
+                "material": member.material or "STEEL_SS400",
+                "profile": member.profile,
+                "dimensions": {
+                    "length": member.length,
+                },
+            })
+
+        # Ridge & Hip Caps (สันหลังคา/ครอบสัน)
+        for ridge in roof.ridges:
+            color = "#DC2626" if ridge.ridge_type == "RIDGE" else ("#F59E0B" if ridge.ridge_type == "HIP" else "#64748B")
+            elements_data.append({
+                "tag": ridge.tag,
+                "class": "IfcRoofRidge",
+                "geometry_type": "line",
+                "points": [ridge.start_point, ridge.end_point],
+                "color": color,
+                "linewidth": 3 if ridge.ridge_type in ("RIDGE", "HIP") else 2,
+                "layer": "roof_covering",
+                "member_name": f"แนวสันหลังคา ({ridge.ridge_type})",
+                "dimensions": {
+                    "length": ridge.length,
+                },
+            })
+
     # Custom Elements
     for custom in resolved.custom_elements:
         tag_upper = custom.tag.upper()
@@ -388,6 +443,305 @@ def generate_viewer_html(
                 "height": h,
             },
             "color": color,
+        })
+
+    # MEP Elements: Pipes (Sanitary, Plumbing & HVAC Refrigerant/Drain)
+    for pipe in resolved.pipes:
+        if pipe.system_type in ("REFRIGERANT", "CONDENSATE"):
+            layer = "mep_hvac"
+        elif pipe.system_type == "COLD_WATER":
+            layer = "mep_cold_water"
+        else:
+            layer = "mep_drainage"
+
+        sys_th = {
+            "COLD_WATER": "ท่อน้ำดี (Cold Water)",
+            "HOT_WATER": "ท่อน้ำร้อน (Hot Water)",
+            "SOIL": "ท่อโสโครก/ส้วม (Soil Pipe)",
+            "WASTE": "ท่อน้ำทิ้ง (Waste Pipe)",
+            "VENT": "ท่อระบายอากาศ (Vent Pipe)",
+            "DRAINAGE": "ท่อระบายน้ำรอบอาคาร (Drainage)",
+            "REFRIGERANT": "ท่อน้ำยาแอร์ (Refrigerant Pipe)",
+            "CONDENSATE": "ท่อน้ำทิ้งแอร์ (AC Condensate Drain)",
+        }.get(pipe.system_type, pipe.system_type)
+
+        elements_data.append({
+            "tag": pipe.tag,
+            "class": "IfcPipeSegment",
+            "geometry_type": "line",
+            "points": pipe.waypoints,
+            "color": pipe.color,
+            "linewidth": 4,
+            "layer": layer,
+            "system_type": pipe.system_type,
+            "system_name_th": sys_th,
+            "material": pipe.element.material or ("PPR" if pipe.system_type == "COLD_WATER" else "PVC"),
+            "dimensions": {
+                "length": pipe.length,
+                "diameter": pipe.nominal_diameter,
+                "slope": pipe.slope,
+            },
+            "fittings_count": pipe.fittings_count,
+        })
+
+    # MEP Elements: Conduits (Electrical)
+    for conduit in resolved.conduits:
+        sys_th = {
+            "POWER": "ท่อร้อยสายไฟกำลัง (Power Conduit)",
+            "LIGHTING": "ท่อร้อยสายไฟแสงสว่าง (Lighting Conduit)",
+            "MAIN_FEEDER": "ท่อร้อยสายเมน (Main Feeder)",
+            "COMMUNICATION": "สายสื่อสาร/LAN",
+            "SOLAR": "สายไฟฟ้าโซล่าร์เซลล์",
+        }.get(conduit.system_type, conduit.system_type)
+
+        elements_data.append({
+            "tag": conduit.tag,
+            "class": "IfcCableCarrierSegment",
+            "geometry_type": "line",
+            "points": conduit.waypoints,
+            "color": conduit.color,
+            "linewidth": 3,
+            "layer": "mep_electrical",
+            "system_type": conduit.system_type,
+            "system_name_th": sys_th,
+            "material": conduit.element.material or "EMT / PVC",
+            "dimensions": {
+                "length": conduit.length,
+                "diameter": conduit.nominal_diameter,
+            },
+            "fittings_count": conduit.fittings_count,
+        })
+
+    # MEP Elements: Sanitary Terminals (Fixtures)
+    for term in resolved.sanitary_terminals:
+        type_th = {
+            "WATER_CLOSET": "โถส้วม / สุขภัณฑ์ (WC)",
+            "LAVATORY": "อ่างล้างหน้า (Lavatory)",
+            "SHOWER": "ฝักบัวอาบน้ำ (Shower)",
+            "KITCHEN_SINK": "อ่างล้างจาน (Kitchen Sink)",
+            "FLOOR_DRAIN": "ตะแกรงดักกลิ่นที่พื้น (Floor Drain)",
+            "GREASE_TRAP": "บ่อดักไขมัน (Grease Trap)",
+            "SEPTIC_TANK": "ถังบำบัดน้ำเสีย (Septic Tank)",
+            "WATER_TANK": "ถังเก็บน้ำบนดิน (Water Tank)",
+            "WATER_PUMP": "ปั๊มน้ำอัตโนมัติ (Water Pump)",
+        }.get(term.terminal_type, term.terminal_type)
+
+        elements_data.append({
+            "tag": term.tag,
+            "class": "IfcSanitaryTerminal",
+            "material": term.element.material or "Sanitary Ware",
+            "position": [
+                term.position[0],
+                term.position[1],
+                term.position[2] + term.dimensions[2] / 2.0,
+            ],
+            "rotation": [0, 0, math.radians(term.rotation)],
+            "dimensions": {
+                "width": term.dimensions[0],
+                "depth": term.dimensions[1],
+                "height": term.dimensions[2],
+            },
+            "color": term.color,
+            "layer": "mep_fixtures",
+            "fixture_type": term.terminal_type,
+            "fixture_name_th": type_th,
+        })
+
+    # MEP Elements: Distribution Boards
+    for board in resolved.distribution_boards:
+        b_th = "ตู้ควบคุมไฟฟ้าหลัก (Consumer Unit / MDB)"
+        elements_data.append({
+            "tag": board.tag,
+            "class": "IfcDistributionBoard",
+            "material": board.element.material or "Enclosure Box",
+            "position": [
+                board.position[0],
+                board.position[1],
+                board.position[2] + board.dimensions[2] / 2.0,
+            ],
+            "rotation": [0, 0, math.radians(board.rotation)],
+            "dimensions": {
+                "width": board.dimensions[0],
+                "depth": board.dimensions[1],
+                "height": board.dimensions[2],
+            },
+            "color": board.color,
+            "layer": "mep_electrical",
+            "board_type": board.board_type,
+            "circuits_count": board.circuits_count,
+            "fixture_name_th": b_th,
+        })
+
+    # MEP Elements: Lighting Fixtures
+    for light in resolved.light_fixtures:
+        l_th = {
+            "DOWNLIGHT": "โคมไฟดาวน์ไลท์ (Downlight)",
+            "LED_TUBE": "โคมไฟรางนีออน/LED (LED Tube)",
+            "PENDANT": "โคมไฟแขวน (Pendant Lamp)",
+            "WALL_LAMP": "โคมไฟกิ่งติดผนัง (Wall Lamp)",
+            "FLOODLIGHT": "โคมไฟฟลัดไลท์ (Floodlight)",
+        }.get(light.fixture_type, light.fixture_type)
+
+        elements_data.append({
+            "tag": light.tag,
+            "class": "IfcLightFixture",
+            "material": light.element.material or "Lighting Fixture",
+            "position": [
+                light.position[0],
+                light.position[1],
+                light.position[2] - light.dimensions[2] / 2.0,
+            ],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": light.dimensions[0],
+                "depth": light.dimensions[1],
+                "height": light.dimensions[2],
+            },
+            "color": light.color,
+            "layer": "mep_electrical",
+            "fixture_type": light.fixture_type,
+            "wattage": light.wattage,
+            "fixture_name_th": l_th,
+        })
+
+    # MEP Elements: Switches
+    for sw in resolved.switches:
+        s_th = f"สวิตช์ไฟ {sw.gangs} ช่อง ({sw.switch_type})"
+        elements_data.append({
+            "tag": sw.tag,
+            "class": "IfcSwitchingDevice",
+            "material": sw.element.material or "Polycarbonate",
+            "position": [
+                sw.position[0],
+                sw.position[1],
+                sw.position[2] + sw.dimensions[2] / 2.0,
+            ],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": sw.dimensions[0],
+                "depth": sw.dimensions[1],
+                "height": sw.dimensions[2],
+            },
+            "color": sw.color,
+            "layer": "mep_electrical",
+            "switch_type": sw.switch_type,
+            "gangs": sw.gangs,
+            "fixture_name_th": s_th,
+        })
+
+    # MEP Elements: Outlets
+    for out in resolved.outlets:
+        o_th = f"เต้ารับไฟฟ้า ({out.outlet_type})"
+        elements_data.append({
+            "tag": out.tag,
+            "class": "IfcOutlet",
+            "material": out.element.material or "Polycarbonate",
+            "position": [
+                out.position[0],
+                out.position[1],
+                out.position[2] + out.dimensions[2] / 2.0,
+            ],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": out.dimensions[0],
+                "depth": out.dimensions[1],
+                "height": out.dimensions[2],
+            },
+            "color": out.color,
+            "layer": "mep_electrical",
+            "outlet_type": out.outlet_type,
+            "fixture_name_th": o_th,
+        })
+
+    # MEP Elements: Ducts (HVAC & Ventilation)
+    for duct in resolved.ducts:
+        sys_th = {
+            "SUPPLY_AIR": "ท่อลมจ่าย (Supply Air Duct)",
+            "RETURN_AIR": "ท่อลมกลับ (Return Air Duct)",
+            "EXHAUST_AIR": "ท่อระบายอากาศ/ดูดควัน (Exhaust Air Duct)",
+            "FRESH_AIR": "ท่อเติมอากาศบริสุทธิ์ (Fresh Air Duct)",
+        }.get(duct.system_type, duct.system_type)
+
+        elements_data.append({
+            "tag": duct.tag,
+            "class": "IfcDuctSegment",
+            "geometry_type": "line",
+            "points": duct.waypoints,
+            "color": duct.color,
+            "linewidth": 4,
+            "layer": "mep_hvac",
+            "system_type": duct.system_type,
+            "system_name_th": sys_th,
+            "material": duct.element.material or "Galvanized Steel / Aluminum",
+            "dimensions": {
+                "length": duct.length,
+                "width": duct.width,
+                "height": duct.height,
+            },
+            "fittings_count": duct.fittings_count,
+        })
+
+    # MEP Elements: Air Terminals (Exhaust Fans, Kitchen Hoods, Diffusers)
+    for air in resolved.air_terminals:
+        type_th = {
+            "EXHAUST_FAN_CEILING": "พัดลมดูดอากาศติดเพดาน (Ceiling Exhaust Fan)",
+            "EXHAUST_FAN_WALL": "พัดลมดูดอากาศติดผนัง (Wall Exhaust Fan)",
+            "KITCHEN_HOOD": "ฮูดดูดควันห้องครัว (Kitchen Range Hood)",
+            "SUPPLY_DIFFUSER": "หน้ากากหัวจ่ายลม (Supply Diffuser)",
+            "RETURN_GRILLE": "หน้ากากลมกลับ (Return Grille)",
+        }.get(air.terminal_type, air.terminal_type)
+
+        elements_data.append({
+            "tag": air.tag,
+            "class": "IfcAirTerminal",
+            "material": air.element.material or "Ventilation Terminal",
+            "position": [
+                air.position[0],
+                air.position[1],
+                air.position[2] + air.dimensions[2] / 2.0,
+            ],
+            "rotation": [0, 0, math.radians(air.rotation)],
+            "dimensions": {
+                "width": air.dimensions[0],
+                "depth": air.dimensions[1],
+                "height": air.dimensions[2],
+            },
+            "color": air.color,
+            "layer": "mep_hvac",
+            "terminal_type": air.terminal_type,
+            "flow_rate_cfm": air.flow_rate_cfm,
+            "fixture_name_th": type_th,
+        })
+
+    # MEP Elements: Unitary Equipment (Air Conditioners - Split Wall, Cassette, Condenser)
+    for eq in resolved.unitary_equipments:
+        eq_th = {
+            "AC_INDOOR_WALL": "เครื่องปรับอากาศแบบติดผนัง (Wall Mounted AC)",
+            "AC_INDOOR_CASSETTE": "เครื่องปรับอากาศแบบฝังฝ้า 4 ทิศทาง (Cassette AC)",
+            "AC_INDOOR_CONCEALED": "เครื่องปรับอากาศแบบซ่อนในฝ้า (Concealed Duct AC)",
+            "AC_OUTDOOR_CONDENSER": "คอนเดนซิ่งยูนิตภายนอก (Outdoor Condensing Unit)",
+        }.get(eq.equipment_type, eq.equipment_type)
+
+        elements_data.append({
+            "tag": eq.tag,
+            "class": "IfcUnitaryEquipment",
+            "material": eq.element.material or "Air Conditioner",
+            "position": [
+                eq.position[0],
+                eq.position[1],
+                eq.position[2] + eq.dimensions[2] / 2.0,
+            ],
+            "rotation": [0, 0, math.radians(eq.rotation)],
+            "dimensions": {
+                "width": eq.dimensions[0],
+                "depth": eq.dimensions[1],
+                "height": eq.dimensions[2],
+            },
+            "color": eq.color,
+            "layer": "mep_hvac",
+            "equipment_type": eq.equipment_type,
+            "cooling_capacity_btu": eq.cooling_capacity_btu,
+            "fixture_name_th": eq_th,
         })
 
     scene_json = json.dumps({
@@ -598,7 +952,14 @@ def generate_viewer_html(
         <button class="layer-btn active" id="btn-layer-slabs" onclick="toggleLayer('slabs')">🟧 พื้น (Slabs)</button>
         <button class="layer-btn active" id="btn-layer-stairs" onclick="toggleLayer('stairs')">🪜 บันได (Stairs)</button>
         <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/คาน</button>
-        <button class="layer-btn active" id="btn-layer-grids" onclick="toggleLayer('grids')">📐 ผังกริด/แนวเขต</button>
+        <button class="layer-btn active" id="btn-layer-roof_covering" onclick="toggleLayer('roof_covering')">🏠 หลังคา</button>
+        <button class="layer-btn active" id="btn-layer-roof_framing" onclick="toggleLayer('roof_framing')">🏗️ โครงหลังคา</button>
+        <button class="layer-btn active" id="btn-layer-mep_cold_water" onclick="toggleLayer('mep_cold_water')">💧 น้ำดี</button>
+        <button class="layer-btn active" id="btn-layer-mep_drainage" onclick="toggleLayer('mep_drainage')">🚽 น้ำเสีย/น้ำทิ้ง</button>
+        <button class="layer-btn active" id="btn-layer-mep_fixtures" onclick="toggleLayer('mep_fixtures')">🛁 สุขภัณฑ์</button>
+        <button class="layer-btn active" id="btn-layer-mep_electrical" onclick="toggleLayer('mep_electrical')">⚡ ไฟฟ้า</button>
+        <button class="layer-btn active" id="btn-layer-mep_hvac" onclick="toggleLayer('mep_hvac')">❄️ แอร์/ระบายอากาศ</button>
+        <button class="layer-btn active" id="btn-layer-grids" onclick="toggleLayer('grids')">📐 กริด/ผัง</button>
     </div>
 
     <div id="axes-legend">
@@ -802,6 +1163,36 @@ def generate_viewer_html(
                 object3D = (data.geometry_type === "line_loop")
                     ? new THREE.LineLoop(lineGeom, lineMat)
                     : new THREE.Line(lineGeom, lineMat);
+            }} else if (data.geometry_type === "polygon") {{
+                const geom = new THREE.BufferGeometry();
+                const vertices = [];
+                const pts = data.points;
+                if (pts.length === 3) {{
+                    vertices.push(...pts[0], ...pts[1], ...pts[2]);
+                }} else if (pts.length >= 4) {{
+                    for (let i = 1; i < pts.length - 1; i++) {{
+                        vertices.push(...pts[0], ...pts[i], ...pts[i + 1]);
+                    }}
+                }}
+                geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                geom.computeVertexNormals();
+
+                const matOptions = {{
+                    color: new THREE.Color(data.color),
+                    roughness: 0.6,
+                    metalness: 0.1,
+                    side: THREE.DoubleSide,
+                }};
+                const mat = new THREE.MeshStandardMaterial(matOptions);
+                const mesh = new THREE.Mesh(geom, mat);
+
+                const edges = new THREE.EdgesGeometry(geom);
+                const line = new THREE.LineSegments(
+                    edges,
+                    new THREE.LineBasicMaterial({{ color: 0x111111, linewidth: 1 }})
+                );
+                mesh.add(line);
+                object3D = mesh;
             }} else {{
                 let geometry;
                 if (data.class === "IfcColumn") {{
@@ -846,8 +1237,16 @@ def generate_viewer_html(
 
             // Layer assignment for filtering
             const tagUpper = (data.tag || "").toUpperCase();
-            if (tagUpper.includes("F2") || tagUpper.includes("FOOTING") || data.class === "IfcFooting" || data.class === "IfcPile") {{
+            if (data.layer) {{
+                object3D.userData.layer = data.layer;
+            }} else if (tagUpper.includes("F2") || tagUpper.includes("FOOTING") || data.class === "IfcFooting" || data.class === "IfcPile") {{
                 object3D.userData.layer = "footings";
+            }} else if (data.class === "IfcRoofCovering" || data.class === "IfcRoofRidge") {{
+                object3D.userData.layer = "roof_covering";
+            }} else if (data.class === "IfcRoofFraming") {{
+                object3D.userData.layer = "roof_framing";
+            }} else if (data.class === "IfcRoof" || tagUpper.includes("ROOF") || tagUpper.includes("RIDGE") || tagUpper.includes("HIP") || tagUpper.includes("EAVE") || tagUpper.includes("SLOPE")) {{
+                object3D.userData.layer = "roof_covering";
             }} else if (data.class === "IfcSlab" || tagUpper.includes("SLAB") || tagUpper.startsWith("S-") || tagUpper.startsWith("GS-")) {{
                 object3D.userData.layer = "slabs";
             }} else if (data.class.startsWith("IfcStair") || data.class === "IfcRailing" || tagUpper.startsWith("ST-")) {{
@@ -901,6 +1300,7 @@ def generate_viewer_html(
 
         window.toggleLayer = function(layerName) {{
             const btn = document.getElementById('btn-layer-' + layerName);
+            if (!btn) return;
             const isActive = btn.classList.toggle('active');
             if (layerName === 'grids') {{
                 gridGroup.visible = isActive;
@@ -921,8 +1321,9 @@ def generate_viewer_html(
             showInspector(sceneData.elements[0]);
         }}
 
-        // Element Selection / Raycasting
+        // Element Selection / Raycasting (with line threshold for easy wire picking)
         const raycaster = new THREE.Raycaster();
+        raycaster.params.Line = {{ threshold: 0.35 }};
         const mouse = new THREE.Vector2();
         let selectedMesh = null;
         let originalColor = null;
@@ -960,23 +1361,73 @@ def generate_viewer_html(
                 return;
             }}
 
-            let dimText = '';
-            if (data.dimensions.length !== undefined) {{
-                dimText = `${{data.dimensions.length.toFixed(2)}}m (L)`;
-                if (data.dimensions.width !== undefined) dimText += ` × ${{data.dimensions.width.toFixed(2)}}m (W)`;
-                if (data.dimensions.thickness !== undefined) dimText += ` × ${{data.dimensions.thickness.toFixed(2)}}m (Thk)`;
-                if (data.dimensions.height !== undefined) dimText += ` × ${{data.dimensions.height.toFixed(2)}}m (H)`;
-                if (data.dimensions.depth !== undefined) dimText += ` × ${{data.dimensions.depth.toFixed(2)}}m (D)`;
-            }} else {{
-                dimText = `${{data.dimensions.width.toFixed(2)}}m (W) × ${{data.dimensions.depth.toFixed(2)}}m (D) × ${{data.dimensions.height.toFixed(2)}}m (H)`;
+            let dimText = '-';
+            if (data.dimensions) {{
+                if (data.dimensions.area !== undefined) {{
+                    dimText = `${{data.dimensions.area.toFixed(2)}} m² (Slope: ${{data.dimensions.slope_degrees || 0}}°)`;
+                }} else if (data.dimensions.length !== undefined) {{
+                    dimText = `${{data.dimensions.length.toFixed(2)}}m (L)`;
+                    if (data.dimensions.width !== undefined) dimText += ` × ${{data.dimensions.width.toFixed(2)}}m (W)`;
+                    if (data.dimensions.thickness !== undefined) dimText += ` × ${{data.dimensions.thickness.toFixed(2)}}m (Thk)`;
+                    if (data.dimensions.height !== undefined) dimText += ` × ${{data.dimensions.height.toFixed(2)}}m (H)`;
+                    if (data.dimensions.depth !== undefined) dimText += ` × ${{data.dimensions.depth.toFixed(2)}}m (D)`;
+                }} else if (data.dimensions.width !== undefined) {{
+                    dimText = `${{data.dimensions.width.toFixed(2)}}m (W) × ${{data.dimensions.depth.toFixed(2)}}m (D) × ${{data.dimensions.height.toFixed(2)}}m (H)`;
+                }}
+            }}
+
+            const posText = data.position ? `(${{data.position[0].toFixed(2)}}, ${{data.position[1].toFixed(2)}}, ${{data.position[2].toFixed(2)}})` : '-';
+
+            let memberRow = '';
+            if (data.member_name) {{
+                const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${{data.color}};margin-right:6px;"></span>` : '';
+                memberRow = `<div class="data-row"><span class="data-label">ชิ้นส่วน (Member)</span><span class="data-value">${{colorDot}}${{data.member_name}}</span></div>`;
+            }}
+
+            let profileRow = '';
+            if (data.profile) {{
+                profileRow = `<div class="data-row"><span class="data-label">หน้าตัด (Profile)</span><span class="data-value">${{data.profile}}</span></div>`;
+            }}
+
+            let mepRow = '';
+            if (data.system_name_th) {{
+                const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${{data.color}};margin-right:6px;"></span>` : '';
+                mepRow += `<div class="data-row"><span class="data-label">ระบบ (System)</span><span class="data-value">${{colorDot}}${{data.system_name_th}}</span></div>`;
+            }}
+            if (data.fixture_name_th) {{
+                const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${{data.color}};margin-right:6px;"></span>` : '';
+                mepRow += `<div class="data-row"><span class="data-label">อุปกรณ์ (Fixture)</span><span class="data-value">${{colorDot}}${{data.fixture_name_th}}</span></div>`;
+            }}
+            if (data.dimensions && data.dimensions.diameter !== undefined) {{
+                const dia_mm = (data.dimensions.diameter * 1000).toFixed(0);
+                mepRow += `<div class="data-row"><span class="data-label">ขนาดท่อ (Dia)</span><span class="data-value">Ø ${{dia_mm}} mm (${{data.dimensions.diameter}}m)</span></div>`;
+            }}
+            if (data.dimensions && data.dimensions.slope) {{
+                const slope_pct = (data.dimensions.slope * 100).toFixed(1);
+                mepRow += `<div class="data-row"><span class="data-label">ความลาดชัน (Slope)</span><span class="data-value">${{slope_pct}}% (1:${{Math.round(1/data.dimensions.slope)}})</span></div>`;
+            }}
+            if (data.wattage) {{
+                mepRow += `<div class="data-row"><span class="data-label">กำลังไฟฟ้า (Power)</span><span class="data-value">${{data.wattage}} W</span></div>`;
+            }}
+            if (data.circuits_count) {{
+                mepRow += `<div class="data-row"><span class="data-label">จำนวนวงจร (Circuits)</span><span class="data-value">${{data.circuits_count}} วงจรย่อย</span></div>`;
+            }}
+            if (data.cooling_capacity_btu) {{
+                mepRow += `<div class="data-row"><span class="data-label">ขนาดทำความเย็น (Cooling)</span><span class="data-value">${{data.cooling_capacity_btu.toLocaleString()}} BTU/hr</span></div>`;
+            }}
+            if (data.flow_rate_cfm) {{
+                mepRow += `<div class="data-row"><span class="data-label">อัตราลมระบาย (Air Flow)</span><span class="data-value">${{data.flow_rate_cfm}} CFM</span></div>`;
             }}
 
             contentEl.innerHTML = `
                 <div style="margin-bottom: 8px;"><span class="badge">${{data.class}}</span></div>
                 <div class="data-row"><span class="data-label">Tag</span><span class="data-value">${{data.tag}}</span></div>
+                ${{memberRow}}
+                ${{profileRow}}
+                ${{mepRow}}
                 <div class="data-row"><span class="data-label">Material</span><span class="data-value">${{data.material || '-'}}</span></div>
                 <div class="data-row"><span class="data-label">Dimensions</span><span class="data-value">${{dimText}}</span></div>
-                <div class="data-row"><span class="data-label">Position</span><span class="data-value">(${{data.position[0].toFixed(2)}}, ${{data.position[1].toFixed(2)}}, ${{data.position[2].toFixed(2)}})</span></div>
+                <div class="data-row"><span class="data-label">Position</span><span class="data-value">${{posText}}</span></div>
             `;
         }}
 

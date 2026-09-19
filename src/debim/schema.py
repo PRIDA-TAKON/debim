@@ -194,6 +194,17 @@ class WallPlacement(BaseModel):
         return v
 
 
+PlasterType = Literal["BOTH", "INTERIOR", "EXTERIOR", "NONE"]
+WallFinishType = Literal["PAINT", "TILES", "NONE"]
+
+
+class WallFinishesConfig(BaseModel):
+    plaster: PlasterType = "BOTH"
+    interior_finish: WallFinishType = "PAINT"
+    exterior_finish: WallFinishType = "PAINT"
+    tile_height: Optional[float] = None
+
+
 class IfcWall(BaseModel):
     class_: Literal["IfcWall"] = Field(alias="class")
     tag: str
@@ -202,6 +213,7 @@ class IfcWall(BaseModel):
     height: float
     placement: WallPlacement
     children: List[WallChild] = Field(default_factory=list)
+    finishes: Optional[WallFinishesConfig] = None
 
 
 # Slab placement & element
@@ -335,8 +347,262 @@ class IfcCustomElement(BaseModel):
     placement: CustomElementPlacement
 
 
+
+# Roof element definitions
+RoofType = Literal["GABLE", "HIP", "SHED", "FLAT", "MANSARD"]
+RidgeOrientation = Literal["X", "Y", "ALONG_LENGTH", "ALONG_WIDTH"]
+
+
+class RoofPlacement(BaseModel):
+    boundary: List[Tuple[str, str]]  # List of grid intersections bounding the roof e.g. [["1", "B"], ["4", "B"], ["4", "E"], ["1", "E"]]
+    storey: str
+    offset_z: float = 0.00
+    overhang: float = 1.00  # Eave overhang in meters (ระยะยื่นชายคา)
+    ridge_orientation: RidgeOrientation = "X"
+
+    @field_validator("boundary", mode="before")
+    @classmethod
+    def convert_boundary_to_str(cls, v):
+        if isinstance(v, list):
+            return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+
+class RoofCoveringConfig(BaseModel):
+    tile_type: str = "CONCRETE_TILE"  # e.g. "CONCRETE_TILE", "CERAMIC_TILE", "CORRUGATED_FIBER", "METAL_SHEET"
+    material: Optional[str] = None
+    pitch: float = 30.0  # Slope pitch angle in degrees (ความลาดชันหลังคา องศา)
+    insulation: bool = True  # Foil insulation under tiles (แผ่นสะท้อนความร้อน)
+    fascia_board: bool = True  # Fascia board (ไม้เชิงชาย)
+    ridge_cap: bool = True  # Ridge / Hip caps (ครอบสันหลังคา/ตะเข้สัน)
+
+
+class RoofFramingConfig(BaseModel):
+    truss_type: Literal["STEEL_TRUSS", "TIMBER_TRUSS", "STEEL_RAFTER"] = "STEEL_TRUSS"
+    material: Optional[str] = None  # Reference to material id, e.g. "STEEL_SS400"
+    spacing: float = 1.00  # Truss / rafter spacing (m)
+    purlin_spacing: float = 0.32  # Purlin spacing (m) (ระยะแป e.g. 0.32m for concrete tile)
+    steel_weight_per_sqm: float = 18.0  # kg/m2 of projected roof area for structural steel framing
+
+
+class IfcRoof(BaseModel):
+    class_: Literal["IfcRoof"] = Field(alias="class", default="IfcRoof")
+    tag: str
+    material: str
+    roof_type: RoofType = "HIP"
+    placement: RoofPlacement
+    covering: Optional[RoofCoveringConfig] = Field(default_factory=RoofCoveringConfig)
+    framing: Optional[RoofFramingConfig] = Field(default_factory=RoofFramingConfig)
+
+
+
+# MEP (Mechanical, Electrical & Plumbing) Elements
+
+PipeSystemType = Literal[
+    "COLD_WATER", "HOT_WATER", "SOIL", "WASTE", "VENT", "DRAINAGE", "REFRIGERANT", "CONDENSATE"
+]
+ElectricalSystemType = Literal["POWER", "LIGHTING", "MAIN_FEEDER", "COMMUNICATION", "SOLAR"]
+DuctSystemType = Literal["SUPPLY_AIR", "RETURN_AIR", "EXHAUST_AIR", "FRESH_AIR"]
+AirTerminalType = Literal[
+    "EXHAUST_FAN_CEILING", "EXHAUST_FAN_WALL", "KITCHEN_HOOD", "SUPPLY_DIFFUSER", "RETURN_GRILLE"
+]
+HvacEquipmentType = Literal[
+    "AC_INDOOR_WALL", "AC_INDOOR_CASSETTE", "AC_INDOOR_CONCEALED", "AC_OUTDOOR_CONDENSER"
+]
+SanitaryTerminalType = Literal[
+    "WATER_CLOSET", "LAVATORY", "SHOWER", "KITCHEN_SINK",
+    "FLOOR_DRAIN", "GREASE_TRAP", "SEPTIC_TANK", "WATER_TANK", "WATER_PUMP"
+]
+BoardType = Literal["CONSUMER_UNIT", "MDB", "PANELBOARD"]
+LightFixtureType = Literal["DOWNLIGHT", "LED_TUBE", "PENDANT", "WALL_LAMP", "FLOODLIGHT"]
+SwitchType = Literal["ONE_WAY", "TWO_WAY", "DIMMER"]
+OutletType = Literal["DUPLEX_GROUNDED", "WATERPROOF", "HIGH_POWER"]
+
+
+RoutingStrategy = Literal["DIRECT", "ORTHOGONAL", "X_THEN_Y", "Y_THEN_X"]
+
+
+class PipePoint(BaseModel):
+    grid: Optional[Tuple[str, str]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    x: Optional[float] = None
+    y: Optional[float] = None
+    z: Optional[float] = None
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class PipePlacement(BaseModel):
+    storey: str
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    from_offset: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    to_offset: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    path: Optional[List[PipePoint]] = None
+    routing: RoutingStrategy = "DIRECT"
+    slope: float = 0.0  # Slope ratio, e.g. 0.01 (1:100) or 0.02 (1:50)
+
+    @field_validator("from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("from_offset", "to_offset", mode="before")
+    @classmethod
+    def convert_offset_tuple(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(float(x) for x in v)
+        return v
+
+
+class IfcPipeSegment(BaseModel):
+    class_: Literal["IfcPipeSegment"] = Field(alias="class", default="IfcPipeSegment")
+    tag: str
+    system_type: PipeSystemType = "COLD_WATER"
+    material: Optional[str] = None
+    nominal_diameter: float = 0.020  # Nominal diameter in meters (e.g. 0.020 for 3/4", 0.100 for 4")
+    placement: PipePlacement
+
+
+class IfcCableCarrierSegment(BaseModel):
+    class_: Literal["IfcCableCarrierSegment"] = Field(alias="class", default="IfcCableCarrierSegment")
+    tag: str
+    system_type: ElectricalSystemType = "LIGHTING"
+    material: Optional[str] = None
+    nominal_diameter: float = 0.020  # Conduit diameter in meters
+    placement: PipePlacement
+
+
+class TerminalDimensions(BaseModel):
+    width: float = 0.50
+    depth: float = 0.50
+    height: float = 0.50
+
+
+class TerminalPlacement(BaseModel):
+    grid: Tuple[str, str]
+    storey: str
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    rotation: float = 0.0  # Rotation in degrees around Z-axis
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcSanitaryTerminal(BaseModel):
+    class_: Literal["IfcSanitaryTerminal"] = Field(alias="class", default="IfcSanitaryTerminal")
+    tag: str
+    terminal_type: SanitaryTerminalType = "WATER_CLOSET"
+    material: Optional[str] = None
+    placement: TerminalPlacement
+    dimensions: Optional[TerminalDimensions] = None
+
+
+class IfcDistributionBoard(BaseModel):
+    class_: Literal["IfcDistributionBoard"] = Field(alias="class", default="IfcDistributionBoard")
+    tag: str
+    board_type: BoardType = "CONSUMER_UNIT"
+    material: Optional[str] = None
+    placement: TerminalPlacement
+    dimensions: Optional[TerminalDimensions] = None
+    circuits_count: int = 12
+
+
+class IfcLightFixture(BaseModel):
+    class_: Literal["IfcLightFixture"] = Field(alias="class", default="IfcLightFixture")
+    tag: str
+    fixture_type: LightFixtureType = "DOWNLIGHT"
+    material: Optional[str] = None
+    placement: TerminalPlacement
+    dimensions: Optional[TerminalDimensions] = None
+    wattage: Optional[float] = 12.0
+
+
+class IfcSwitchingDevice(BaseModel):
+    class_: Literal["IfcSwitchingDevice"] = Field(alias="class", default="IfcSwitchingDevice")
+    tag: str
+    switch_type: SwitchType = "ONE_WAY"
+    material: Optional[str] = None
+    placement: TerminalPlacement
+    dimensions: Optional[TerminalDimensions] = None
+    gangs: int = 1
+
+
+class IfcOutlet(BaseModel):
+    class_: Literal["IfcOutlet"] = Field(alias="class", default="IfcOutlet")
+    tag: str
+    outlet_type: OutletType = "DUPLEX_GROUNDED"
+    material: Optional[str] = None
+    placement: TerminalPlacement
+    dimensions: Optional[TerminalDimensions] = None
+
+
+class IfcDuctSegment(BaseModel):
+    class_: Literal["IfcDuctSegment"] = Field(alias="class", default="IfcDuctSegment")
+    tag: str
+    system_type: DuctSystemType = "EXHAUST_AIR"
+    material: Optional[str] = None
+    width: float = 0.25   # Duct width in meters (or diameter if circular)
+    height: float = 0.20  # Duct height in meters
+    placement: PipePlacement
+
+
+class IfcAirTerminal(BaseModel):
+    class_: Literal["IfcAirTerminal"] = Field(alias="class", default="IfcAirTerminal")
+    tag: str
+    terminal_type: AirTerminalType = "EXHAUST_FAN_CEILING"
+    material: Optional[str] = None
+    placement: TerminalPlacement
+    dimensions: Optional[TerminalDimensions] = None
+    flow_rate_cfm: Optional[float] = None
+
+
+class IfcUnitaryEquipment(BaseModel):
+    class_: Literal["IfcUnitaryEquipment"] = Field(alias="class", default="IfcUnitaryEquipment")
+    tag: str
+    equipment_type: HvacEquipmentType = "AC_INDOOR_WALL"
+    material: Optional[str] = None
+    placement: TerminalPlacement
+    dimensions: Optional[TerminalDimensions] = None
+    cooling_capacity_btu: Optional[float] = 12000.0
+
+
 Element = Annotated[
-    Union[IfcColumn, IfcBeam, IfcWall, IfcFooting, IfcSlab, IfcStair, IfcCustomElement],
+    Union[
+        IfcColumn,
+        IfcBeam,
+        IfcWall,
+        IfcFooting,
+        IfcSlab,
+        IfcStair,
+        IfcRoof,
+        IfcPipeSegment,
+        IfcCableCarrierSegment,
+        IfcDuctSegment,
+        IfcSanitaryTerminal,
+        IfcDistributionBoard,
+        IfcLightFixture,
+        IfcSwitchingDevice,
+        IfcOutlet,
+        IfcAirTerminal,
+        IfcUnitaryEquipment,
+        IfcCustomElement,
+    ],
     Field(discriminator="class_"),
 ]
 
@@ -492,6 +758,63 @@ class ProjectManifest(BaseModel):
                     raise ValueError(
                         f"Element '{elem.tag}' grid_anchor references unknown Y grid '{gy}'"
                     )
+
+            elif isinstance(elem, IfcRoof):
+                if elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                for pt in elem.placement.boundary:
+                    gx, gy = pt
+                    if gx not in grid_x_ids:
+                        raise ValueError(
+                            f"Element '{elem.tag}' boundary references unknown X grid '{gx}'"
+                        )
+                    if gy not in grid_y_ids:
+                        raise ValueError(
+                            f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'"
+                        )
+                if elem.framing and elem.framing.material and elem.framing.material not in material_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' framing references unknown material '{elem.framing.material}'"
+                    )
+
+            elif isinstance(elem, (IfcPipeSegment, IfcCableCarrierSegment, IfcDuctSegment)):
+                if elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                if elem.placement.from_grid:
+                    gx, gy = elem.placement.from_grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
+                if elem.placement.to_grid:
+                    gx, gy = elem.placement.to_grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
+                if elem.placement.path:
+                    for pt in elem.placement.path:
+                        if pt.grid:
+                            gx, gy = pt.grid
+                            if gx not in grid_x_ids:
+                                raise ValueError(f"Element '{elem.tag}' path references unknown X grid '{gx}'")
+                            if gy not in grid_y_ids:
+                                raise ValueError(f"Element '{elem.tag}' path references unknown Y grid '{gy}'")
+
+            elif isinstance(elem, (IfcSanitaryTerminal, IfcDistributionBoard, IfcLightFixture, IfcSwitchingDevice, IfcOutlet, IfcAirTerminal, IfcUnitaryEquipment)):
+                if elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                gx, gy = elem.placement.grid
+                if gx not in grid_x_ids:
+                    raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
+                if gy not in grid_y_ids:
+                    raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
 
             elif isinstance(elem, IfcCustomElement):
                 if elem.placement.storey not in storey_ids:

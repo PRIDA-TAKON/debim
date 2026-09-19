@@ -9,14 +9,25 @@ from typing import Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 
 from debim.resolver import (
+    ResolvedAirTerminal,
     ResolvedBeam,
+    ResolvedCableCarrierSegment,
     ResolvedColumn,
     ResolvedCustomElement,
+    ResolvedDistributionBoard,
+    ResolvedDuctSegment,
     ResolvedElement,
     ResolvedFooting,
+    ResolvedLightFixture,
     ResolvedManifest,
+    ResolvedOutlet,
+    ResolvedPipeSegment,
+    ResolvedRoof,
+    ResolvedSanitaryTerminal,
     ResolvedSlab,
     ResolvedStair,
+    ResolvedSwitchingDevice,
+    ResolvedUnitaryEquipment,
     ResolvedWall,
     resolve_manifest,
 )
@@ -126,6 +137,37 @@ class StairQTO(BaseModel):
     railing_type: Optional[str] = None
 
 
+class WallFinishesQTO(BaseModel):
+    net_area_one_side: float = 0.0      # m²
+    plaster_area: float = 0.0           # m²
+    paint_interior_area: float = 0.0    # m²
+    paint_exterior_area: float = 0.0    # m²
+    tile_area: float = 0.0              # m²
+
+
+class RoofQTO(BaseModel):
+    footprint_area: float = 0.0          # Projected horizontal area (m²)
+    sloped_area: float = 0.0             # Sloped roof covering tile area (m²)
+    ridge_cap_length: float = 0.0        # Ridge cap length (m)
+    hip_cap_length: float = 0.0          # Hip cap length (m)
+    eaves_length: float = 0.0            # Eaves/fascia board length (m)
+    structural_steel_weight: float = 0.0 # SS400 structural steel weight (kg)
+    insulation_area: float = 0.0         # Under-tile insulation area (m²)
+
+
+class MepQTO(BaseModel):
+    system_type: str = ""
+    length: float = 0.0                    # ท่อ / สายไฟ / ท่อลม (linear meters)
+    nominal_diameter: float = 0.0          # m (สำหรับท่อกลม)
+    width: float = 0.0                     # m (สำหรับท่อลมสี่เหลี่ยม)
+    height: float = 0.0                    # m (สำหรับท่อลมสี่เหลี่ยม)
+    fittings_count: int = 0                # จำนวน fittings / ข้อต่อ
+    fixture_type: str = ""                 # ประเภทสุขภัณฑ์หรืออุปกรณ์
+    count: int = 1                         # จำนวนชิ้น / ชุด
+    dimensions: Optional[Tuple[float, float, float]] = None
+    capacity: Optional[float] = None       # CFM หรือ BTU
+
+
 class ElementQTO(BaseModel):
     tag: str
     element_class: str
@@ -136,6 +178,9 @@ class ElementQTO(BaseModel):
     total_rebar_weight: float = 0.0  # kg
     substructure: Optional[SubstructureQTO] = None
     stair_assembly: Optional[StairQTO] = None
+    wall_finishes: Optional[WallFinishesQTO] = None
+    roof: Optional[RoofQTO] = None
+    mep: Optional[MepQTO] = None
 
 
 class ProjectQTO(BaseModel):
@@ -150,6 +195,37 @@ class ProjectQTO(BaseModel):
     total_pile_length: float = 0.0
     total_nosing_length: float = 0.0
     total_railing_length: float = 0.0
+    total_wall_masonry_area: float = 0.0
+    total_wall_plaster_area: float = 0.0
+    total_wall_paint_interior_area: float = 0.0
+    total_wall_paint_exterior_area: float = 0.0
+    total_wall_tile_area: float = 0.0
+    total_roof_covering_area: float = 0.0
+    total_roof_steel_weight: float = 0.0
+    total_roof_ridge_length: float = 0.0
+    total_roof_hip_length: float = 0.0
+    total_roof_eaves_length: float = 0.0
+    total_roof_insulation_area: float = 0.0
+    # MEP Totals
+    total_cold_water_pipe_length: float = 0.0
+    total_soil_pipe_length: float = 0.0
+    total_waste_pipe_length: float = 0.0
+    total_vent_pipe_length: float = 0.0
+    total_drainage_pipe_length: float = 0.0
+    total_refrigerant_pipe_length: float = 0.0
+    total_condensate_pipe_length: float = 0.0
+    total_pipe_fittings_count: int = 0
+    total_conduit_length: float = 0.0
+    total_conduit_fittings_count: int = 0
+    total_duct_length: float = 0.0
+    total_duct_fittings_count: int = 0
+    total_sanitary_terminals_count: int = 0
+    total_distribution_boards_count: int = 0
+    total_lighting_fixtures_count: int = 0
+    total_switches_count: int = 0
+    total_outlets_count: int = 0
+    total_air_terminals_count: int = 0
+    total_unitary_equipment_count: int = 0
 
 
     def get_element(self, tag: str) -> Optional[ElementQTO]:
@@ -287,6 +363,44 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
 
         vol = (t * h * length) - opening_volume
         formwork = 2.0 * (h * length) - 2.0 * opening_area
+        net_one_side = max(0.0, (h * length) - opening_area)
+
+        finishes_qto = None
+        if elem.finishes:
+            fin_cfg = elem.finishes
+            # 1. Plaster area
+            if fin_cfg.plaster == "BOTH":
+                plaster_area = 2.0 * net_one_side
+            elif fin_cfg.plaster in ("INTERIOR", "EXTERIOR"):
+                plaster_area = net_one_side
+            else:
+                plaster_area = 0.0
+
+            # 2. Side finishes (Tiles vs Paint)
+            def calc_side_finish(ftype: str) -> Tuple[float, float]:
+                """Returns (tile_area, paint_area)."""
+                if ftype == "TILES":
+                    if fin_cfg.tile_height is not None and h > 0:
+                        ratio = min(1.0, max(0.0, fin_cfg.tile_height / h))
+                        t_area = net_one_side * ratio
+                        p_area = net_one_side - t_area
+                        return t_area, p_area
+                    return net_one_side, 0.0
+                elif ftype == "PAINT":
+                    return 0.0, net_one_side
+                else:
+                    return 0.0, 0.0
+
+            int_tile, int_paint = calc_side_finish(fin_cfg.interior_finish)
+            ext_tile, ext_paint = calc_side_finish(fin_cfg.exterior_finish)
+
+            finishes_qto = WallFinishesQTO(
+                net_area_one_side=net_one_side,
+                plaster_area=plaster_area,
+                paint_interior_area=int_paint,
+                paint_exterior_area=ext_paint,
+                tile_area=int_tile + ext_tile,
+            )
 
         return ElementQTO(
             tag=tag,
@@ -296,6 +410,7 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
             formwork_area=formwork,
             rebar_weights={},
             total_rebar_weight=0.0,
+            wall_finishes=finishes_qto,
         )
 
     elif isinstance(resolved, ResolvedSlab):
@@ -446,6 +561,217 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
             substructure=substructure,
         )
 
+    elif isinstance(resolved, ResolvedRoof):
+        elem = resolved.element
+        steel_wt = resolved.total_steel_weight
+        has_insul = bool(elem.covering and elem.covering.insulation)
+        roof_qto = RoofQTO(
+            footprint_area=resolved.total_footprint_area,
+            sloped_area=resolved.total_sloped_area,
+            ridge_cap_length=resolved.total_ridge_length,
+            hip_cap_length=resolved.total_hip_length,
+            eaves_length=resolved.total_eaves_length,
+            structural_steel_weight=steel_wt,
+            insulation_area=resolved.total_sloped_area if has_insul else 0.0,
+        )
+
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            roof=roof_qto,
+        )
+
+    elif isinstance(resolved, ResolvedPipeSegment):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type=resolved.system_type,
+                length=resolved.length,
+                nominal_diameter=resolved.nominal_diameter,
+                fittings_count=resolved.fittings_count,
+                count=1,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedCableCarrierSegment):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type=resolved.system_type,
+                length=resolved.length,
+                nominal_diameter=resolved.nominal_diameter,
+                fittings_count=resolved.fittings_count,
+                count=1,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedSanitaryTerminal):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="SANITARY",
+                fixture_type=resolved.terminal_type,
+                count=1,
+                dimensions=resolved.dimensions,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedDistributionBoard):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="ELECTRICAL",
+                fixture_type=resolved.board_type,
+                count=1,
+                dimensions=resolved.dimensions,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedLightFixture):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="ELECTRICAL",
+                fixture_type=resolved.fixture_type,
+                count=1,
+                dimensions=resolved.dimensions,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedSwitchingDevice):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="ELECTRICAL",
+                fixture_type=resolved.switch_type,
+                count=1,
+                dimensions=resolved.dimensions,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedOutlet):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="ELECTRICAL",
+                fixture_type=resolved.outlet_type,
+                count=1,
+                dimensions=resolved.dimensions,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedDuctSegment):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type=resolved.system_type,
+                length=resolved.length,
+                width=resolved.width,
+                height=resolved.height,
+                fittings_count=resolved.fittings_count,
+                count=1,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedAirTerminal):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="HVAC",
+                fixture_type=resolved.terminal_type,
+                count=1,
+                dimensions=resolved.dimensions,
+                capacity=resolved.flow_rate_cfm,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedUnitaryEquipment):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="HVAC",
+                fixture_type=resolved.equipment_type,
+                count=1,
+                dimensions=resolved.dimensions,
+                capacity=resolved.cooling_capacity_btu,
+            ),
+        )
+
     raise TypeError(f"Unsupported resolved element type: {type(resolved)}")
 
 
@@ -474,7 +800,38 @@ def calculate_qto(
     total_piles_len = 0.0
     total_nosing_len = 0.0
     total_railing_len = 0.0
+    total_wall_masonry = 0.0
+    total_wall_plaster = 0.0
+    total_wall_paint_int = 0.0
+    total_wall_paint_ext = 0.0
+    total_wall_tile = 0.0
+    total_roof_covering = 0.0
+    total_roof_steel = 0.0
+    total_roof_ridge = 0.0
+    total_roof_hip = 0.0
+    total_roof_eaves = 0.0
+    total_roof_insul = 0.0
 
+    # MEP Totals
+    total_cold_water_len = 0.0
+    total_soil_len = 0.0
+    total_waste_len = 0.0
+    total_vent_len = 0.0
+    total_drainage_len = 0.0
+    total_refrigerant_len = 0.0
+    total_condensate_len = 0.0
+    total_pipe_fittings = 0
+    total_conduit_len = 0.0
+    total_conduit_fittings = 0
+    total_duct_len = 0.0
+    total_duct_fittings = 0
+    total_sanitary_terms = 0
+    total_dist_boards = 0
+    total_lights = 0
+    total_switches = 0
+    total_outlets = 0
+    total_air_terms = 0
+    total_unitary_eqs = 0
 
     # Build material category lookup
     material_categories = {
@@ -508,6 +865,62 @@ def calculate_qto(
             total_nosing_len += eqto.stair_assembly.nosing_length
             total_railing_len += eqto.stair_assembly.railing_length
 
+        if eqto.roof:
+            total_roof_covering += eqto.roof.sloped_area
+            total_roof_steel += eqto.roof.structural_steel_weight
+            total_roof_ridge += eqto.roof.ridge_cap_length
+            total_roof_hip += eqto.roof.hip_cap_length
+            total_roof_eaves += eqto.roof.eaves_length
+            total_roof_insul += eqto.roof.insulation_area
+
+        if eqto.element_class == "IfcWall":
+            if hasattr(elem, "thickness") and elem.thickness > 0:
+                total_wall_masonry += eqto.concrete_volume / elem.thickness
+            if eqto.wall_finishes:
+                total_wall_plaster += eqto.wall_finishes.plaster_area
+                total_wall_paint_int += eqto.wall_finishes.paint_interior_area
+                total_wall_paint_ext += eqto.wall_finishes.paint_exterior_area
+                total_wall_tile += eqto.wall_finishes.tile_area
+
+        if eqto.mep:
+            if eqto.element_class == "IfcPipeSegment":
+                st = eqto.mep.system_type
+                if st == "COLD_WATER":
+                    total_cold_water_len += eqto.mep.length
+                elif st == "SOIL":
+                    total_soil_len += eqto.mep.length
+                elif st == "WASTE":
+                    total_waste_len += eqto.mep.length
+                elif st == "VENT":
+                    total_vent_len += eqto.mep.length
+                elif st == "DRAINAGE":
+                    total_drainage_len += eqto.mep.length
+                elif st == "REFRIGERANT":
+                    total_refrigerant_len += eqto.mep.length
+                elif st == "CONDENSATE":
+                    total_condensate_len += eqto.mep.length
+                total_pipe_fittings += eqto.mep.fittings_count
+            elif eqto.element_class == "IfcCableCarrierSegment":
+                total_conduit_len += eqto.mep.length
+                total_conduit_fittings += eqto.mep.fittings_count
+            elif eqto.element_class == "IfcDuctSegment":
+                total_duct_len += eqto.mep.length
+                total_duct_fittings += eqto.mep.fittings_count
+            elif eqto.element_class == "IfcSanitaryTerminal":
+                total_sanitary_terms += eqto.mep.count
+            elif eqto.element_class == "IfcDistributionBoard":
+                total_dist_boards += eqto.mep.count
+            elif eqto.element_class == "IfcLightFixture":
+                total_lights += eqto.mep.count
+            elif eqto.element_class == "IfcSwitchingDevice":
+                total_switches += eqto.mep.count
+            elif eqto.element_class == "IfcOutlet":
+                total_outlets += eqto.mep.count
+            elif eqto.element_class == "IfcAirTerminal":
+                total_air_terms += eqto.mep.count
+            elif eqto.element_class == "IfcUnitaryEquipment":
+                total_unitary_eqs += eqto.mep.count
+
     return ProjectQTO(
         elements=qto_elements,
         total_concrete_volume=total_conc_vol,
@@ -520,4 +933,34 @@ def calculate_qto(
         total_pile_length=total_piles_len,
         total_nosing_length=total_nosing_len,
         total_railing_length=total_railing_len,
+        total_wall_masonry_area=total_wall_masonry,
+        total_wall_plaster_area=total_wall_plaster,
+        total_wall_paint_interior_area=total_wall_paint_int,
+        total_wall_paint_exterior_area=total_wall_paint_ext,
+        total_wall_tile_area=total_wall_tile,
+        total_roof_covering_area=total_roof_covering,
+        total_roof_steel_weight=total_roof_steel,
+        total_roof_ridge_length=total_roof_ridge,
+        total_roof_hip_length=total_roof_hip,
+        total_roof_eaves_length=total_roof_eaves,
+        total_roof_insulation_area=total_roof_insul,
+        total_cold_water_pipe_length=total_cold_water_len,
+        total_soil_pipe_length=total_soil_len,
+        total_waste_pipe_length=total_waste_len,
+        total_vent_pipe_length=total_vent_len,
+        total_drainage_pipe_length=total_drainage_len,
+        total_refrigerant_pipe_length=total_refrigerant_len,
+        total_condensate_pipe_length=total_condensate_len,
+        total_pipe_fittings_count=total_pipe_fittings,
+        total_conduit_length=total_conduit_len,
+        total_conduit_fittings_count=total_conduit_fittings,
+        total_duct_length=total_duct_len,
+        total_duct_fittings_count=total_duct_fittings,
+        total_sanitary_terminals_count=total_sanitary_terms,
+        total_distribution_boards_count=total_dist_boards,
+        total_lighting_fixtures_count=total_lights,
+        total_switches_count=total_switches,
+        total_outlets_count=total_outlets,
+        total_air_terminals_count=total_air_terms,
+        total_unitary_equipment_count=total_unitary_eqs,
     )

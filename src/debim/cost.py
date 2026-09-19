@@ -142,13 +142,28 @@ def estimate_cost(
             if unit in ("m3", "cubic_meter"):
                 qty = eqto.concrete_volume
             elif unit in ("m2", "square_meter"):
+                if eqto.roof:
+                    qty = eqto.roof.sloped_area
                 # For wall, net surface area = volume / thickness if thickness > 0
-                if hasattr(resolved_elem, "thickness") and resolved_elem.thickness > 0:
+                elif hasattr(resolved_elem, "thickness") and resolved_elem.thickness > 0:
                     qty = eqto.concrete_volume / resolved_elem.thickness
                 else:
                     qty = eqto.formwork_area
             elif unit in ("kg", "kilogram"):
-                qty = eqto.total_rebar_weight
+                if eqto.roof:
+                    qty = eqto.roof.structural_steel_weight
+                else:
+                    qty = eqto.total_rebar_weight
+            elif unit in ("m", "meter", "linear_meter"):
+                if eqto.mep:
+                    qty = eqto.mep.length
+                else:
+                    qty = 1.0
+            elif unit in ("set", "item", "ea", "ชุด", "จุด", "ตัว"):
+                if eqto.mep:
+                    qty = float(eqto.mep.count)
+                else:
+                    qty = 1.0
             else:
                 qty = 1.0
 
@@ -229,6 +244,122 @@ def estimate_cost(
                     quantities_by_code.get(code, 0.0) + qto.total_pile_count
                 )
                 break
+
+    # 5. Map wall finishes (Plaster, Interior Paint, Exterior Paint, Wall Tiles)
+    if qto.total_wall_plaster_area > 0:
+        for code, item in catalog.items.items():
+            if "plaster" in code.lower() or "ฉาบ" in item.name or "plaster" in item.name.lower():
+                quantities_by_code[code] = (
+                    quantities_by_code.get(code, 0.0) + qto.total_wall_plaster_area
+                )
+                break
+
+    if qto.total_wall_paint_interior_area > 0:
+        for code, item in catalog.items.items():
+            if "paint-int" in code.lower() or "ทาสีภายใน" in item.name or ("paint" in code.lower() and "int" in code.lower()):
+                quantities_by_code[code] = (
+                    quantities_by_code.get(code, 0.0) + qto.total_wall_paint_interior_area
+                )
+                break
+
+    if qto.total_wall_paint_exterior_area > 0:
+        for code, item in catalog.items.items():
+            if "paint-ext" in code.lower() or "ทาสีภายนอก" in item.name or ("paint" in code.lower() and "ext" in code.lower()):
+                quantities_by_code[code] = (
+                    quantities_by_code.get(code, 0.0) + qto.total_wall_paint_exterior_area
+                )
+                break
+
+    # If general paint is present in catalog without int/ext distinction:
+    total_paint = qto.total_wall_paint_interior_area + qto.total_wall_paint_exterior_area
+    if total_paint > 0:
+        has_matched_paint = any("paint" in c.lower() for c in quantities_by_code.keys())
+        if not has_matched_paint:
+            for code, item in catalog.items.items():
+                if "paint" in code.lower() or "ทาสี" in item.name:
+                    quantities_by_code[code] = (
+                        quantities_by_code.get(code, 0.0) + total_paint
+                    )
+                    break
+
+    if qto.total_wall_tile_area > 0:
+        for code, item in catalog.items.items():
+            if "tile" in code.lower() or "กระเบื้อง" in item.name:
+                quantities_by_code[code] = (
+                    quantities_by_code.get(code, 0.0) + qto.total_wall_tile_area
+                )
+                break
+
+    # 6. Map roof items (Structural steel truss, Roof tiles, Ridge/Hip caps, Fascia, Insulation)
+    if qto.total_roof_steel_weight > 0:
+        has_steel = any("steel" in c.lower() or "truss" in c.lower() for c in quantities_by_code.keys())
+        if not has_steel:
+            for code, item in catalog.items.items():
+                if "steel" in code.lower() or "โครงเหล็ก" in item.name or "truss" in code.lower():
+                    quantities_by_code[code] = (
+                        quantities_by_code.get(code, 0.0) + qto.total_roof_steel_weight
+                    )
+                    break
+
+    if qto.total_roof_covering_area > 0:
+        has_roof_tile = any("roof-tile" in c.lower() for c in quantities_by_code.keys())
+        if not has_roof_tile:
+            for code, item in catalog.items.items():
+                if "roof-tile" in code.lower() or "กระเบื้องหลังคา" in item.name or "กระเบื้องมุงหลังคา" in item.name or ("roof" in code.lower() and "tile" in code.lower()):
+                    quantities_by_code[code] = (
+                        quantities_by_code.get(code, 0.0) + qto.total_roof_covering_area
+                    )
+                    break
+
+    total_ridge_hip = qto.total_roof_ridge_length + qto.total_roof_hip_length
+    if total_ridge_hip > 0:
+        for code, item in catalog.items.items():
+            if "ridge" in code.lower() or "ครอบสันหลังคา" in item.name or "ครอบตะเข้" in item.name:
+                quantities_by_code[code] = (
+                    quantities_by_code.get(code, 0.0) + total_ridge_hip
+                )
+                break
+
+    if qto.total_roof_eaves_length > 0:
+        for code, item in catalog.items.items():
+            if "fascia" in code.lower() or "เชิงชาย" in item.name:
+                quantities_by_code[code] = (
+                    quantities_by_code.get(code, 0.0) + qto.total_roof_eaves_length
+                )
+                break
+
+    if qto.total_roof_insulation_area > 0:
+        for code, item in catalog.items.items():
+            if "insul" in code.lower() or "สะท้อนความร้อน" in item.name or "ฉนวน" in item.name:
+                quantities_by_code[code] = (
+                    quantities_by_code.get(code, 0.0) + qto.total_roof_insulation_area
+                )
+                break
+
+    # 7. Map MEP system totals (Cold Water, Soil, Waste, Vent, Conduits, Terminals, HVAC)
+    mep_maps = [
+        (qto.total_cold_water_pipe_length, ["pipe-cold", "pipe-water", "ppr", "ท่อน้ำดี"]),
+        (qto.total_soil_pipe_length, ["pipe-soil", "ท่อโสโครก", "pvc-soil"]),
+        (qto.total_waste_pipe_length, ["pipe-waste", "ท่อน้ำทิ้ง", "pvc-waste"]),
+        (qto.total_vent_pipe_length, ["pipe-vent", "ท่อระบายอากาศ", "pvc-vent"]),
+        (qto.total_drainage_pipe_length, ["pipe-drain", "ท่อระบายน้ำ"]),
+        (qto.total_refrigerant_pipe_length, ["refrigerant", "pipe-ref", "ท่อน้ำยาแอร์", "ท่อน้ำยา"]),
+        (qto.total_condensate_pipe_length, ["condensate", "pipe-drain-ac", "ท่อน้ำทิ้งแอร์"]),
+        (float(qto.total_pipe_fittings_count), ["pipe-fitting", "ข้อต่อท่อ"]),
+        (qto.total_conduit_length, ["conduit", "ท่อร้อยสายไฟ"]),
+        (float(qto.total_conduit_fittings_count), ["conduit-fitting", "กล่องพักสาย", "อุปกรณ์ร้อยสาย"]),
+        (qto.total_duct_length, ["duct", "ท่อลม", "ท่อระบาย"]),
+        (float(qto.total_duct_fittings_count), ["duct-fitting", "ข้อต่อท่อลม"]),
+    ]
+    for amount, keywords in mep_maps:
+        if amount > 0:
+            for code, item in catalog.items.items():
+                if any(kw in code.lower() or kw in item.name.lower() for kw in keywords):
+                    if code not in quantities_by_code:
+                        quantities_by_code[code] = (
+                            quantities_by_code.get(code, 0.0) + amount
+                        )
+                        break
 
     # Build line items
     line_items: List[CostLineItem] = []

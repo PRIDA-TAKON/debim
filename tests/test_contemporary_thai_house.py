@@ -40,13 +40,49 @@ def test_contemporary_thai_house_resolution_and_qto():
     assert len(resolved.columns) > 30
     assert len(resolved.beams) > 30
 
+    # 31 walls, 13 doors, 18 windows
+    assert len(resolved.walls) == 31
+    assert len(resolved.doors) == 13
+    assert len(resolved.windows) == 18
+
     qto_result = calculate_qto(manifest_path)
     # Total concrete volume including 17 footings, 19 slabs, and 1 stair
     assert 50.0 <= qto_result.total_concrete_volume <= 58.0
 
+    # Wall masonry takeoffs (brick area net of openings)
+    masonry_area = sum(
+        eq.concrete_volume / 0.10
+        for eq in qto_result.elements
+        if eq.material == "BRICK_MON"
+    )
+    assert 220.0 <= masonry_area <= 235.0
+    assert 220.0 <= qto_result.total_wall_masonry_area <= 235.0
+
+    # Wall finishes takeoffs (Plaster, Paint Interior/Exterior, Wall Tiles)
+    assert 450.0 <= qto_result.total_wall_plaster_area <= 460.0
+    assert 180.0 <= qto_result.total_wall_paint_interior_area <= 190.0
+    assert 220.0 <= qto_result.total_wall_paint_exterior_area <= 235.0
+    assert 40.0 <= qto_result.total_wall_tile_area <= 45.0
+
+
     # Stair architectural takeoffs
     assert qto_result.total_nosing_length == 20.0
     assert qto_result.total_railing_length > 5.0
+
+    # Roof structure & covering takeoffs
+    assert len(resolved.roofs) == 1
+    house_roof = resolved.roofs[0]
+    assert house_roof.roof_type == "HIP"
+    assert len(house_roof.planes) == 4
+    assert 140.0 <= qto_result.total_roof_covering_area <= 155.0
+    assert 2200.0 <= qto_result.total_roof_steel_weight <= 2400.0
+    assert round(qto_result.total_roof_ridge_length, 2) == 0.60
+    assert qto_result.total_roof_hip_length > 25.0
+    assert round(qto_result.total_roof_eaves_length, 2) == 45.20
+    # Roof framing members (อกไก่, ตะเข้สัน, เสาดั้ง, ขื่อ, อะเส, จันทัน, แป)
+    assert len(house_roof.framing_members) > 20
+    house_m_types = {m.member_type for m in house_roof.framing_members}
+    assert {"WALL_PLATE", "RIDGE_BEAM", "HIP_RAFTER", "KING_POST", "TIE_BEAM", "PURLIN"}.issubset(house_m_types)
 
     # Rebar weight verification
     assert qto_result.total_rebar_weight > 3000.0

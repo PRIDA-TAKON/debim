@@ -195,7 +195,14 @@
         <button class="layer-btn active" id="btn-layer-slabs" onclick="toggleLayer('slabs')">🟧 พื้น (Slabs)</button>
         <button class="layer-btn active" id="btn-layer-stairs" onclick="toggleLayer('stairs')">🪜 บันได (Stairs)</button>
         <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/คาน</button>
-        <button class="layer-btn active" id="btn-layer-grids" onclick="toggleLayer('grids')">📐 ผังกริด/แนวเขต</button>
+        <button class="layer-btn active" id="btn-layer-roof_covering" onclick="toggleLayer('roof_covering')">🏠 หลังคา</button>
+        <button class="layer-btn active" id="btn-layer-roof_framing" onclick="toggleLayer('roof_framing')">🏗️ โครงหลังคา</button>
+        <button class="layer-btn active" id="btn-layer-mep_cold_water" onclick="toggleLayer('mep_cold_water')">💧 น้ำดี</button>
+        <button class="layer-btn active" id="btn-layer-mep_drainage" onclick="toggleLayer('mep_drainage')">🚽 น้ำเสีย/น้ำทิ้ง</button>
+        <button class="layer-btn active" id="btn-layer-mep_fixtures" onclick="toggleLayer('mep_fixtures')">🛁 สุขภัณฑ์</button>
+        <button class="layer-btn active" id="btn-layer-mep_electrical" onclick="toggleLayer('mep_electrical')">⚡ ไฟฟ้า</button>
+        <button class="layer-btn active" id="btn-layer-mep_hvac" onclick="toggleLayer('mep_hvac')">❄️ แอร์/ระบายอากาศ</button>
+        <button class="layer-btn active" id="btn-layer-grids" onclick="toggleLayer('grids')">📐 กริด/ผัง</button>
     </div>
 
     <div id="axes-legend">
@@ -5890,6 +5897,6647 @@
       ],
       "color": "#E11D48",
       "linewidth": 4
+    },
+    {
+      "tag": "WALL-L1-B_1-2",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        2.0,
+        1.8,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 4.0,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "D-L1-01",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        1.0,
+        1.8,
+        1.025
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 2.0,
+        "thickness": 0.10800000000000001,
+        "height": 2.05
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "WALL-L1-1_B-C",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        0.0,
+        3.65,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.7,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L1-01",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.0,
+        2.85,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L1-2_B-C",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        4.0,
+        3.65,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.7,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "D-L1-02",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        4.0,
+        3.1500000000000004,
+        1.0
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "thickness": 0.10800000000000001,
+        "height": 2.0
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "WALL-L1-C_2-4",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        6.5,
+        5.5,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 5.0,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L1-02",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        4.6,
+        5.5,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "D-L1-03",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        7.2,
+        5.5,
+        1.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.9,
+        "thickness": 0.10800000000000001,
+        "height": 2.0
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "WALL-L1-1_C-D",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        0.0,
+        6.6,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 2.2,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L1-03",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.0,
+        6.0,
+        1.9
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.2,
+        "thickness": 0.10800000000000001,
+        "height": 1.8
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L1-4_C-D",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        9.0,
+        6.6,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 2.2,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L1-04",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        9.0,
+        5.8,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L1-D_1-2",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        2.0,
+        7.7,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 4.0,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "D-L1-04",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        1.55,
+        7.7,
+        1.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.9,
+        "thickness": 0.10800000000000001,
+        "height": 2.0
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "WALL-L1-D_2-3",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        5.0,
+        7.7,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 2.0,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "D-L1-05",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        4.6,
+        7.7,
+        1.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "thickness": 0.10800000000000001,
+        "height": 2.0
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "WALL-L1-D_3-4",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        7.5,
+        7.7,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 3.0,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "D-L1-06",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        6.5,
+        7.7,
+        1.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.9,
+        "thickness": 0.10800000000000001,
+        "height": 2.0
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "WALL-L1-1_D-E",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        0.0,
+        9.55,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.7,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L1-05",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.0,
+        8.75,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L1-E_1-2",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        2.0,
+        11.4,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 4.0,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "D-L1-07",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        0.5,
+        11.4,
+        1.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "thickness": 0.10800000000000001,
+        "height": 2.0
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "W-L1-06",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        1.8,
+        11.4,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L1-3_D-E",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        6.0,
+        9.55,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.7,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "WALL-L1-E_2-3",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        5.0,
+        11.4,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 2.0,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L1-07",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        4.7,
+        11.4,
+        2.1
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.6,
+        "thickness": 0.10800000000000001,
+        "height": 0.6
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L1-4_D-E",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        9.0,
+        9.55,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.7,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L1-08",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        9.0,
+        8.75,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L1-E_3-4",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        7.5,
+        11.4,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 3.0,
+        "thickness": 0.1,
+        "height": 3.0
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L1-09",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        6.7,
+        11.4,
+        1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L2-B_1-2",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        2.0,
+        1.8,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 4.0,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L2-01",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        1.2,
+        1.8,
+        5.25
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L2-1_B-C",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        0.0,
+        3.65,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.7,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L2-02",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.0,
+        2.85,
+        5.25
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L2-2_B-C",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        4.0,
+        3.65,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.7,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "D-L2-01",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        4.0,
+        2.75,
+        4.775
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.8,
+        "thickness": 0.10800000000000001,
+        "height": 2.05
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "WALL-L2-C_1-2",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        2.0,
+        5.5,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 4.0,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "D-L2-02",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        2.3,
+        5.5,
+        4.75
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.9,
+        "thickness": 0.10800000000000001,
+        "height": 2.0
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "WALL-L2-1_C-D",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        0.0,
+        6.6,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 2.2,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L2-03",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.0,
+        6.3,
+        5.85
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.6,
+        "thickness": 0.10800000000000001,
+        "height": 0.6
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L2-C_3-4",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        7.5,
+        5.5,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 3.0,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "D-L2-03",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        6.5,
+        5.5,
+        4.75
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.9,
+        "thickness": 0.10800000000000001,
+        "height": 2.0
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "WALL-L2-4_C-D",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        9.0,
+        6.6,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 2.2,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L2-04",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        9.0,
+        5.8,
+        5.25
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L2-D_1-2",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        2.0,
+        7.7,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 4.0,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "D-L2-04",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        0.8,
+        7.7,
+        4.75
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "thickness": 0.10800000000000001,
+        "height": 2.0
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "WALL-L2-D_2-3",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        5.0,
+        7.7,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 2.0,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "D-L2-05",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        4.6,
+        7.7,
+        4.75
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "thickness": 0.10800000000000001,
+        "height": 2.0
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "WALL-L2-D_3-4",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        7.5,
+        7.7,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 3.0,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "D-L2-06",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        6.5,
+        7.7,
+        4.75
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.9,
+        "thickness": 0.10800000000000001,
+        "height": 2.0
+      },
+      "color": "#8B4513"
+    },
+    {
+      "tag": "WALL-L2-1_D-E",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        0.0,
+        9.55,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.7,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L2-05",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.0,
+        8.75,
+        5.25
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L2-E_1-2",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        2.0,
+        11.4,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 4.0,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L2-06",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        1.2,
+        11.4,
+        5.25
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L2-3_D-E",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        6.0,
+        9.55,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.7,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "WALL-L2-E_2-3",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        5.0,
+        11.4,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 2.0,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L2-07",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        4.7,
+        11.4,
+        5.85
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.6,
+        "thickness": 0.10800000000000001,
+        "height": 0.6
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L2-4_D-E",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        9.0,
+        9.55,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.7,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L2-08",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        9.0,
+        8.75,
+        5.25
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "WALL-L2-E_3-4",
+      "class": "IfcWall",
+      "material": "BRICK_MON",
+      "position": [
+        7.5,
+        11.4,
+        5.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 3.0,
+        "thickness": 0.1,
+        "height": 2.6
+      },
+      "color": "#D3D3D3"
+    },
+    {
+      "tag": "W-L2-09",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        6.7,
+        11.4,
+        5.25
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.6,
+        "thickness": 0.10800000000000001,
+        "height": 1.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6
+    },
+    {
+      "tag": "ROOF-MAIN-SouthHip",
+      "class": "IfcRoofCovering",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          -1.0,
+          0.8,
+          6.65
+        ],
+        [
+          10.0,
+          0.8,
+          6.65
+        ],
+        [
+          4.5,
+          6.3,
+          9.82542648054294
+        ]
+      ],
+      "material": "CONCRETE_TILE",
+      "color": "#9E4734",
+      "layer": "roof_covering",
+      "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
+      "dimensions": {
+        "area": 34.92969128597235,
+        "slope_degrees": 30.0
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-NorthHip",
+      "class": "IfcRoofCovering",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          10.0,
+          12.4,
+          6.65
+        ],
+        [
+          -1.0,
+          12.4,
+          6.65
+        ],
+        [
+          4.5,
+          6.9,
+          9.82542648054294
+        ]
+      ],
+      "material": "CONCRETE_TILE",
+      "color": "#9E4734",
+      "layer": "roof_covering",
+      "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
+      "dimensions": {
+        "area": 34.92969128597236,
+        "slope_degrees": 30.0
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-EastSlope",
+      "class": "IfcRoofCovering",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          10.0,
+          0.8,
+          6.65
+        ],
+        [
+          10.0,
+          12.4,
+          6.65
+        ],
+        [
+          4.5,
+          6.9,
+          9.82542648054294
+        ],
+        [
+          4.5,
+          6.3,
+          9.82542648054294
+        ]
+      ],
+      "material": "CONCRETE_TILE",
+      "color": "#9E4734",
+      "layer": "roof_covering",
+      "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
+      "dimensions": {
+        "area": 38.74020306262388,
+        "slope_degrees": 30.0
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-WestSlope",
+      "class": "IfcRoofCovering",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          -1.0,
+          12.4,
+          6.65
+        ],
+        [
+          -1.0,
+          0.8,
+          6.65
+        ],
+        [
+          4.5,
+          6.3,
+          9.82542648054294
+        ],
+        [
+          4.5,
+          6.9,
+          9.82542648054294
+        ]
+      ],
+      "material": "CONCRETE_TILE",
+      "color": "#9E4734",
+      "layer": "roof_covering",
+      "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
+      "dimensions": {
+        "area": 38.740203062623884,
+        "slope_degrees": 30.0
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-WP-South",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          0.8,
+          6.65
+        ],
+        [
+          10.0,
+          0.8,
+          6.65
+        ]
+      ],
+      "color": "#3B82F6",
+      "linewidth": 3,
+      "layer": "roof_framing",
+      "member_type": "WALL_PLATE",
+      "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
+      "material": "STEEL_SS400",
+      "profile": "C150x50x20x3.2",
+      "dimensions": {
+        "length": 11.0
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-WP-East",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          10.0,
+          0.8,
+          6.65
+        ],
+        [
+          10.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#3B82F6",
+      "linewidth": 3,
+      "layer": "roof_framing",
+      "member_type": "WALL_PLATE",
+      "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
+      "material": "STEEL_SS400",
+      "profile": "C150x50x20x3.2",
+      "dimensions": {
+        "length": 11.6
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-WP-North",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          10.0,
+          12.4,
+          6.65
+        ],
+        [
+          -1.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#3B82F6",
+      "linewidth": 3,
+      "layer": "roof_framing",
+      "member_type": "WALL_PLATE",
+      "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
+      "material": "STEEL_SS400",
+      "profile": "C150x50x20x3.2",
+      "dimensions": {
+        "length": 11.0
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-WP-West",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          12.4,
+          6.65
+        ],
+        [
+          -1.0,
+          0.8,
+          6.65
+        ]
+      ],
+      "color": "#3B82F6",
+      "linewidth": 3,
+      "layer": "roof_framing",
+      "member_type": "WALL_PLATE",
+      "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
+      "material": "STEEL_SS400",
+      "profile": "C150x50x20x3.2",
+      "dimensions": {
+        "length": 11.6
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-RidgeBeam",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.5,
+          6.3,
+          9.82542648054294
+        ],
+        [
+          4.5,
+          6.9,
+          9.82542648054294
+        ]
+      ],
+      "color": "#EF4444",
+      "linewidth": 3,
+      "layer": "roof_framing",
+      "member_type": "RIDGE_BEAM",
+      "member_name": "\u0e2d\u0e01\u0e44\u0e01\u0e48 (Ridge Beam)",
+      "material": "STEEL_SS400",
+      "profile": "2C150x50x20x3.2",
+      "dimensions": {
+        "length": 0.6000000000000005
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-KingPost-1",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.5,
+          6.3,
+          6.65
+        ],
+        [
+          4.5,
+          6.3,
+          9.82542648054294
+        ]
+      ],
+      "color": "#A855F7",
+      "linewidth": 3,
+      "layer": "roof_framing",
+      "member_type": "KING_POST",
+      "member_name": "\u0e40\u0e2a\u0e32\u0e14\u0e31\u0e49\u0e07 (King Post)",
+      "material": "STEEL_SS400",
+      "profile": "2C100x50x20x3.2",
+      "dimensions": {
+        "length": 3.1754264805429404
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-KingPost-2",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.5,
+          6.9,
+          6.65
+        ],
+        [
+          4.5,
+          6.9,
+          9.82542648054294
+        ]
+      ],
+      "color": "#A855F7",
+      "linewidth": 3,
+      "layer": "roof_framing",
+      "member_type": "KING_POST",
+      "member_name": "\u0e40\u0e2a\u0e32\u0e14\u0e31\u0e49\u0e07 (King Post)",
+      "material": "STEEL_SS400",
+      "profile": "2C100x50x20x3.2",
+      "dimensions": {
+        "length": 3.1754264805429404
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-TieBeam",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.5,
+          6.3,
+          6.65
+        ],
+        [
+          4.5,
+          6.9,
+          6.65
+        ]
+      ],
+      "color": "#6366F1",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "TIE_BEAM",
+      "member_name": "\u0e02\u0e37\u0e48\u0e2d (Tie Beam)",
+      "material": "STEEL_SS400",
+      "profile": "2C125x50x20x3.2",
+      "dimensions": {
+        "length": 0.6000000000000005
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Hip-SW",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          0.8,
+          6.65
+        ],
+        [
+          4.5,
+          6.3,
+          9.82542648054294
+        ]
+      ],
+      "color": "#F59E0B",
+      "linewidth": 3,
+      "layer": "roof_framing",
+      "member_type": "HIP_RAFTER",
+      "member_name": "\u0e15\u0e30\u0e40\u0e02\u0e49\u0e2a\u0e31\u0e19 (Hip Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "2C150x50x20x3.2",
+      "dimensions": {
+        "length": 8.401388774085707
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Hip-SE",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          10.0,
+          0.8,
+          6.65
+        ],
+        [
+          4.5,
+          6.3,
+          9.82542648054294
+        ]
+      ],
+      "color": "#F59E0B",
+      "linewidth": 3,
+      "layer": "roof_framing",
+      "member_type": "HIP_RAFTER",
+      "member_name": "\u0e15\u0e30\u0e40\u0e02\u0e49\u0e2a\u0e31\u0e19 (Hip Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "2C150x50x20x3.2",
+      "dimensions": {
+        "length": 8.401388774085707
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Hip-NE",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          10.0,
+          12.4,
+          6.65
+        ],
+        [
+          4.5,
+          6.9,
+          9.82542648054294
+        ]
+      ],
+      "color": "#F59E0B",
+      "linewidth": 3,
+      "layer": "roof_framing",
+      "member_type": "HIP_RAFTER",
+      "member_name": "\u0e15\u0e30\u0e40\u0e02\u0e49\u0e2a\u0e31\u0e19 (Hip Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "2C150x50x20x3.2",
+      "dimensions": {
+        "length": 8.401388774085707
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Hip-NW",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          12.4,
+          6.65
+        ],
+        [
+          4.5,
+          6.9,
+          9.82542648054294
+        ]
+      ],
+      "color": "#F59E0B",
+      "linewidth": 3,
+      "layer": "roof_framing",
+      "member_type": "HIP_RAFTER",
+      "member_name": "\u0e15\u0e30\u0e40\u0e02\u0e49\u0e2a\u0e31\u0e19 (Hip Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "2C150x50x20x3.2",
+      "dimensions": {
+        "length": 8.401388774085707
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-1",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          0.0,
+          0.8,
+          6.65
+        ],
+        [
+          0.0,
+          1.7999999999999998,
+          7.227350269189626
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 1.154700538379251
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-2",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          1.0,
+          0.8,
+          6.65
+        ],
+        [
+          1.0,
+          2.8,
+          7.804700538379251
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 2.3094010767585025
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-3",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          2.0,
+          0.8,
+          6.65
+        ],
+        [
+          2.0,
+          3.8,
+          8.382050807568877
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 3.4641016151377544
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-4",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.0,
+          0.8,
+          6.65
+        ],
+        [
+          3.0,
+          4.8,
+          8.959401076758503
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 4.618802153517006
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-5",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.0,
+          0.8,
+          6.65
+        ],
+        [
+          4.0,
+          5.8,
+          9.536751345948128
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 5.773502691896257
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-6",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.0,
+          0.8,
+          6.65
+        ],
+        [
+          5.0,
+          5.8,
+          9.536751345948128
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 5.773502691896257
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-7",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.0,
+          0.8,
+          6.65
+        ],
+        [
+          6.0,
+          4.8,
+          8.959401076758503
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 4.618802153517006
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-8",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          7.0,
+          0.8,
+          6.65
+        ],
+        [
+          7.0,
+          3.8,
+          8.382050807568877
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 3.4641016151377544
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-9",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          8.0,
+          0.8,
+          6.65
+        ],
+        [
+          8.0,
+          2.8,
+          7.804700538379251
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 2.3094010767585025
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-10",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.0,
+          0.8,
+          6.65
+        ],
+        [
+          9.0,
+          1.8,
+          7.227350269189626
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 1.1547005383792512
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-11",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          0.0,
+          11.4,
+          7.227350269189626
+        ],
+        [
+          0.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 1.1547005383792512
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-12",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          1.0,
+          10.4,
+          7.804700538379251
+        ],
+        [
+          1.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 2.3094010767585025
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-13",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          2.0,
+          9.4,
+          8.382050807568877
+        ],
+        [
+          2.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 3.4641016151377544
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-14",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.0,
+          8.4,
+          8.959401076758503
+        ],
+        [
+          3.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 4.618802153517006
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-15",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.0,
+          7.4,
+          9.536751345948128
+        ],
+        [
+          4.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 5.773502691896257
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-16",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.0,
+          7.4,
+          9.536751345948128
+        ],
+        [
+          5.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 5.773502691896257
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-17",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.0,
+          8.4,
+          8.959401076758503
+        ],
+        [
+          6.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 4.618802153517006
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-18",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          7.0,
+          9.4,
+          8.382050807568877
+        ],
+        [
+          7.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 3.4641016151377544
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-19",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          8.0,
+          10.4,
+          7.804700538379251
+        ],
+        [
+          8.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 2.3094010767585025
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-20",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.0,
+          11.4,
+          7.227350269189626
+        ],
+        [
+          9.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 1.1547005383792512
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-21",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.0,
+          1.8,
+          7.227350269189626
+        ],
+        [
+          10.0,
+          1.8,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 1.1547005383792512
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-22",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          8.0,
+          2.8,
+          7.804700538379251
+        ],
+        [
+          10.0,
+          2.8,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 2.3094010767585025
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-23",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          7.0,
+          3.8,
+          8.382050807568877
+        ],
+        [
+          10.0,
+          3.8,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 3.4641016151377544
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-24",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.0,
+          4.8,
+          8.959401076758503
+        ],
+        [
+          10.0,
+          4.8,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 4.618802153517006
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-25",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.0,
+          5.8,
+          9.536751345948128
+        ],
+        [
+          10.0,
+          5.8,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 5.773502691896257
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-26",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.5,
+          6.8,
+          9.82542648054294
+        ],
+        [
+          10.0,
+          6.8,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "COMMON_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 6.350852961085883
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-27",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.3999999999999995,
+          7.8,
+          9.305811238272279
+        ],
+        [
+          10.0,
+          7.8,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 5.311622476544557
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-28",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.4,
+          8.8,
+          8.728460969082652
+        ],
+        [
+          10.0,
+          8.8,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 4.156921938165305
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-29",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          7.4,
+          9.8,
+          8.151110699893026
+        ],
+        [
+          10.0,
+          9.8,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 3.002221399786053
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-30",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          8.4,
+          10.8,
+          7.573760430703401
+        ],
+        [
+          10.0,
+          10.8,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 1.847520861406802
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-31",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.4,
+          11.8,
+          6.996410161513776
+        ],
+        [
+          10.0,
+          11.8,
+          6.65
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 0.6928203230275506
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-32",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          1.8,
+          6.65
+        ],
+        [
+          0.0,
+          1.8,
+          7.227350269189626
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 1.1547005383792512
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-33",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          2.8,
+          6.65
+        ],
+        [
+          0.9999999999999998,
+          2.8,
+          7.804700538379251
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 2.3094010767585025
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-34",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          3.8,
+          6.65
+        ],
+        [
+          2.0,
+          3.8,
+          8.382050807568877
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 3.4641016151377544
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-35",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          4.8,
+          6.65
+        ],
+        [
+          3.0,
+          4.8,
+          8.959401076758503
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 4.618802153517006
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-36",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          5.8,
+          6.65
+        ],
+        [
+          4.0,
+          5.8,
+          9.536751345948128
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 5.773502691896257
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-37",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          6.8,
+          6.65
+        ],
+        [
+          4.5,
+          6.8,
+          9.82542648054294
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "COMMON_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 6.350852961085883
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-38",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          7.8,
+          6.65
+        ],
+        [
+          3.6000000000000005,
+          7.8,
+          9.305811238272279
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 5.311622476544557
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-39",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          8.8,
+          6.65
+        ],
+        [
+          2.5999999999999996,
+          8.8,
+          8.728460969082652
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 4.156921938165305
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-40",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          9.8,
+          6.65
+        ],
+        [
+          1.5999999999999996,
+          9.8,
+          8.151110699893026
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 3.002221399786053
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-41",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          10.8,
+          6.65
+        ],
+        [
+          0.6000000000000001,
+          10.8,
+          7.573760430703401
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 1.8475208614068022
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Rafter-42",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          11.8,
+          6.65
+        ],
+        [
+          -0.40000000000000036,
+          11.8,
+          6.996410161513776
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 0.6928203230275506
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-1",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.72287187078898,
+          1.0771281292110209,
+          6.8100000000000005
+        ],
+        [
+          -0.7228718707889792,
+          1.0771281292110206,
+          6.8100000000000005
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 10.44574374157796
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-2",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -0.7228718707889792,
+          12.12287187078898,
+          6.8100000000000005
+        ],
+        [
+          9.722871870788978,
+          12.12287187078898,
+          6.8100000000000005
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 10.445743741577957
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-3",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.72287187078898,
+          12.12287187078898,
+          6.8100000000000005
+        ],
+        [
+          9.722871870788978,
+          1.0771281292110206,
+          6.8100000000000005
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 11.04574374157796
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-4",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -0.7228718707889792,
+          1.0771281292110209,
+          6.8100000000000005
+        ],
+        [
+          -0.7228718707889792,
+          12.12287187078898,
+          6.8100000000000005
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 11.04574374157796
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-5",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.445743741577958,
+          1.3542562584220414,
+          6.970000000000001
+        ],
+        [
+          -0.4457437415779584,
+          1.3542562584220414,
+          6.970000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 9.891487483155917
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-6",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -0.4457437415779585,
+          11.845743741577959,
+          6.970000000000001
+        ],
+        [
+          9.445743741577958,
+          11.845743741577959,
+          6.970000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 9.891487483155917
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-7",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.445743741577958,
+          11.845743741577959,
+          6.970000000000001
+        ],
+        [
+          9.445743741577958,
+          1.3542562584220414,
+          6.970000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 10.491487483155918
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-8",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -0.4457437415779585,
+          1.3542562584220414,
+          6.970000000000001
+        ],
+        [
+          -0.4457437415779584,
+          11.845743741577959,
+          6.970000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 10.491487483155918
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-9",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.168615612366938,
+          1.6313843876330623,
+          7.130000000000001
+        ],
+        [
+          -0.16861561236693756,
+          1.6313843876330623,
+          7.130000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 9.337231224733877
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-10",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -0.16861561236693778,
+          11.568615612366939,
+          7.130000000000001
+        ],
+        [
+          9.168615612366938,
+          11.568615612366937,
+          7.130000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 9.337231224733877
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-11",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.168615612366938,
+          11.568615612366939,
+          7.130000000000001
+        ],
+        [
+          9.168615612366938,
+          1.6313843876330623,
+          7.130000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 9.937231224733877
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-12",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          -0.16861561236693778,
+          1.6313843876330623,
+          7.130000000000001
+        ],
+        [
+          -0.16861561236693756,
+          11.568615612366937,
+          7.130000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 9.937231224733875
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-13",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          8.891487483155917,
+          1.908512516844083,
+          7.290000000000001
+        ],
+        [
+          0.10851251684408325,
+          1.908512516844083,
+          7.290000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 8.782974966311833
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-14",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          0.10851251684408303,
+          11.291487483155917,
+          7.290000000000001
+        ],
+        [
+          8.891487483155917,
+          11.291487483155917,
+          7.290000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 8.782974966311833
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-15",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          8.891487483155917,
+          11.291487483155917,
+          7.290000000000001
+        ],
+        [
+          8.891487483155917,
+          1.908512516844083,
+          7.290000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 9.382974966311835
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-16",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          0.10851251684408303,
+          1.908512516844083,
+          7.290000000000001
+        ],
+        [
+          0.10851251684408325,
+          11.291487483155917,
+          7.290000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 9.382974966311835
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-17",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          8.614359353944897,
+          2.185640646055104,
+          7.450000000000001
+        ],
+        [
+          0.3856406460551032,
+          2.185640646055103,
+          7.450000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 8.228718707889794
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-18",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          0.3856406460551036,
+          11.014359353944897,
+          7.450000000000001
+        ],
+        [
+          8.614359353944897,
+          11.014359353944897,
+          7.450000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 8.228718707889794
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-19",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          8.614359353944897,
+          11.014359353944897,
+          7.450000000000001
+        ],
+        [
+          8.614359353944897,
+          2.185640646055103,
+          7.450000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 8.828718707889795
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-20",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          0.3856406460551036,
+          2.185640646055104,
+          7.450000000000001
+        ],
+        [
+          0.3856406460551032,
+          11.014359353944897,
+          7.450000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 8.828718707889793
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-21",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          8.337231224733875,
+          2.4627687752661247,
+          7.610000000000001
+        ],
+        [
+          0.6627687752661244,
+          2.4627687752661243,
+          7.610000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 7.67446244946775
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-22",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          0.6627687752661244,
+          10.737231224733875,
+          7.610000000000001
+        ],
+        [
+          8.337231224733875,
+          10.737231224733875,
+          7.610000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 7.67446244946775
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-23",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          8.337231224733875,
+          10.737231224733875,
+          7.610000000000001
+        ],
+        [
+          8.337231224733875,
+          2.4627687752661243,
+          7.610000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 8.274462449467752
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-24",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          0.6627687752661244,
+          2.4627687752661247,
+          7.610000000000001
+        ],
+        [
+          0.6627687752661244,
+          10.737231224733875,
+          7.610000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 8.274462449467752
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-25",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          8.060103095522855,
+          2.739896904477145,
+          7.770000000000001
+        ],
+        [
+          0.9398969044771452,
+          2.739896904477145,
+          7.770000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 7.12020619104571
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-26",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          0.939896904477145,
+          10.460103095522856,
+          7.770000000000001
+        ],
+        [
+          8.060103095522855,
+          10.460103095522856,
+          7.770000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 7.12020619104571
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-27",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          8.060103095522855,
+          10.460103095522856,
+          7.770000000000001
+        ],
+        [
+          8.060103095522855,
+          2.739896904477145,
+          7.770000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 7.72020619104571
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-28",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          0.939896904477145,
+          2.739896904477145,
+          7.770000000000001
+        ],
+        [
+          0.9398969044771452,
+          10.460103095522856,
+          7.770000000000001
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 7.72020619104571
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-29",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          7.7829749663118335,
+          3.0170250336881663,
+          7.9300000000000015
+        ],
+        [
+          1.2170250336881656,
+          3.0170250336881654,
+          7.9300000000000015
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 6.565949932623668
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-30",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          1.217025033688166,
+          10.182974966311834,
+          7.9300000000000015
+        ],
+        [
+          7.782974966311834,
+          10.182974966311836,
+          7.9300000000000015
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 6.565949932623669
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-31",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          7.7829749663118335,
+          10.182974966311834,
+          7.9300000000000015
+        ],
+        [
+          7.782974966311834,
+          3.0170250336881654,
+          7.9300000000000015
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 7.165949932623668
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-32",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          1.217025033688166,
+          3.0170250336881663,
+          7.9300000000000015
+        ],
+        [
+          1.2170250336881656,
+          10.182974966311836,
+          7.9300000000000015
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 7.165949932623669
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-33",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          7.505846837100814,
+          3.2941531628991862,
+          8.090000000000002
+        ],
+        [
+          1.4941531628991864,
+          3.2941531628991862,
+          8.090000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 6.011693674201627
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-34",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          1.4941531628991864,
+          9.905846837100814,
+          8.090000000000002
+        ],
+        [
+          7.505846837100814,
+          9.905846837100814,
+          8.090000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 6.011693674201627
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-35",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          7.505846837100814,
+          9.905846837100814,
+          8.090000000000002
+        ],
+        [
+          7.505846837100814,
+          3.2941531628991862,
+          8.090000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 6.611693674201628
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-36",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          1.4941531628991864,
+          3.2941531628991862,
+          8.090000000000002
+        ],
+        [
+          1.4941531628991864,
+          9.905846837100814,
+          8.090000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 6.611693674201628
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-37",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          7.228718707889793,
+          3.571281292110207,
+          8.250000000000002
+        ],
+        [
+          1.7712812921102072,
+          3.571281292110207,
+          8.250000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 5.4574374157795855
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-38",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          1.7712812921102072,
+          9.628718707889792,
+          8.250000000000002
+        ],
+        [
+          7.228718707889793,
+          9.628718707889792,
+          8.250000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 5.4574374157795855
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-39",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          7.228718707889793,
+          9.628718707889792,
+          8.250000000000002
+        ],
+        [
+          7.228718707889793,
+          3.571281292110207,
+          8.250000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 6.057437415779585
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-40",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          1.7712812921102072,
+          3.571281292110207,
+          8.250000000000002
+        ],
+        [
+          1.7712812921102072,
+          9.628718707889792,
+          8.250000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 6.057437415779585
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-41",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.951590578678772,
+          3.848409421321228,
+          8.410000000000002
+        ],
+        [
+          2.048409421321228,
+          3.848409421321228,
+          8.410000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 4.903181157357544
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-42",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          2.0484094213212276,
+          9.351590578678772,
+          8.410000000000002
+        ],
+        [
+          6.951590578678772,
+          9.351590578678772,
+          8.410000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 4.903181157357544
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-43",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.951590578678772,
+          9.351590578678772,
+          8.410000000000002
+        ],
+        [
+          6.951590578678772,
+          3.848409421321228,
+          8.410000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 5.503181157357544
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-44",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          2.0484094213212276,
+          3.848409421321228,
+          8.410000000000002
+        ],
+        [
+          2.048409421321228,
+          9.351590578678772,
+          8.410000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 5.503181157357544
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-45",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.674462449467751,
+          4.125537550532249,
+          8.570000000000002
+        ],
+        [
+          2.325537550532249,
+          4.125537550532249,
+          8.570000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 4.348924898935502
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-46",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          2.325537550532249,
+          9.074462449467752,
+          8.570000000000002
+        ],
+        [
+          6.674462449467751,
+          9.074462449467752,
+          8.570000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 4.348924898935502
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-47",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.674462449467751,
+          9.074462449467752,
+          8.570000000000002
+        ],
+        [
+          6.674462449467751,
+          4.125537550532249,
+          8.570000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 4.948924898935504
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-48",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          2.325537550532249,
+          4.125537550532249,
+          8.570000000000002
+        ],
+        [
+          2.325537550532249,
+          9.074462449467752,
+          8.570000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 4.948924898935504
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-49",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.39733432025673,
+          4.4026656797432695,
+          8.730000000000002
+        ],
+        [
+          2.6026656797432697,
+          4.4026656797432695,
+          8.730000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 3.7946686405134606
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-50",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          2.6026656797432697,
+          8.79733432025673,
+          8.730000000000002
+        ],
+        [
+          6.39733432025673,
+          8.79733432025673,
+          8.730000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 3.7946686405134606
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-51",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.39733432025673,
+          8.79733432025673,
+          8.730000000000002
+        ],
+        [
+          6.39733432025673,
+          4.4026656797432695,
+          8.730000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 4.394668640513461
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-52",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          2.6026656797432697,
+          4.4026656797432695,
+          8.730000000000002
+        ],
+        [
+          2.6026656797432697,
+          8.79733432025673,
+          8.730000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 4.394668640513461
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-53",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.12020619104571,
+          4.67979380895429,
+          8.890000000000002
+        ],
+        [
+          2.8797938089542905,
+          4.67979380895429,
+          8.890000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 3.24041238209142
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-54",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          2.87979380895429,
+          8.52020619104571,
+          8.890000000000002
+        ],
+        [
+          6.1202061910457095,
+          8.52020619104571,
+          8.890000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 3.2404123820914195
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-55",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.12020619104571,
+          8.52020619104571,
+          8.890000000000002
+        ],
+        [
+          6.1202061910457095,
+          4.67979380895429,
+          8.890000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 3.8404123820914204
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-56",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          2.87979380895429,
+          4.67979380895429,
+          8.890000000000002
+        ],
+        [
+          2.8797938089542905,
+          8.52020619104571,
+          8.890000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 3.8404123820914204
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-57",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.84307806183469,
+          4.95692193816531,
+          9.050000000000002
+        ],
+        [
+          3.156921938165311,
+          4.95692193816531,
+          9.050000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 2.6861561236693787
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-58",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.1569219381653104,
+          8.24307806183469,
+          9.050000000000002
+        ],
+        [
+          5.843078061834689,
+          8.243078061834689,
+          9.050000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 2.6861561236693783
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-59",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.84307806183469,
+          8.24307806183469,
+          9.050000000000002
+        ],
+        [
+          5.843078061834689,
+          4.95692193816531,
+          9.050000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 3.2861561236693806
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-60",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.1569219381653104,
+          4.95692193816531,
+          9.050000000000002
+        ],
+        [
+          3.156921938165311,
+          8.243078061834689,
+          9.050000000000002
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 3.286156123669379
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-61",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.565949932623668,
+          5.234050067376332,
+          9.210000000000003
+        ],
+        [
+          3.4340500673763317,
+          5.234050067376332,
+          9.210000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 2.131899865247336
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-62",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.434050067376332,
+          7.965949932623668,
+          9.210000000000003
+        ],
+        [
+          5.565949932623669,
+          7.965949932623669,
+          9.210000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 2.1318998652473367
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-63",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.565949932623668,
+          7.965949932623668,
+          9.210000000000003
+        ],
+        [
+          5.565949932623669,
+          5.234050067376332,
+          9.210000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 2.7318998652473363
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-64",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.434050067376332,
+          5.234050067376332,
+          9.210000000000003
+        ],
+        [
+          3.4340500673763317,
+          7.965949932623669,
+          9.210000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 2.731899865247337
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-65",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.288821803412648,
+          5.511178196587352,
+          9.370000000000003
+        ],
+        [
+          3.7111781965873525,
+          5.511178196587352,
+          9.370000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 1.5776436068252955
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-66",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.711178196587352,
+          7.688821803412648,
+          9.370000000000003
+        ],
+        [
+          5.288821803412648,
+          7.688821803412648,
+          9.370000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 1.577643606825296
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-67",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.288821803412648,
+          7.688821803412648,
+          9.370000000000003
+        ],
+        [
+          5.288821803412648,
+          5.511178196587352,
+          9.370000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 2.1776436068252965
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-68",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.711178196587352,
+          5.511178196587352,
+          9.370000000000003
+        ],
+        [
+          3.7111781965873525,
+          7.688821803412648,
+          9.370000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 2.1776436068252965
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-69",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.011693674201627,
+          5.788306325798373,
+          9.530000000000003
+        ],
+        [
+          3.988306325798373,
+          5.788306325798373,
+          9.530000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 1.0233873484032543
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-70",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.988306325798373,
+          7.4116936742016275,
+          9.530000000000003
+        ],
+        [
+          5.011693674201627,
+          7.4116936742016275,
+          9.530000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 1.0233873484032543
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-71",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.011693674201627,
+          7.4116936742016275,
+          9.530000000000003
+        ],
+        [
+          5.011693674201627,
+          5.788306325798373,
+          9.530000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 1.6233873484032548
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-72",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.988306325798373,
+          5.788306325798373,
+          9.530000000000003
+        ],
+        [
+          3.988306325798373,
+          7.4116936742016275,
+          9.530000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 1.6233873484032548
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-73",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.734565544990606,
+          6.0654344550093935,
+          9.690000000000003
+        ],
+        [
+          4.265434455009394,
+          6.0654344550093935,
+          9.690000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 0.46913108998121267
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-74",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.265434455009394,
+          7.134565544990607,
+          9.690000000000003
+        ],
+        [
+          4.734565544990606,
+          7.134565544990607,
+          9.690000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 0.46913108998121267
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-75",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.734565544990606,
+          7.134565544990607,
+          9.690000000000003
+        ],
+        [
+          4.734565544990606,
+          6.0654344550093935,
+          9.690000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 1.0691310899812132
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Purlin-76",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.265434455009394,
+          6.0654344550093935,
+          9.690000000000003
+        ],
+        [
+          4.265434455009394,
+          7.134565544990607,
+          9.690000000000003
+        ]
+      ],
+      "color": "#10B981",
+      "linewidth": 2,
+      "layer": "roof_framing",
+      "member_type": "PURLIN",
+      "member_name": "\u0e41\u0e1b (Purlin)",
+      "material": "STEEL_SS400",
+      "profile": "C75x45x15x2.3",
+      "dimensions": {
+        "length": 1.0691310899812132
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Ridge",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.5,
+          6.3,
+          9.82542648054294
+        ],
+        [
+          4.5,
+          6.9,
+          9.82542648054294
+        ]
+      ],
+      "color": "#DC2626",
+      "linewidth": 3,
+      "layer": "roof_covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (RIDGE)",
+      "dimensions": {
+        "length": 0.6000000000000005
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Hip-SW",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          0.8,
+          6.65
+        ],
+        [
+          4.5,
+          6.3,
+          9.82542648054294
+        ]
+      ],
+      "color": "#F59E0B",
+      "linewidth": 3,
+      "layer": "roof_covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (HIP)",
+      "dimensions": {
+        "length": 8.401388774085707
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Hip-SE",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          10.0,
+          0.8,
+          6.65
+        ],
+        [
+          4.5,
+          6.3,
+          9.82542648054294
+        ]
+      ],
+      "color": "#F59E0B",
+      "linewidth": 3,
+      "layer": "roof_covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (HIP)",
+      "dimensions": {
+        "length": 8.401388774085707
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Hip-NE",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          10.0,
+          12.4,
+          6.65
+        ],
+        [
+          4.5,
+          6.9,
+          9.82542648054294
+        ]
+      ],
+      "color": "#F59E0B",
+      "linewidth": 3,
+      "layer": "roof_covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (HIP)",
+      "dimensions": {
+        "length": 8.401388774085707
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Hip-NW",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          12.4,
+          6.65
+        ],
+        [
+          4.5,
+          6.9,
+          9.82542648054294
+        ]
+      ],
+      "color": "#F59E0B",
+      "linewidth": 3,
+      "layer": "roof_covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (HIP)",
+      "dimensions": {
+        "length": 8.401388774085707
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Eave-1",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          0.8,
+          6.65
+        ],
+        [
+          10.0,
+          0.8,
+          6.65
+        ]
+      ],
+      "color": "#64748B",
+      "linewidth": 2,
+      "layer": "roof_covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
+      "dimensions": {
+        "length": 11.0
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Eave-2",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          10.0,
+          0.8,
+          6.65
+        ],
+        [
+          10.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#64748B",
+      "linewidth": 2,
+      "layer": "roof_covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
+      "dimensions": {
+        "length": 11.6
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Eave-3",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          10.0,
+          12.4,
+          6.65
+        ],
+        [
+          -1.0,
+          12.4,
+          6.65
+        ]
+      ],
+      "color": "#64748B",
+      "linewidth": 2,
+      "layer": "roof_covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
+      "dimensions": {
+        "length": 11.0
+      }
+    },
+    {
+      "tag": "ROOF-MAIN-Eave-4",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          -1.0,
+          12.4,
+          6.65
+        ],
+        [
+          -1.0,
+          0.8,
+          6.65
+        ]
+      ],
+      "color": "#64748B",
+      "linewidth": 2,
+      "layer": "roof_covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
+      "dimensions": {
+        "length": 11.6
+      }
+    },
+    {
+      "tag": "PIPE-CW-MAIN-01",
+      "class": "IfcPipeSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          10.2,
+          15.200000000000001,
+          0.1
+        ],
+        [
+          9.2,
+          15.200000000000001,
+          0.1
+        ],
+        [
+          9.2,
+          11.4,
+          0.1
+        ],
+        [
+          9.2,
+          7.8,
+          0.1
+        ]
+      ],
+      "color": "#0284C7",
+      "linewidth": 4,
+      "layer": "mep_cold_water",
+      "system_type": "COLD_WATER",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
+      "material": "PIPE_PPR",
+      "dimensions": {
+        "length": 8.400000000000002,
+        "diameter": 0.025,
+        "slope": 0.0
+      },
+      "fittings_count": 3
+    },
+    {
+      "tag": "PIPE-CW-RISER-01",
+      "class": "IfcPipeSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.1,
+          7.8,
+          0.1
+        ],
+        [
+          9.1,
+          7.8,
+          3.85
+        ]
+      ],
+      "color": "#0284C7",
+      "linewidth": 4,
+      "layer": "mep_cold_water",
+      "system_type": "COLD_WATER",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
+      "material": "PIPE_PPR",
+      "dimensions": {
+        "length": 3.75,
+        "diameter": 0.025,
+        "slope": 0.0
+      },
+      "fittings_count": 1
+    },
+    {
+      "tag": "PIPE-CW-BRANCH-L1",
+      "class": "IfcPipeSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.1,
+          7.8,
+          0.4
+        ],
+        [
+          6.6,
+          7.8,
+          0.4
+        ],
+        [
+          6.6,
+          8.5,
+          0.5
+        ],
+        [
+          6.6,
+          9.9,
+          0.3
+        ],
+        [
+          7.2,
+          9.9,
+          0.3
+        ],
+        [
+          8.2,
+          9.9,
+          1.0
+        ]
+      ],
+      "color": "#0284C7",
+      "linewidth": 4,
+      "layer": "mep_cold_water",
+      "system_type": "COLD_WATER",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
+      "material": "PIPE_PVC_BLUE",
+      "dimensions": {
+        "length": 6.441975905133014,
+        "diameter": 0.02,
+        "slope": 0.0
+      },
+      "fittings_count": 5
+    },
+    {
+      "tag": "PIPE-CW-BRANCH-L2",
+      "class": "IfcPipeSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.1,
+          7.8,
+          4.15
+        ],
+        [
+          6.6,
+          7.8,
+          4.15
+        ],
+        [
+          6.6,
+          8.5,
+          4.25
+        ],
+        [
+          7.2,
+          9.9,
+          4.05
+        ],
+        [
+          7.2,
+          3.6,
+          4.05
+        ]
+      ],
+      "color": "#0284C7",
+      "linewidth": 4,
+      "layer": "mep_cold_water",
+      "system_type": "COLD_WATER",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
+      "material": "PIPE_PVC_BLUE",
+      "dimensions": {
+        "length": 11.043335930760271,
+        "diameter": 0.02,
+        "slope": 0.0
+      },
+      "fittings_count": 4
+    },
+    {
+      "tag": "PIPE-SOIL-STACK-01",
+      "class": "IfcPipeSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.3,
+          7.8,
+          3.75
+        ],
+        [
+          9.3,
+          7.8,
+          -0.45
+        ]
+      ],
+      "color": "#78350F",
+      "linewidth": 4,
+      "layer": "mep_drainage",
+      "system_type": "SOIL",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e42\u0e2a\u0e42\u0e04\u0e23\u0e01/\u0e2a\u0e49\u0e27\u0e21 (Soil Pipe)",
+      "material": "PIPE_PVC_GREY",
+      "dimensions": {
+        "length": 4.2,
+        "diameter": 0.1,
+        "slope": 0.0
+      },
+      "fittings_count": 1
+    },
+    {
+      "tag": "PIPE-SOIL-MAIN-OUT",
+      "class": "IfcPipeSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.3,
+          7.8,
+          -0.45
+        ],
+        [
+          9.3,
+          11.9,
+          -0.55
+        ],
+        [
+          10.5,
+          11.9,
+          -0.65
+        ]
+      ],
+      "color": "#78350F",
+      "linewidth": 4,
+      "layer": "mep_drainage",
+      "system_type": "SOIL",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e42\u0e2a\u0e42\u0e04\u0e23\u0e01/\u0e2a\u0e49\u0e27\u0e21 (Soil Pipe)",
+      "material": "PIPE_PVC_GREY",
+      "dimensions": {
+        "length": 5.305378788761205,
+        "diameter": 0.1,
+        "slope": 0.0
+      },
+      "fittings_count": 2
+    },
+    {
+      "tag": "PIPE-SOIL-BRANCH-L1",
+      "class": "IfcPipeSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          7.2,
+          9.9,
+          0.0
+        ],
+        [
+          7.2,
+          9.9,
+          -0.3
+        ],
+        [
+          9.3,
+          9.9,
+          -0.35
+        ],
+        [
+          9.3,
+          7.8,
+          -0.45
+        ]
+      ],
+      "color": "#78350F",
+      "linewidth": 4,
+      "layer": "mep_drainage",
+      "system_type": "SOIL",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e42\u0e2a\u0e42\u0e04\u0e23\u0e01/\u0e2a\u0e49\u0e27\u0e21 (Soil Pipe)",
+      "material": "PIPE_PVC_GREY",
+      "dimensions": {
+        "length": 4.502974757922865,
+        "diameter": 0.1,
+        "slope": 0.0
+      },
+      "fittings_count": 3
+    },
+    {
+      "tag": "PIPE-WASTE-MAIN-01",
+      "class": "IfcPipeSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.6,
+          8.5,
+          -0.2
+        ],
+        [
+          7.8,
+          9.2,
+          -0.25
+        ],
+        [
+          9.3,
+          9.2,
+          -0.3
+        ],
+        [
+          9.3,
+          11.9,
+          -0.4
+        ]
+      ],
+      "color": "#475569",
+      "linewidth": 4,
+      "layer": "mep_drainage",
+      "system_type": "WASTE",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e17\u0e34\u0e49\u0e07 (Waste Pipe)",
+      "material": "PIPE_PVC_GREY",
+      "dimensions": {
+        "length": 5.5928281966474085,
+        "diameter": 0.05,
+        "slope": 0.0
+      },
+      "fittings_count": 3
+    },
+    {
+      "tag": "PIPE-WASTE-KITCHEN",
+      "class": "IfcPipeSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          1.2,
+          9.3,
+          -0.1
+        ],
+        [
+          0.5,
+          11.4,
+          -0.15
+        ],
+        [
+          0.5,
+          12.0,
+          -0.2
+        ]
+      ],
+      "color": "#475569",
+      "linewidth": 4,
+      "layer": "mep_drainage",
+      "system_type": "WASTE",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e17\u0e34\u0e49\u0e07 (Waste Pipe)",
+      "material": "PIPE_PVC_GREY",
+      "dimensions": {
+        "length": 2.816238711488067,
+        "diameter": 0.05,
+        "slope": 0.0
+      },
+      "fittings_count": 2
+    },
+    {
+      "tag": "PIPE-VENT-STACK-01",
+      "class": "IfcPipeSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          9.4,
+          7.8,
+          3.75
+        ],
+        [
+          9.4,
+          7.8,
+          7.25
+        ]
+      ],
+      "color": "#65A30D",
+      "linewidth": 4,
+      "layer": "mep_drainage",
+      "system_type": "VENT",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e30\u0e1a\u0e32\u0e22\u0e2d\u0e32\u0e01\u0e32\u0e28 (Vent Pipe)",
+      "material": "PIPE_PVC_GREY",
+      "dimensions": {
+        "length": 3.5,
+        "diameter": 0.05,
+        "slope": 0.0
+      },
+      "fittings_count": 1
+    },
+    {
+      "tag": "PIPE-REF-LIVING",
+      "class": "IfcPipeSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.0,
+          1.95,
+          2.6
+        ],
+        [
+          4.0,
+          1.95,
+          2.6
+        ],
+        [
+          0.0,
+          1.95,
+          2.6
+        ],
+        [
+          -0.6,
+          1.95,
+          2.6
+        ],
+        [
+          -0.6,
+          2.6,
+          2.6
+        ],
+        [
+          -0.6,
+          2.6,
+          0.3
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 4,
+      "layer": "mep_hvac",
+      "system_type": "REFRIGERANT",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e22\u0e32\u0e41\u0e2d\u0e23\u0e4c (Refrigerant Pipe)",
+      "material": "PIPE_PPR",
+      "dimensions": {
+        "length": 8.55,
+        "diameter": 0.012,
+        "slope": 0.0
+      },
+      "fittings_count": 5
+    },
+    {
+      "tag": "PIPE-COND-LIVING",
+      "class": "IfcPipeSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.0,
+          1.95,
+          2.5
+        ],
+        [
+          4.0,
+          1.95,
+          2.5
+        ],
+        [
+          0.0,
+          1.95,
+          2.5
+        ],
+        [
+          -0.3,
+          1.95,
+          2.5
+        ],
+        [
+          -0.3,
+          1.95,
+          0.15
+        ]
+      ],
+      "color": "#38BDF8",
+      "linewidth": 4,
+      "layer": "mep_hvac",
+      "system_type": "CONDENSATE",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e17\u0e34\u0e49\u0e07\u0e41\u0e2d\u0e23\u0e4c (AC Condensate Drain)",
+      "material": "PIPE_PVC_BLUE",
+      "dimensions": {
+        "length": 7.65,
+        "diameter": 0.02,
+        "slope": 0.0
+      },
+      "fittings_count": 4
+    },
+    {
+      "tag": "CONDUIT-FEEDER-01",
+      "class": "IfcCableCarrierSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          0.0,
+          0.0,
+          2.8
+        ],
+        [
+          4.0,
+          0.0,
+          2.8
+        ],
+        [
+          4.0,
+          5.5,
+          2.8
+        ],
+        [
+          4.2,
+          5.6,
+          1.6
+        ]
+      ],
+      "color": "#DC2626",
+      "linewidth": 3,
+      "layer": "mep_electrical",
+      "system_type": "MAIN_FEEDER",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e49\u0e2d\u0e22\u0e2a\u0e32\u0e22\u0e40\u0e21\u0e19 (Main Feeder)",
+      "material": "CONDUIT_EMT",
+      "dimensions": {
+        "length": 10.72065556157337,
+        "diameter": 0.032
+      },
+      "fittings_count": 3
+    },
+    {
+      "tag": "CONDUIT-LIGHT-L1",
+      "class": "IfcCableCarrierSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.2,
+          5.6,
+          1.6
+        ],
+        [
+          4.2,
+          5.6,
+          3.2
+        ],
+        [
+          4.2,
+          2.8,
+          3.2
+        ],
+        [
+          5.0,
+          2.8,
+          3.2
+        ],
+        [
+          7.0,
+          6.5,
+          3.2
+        ],
+        [
+          7.5,
+          9.2,
+          3.2
+        ]
+      ],
+      "color": "#EAB308",
+      "linewidth": 3,
+      "layer": "mep_electrical",
+      "system_type": "LIGHTING",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e49\u0e2d\u0e22\u0e2a\u0e32\u0e22\u0e44\u0e1f\u0e41\u0e2a\u0e07\u0e2a\u0e27\u0e48\u0e32\u0e07 (Lighting Conduit)",
+      "material": "CONDUIT_EMT",
+      "dimensions": {
+        "length": 12.151854212511815,
+        "diameter": 0.02
+      },
+      "fittings_count": 5
+    },
+    {
+      "tag": "CONDUIT-POWER-L1",
+      "class": "IfcCableCarrierSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.2,
+          5.6,
+          1.6
+        ],
+        [
+          4.2,
+          5.6,
+          0.3
+        ],
+        [
+          0.2,
+          5.6,
+          0.3
+        ],
+        [
+          1.5,
+          1.9000000000000001,
+          0.3
+        ]
+      ],
+      "color": "#F97316",
+      "linewidth": 3,
+      "layer": "mep_electrical",
+      "system_type": "POWER",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e49\u0e2d\u0e22\u0e2a\u0e32\u0e22\u0e44\u0e1f\u0e01\u0e33\u0e25\u0e31\u0e07 (Power Conduit)",
+      "material": "CONDUIT_EMT",
+      "dimensions": {
+        "length": 9.221734310225514,
+        "diameter": 0.02
+      },
+      "fittings_count": 3
+    },
+    {
+      "tag": "SEPTIC-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        10.5,
+        11.9,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.4,
+        "depth": 1.4,
+        "height": 1.6
+      },
+      "color": "#1E293B",
+      "layer": "mep_fixtures",
+      "fixture_type": "SEPTIC_TANK",
+      "fixture_name_th": "\u0e16\u0e31\u0e07\u0e1a\u0e33\u0e1a\u0e31\u0e14\u0e19\u0e49\u0e33\u0e40\u0e2a\u0e35\u0e22 (Septic Tank)"
+    },
+    {
+      "tag": "GREASE-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        0.5,
+        12.0,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.4,
+        "depth": 0.5,
+        "height": 0.4
+      },
+      "color": "#0D9488",
+      "layer": "mep_fixtures",
+      "fixture_type": "GREASE_TRAP",
+      "fixture_name_th": "\u0e1a\u0e48\u0e2d\u0e14\u0e31\u0e01\u0e44\u0e02\u0e21\u0e31\u0e19 (Grease Trap)"
+    },
+    {
+      "tag": "TANK-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        10.2,
+        13.9,
+        0.9
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.1,
+        "depth": 1.1,
+        "height": 1.8
+      },
+      "color": "#0284C7",
+      "layer": "mep_fixtures",
+      "fixture_type": "WATER_TANK",
+      "fixture_name_th": "\u0e16\u0e31\u0e07\u0e40\u0e01\u0e47\u0e1a\u0e19\u0e49\u0e33\u0e1a\u0e19\u0e14\u0e34\u0e19 (Water Tank)"
+    },
+    {
+      "tag": "PUMP-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        10.2,
+        15.200000000000001,
+        0.175
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.35,
+        "depth": 0.35,
+        "height": 0.35
+      },
+      "color": "#2563EB",
+      "layer": "mep_fixtures",
+      "fixture_type": "WATER_PUMP",
+      "fixture_name_th": "\u0e1b\u0e31\u0e4a\u0e21\u0e19\u0e49\u0e33\u0e2d\u0e31\u0e15\u0e42\u0e19\u0e21\u0e31\u0e15\u0e34 (Water Pump)"
+    },
+    {
+      "tag": "WC-L1-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        7.2,
+        9.9,
+        0.39
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.42,
+        "depth": 0.72,
+        "height": 0.78
+      },
+      "color": "#F8FAFC",
+      "layer": "mep_fixtures",
+      "fixture_type": "WATER_CLOSET",
+      "fixture_name_th": "\u0e42\u0e16\u0e2a\u0e49\u0e27\u0e21 / \u0e2a\u0e38\u0e02\u0e20\u0e31\u0e13\u0e11\u0e4c (WC)"
+    },
+    {
+      "tag": "LAV-L1-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        6.6,
+        8.5,
+        0.41
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.55,
+        "depth": 0.45,
+        "height": 0.82
+      },
+      "color": "#F1F5F9",
+      "layer": "mep_fixtures",
+      "fixture_type": "LAVATORY",
+      "fixture_name_th": "\u0e2d\u0e48\u0e32\u0e07\u0e25\u0e49\u0e32\u0e07\u0e2b\u0e19\u0e49\u0e32 (Lavatory)"
+    },
+    {
+      "tag": "SH-L1-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        8.2,
+        9.9,
+        0.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.2,
+        "depth": 0.2,
+        "height": 1.0
+      },
+      "color": "#CBD5E1",
+      "layer": "mep_fixtures",
+      "fixture_type": "SHOWER",
+      "fixture_name_th": "\u0e1d\u0e31\u0e01\u0e1a\u0e31\u0e27\u0e2d\u0e32\u0e1a\u0e19\u0e49\u0e33 (Shower)"
+    },
+    {
+      "tag": "FD-L1-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        7.8,
+        9.2,
+        0.025
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.15,
+        "depth": 0.15,
+        "height": 0.05
+      },
+      "color": "#64748B",
+      "layer": "mep_fixtures",
+      "fixture_type": "FLOOR_DRAIN",
+      "fixture_name_th": "\u0e15\u0e30\u0e41\u0e01\u0e23\u0e07\u0e14\u0e31\u0e01\u0e01\u0e25\u0e34\u0e48\u0e19\u0e17\u0e35\u0e48\u0e1e\u0e37\u0e49\u0e19 (Floor Drain)"
+    },
+    {
+      "tag": "SINK-L1-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        1.2,
+        9.3,
+        0.425
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.6,
+        "depth": 1.2,
+        "height": 0.85
+      },
+      "color": "#94A3B8",
+      "layer": "mep_fixtures",
+      "fixture_type": "KITCHEN_SINK",
+      "fixture_name_th": "\u0e2d\u0e48\u0e32\u0e07\u0e25\u0e49\u0e32\u0e07\u0e08\u0e32\u0e19 (Kitchen Sink)"
+    },
+    {
+      "tag": "WC-L2-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        7.2,
+        3.6,
+        4.14
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.42,
+        "depth": 0.72,
+        "height": 0.78
+      },
+      "color": "#F8FAFC",
+      "layer": "mep_fixtures",
+      "fixture_type": "WATER_CLOSET",
+      "fixture_name_th": "\u0e42\u0e16\u0e2a\u0e49\u0e27\u0e21 / \u0e2a\u0e38\u0e02\u0e20\u0e31\u0e13\u0e11\u0e4c (WC)"
+    },
+    {
+      "tag": "LAV-L2-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        6.6,
+        2.6,
+        4.16
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.55,
+        "depth": 0.45,
+        "height": 0.82
+      },
+      "color": "#F1F5F9",
+      "layer": "mep_fixtures",
+      "fixture_type": "LAVATORY",
+      "fixture_name_th": "\u0e2d\u0e48\u0e32\u0e07\u0e25\u0e49\u0e32\u0e07\u0e2b\u0e19\u0e49\u0e32 (Lavatory)"
+    },
+    {
+      "tag": "SH-L2-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        8.2,
+        3.6,
+        4.25
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.2,
+        "depth": 0.2,
+        "height": 1.0
+      },
+      "color": "#CBD5E1",
+      "layer": "mep_fixtures",
+      "fixture_type": "SHOWER",
+      "fixture_name_th": "\u0e1d\u0e31\u0e01\u0e1a\u0e31\u0e27\u0e2d\u0e32\u0e1a\u0e19\u0e49\u0e33 (Shower)"
+    },
+    {
+      "tag": "FD-L2-01",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        7.8,
+        3.0,
+        3.775
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.15,
+        "depth": 0.15,
+        "height": 0.05
+      },
+      "color": "#64748B",
+      "layer": "mep_fixtures",
+      "fixture_type": "FLOOR_DRAIN",
+      "fixture_name_th": "\u0e15\u0e30\u0e41\u0e01\u0e23\u0e07\u0e14\u0e31\u0e01\u0e01\u0e25\u0e34\u0e48\u0e19\u0e17\u0e35\u0e48\u0e1e\u0e37\u0e49\u0e19 (Floor Drain)"
+    },
+    {
+      "tag": "WC-L2-02",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        7.2,
+        9.9,
+        4.14
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.42,
+        "depth": 0.72,
+        "height": 0.78
+      },
+      "color": "#F8FAFC",
+      "layer": "mep_fixtures",
+      "fixture_type": "WATER_CLOSET",
+      "fixture_name_th": "\u0e42\u0e16\u0e2a\u0e49\u0e27\u0e21 / \u0e2a\u0e38\u0e02\u0e20\u0e31\u0e13\u0e11\u0e4c (WC)"
+    },
+    {
+      "tag": "LAV-L2-02",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        6.6,
+        8.5,
+        4.16
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.55,
+        "depth": 0.45,
+        "height": 0.82
+      },
+      "color": "#F1F5F9",
+      "layer": "mep_fixtures",
+      "fixture_type": "LAVATORY",
+      "fixture_name_th": "\u0e2d\u0e48\u0e32\u0e07\u0e25\u0e49\u0e32\u0e07\u0e2b\u0e19\u0e49\u0e32 (Lavatory)"
+    },
+    {
+      "tag": "SH-L2-02",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        8.2,
+        9.9,
+        4.25
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.2,
+        "depth": 0.2,
+        "height": 1.0
+      },
+      "color": "#CBD5E1",
+      "layer": "mep_fixtures",
+      "fixture_type": "SHOWER",
+      "fixture_name_th": "\u0e1d\u0e31\u0e01\u0e1a\u0e31\u0e27\u0e2d\u0e32\u0e1a\u0e19\u0e49\u0e33 (Shower)"
+    },
+    {
+      "tag": "FD-L2-02",
+      "class": "IfcSanitaryTerminal",
+      "material": "SANITARY_WARE",
+      "position": [
+        7.8,
+        9.2,
+        3.775
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.15,
+        "depth": 0.15,
+        "height": 0.05
+      },
+      "color": "#64748B",
+      "layer": "mep_fixtures",
+      "fixture_type": "FLOOR_DRAIN",
+      "fixture_name_th": "\u0e15\u0e30\u0e41\u0e01\u0e23\u0e07\u0e14\u0e31\u0e01\u0e01\u0e25\u0e34\u0e48\u0e19\u0e17\u0e35\u0e48\u0e1e\u0e37\u0e49\u0e19 (Floor Drain)"
+    },
+    {
+      "tag": "CU-MAIN-01",
+      "class": "IfcDistributionBoard",
+      "material": "ELEC_SYSTEM",
+      "position": [
+        4.2,
+        5.6,
+        1.85
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.4,
+        "depth": 0.12,
+        "height": 0.5
+      },
+      "color": "#334155",
+      "layer": "mep_electrical",
+      "board_type": "CONSUMER_UNIT",
+      "circuits_count": 12,
+      "fixture_name_th": "\u0e15\u0e39\u0e49\u0e04\u0e27\u0e1a\u0e04\u0e38\u0e21\u0e44\u0e1f\u0e1f\u0e49\u0e32\u0e2b\u0e25\u0e31\u0e01 (Consumer Unit / MDB)"
+    },
+    {
+      "tag": "LIGHT-L1-LIVING",
+      "class": "IfcLightFixture",
+      "material": "ELEC_SYSTEM",
+      "position": [
+        5.0,
+        2.8,
+        3.1700000000000004
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 0.18,
+        "depth": 0.18,
+        "height": 0.06
+      },
+      "color": "#FEF08A",
+      "layer": "mep_electrical",
+      "fixture_type": "DOWNLIGHT",
+      "wattage": 12.0,
+      "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
+    },
+    {
+      "tag": "LIGHT-L1-HALL",
+      "class": "IfcLightFixture",
+      "material": "ELEC_SYSTEM",
+      "position": [
+        5.0,
+        6.5,
+        3.1700000000000004
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 0.18,
+        "depth": 0.18,
+        "height": 0.06
+      },
+      "color": "#FEF08A",
+      "layer": "mep_electrical",
+      "fixture_type": "DOWNLIGHT",
+      "wattage": 12.0,
+      "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
+    },
+    {
+      "tag": "LIGHT-L1-BATH",
+      "class": "IfcLightFixture",
+      "material": "ELEC_SYSTEM",
+      "position": [
+        7.5,
+        9.2,
+        3.1700000000000004
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 0.18,
+        "depth": 0.18,
+        "height": 0.06
+      },
+      "color": "#FEF08A",
+      "layer": "mep_electrical",
+      "fixture_type": "DOWNLIGHT",
+      "wattage": 9.0,
+      "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
+    },
+    {
+      "tag": "LIGHT-L2-BED1",
+      "class": "IfcLightFixture",
+      "material": "ELEC_SYSTEM",
+      "position": [
+        5.0,
+        2.8,
+        6.42
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 0.18,
+        "depth": 0.18,
+        "height": 0.06
+      },
+      "color": "#FEF08A",
+      "layer": "mep_electrical",
+      "fixture_type": "DOWNLIGHT",
+      "wattage": 12.0,
+      "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
+    },
+    {
+      "tag": "LIGHT-L2-BATH1",
+      "class": "IfcLightFixture",
+      "material": "ELEC_SYSTEM",
+      "position": [
+        7.5,
+        3.3,
+        6.42
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 0.18,
+        "depth": 0.18,
+        "height": 0.06
+      },
+      "color": "#FEF08A",
+      "layer": "mep_electrical",
+      "fixture_type": "DOWNLIGHT",
+      "wattage": 9.0,
+      "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
+    },
+    {
+      "tag": "SW-L1-01",
+      "class": "IfcSwitchingDevice",
+      "material": "ELEC_SYSTEM",
+      "position": [
+        4.2,
+        1.9000000000000001,
+        1.26
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 0.07,
+        "depth": 0.04,
+        "height": 0.12
+      },
+      "color": "#E2E8F0",
+      "layer": "mep_electrical",
+      "switch_type": "ONE_WAY",
+      "gangs": 2,
+      "fixture_name_th": "\u0e2a\u0e27\u0e34\u0e15\u0e0a\u0e4c\u0e44\u0e1f 2 \u0e0a\u0e48\u0e2d\u0e07 (ONE_WAY)"
+    },
+    {
+      "tag": "SW-L1-02",
+      "class": "IfcSwitchingDevice",
+      "material": "ELEC_SYSTEM",
+      "position": [
+        6.1,
+        7.8,
+        1.26
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 0.07,
+        "depth": 0.04,
+        "height": 0.12
+      },
+      "color": "#E2E8F0",
+      "layer": "mep_electrical",
+      "switch_type": "ONE_WAY",
+      "gangs": 1,
+      "fixture_name_th": "\u0e2a\u0e27\u0e34\u0e15\u0e0a\u0e4c\u0e44\u0e1f 1 \u0e0a\u0e48\u0e2d\u0e07 (ONE_WAY)"
+    },
+    {
+      "tag": "REC-L1-01",
+      "class": "IfcOutlet",
+      "material": "ELEC_SYSTEM",
+      "position": [
+        1.5,
+        1.85,
+        0.36
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 0.07,
+        "depth": 0.04,
+        "height": 0.12
+      },
+      "color": "#E2E8F0",
+      "layer": "mep_electrical",
+      "outlet_type": "DUPLEX_GROUNDED",
+      "fixture_name_th": "\u0e40\u0e15\u0e49\u0e32\u0e23\u0e31\u0e1a\u0e44\u0e1f\u0e1f\u0e49\u0e32 (DUPLEX_GROUNDED)"
+    },
+    {
+      "tag": "REC-L1-02",
+      "class": "IfcOutlet",
+      "material": "ELEC_SYSTEM",
+      "position": [
+        7.0,
+        5.55,
+        0.36
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 0.07,
+        "depth": 0.04,
+        "height": 0.12
+      },
+      "color": "#E2E8F0",
+      "layer": "mep_electrical",
+      "outlet_type": "DUPLEX_GROUNDED",
+      "fixture_name_th": "\u0e40\u0e15\u0e49\u0e32\u0e23\u0e31\u0e1a\u0e44\u0e1f\u0e1f\u0e49\u0e32 (DUPLEX_GROUNDED)"
+    },
+    {
+      "tag": "DUCT-HOOD-01",
+      "class": "IfcDuctSegment",
+      "geometry_type": "line",
+      "points": [
+        [
+          0.8,
+          8.7,
+          2.3
+        ],
+        [
+          0.8,
+          8.7,
+          3.2
+        ],
+        [
+          -0.3,
+          8.7,
+          3.2
+        ]
+      ],
+      "color": "#64748B",
+      "linewidth": 4,
+      "layer": "mep_hvac",
+      "system_type": "EXHAUST_AIR",
+      "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e30\u0e1a\u0e32\u0e22\u0e2d\u0e32\u0e01\u0e32\u0e28/\u0e14\u0e39\u0e14\u0e04\u0e27\u0e31\u0e19 (Exhaust Air Duct)",
+      "material": "HVAC_SYSTEM",
+      "dimensions": {
+        "length": 2.0000000000000004,
+        "width": 0.2,
+        "height": 0.2
+      },
+      "fittings_count": 2
+    },
+    {
+      "tag": "HOOD-KITCHEN",
+      "class": "IfcAirTerminal",
+      "material": "HVAC_SYSTEM",
+      "position": [
+        0.8,
+        8.7,
+        2.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.9,
+        "depth": 0.55,
+        "height": 0.5
+      },
+      "color": "#94A3B8",
+      "layer": "mep_hvac",
+      "terminal_type": "KITCHEN_HOOD",
+      "flow_rate_cfm": 650.0,
+      "fixture_name_th": "\u0e2e\u0e39\u0e14\u0e14\u0e39\u0e14\u0e04\u0e27\u0e31\u0e19\u0e2b\u0e49\u0e2d\u0e07\u0e04\u0e23\u0e31\u0e27 (Kitchen Range Hood)"
+    },
+    {
+      "tag": "EXH-FAN-BATH-L1",
+      "class": "IfcAirTerminal",
+      "material": "HVAC_SYSTEM",
+      "position": [
+        7.0,
+        8.7,
+        3.2
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.3,
+        "depth": 0.3,
+        "height": 0.2
+      },
+      "color": "#F1F5F9",
+      "layer": "mep_hvac",
+      "terminal_type": "EXHAUST_FAN_CEILING",
+      "flow_rate_cfm": 120.0,
+      "fixture_name_th": "\u0e1e\u0e31\u0e14\u0e25\u0e21\u0e14\u0e39\u0e14\u0e2d\u0e32\u0e01\u0e32\u0e28\u0e15\u0e34\u0e14\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling Exhaust Fan)"
+    },
+    {
+      "tag": "EXH-FAN-BATH-L2",
+      "class": "IfcAirTerminal",
+      "material": "HVAC_SYSTEM",
+      "position": [
+        7.0,
+        2.8,
+        6.449999999999999
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.3,
+        "depth": 0.3,
+        "height": 0.2
+      },
+      "color": "#F1F5F9",
+      "layer": "mep_hvac",
+      "terminal_type": "EXHAUST_FAN_CEILING",
+      "flow_rate_cfm": 120.0,
+      "fixture_name_th": "\u0e1e\u0e31\u0e14\u0e25\u0e21\u0e14\u0e39\u0e14\u0e2d\u0e32\u0e01\u0e32\u0e28\u0e15\u0e34\u0e14\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling Exhaust Fan)"
+    },
+    {
+      "tag": "AC-FCU-LIVING",
+      "class": "IfcUnitaryEquipment",
+      "material": "HVAC_SYSTEM",
+      "position": [
+        5.0,
+        1.95,
+        2.75
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.85,
+        "depth": 0.22,
+        "height": 0.3
+      },
+      "color": "#FFFFFF",
+      "layer": "mep_hvac",
+      "equipment_type": "AC_INDOOR_WALL",
+      "cooling_capacity_btu": 18000.0,
+      "fixture_name_th": "\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e1b\u0e23\u0e31\u0e1a\u0e2d\u0e32\u0e01\u0e32\u0e28\u0e41\u0e1a\u0e1a\u0e15\u0e34\u0e14\u0e1c\u0e19\u0e31\u0e07 (Wall Mounted AC)"
+    },
+    {
+      "tag": "AC-CDU-LIVING",
+      "class": "IfcUnitaryEquipment",
+      "material": "HVAC_SYSTEM",
+      "position": [
+        -0.6,
+        2.6,
+        0.625
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.85,
+        "depth": 0.35,
+        "height": 0.65
+      },
+      "color": "#CBD5E1",
+      "layer": "mep_hvac",
+      "equipment_type": "AC_OUTDOOR_CONDENSER",
+      "cooling_capacity_btu": 18000.0,
+      "fixture_name_th": "\u0e04\u0e2d\u0e19\u0e40\u0e14\u0e19\u0e0b\u0e34\u0e48\u0e07\u0e22\u0e39\u0e19\u0e34\u0e15\u0e20\u0e32\u0e22\u0e19\u0e2d\u0e01 (Outdoor Condensing Unit)"
+    },
+    {
+      "tag": "AC-FCU-BED1",
+      "class": "IfcUnitaryEquipment",
+      "material": "HVAC_SYSTEM",
+      "position": [
+        5.0,
+        1.95,
+        6.300000000000001
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.85,
+        "depth": 0.22,
+        "height": 0.3
+      },
+      "color": "#FFFFFF",
+      "layer": "mep_hvac",
+      "equipment_type": "AC_INDOOR_WALL",
+      "cooling_capacity_btu": 12000.0,
+      "fixture_name_th": "\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e1b\u0e23\u0e31\u0e1a\u0e2d\u0e32\u0e01\u0e32\u0e28\u0e41\u0e1a\u0e1a\u0e15\u0e34\u0e14\u0e1c\u0e19\u0e31\u0e07 (Wall Mounted AC)"
+    },
+    {
+      "tag": "AC-CDU-BED1",
+      "class": "IfcUnitaryEquipment",
+      "material": "HVAC_SYSTEM",
+      "position": [
+        -0.6,
+        2.6,
+        4.275
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.85,
+        "depth": 0.35,
+        "height": 0.65
+      },
+      "color": "#CBD5E1",
+      "layer": "mep_hvac",
+      "equipment_type": "AC_OUTDOOR_CONDENSER",
+      "cooling_capacity_btu": 12000.0,
+      "fixture_name_th": "\u0e04\u0e2d\u0e19\u0e40\u0e14\u0e19\u0e0b\u0e34\u0e48\u0e07\u0e22\u0e39\u0e19\u0e34\u0e15\u0e20\u0e32\u0e22\u0e19\u0e2d\u0e01 (Outdoor Condensing Unit)"
     }
   ]
 };
@@ -6065,6 +12713,36 @@
                 object3D = (data.geometry_type === "line_loop")
                     ? new THREE.LineLoop(lineGeom, lineMat)
                     : new THREE.Line(lineGeom, lineMat);
+            } else if (data.geometry_type === "polygon") {
+                const geom = new THREE.BufferGeometry();
+                const vertices = [];
+                const pts = data.points;
+                if (pts.length === 3) {
+                    vertices.push(...pts[0], ...pts[1], ...pts[2]);
+                } else if (pts.length >= 4) {
+                    for (let i = 1; i < pts.length - 1; i++) {
+                        vertices.push(...pts[0], ...pts[i], ...pts[i + 1]);
+                    }
+                }
+                geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                geom.computeVertexNormals();
+
+                const matOptions = {
+                    color: new THREE.Color(data.color),
+                    roughness: 0.6,
+                    metalness: 0.1,
+                    side: THREE.DoubleSide,
+                };
+                const mat = new THREE.MeshStandardMaterial(matOptions);
+                const mesh = new THREE.Mesh(geom, mat);
+
+                const edges = new THREE.EdgesGeometry(geom);
+                const line = new THREE.LineSegments(
+                    edges,
+                    new THREE.LineBasicMaterial({ color: 0x111111, linewidth: 1 })
+                );
+                mesh.add(line);
+                object3D = mesh;
             } else {
                 let geometry;
                 if (data.class === "IfcColumn") {
@@ -6109,8 +12787,16 @@
 
             // Layer assignment for filtering
             const tagUpper = (data.tag || "").toUpperCase();
-            if (tagUpper.includes("F2") || tagUpper.includes("FOOTING") || data.class === "IfcFooting" || data.class === "IfcPile") {
+            if (data.layer) {
+                object3D.userData.layer = data.layer;
+            } else if (tagUpper.includes("F2") || tagUpper.includes("FOOTING") || data.class === "IfcFooting" || data.class === "IfcPile") {
                 object3D.userData.layer = "footings";
+            } else if (data.class === "IfcRoofCovering" || data.class === "IfcRoofRidge") {
+                object3D.userData.layer = "roof_covering";
+            } else if (data.class === "IfcRoofFraming") {
+                object3D.userData.layer = "roof_framing";
+            } else if (data.class === "IfcRoof" || tagUpper.includes("ROOF") || tagUpper.includes("RIDGE") || tagUpper.includes("HIP") || tagUpper.includes("EAVE") || tagUpper.includes("SLOPE")) {
+                object3D.userData.layer = "roof_covering";
             } else if (data.class === "IfcSlab" || tagUpper.includes("SLAB") || tagUpper.startsWith("S-") || tagUpper.startsWith("GS-")) {
                 object3D.userData.layer = "slabs";
             } else if (data.class.startsWith("IfcStair") || data.class === "IfcRailing" || tagUpper.startsWith("ST-")) {
@@ -6164,6 +12850,7 @@
 
         window.toggleLayer = function(layerName) {
             const btn = document.getElementById('btn-layer-' + layerName);
+            if (!btn) return;
             const isActive = btn.classList.toggle('active');
             if (layerName === 'grids') {
                 gridGroup.visible = isActive;
@@ -6184,8 +12871,9 @@
             showInspector(sceneData.elements[0]);
         }
 
-        // Element Selection / Raycasting
+        // Element Selection / Raycasting (with line threshold for easy wire picking)
         const raycaster = new THREE.Raycaster();
+        raycaster.params.Line = { threshold: 0.35 };
         const mouse = new THREE.Vector2();
         let selectedMesh = null;
         let originalColor = null;
@@ -6223,23 +12911,73 @@
                 return;
             }
 
-            let dimText = '';
-            if (data.dimensions.length !== undefined) {
-                dimText = `${data.dimensions.length.toFixed(2)}m (L)`;
-                if (data.dimensions.width !== undefined) dimText += ` × ${data.dimensions.width.toFixed(2)}m (W)`;
-                if (data.dimensions.thickness !== undefined) dimText += ` × ${data.dimensions.thickness.toFixed(2)}m (Thk)`;
-                if (data.dimensions.height !== undefined) dimText += ` × ${data.dimensions.height.toFixed(2)}m (H)`;
-                if (data.dimensions.depth !== undefined) dimText += ` × ${data.dimensions.depth.toFixed(2)}m (D)`;
-            } else {
-                dimText = `${data.dimensions.width.toFixed(2)}m (W) × ${data.dimensions.depth.toFixed(2)}m (D) × ${data.dimensions.height.toFixed(2)}m (H)`;
+            let dimText = '-';
+            if (data.dimensions) {
+                if (data.dimensions.area !== undefined) {
+                    dimText = `${data.dimensions.area.toFixed(2)} m² (Slope: ${data.dimensions.slope_degrees || 0}°)`;
+                } else if (data.dimensions.length !== undefined) {
+                    dimText = `${data.dimensions.length.toFixed(2)}m (L)`;
+                    if (data.dimensions.width !== undefined) dimText += ` × ${data.dimensions.width.toFixed(2)}m (W)`;
+                    if (data.dimensions.thickness !== undefined) dimText += ` × ${data.dimensions.thickness.toFixed(2)}m (Thk)`;
+                    if (data.dimensions.height !== undefined) dimText += ` × ${data.dimensions.height.toFixed(2)}m (H)`;
+                    if (data.dimensions.depth !== undefined) dimText += ` × ${data.dimensions.depth.toFixed(2)}m (D)`;
+                } else if (data.dimensions.width !== undefined) {
+                    dimText = `${data.dimensions.width.toFixed(2)}m (W) × ${data.dimensions.depth.toFixed(2)}m (D) × ${data.dimensions.height.toFixed(2)}m (H)`;
+                }
+            }
+
+            const posText = data.position ? `(${data.position[0].toFixed(2)}, ${data.position[1].toFixed(2)}, ${data.position[2].toFixed(2)})` : '-';
+
+            let memberRow = '';
+            if (data.member_name) {
+                const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${data.color};margin-right:6px;"></span>` : '';
+                memberRow = `<div class="data-row"><span class="data-label">ชิ้นส่วน (Member)</span><span class="data-value">${colorDot}${data.member_name}</span></div>`;
+            }
+
+            let profileRow = '';
+            if (data.profile) {
+                profileRow = `<div class="data-row"><span class="data-label">หน้าตัด (Profile)</span><span class="data-value">${data.profile}</span></div>`;
+            }
+
+            let mepRow = '';
+            if (data.system_name_th) {
+                const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${data.color};margin-right:6px;"></span>` : '';
+                mepRow += `<div class="data-row"><span class="data-label">ระบบ (System)</span><span class="data-value">${colorDot}${data.system_name_th}</span></div>`;
+            }
+            if (data.fixture_name_th) {
+                const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${data.color};margin-right:6px;"></span>` : '';
+                mepRow += `<div class="data-row"><span class="data-label">อุปกรณ์ (Fixture)</span><span class="data-value">${colorDot}${data.fixture_name_th}</span></div>`;
+            }
+            if (data.dimensions && data.dimensions.diameter !== undefined) {
+                const dia_mm = (data.dimensions.diameter * 1000).toFixed(0);
+                mepRow += `<div class="data-row"><span class="data-label">ขนาดท่อ (Dia)</span><span class="data-value">Ø ${dia_mm} mm (${data.dimensions.diameter}m)</span></div>`;
+            }
+            if (data.dimensions && data.dimensions.slope) {
+                const slope_pct = (data.dimensions.slope * 100).toFixed(1);
+                mepRow += `<div class="data-row"><span class="data-label">ความลาดชัน (Slope)</span><span class="data-value">${slope_pct}% (1:${Math.round(1/data.dimensions.slope)})</span></div>`;
+            }
+            if (data.wattage) {
+                mepRow += `<div class="data-row"><span class="data-label">กำลังไฟฟ้า (Power)</span><span class="data-value">${data.wattage} W</span></div>`;
+            }
+            if (data.circuits_count) {
+                mepRow += `<div class="data-row"><span class="data-label">จำนวนวงจร (Circuits)</span><span class="data-value">${data.circuits_count} วงจรย่อย</span></div>`;
+            }
+            if (data.cooling_capacity_btu) {
+                mepRow += `<div class="data-row"><span class="data-label">ขนาดทำความเย็น (Cooling)</span><span class="data-value">${data.cooling_capacity_btu.toLocaleString()} BTU/hr</span></div>`;
+            }
+            if (data.flow_rate_cfm) {
+                mepRow += `<div class="data-row"><span class="data-label">อัตราลมระบาย (Air Flow)</span><span class="data-value">${data.flow_rate_cfm} CFM</span></div>`;
             }
 
             contentEl.innerHTML = `
                 <div style="margin-bottom: 8px;"><span class="badge">${data.class}</span></div>
                 <div class="data-row"><span class="data-label">Tag</span><span class="data-value">${data.tag}</span></div>
+                ${memberRow}
+                ${profileRow}
+                ${mepRow}
                 <div class="data-row"><span class="data-label">Material</span><span class="data-value">${data.material || '-'}</span></div>
                 <div class="data-row"><span class="data-label">Dimensions</span><span class="data-value">${dimText}</span></div>
-                <div class="data-row"><span class="data-label">Position</span><span class="data-value">(${data.position[0].toFixed(2)}, ${data.position[1].toFixed(2)}, ${data.position[2].toFixed(2)})</span></div>
+                <div class="data-row"><span class="data-label">Position</span><span class="data-value">${posText}</span></div>
             `;
         }
 

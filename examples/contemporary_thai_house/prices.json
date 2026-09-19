@@ -84,6 +84,210 @@
       "unit": "m2",
       "material_cost": 38.0,
       "labor_cost": 12.0
+    },
+    "MAT-PLASTER-01": {
+      "name": "Cement Plastering (งานฉาบปูนเรียบ)",
+      "unit": "m2",
+      "material_cost": 65.0,
+      "labor_cost": 85.0
+    },
+    "MAT-PAINT-INT": {
+      "name": "Interior Acrylic Paint (ทาสีน้ำอะคริลิกภายใน)",
+      "unit": "m2",
+      "material_cost": 45.0,
+      "labor_cost": 35.0
+    },
+    "MAT-PAINT-EXT": {
+      "name": "Exterior Acrylic Paint (ทาสีน้ำอะคริลิกภายนอก)",
+      "unit": "m2",
+      "material_cost": 65.0,
+      "labor_cost": 45.0
+    },
+    "MAT-TILE-WALL": {
+      "name": "Ceramic Wall Tile (งานปูกระเบื้องผนัง)",
+      "unit": "m2",
+      "material_cost": 260.0,
+      "labor_cost": 160.0
+    },
+    "MAT-ROOF-TILE": {
+      "name": "CPAC Monier Concrete Roof Tile (กระเบื้องหลังคาคอนกรีตซีแพคโมเนีย)",
+      "unit": "m2",
+      "material_cost": 260.0,
+      "labor_cost": 85.0
+    },
+    "MAT-ROOF-RIDGE": {
+      "name": "Ridge & Hip Cap Tile (ครอบสันหลังคาและตะเข้สัน)",
+      "unit": "m",
+      "material_cost": 130.0,
+      "labor_cost": 45.0
+    },
+    "MAT-FASCIA": {
+      "name": "Conwood Fascia Board (ไม้เชิงชายรอบอาคาร)",
+      "unit": "m",
+      "material_cost": 95.0,
+      "labor_cost": 35.0
+    },
+    "MAT-ROOF-INSUL": {
+      "name": "Aluminium Foil Thermal Insulation (แผ่นสะท้อนความร้อน)",
+      "unit": "m2",
+      "material_cost": 48.0,
+      "labor_cost": 16.0
+    },
+    "MAT-PIPE-PPR-25": {
+      "name": "PPR Cold Water Pipe 25mm (1\") (ท่อน้ำดี PPR)",
+      "unit": "m",
+      "material_cost": 95.0,
+      "labor_cost": 45.0
+    },
+    "MAT-PIPE-PVC-BLUE-20": {
+      "name": "PVC Pipe 3/4\" Class 8.5 Blue (ท่อน้ำดี PVC ฟ้า)",
+      "unit": "m",
+      "material_cost": 45.0,
+      "labor_cost": 25.0
+    },
+    "MAT-PIPE-PVC-GREY-100": {
+      "name": "PVC Soil Pipe 4\" Class 8.5 (ท่อโสโครก PVC 4\")",
+      "unit": "m",
+      "material_cost": 185.0,
+      "labor_cost": 75.0
+    },
+    "MAT-PIPE-PVC-GREY-50": {
+      "name": "PVC Waste/Vent Pipe 2\" Class 8.5 (ท่อน้ำทิ้ง/อากาศ PVC 2\")",
+      "unit": "m",
+      "material_cost": 65.0,
+      "labor_cost": 35.0
+    },
+    "MAT-PIPE-FITTING": {
+      "name": "Plumbing Pipe Fittings & Valves (ข้อต่อและวาล์วประปา)",
+      "unit": "item",
+      "material_cost": 45.0,
+      "labor_cost": 20.0
+    },
+    "MAT-CONDUIT-EMT-20": {
+      "name": "Electrical Conduit EMT 20mm (ท่อร้อยสายไฟ EMT)",
+      "unit": "m",
+      "material_cost": 55.0,
+      "labor_cost": 35.0
+    },
+    "MAT-CONDUIT-FITTING": {
+      "name": "Electrical Conduit Fittings & Boxes (กล่องและข้อต่อร้อยสาย)",
+      "unit": "item",
+      "material_cost": 30.0,
+      "labor_cost": 15.0
+    },
+    "MAT-WC-SET": {
+      "name": "Water Closet Ceramic Set (ชุดโถสุขภัณฑ์ประหยัดน้ำ)",
+      "unit": "set",
+      "material_cost": 3800.0,
+      "labor_cost": 650.0
+    },
+    "MAT-LAV-SET": {
+      "name": "Lavatory Ceramic Basin & Faucet (ชุดอ่างล้างหน้าพร้อมก๊อก)",
+      "unit": "set",
+      "material_cost": 1850.0,
+      "labor_cost": 450.0
+    },
+    "MAT-SHOWER-SET": {
+      "name": "Shower Set & Valve (ชุดฝักบัวอาบน้ำพร้อมวาล์ว)",
+      "unit": "set",
+      "material_cost": 1250.0,
+      "labor_cost": 350.0
+    },
+    "MAT-KITCHEN-SINK": {
+      "name": "Stainless Steel Kitchen Sink 1-Bowl (อ่างล้างจานสแตนเลส)",
+      "unit": "set",
+      "material_cost": 2400.0,
+      "labor_cost": 500.0
+    },
+    "MAT-FLOOR-DRAIN": {
+      "name": "Stainless Steel Floor Drain Trap (ตะแกรงดักกลิ่นสแตนเลส)",
+      "unit": "set",
+      "material_cost": 250.0,
+      "labor_cost": 100.0
+    },
+    "MAT-GREASE-TRAP": {
+      "name": "Polyethylene Grease Trap 30L (บ่อดักไขมันสำเร็จรูป 30L)",
+      "unit": "set",
+      "material_cost": 1800.0,
+      "labor_cost": 400.0
+    },
+    "MAT-SEPTIC-TANK": {
+      "name": "Fiberglass Septic Tank 1600L (ถังบำบัดน้ำเสียสำเร็จรูป 1600L)",
+      "unit": "set",
+      "material_cost": 6500.0,
+      "labor_cost": 1500.0
+    },
+    "MAT-WATER-TANK": {
+      "name": "Polymer Water Storage Tank 1000L (ถังเก็บน้ำบนดิน 1000L)",
+      "unit": "set",
+      "material_cost": 4200.0,
+      "labor_cost": 600.0
+    },
+    "MAT-WATER-PUMP": {
+      "name": "Automatic Water Booster Pump 250W (ปั๊มน้ำอัตโนมัติ 250W)",
+      "unit": "set",
+      "material_cost": 5800.0,
+      "labor_cost": 800.0
+    },
+    "MAT-CONSUMER-UNIT": {
+      "name": "Consumer Unit 12-Circuits with RCBO (ตู้ควบคุมไฟฟ้า 12 ช่อง)",
+      "unit": "set",
+      "material_cost": 3800.0,
+      "labor_cost": 1200.0
+    },
+    "MAT-DOWNLIGHT-LED": {
+      "name": "LED Downlight Luminaire 12W (โคมดาวน์ไลท์ LED 12W)",
+      "unit": "set",
+      "material_cost": 280.0,
+      "labor_cost": 90.0
+    },
+    "MAT-SWITCH-1G": {
+      "name": "Wall Switch with Faceplate (สวิตช์ไฟพร้อมฝาครอบ)",
+      "unit": "set",
+      "material_cost": 85.0,
+      "labor_cost": 45.0
+    },
+    "MAT-OUTLET-DUPLEX": {
+      "name": "Duplex Grounded Outlet with Faceplate (เต้ารับคู่มีกราวด์)",
+      "unit": "set",
+      "material_cost": 120.0,
+      "labor_cost": 55.0
+    },
+    "MAT-AC-WALL-18000": {
+      "name": "Wall Mounted Inverter AC 18,000 BTU (แอร์ติดผนัง Inverter 18000 BTU)",
+      "unit": "set",
+      "material_cost": 18500.0,
+      "labor_cost": 2500.0
+    },
+    "MAT-AC-WALL-12000": {
+      "name": "Wall Mounted Inverter AC 12,000 BTU (แอร์ติดผนัง Inverter 12000 BTU)",
+      "unit": "set",
+      "material_cost": 13500.0,
+      "labor_cost": 2000.0
+    },
+    "MAT-EXHAUST-FAN": {
+      "name": "Ceiling Exhaust Fan 8\" (พัดลมระบายอากาศติดเพดาน 8 นิ้ว)",
+      "unit": "set",
+      "material_cost": 1200.0,
+      "labor_cost": 400.0
+    },
+    "MAT-KITCHEN-HOOD": {
+      "name": "Kitchen Range Hood Stainless 90cm (ฮูดดูดควันสแตนเลส 90 ซม.)",
+      "unit": "set",
+      "material_cost": 8500.0,
+      "labor_cost": 1500.0
+    },
+    "MAT-PIPE-REFRIGERANT": {
+      "name": "Insulated Copper Refrigerant Pipe (ท่อน้ำยาแอร์ทองแดงหุ้มฉนวน)",
+      "unit": "m",
+      "material_cost": 320.0,
+      "labor_cost": 120.0
+    },
+    "MAT-DUCT-EXHAUST": {
+      "name": "Flexible Aluminum Exhaust Duct (ท่อลมระบายอากาศ/ดูดควัน)",
+      "unit": "m",
+      "material_cost": 280.0,
+      "labor_cost": 90.0
     }
   }
 }

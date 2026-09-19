@@ -5,22 +5,105 @@ and geometric dimensions.
 """
 
 import math
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union
 from pydantic import BaseModel, ConfigDict
 
 from debim.schema import (
+    IfcAirTerminal,
     IfcBeam,
+    IfcCableCarrierSegment,
     IfcColumn,
     IfcCustomElement,
+    IfcDistributionBoard,
     IfcDoor,
+    IfcDuctSegment,
     IfcFooting,
+    IfcLightFixture,
+    IfcOutlet,
+    IfcPipeSegment,
+    IfcRoof,
+    IfcSanitaryTerminal,
     IfcSlab,
     IfcStair,
+    IfcSwitchingDevice,
+    IfcUnitaryEquipment,
     IfcWall,
     IfcWindow,
     ProjectManifest,
     Storey,
 )
+
+
+def _calc_polygon_3d(pts: List[Tuple[float, float, float]]) -> Tuple[float, Tuple[float, float, float]]:
+    """Calculates 3D surface area and normal vector for a planar polygon in 3D."""
+    n = len(pts)
+    if n < 3:
+        return 0.0, (0.0, 0.0, 1.0)
+    nx = 0.0
+    ny = 0.0
+    nz = 0.0
+    for i in range(n):
+        p1 = pts[i]
+        p2 = pts[(i + 1) % n]
+        nx += (p1[1] * p2[2] - p1[2] * p2[1])
+        ny += (p1[2] * p2[0] - p1[0] * p2[2])
+        nz += (p1[0] * p2[1] - p1[1] * p2[0])
+    length = math.sqrt(nx * nx + ny * ny + nz * nz)
+    area = 0.5 * length
+    if length > 1e-9:
+        normal = (nx / length, ny / length, nz / length)
+    else:
+        normal = (0.0, 0.0, 1.0)
+    return area, normal
+
+
+def _generate_orthogonal_waypoints(
+    p1: Tuple[float, float, float],
+    p2: Tuple[float, float, float],
+    strategy: str = "ORTHOGONAL",
+) -> List[Tuple[float, float, float]]:
+    """
+    Generates orthogonal (Manhattan / Right-angle) 3D waypoints between p1 and p2.
+    Prevents diagonal cuts across rooms and calculates realistic pipe/conduit lengths.
+    """
+    x1, y1, z1 = p1
+    x2, y2, z2 = p2
+
+    dx = abs(x2 - x1)
+    dy = abs(y2 - y1)
+    dz = abs(z2 - z1)
+
+    # If already aligned along axes or virtually identical
+    if (dx < 1e-4 and dy < 1e-4) or (dx < 1e-4 and dz < 1e-4) or (dy < 1e-4 and dz < 1e-4):
+        return [p1, p2]
+
+    waypoints: List[Tuple[float, float, float]] = [p1]
+
+    if strategy in ("ORTHOGONAL", "X_THEN_Y"):
+        # Route along X first, then Y, then vertical Z
+        if dx > 1e-4:
+            waypoints.append((x2, y1, z1))
+        if dy > 1e-4:
+            waypoints.append((x2, y2, z1))
+        if dz > 1e-4:
+            waypoints.append((x2, y2, z2))
+    elif strategy == "Y_THEN_X":
+        # Route along Y first, then X, then vertical Z
+        if dy > 1e-4:
+            waypoints.append((x1, y2, z1))
+        if dx > 1e-4:
+            waypoints.append((x2, y2, z1))
+        if dz > 1e-4:
+            waypoints.append((x2, y2, z2))
+    else:
+        return [p1, p2]
+
+    # Deduplicate consecutive identical waypoints
+    cleaned: List[Tuple[float, float, float]] = [waypoints[0]]
+    for pt in waypoints[1:]:
+        if math.dist(cleaned[-1], pt) > 1e-4:
+            cleaned.append(pt)
+    return cleaned
 
 
 class ResolvedColumn(BaseModel):
@@ -220,6 +303,305 @@ class ResolvedStair(BaseModel):
 
 
 
+class ResolvedRoofPlane(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    polygon: List[Tuple[float, float, float]]  # Vertices in 3D (x, y, z)
+    area: float  # Sloped surface area (m2)
+    slope_degrees: float
+    normal: Tuple[float, float, float]
+
+
+class ResolvedRoofRidge(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    length: float
+    ridge_type: Literal["RIDGE", "HIP", "VALLEY", "EAVE", "VERGE"]
+
+
+class ResolvedRoofFramingMember(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    member_type: Literal[
+        "RIDGE_BEAM",
+        "HIP_RAFTER",
+        "VALLEY_RAFTER",
+        "COMMON_RAFTER",
+        "JACK_RAFTER",
+        "PURLIN",
+        "KING_POST",
+        "WALL_PLATE",
+        "TIE_BEAM",
+    ]
+    name_th: str
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    length: float
+    color: str
+    material: Optional[str] = None
+    profile: Optional[str] = None
+
+
+class ResolvedRoof(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcRoof
+    roof_type: str
+    pitch: float
+    eaves_elevation: float
+    ridge_elevation: float
+    footprint_polygon: List[Tuple[float, float, float]]  # Eaves boundary at eaves elevation
+    planes: List[ResolvedRoofPlane] = []
+    ridges: List[ResolvedRoofRidge] = []
+    framing_members: List[ResolvedRoofFramingMember] = []
+
+    total_footprint_area: float  # Projected horizontal area including overhang (m2)
+    total_sloped_area: float     # Actual sloped roof covering area (m2)
+    total_ridge_length: float    # Main ridge cap length (m)
+    total_hip_length: float      # Hip ridge cap length (m)
+    total_eaves_length: float    # Fascia / gutter perimeter length (m)
+    total_steel_weight: float    # Structural steel framing weight (kg)
+
+
+# MEP Colors & Defaults
+MEP_PIPE_COLORS: Dict[str, str] = {
+    "COLD_WATER": "#0284C7",  # Sky Blue (น้ำดี ท่อ PVC ฟ้า / PPR)
+    "HOT_WATER": "#EA580C",   # Orange-Red (น้ำร้อน)
+    "SOIL": "#78350F",        # Amber Brown (ส้วม/โสโครก ท่อ PVC 4")
+    "WASTE": "#475569",       # Slate Grey (น้ำทิ้ง ท่อ PVC 2")
+    "VENT": "#65A30D",        # Lime Green (ท่อระบายอากาศ)
+    "DRAINAGE": "#7C3AED",    # Purple (ท่อระบายน้ำรอบอาคาร)
+    "REFRIGERANT": "#06B6D4", # Cyan / Deep Turquoise (ท่อน้ำยาแอร์)
+    "CONDENSATE": "#38BDF8",  # Light Sky Blue (ท่อน้ำทิ้งแอร์)
+}
+
+MEP_CONDUIT_COLORS: Dict[str, str] = {
+    "POWER": "#F97316",         # Orange (ท่อร้อยสายไฟกำลัง/เต้ารับ)
+    "LIGHTING": "#EAB308",      # Amber/Yellow (ระบบแสงสว่าง)
+    "MAIN_FEEDER": "#DC2626",   # Red (สายเมนเข้าตู้ MDB)
+    "COMMUNICATION": "#06B6D4", # Cyan (LAN / โทรศัพท์)
+    "SOLAR": "#84CC16",         # Lime (โซล่าร์เซลล์)
+}
+
+MEP_DUCT_COLORS: Dict[str, str] = {
+    "SUPPLY_AIR": "#0284C7",    # Blue (ท่อลมจ่าย)
+    "RETURN_AIR": "#F59E0B",    # Amber (ท่อลมกลับ)
+    "EXHAUST_AIR": "#64748B",   # Slate Grey (ท่อระบายอากาศ/ดูดควัน)
+    "FRESH_AIR": "#10B981",     # Emerald Green (ท่อเติมอากาศบริสุทธิ์)
+}
+
+DEFAULT_TERMINAL_DIMENSIONS: Dict[str, Tuple[float, float, float]] = {
+    "WATER_CLOSET": (0.40, 0.70, 0.75),
+    "LAVATORY": (0.50, 0.45, 0.80),
+    "SHOWER": (0.20, 0.20, 0.90),
+    "KITCHEN_SINK": (0.60, 1.00, 0.85),
+    "FLOOR_DRAIN": (0.15, 0.15, 0.05),
+    "GREASE_TRAP": (0.40, 0.50, 0.40),
+    "SEPTIC_TANK": (1.20, 1.20, 1.50),
+    "WATER_TANK": (1.00, 1.00, 1.60),
+    "WATER_PUMP": (0.35, 0.35, 0.35),
+    "CONSUMER_UNIT": (0.35, 0.12, 0.45),
+    "MDB": (0.60, 0.25, 0.80),
+    "PANELBOARD": (0.45, 0.15, 0.60),
+    "DOWNLIGHT": (0.15, 0.15, 0.05),
+    "LED_TUBE": (0.10, 1.20, 0.08),
+    "PENDANT": (0.30, 0.30, 0.40),
+    "WALL_LAMP": (0.15, 0.15, 0.20),
+    "FLOODLIGHT": (0.25, 0.20, 0.25),
+    "ONE_WAY": (0.07, 0.04, 0.12),
+    "TWO_WAY": (0.07, 0.04, 0.12),
+    "DIMMER": (0.07, 0.04, 0.12),
+    "DUPLEX_GROUNDED": (0.07, 0.04, 0.12),
+    "WATERPROOF": (0.08, 0.06, 0.13),
+    "HIGH_POWER": (0.10, 0.06, 0.12),
+    # HVAC Terminals & Equipment
+    "EXHAUST_FAN_CEILING": (0.30, 0.30, 0.20),
+    "EXHAUST_FAN_WALL": (0.30, 0.20, 0.30),
+    "KITCHEN_HOOD": (0.90, 0.55, 0.50),
+    "SUPPLY_DIFFUSER": (0.60, 0.60, 0.10),
+    "RETURN_GRILLE": (0.60, 0.60, 0.05),
+    "AC_INDOOR_WALL": (0.85, 0.22, 0.30),
+    "AC_INDOOR_CASSETTE": (0.84, 0.84, 0.28),
+    "AC_INDOOR_CONCEALED": (0.90, 0.60, 0.30),
+    "AC_OUTDOOR_CONDENSER": (0.85, 0.35, 0.65),
+}
+
+DEFAULT_TERMINAL_COLORS: Dict[str, str] = {
+    "WATER_CLOSET": "#F8FAFC",
+    "LAVATORY": "#F1F5F9",
+    "SHOWER": "#CBD5E1",
+    "KITCHEN_SINK": "#94A3B8",
+    "FLOOR_DRAIN": "#64748B",
+    "GREASE_TRAP": "#0D9488",  # Teal
+    "SEPTIC_TANK": "#1E293B",  # Dark Slate
+    "WATER_TANK": "#0284C7",   # Blue
+    "WATER_PUMP": "#2563EB",   # Royal Blue
+    "CONSUMER_UNIT": "#334155",
+    "MDB": "#1E293B",
+    "PANELBOARD": "#334155",
+    "DOWNLIGHT": "#FEF08A",
+    "LED_TUBE": "#FEF9C3",
+    "PENDANT": "#FDE047",
+    "WALL_LAMP": "#FEF08A",
+    "FLOODLIGHT": "#FACC15",
+    "ONE_WAY": "#E2E8F0",
+    "TWO_WAY": "#E2E8F0",
+    "DIMMER": "#E2E8F0",
+    "DUPLEX_GROUNDED": "#E2E8F0",
+    "WATERPROOF": "#CBD5E1",
+    "HIGH_POWER": "#94A3B8",
+    # HVAC Terminals & Equipment
+    "EXHAUST_FAN_CEILING": "#F1F5F9",
+    "EXHAUST_FAN_WALL": "#E2E8F0",
+    "KITCHEN_HOOD": "#94A3B8",
+    "SUPPLY_DIFFUSER": "#F8FAFC",
+    "RETURN_GRILLE": "#E2E8F0",
+    "AC_INDOOR_WALL": "#FFFFFF",
+    "AC_INDOOR_CASSETTE": "#F8FAFC",
+    "AC_INDOOR_CONCEALED": "#64748B",
+    "AC_OUTDOOR_CONDENSER": "#CBD5E1",
+}
+
+
+class ResolvedPipeSegment(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcPipeSegment
+    system_type: str
+    nominal_diameter: float
+    length: float
+    slope: float
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    waypoints: List[Tuple[float, float, float]]
+    color: str
+    fittings_count: int = 0
+
+
+class ResolvedCableCarrierSegment(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcCableCarrierSegment
+    system_type: str
+    nominal_diameter: float
+    length: float
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    waypoints: List[Tuple[float, float, float]]
+    color: str
+    fittings_count: int = 0
+
+
+class ResolvedSanitaryTerminal(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcSanitaryTerminal
+    terminal_type: str
+    position: Tuple[float, float, float]
+    rotation: float
+    dimensions: Tuple[float, float, float]  # width, depth, height
+    color: str
+
+
+class ResolvedDistributionBoard(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcDistributionBoard
+    board_type: str
+    position: Tuple[float, float, float]
+    rotation: float
+    dimensions: Tuple[float, float, float]
+    color: str
+    circuits_count: int
+
+
+class ResolvedLightFixture(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcLightFixture
+    fixture_type: str
+    position: Tuple[float, float, float]
+    dimensions: Tuple[float, float, float]
+    color: str
+    wattage: float
+
+
+class ResolvedSwitchingDevice(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcSwitchingDevice
+    switch_type: str
+    position: Tuple[float, float, float]
+    dimensions: Tuple[float, float, float]
+    color: str
+    gangs: int
+
+
+class ResolvedOutlet(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcOutlet
+    outlet_type: str
+    position: Tuple[float, float, float]
+    dimensions: Tuple[float, float, float]
+    color: str
+
+
+class ResolvedDuctSegment(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcDuctSegment
+    system_type: str
+    width: float
+    height: float
+    length: float
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    waypoints: List[Tuple[float, float, float]]
+    color: str
+    fittings_count: int = 0
+
+
+class ResolvedAirTerminal(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcAirTerminal
+    terminal_type: str
+    position: Tuple[float, float, float]
+    rotation: float
+    dimensions: Tuple[float, float, float]
+    color: str
+    flow_rate_cfm: Optional[float] = None
+
+
+class ResolvedUnitaryEquipment(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcUnitaryEquipment
+    equipment_type: str
+    position: Tuple[float, float, float]
+    rotation: float
+    dimensions: Tuple[float, float, float]
+    color: str
+    cooling_capacity_btu: Optional[float] = None
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -227,6 +609,17 @@ ResolvedElement = Union[
     ResolvedFooting,
     ResolvedSlab,
     ResolvedStair,
+    ResolvedRoof,
+    ResolvedPipeSegment,
+    ResolvedCableCarrierSegment,
+    ResolvedDuctSegment,
+    ResolvedSanitaryTerminal,
+    ResolvedDistributionBoard,
+    ResolvedLightFixture,
+    ResolvedSwitchingDevice,
+    ResolvedOutlet,
+    ResolvedAirTerminal,
+    ResolvedUnitaryEquipment,
     ResolvedCustomElement,
 ]
 
@@ -241,8 +634,19 @@ class ResolvedManifest(BaseModel):
     walls: List[ResolvedWall] = []
     slabs: List[ResolvedSlab] = []
     stairs: List[ResolvedStair] = []
+    roofs: List[ResolvedRoof] = []
     doors: List[ResolvedDoor] = []
     windows: List[ResolvedWindow] = []
+    pipes: List[ResolvedPipeSegment] = []
+    conduits: List[ResolvedCableCarrierSegment] = []
+    ducts: List[ResolvedDuctSegment] = []
+    sanitary_terminals: List[ResolvedSanitaryTerminal] = []
+    distribution_boards: List[ResolvedDistributionBoard] = []
+    light_fixtures: List[ResolvedLightFixture] = []
+    switches: List[ResolvedSwitchingDevice] = []
+    outlets: List[ResolvedOutlet] = []
+    air_terminals: List[ResolvedAirTerminal] = []
+    unitary_equipments: List[ResolvedUnitaryEquipment] = []
     custom_elements: List[ResolvedCustomElement] = []
     elements: List[ResolvedElement] = []
 
@@ -1073,6 +1477,854 @@ class SpatialResolver:
         )
 
 
+    def resolve_roof(self, roof: IfcRoof) -> ResolvedRoof:
+        xs = []
+        ys = []
+        for pt in roof.placement.boundary:
+            gx, gy = pt
+            xs.append(self.axes_x[gx])
+            ys.append(self.axes_y[gy])
+
+        min_x = min(xs)
+        max_x = max(xs)
+        min_y = min(ys)
+        max_y = max(ys)
+
+        oh = roof.placement.overhang
+        x0 = min_x - oh
+        x1 = max_x + oh
+        y0 = min_y - oh
+        y1 = max_y + oh
+
+        width = x1 - x0
+        length = y1 - y0
+
+        st = self.storeys[roof.placement.storey]
+        z0 = st.elevation + roof.placement.offset_z
+        pitch = roof.covering.pitch if roof.covering else 30.0
+        pitch_rad = math.radians(pitch)
+
+        # 4 Eaves corners at base eaves elevation
+        c1 = (x0, y0, z0)  # SW
+        c2 = (x1, y0, z0)  # SE
+        c3 = (x1, y1, z0)  # NE
+        c4 = (x0, y1, z0)  # NW
+
+        footprint_poly = [c1, c2, c3, c4]
+        footprint_area = width * length
+        eaves_perimeter = 2.0 * (width + length)
+
+        planes: List[ResolvedRoofPlane] = []
+        ridges: List[ResolvedRoofRidge] = []
+
+        roof_type = roof.roof_type.upper()
+        orientation = roof.placement.ridge_orientation
+
+        if roof_type == "GABLE":
+            # Gable roof (อกไก่แนวขวางหรือแนวยาว + 2 ด้านลาดเอียง)
+            if orientation == "Y" or (orientation == "ALONG_LENGTH" and length >= width):
+                span = width
+                half_span = span / 2.0
+                rise_h = half_span * math.tan(pitch_rad)
+                zr = z0 + rise_h
+                x_mid = (x0 + x1) / 2.0
+                r1 = (x_mid, y0, zr)
+                r2 = (x_mid, y1, zr)
+
+                ridges.append(ResolvedRoofRidge(
+                    tag=f"{roof.tag}-Ridge",
+                    start_point=r1,
+                    end_point=r2,
+                    length=length,
+                    ridge_type="RIDGE",
+                ))
+
+                p_west = [c1, r1, r2, c4]
+                p_east = [c2, c3, r2, r1]
+
+                for p_tag, poly in [("WestSlope", p_west), ("EastSlope", p_east)]:
+                    area, normal = _calc_polygon_3d(poly)
+                    planes.append(ResolvedRoofPlane(
+                        tag=f"{roof.tag}-{p_tag}",
+                        polygon=poly,
+                        area=area,
+                        slope_degrees=pitch,
+                        normal=normal,
+                    ))
+
+                v_segs = [(c1, r1), (c2, r1), (c4, r2), (c3, r2)]
+                for v_idx, (v_start, v_end) in enumerate(v_segs):
+                    ridges.append(ResolvedRoofRidge(
+                        tag=f"{roof.tag}-Verge-{v_idx+1}",
+                        start_point=v_start,
+                        end_point=v_end,
+                        length=math.dist(v_start, v_end),
+                        ridge_type="VERGE",
+                    ))
+            else:
+                # Ridge runs along X (default)
+                span = length
+                half_span = span / 2.0
+                rise_h = half_span * math.tan(pitch_rad)
+                zr = z0 + rise_h
+                y_mid = (y0 + y1) / 2.0
+                r1 = (x0, y_mid, zr)
+                r2 = (x1, y_mid, zr)
+
+                ridges.append(ResolvedRoofRidge(
+                    tag=f"{roof.tag}-Ridge",
+                    start_point=r1,
+                    end_point=r2,
+                    length=width,
+                    ridge_type="RIDGE",
+                ))
+
+                p_south = [c1, c2, r2, r1]
+                p_north = [c4, r1, r2, c3]
+
+                for p_tag, poly in [("SouthSlope", p_south), ("NorthSlope", p_north)]:
+                    area, normal = _calc_polygon_3d(poly)
+                    planes.append(ResolvedRoofPlane(
+                        tag=f"{roof.tag}-{p_tag}",
+                        polygon=poly,
+                        area=area,
+                        slope_degrees=pitch,
+                        normal=normal,
+                    ))
+
+                v_segs = [(c1, r1), (c4, r1), (c2, r2), (c3, r2)]
+                for v_idx, (v_start, v_end) in enumerate(v_segs):
+                    ridges.append(ResolvedRoofRidge(
+                        tag=f"{roof.tag}-Verge-{v_idx+1}",
+                        start_point=v_start,
+                        end_point=v_end,
+                        length=math.dist(v_start, v_end),
+                        ridge_type="VERGE",
+                    ))
+
+        elif roof_type == "HIP":
+            # Hip roof (หลังคาปั้นหยา 4 ด้าน)
+            if orientation == "Y" or (orientation == "ALONG_LENGTH" and length > width):
+                half_span = width / 2.0
+                rise_h = half_span * math.tan(pitch_rad)
+                zr = z0 + rise_h
+                x_mid = (x0 + x1) / 2.0
+                y_a = y0 + half_span
+                y_b = y1 - half_span
+                if y_b < y_a:
+                    y_a = y_b = (y0 + y1) / 2.0
+
+                r1 = (x_mid, y_a, zr)
+                r2 = (x_mid, y_b, zr)
+                ridge_len = y_b - y_a
+                if ridge_len > 0.01:
+                    ridges.append(ResolvedRoofRidge(
+                        tag=f"{roof.tag}-Ridge",
+                        start_point=r1,
+                        end_point=r2,
+                        length=ridge_len,
+                        ridge_type="RIDGE",
+                    ))
+
+                hip_lines = [
+                    ("Hip-SW", c1, r1),
+                    ("Hip-SE", c2, r1),
+                    ("Hip-NE", c3, r2),
+                    ("Hip-NW", c4, r2),
+                ]
+                for h_tag, h_s, h_e in hip_lines:
+                    ridges.append(ResolvedRoofRidge(
+                        tag=f"{roof.tag}-{h_tag}",
+                        start_point=h_s,
+                        end_point=h_e,
+                        length=math.dist(h_s, h_e),
+                        ridge_type="HIP",
+                    ))
+
+                p_south = [c1, c2, r1]
+                p_north = [c3, c4, r2]
+                p_east = [c2, c3, r2, r1] if ridge_len > 0.01 else [c2, c3, r1]
+                p_west = [c4, c1, r1, r2] if ridge_len > 0.01 else [c4, c1, r1]
+
+                for p_tag, poly in [("SouthHip", p_south), ("NorthHip", p_north), ("EastSlope", p_east), ("WestSlope", p_west)]:
+                    area, normal = _calc_polygon_3d(poly)
+                    planes.append(ResolvedRoofPlane(
+                        tag=f"{roof.tag}-{p_tag}",
+                        polygon=poly,
+                        area=area,
+                        slope_degrees=pitch,
+                        normal=normal,
+                    ))
+
+            else:
+                # Ridge along X (default)
+                half_span = length / 2.0
+                rise_h = half_span * math.tan(pitch_rad)
+                zr = z0 + rise_h
+                y_mid = (y0 + y1) / 2.0
+                x_a = x0 + half_span
+                x_b = x1 - half_span
+                if x_b < x_a:
+                    x_a = x_b = (x0 + x1) / 2.0
+
+                r1 = (x_a, y_mid, zr)
+                r2 = (x_b, y_mid, zr)
+                ridge_len = x_b - x_a
+                if ridge_len > 0.01:
+                    ridges.append(ResolvedRoofRidge(
+                        tag=f"{roof.tag}-Ridge",
+                        start_point=r1,
+                        end_point=r2,
+                        length=ridge_len,
+                        ridge_type="RIDGE",
+                    ))
+
+                hip_lines = [
+                    ("Hip-SW", c1, r1),
+                    ("Hip-NW", c4, r1),
+                    ("Hip-SE", c2, r2),
+                    ("Hip-NE", c3, r2),
+                ]
+                for h_tag, h_s, h_e in hip_lines:
+                    ridges.append(ResolvedRoofRidge(
+                        tag=f"{roof.tag}-{h_tag}",
+                        start_point=h_s,
+                        end_point=h_e,
+                        length=math.dist(h_s, h_e),
+                        ridge_type="HIP",
+                    ))
+
+                p_west = [c1, r1, c4]
+                p_east = [c2, c3, r2]
+                p_south = [c1, c2, r2, r1] if ridge_len > 0.01 else [c1, c2, r1]
+                p_north = [c4, r1, r2, c3] if ridge_len > 0.01 else [c4, r1, c3]
+
+                for p_tag, poly in [("WestHip", p_west), ("EastHip", p_east), ("SouthSlope", p_south), ("NorthSlope", p_north)]:
+                    area, normal = _calc_polygon_3d(poly)
+                    planes.append(ResolvedRoofPlane(
+                        tag=f"{roof.tag}-{p_tag}",
+                        polygon=poly,
+                        area=area,
+                        slope_degrees=pitch,
+                        normal=normal,
+                    ))
+
+        elif roof_type == "SHED":
+            # Shed (เพิงหมาแหงน)
+            span = length
+            rise_h = span * math.tan(pitch_rad)
+            zr = z0 + rise_h
+            p1 = c1
+            p2 = c2
+            p3 = (x1, y1, zr)
+            p4 = (x0, y1, zr)
+            poly = [p1, p2, p3, p4]
+            area, normal = _calc_polygon_3d(poly)
+            planes.append(ResolvedRoofPlane(
+                tag=f"{roof.tag}-ShedSlope",
+                polygon=poly,
+                area=area,
+                slope_degrees=pitch,
+                normal=normal,
+            ))
+            ridges.append(ResolvedRoofRidge(
+                tag=f"{roof.tag}-TopEdge",
+                start_point=p4,
+                end_point=p3,
+                length=width,
+                ridge_type="RIDGE",
+            ))
+
+        else:  # FLAT or other
+            zr = z0
+            poly = [c1, c2, c3, c4]
+            area, normal = _calc_polygon_3d(poly)
+            planes.append(ResolvedRoofPlane(
+                tag=f"{roof.tag}-FlatSurface",
+                polygon=poly,
+                area=area,
+                slope_degrees=0.0,
+                normal=(0.0, 0.0, 1.0),
+            ))
+
+        # Eaves perimeter segments
+        eave_segs = [(c1, c2), (c2, c3), (c3, c4), (c4, c1)]
+        for e_idx, (e_s, e_e) in enumerate(eave_segs):
+            ridges.append(ResolvedRoofRidge(
+                tag=f"{roof.tag}-Eave-{e_idx+1}",
+                start_point=e_s,
+                end_point=e_e,
+                length=math.dist(e_s, e_e),
+                ridge_type="EAVE",
+            ))
+
+        tot_sloped_area = sum(p.area for p in planes)
+        tot_ridge_len = sum(r.length for r in ridges if r.ridge_type == "RIDGE")
+        tot_hip_len = sum(r.length for r in ridges if r.ridge_type == "HIP")
+
+        steel_rate = roof.framing.steel_weight_per_sqm if roof.framing else 18.0
+        tot_steel = footprint_area * steel_rate
+
+        # Roof Framing Members Synthesis (โครงสร้างหลังคาแยกชิ้นส่วน: อะเส, ขื่อ, อกไก่, ดั้ง, ตะเข้สัน, จันทัน, แป)
+        framing_members: List[ResolvedRoofFramingMember] = []
+        f_mat = roof.framing.material if roof.framing else "STEEL_SS400"
+
+        # 1. อะเส (Wall Plates) รอบแนวอาคาร/ชายคา
+        wall_plate_corners = [
+            ("WP-South", c1, c2),
+            ("WP-East", c2, c3),
+            ("WP-North", c3, c4),
+            ("WP-West", c4, c1),
+        ]
+        for wp_tag, p_s, p_e in wall_plate_corners:
+            framing_members.append(ResolvedRoofFramingMember(
+                tag=f"{roof.tag}-{wp_tag}",
+                member_type="WALL_PLATE",
+                name_th="อะเส (Wall Plate)",
+                start_point=p_s,
+                end_point=p_e,
+                length=math.dist(p_s, p_e),
+                color="#3B82F6",  # Blue
+                material=f_mat,
+                profile="C150x50x20x3.2",
+            ))
+
+        # 2. อกไก่ (Ridge Beam), ตะเข้สัน (Hip Rafters), เสาดั้ง (King Posts), ขื่อ (Tie Beams)
+        for r in ridges:
+            if r.ridge_type == "RIDGE":
+                framing_members.append(ResolvedRoofFramingMember(
+                    tag=f"{roof.tag}-RidgeBeam",
+                    member_type="RIDGE_BEAM",
+                    name_th="อกไก่ (Ridge Beam)",
+                    start_point=r.start_point,
+                    end_point=r.end_point,
+                    length=r.length,
+                    color="#EF4444",  # Red
+                    material=f_mat,
+                    profile="2C150x50x20x3.2",
+                ))
+                # เสาดั้ง (King Posts) ที่ปลายอกไก่ลงมาที่ระดับอะเส
+                framing_members.append(ResolvedRoofFramingMember(
+                    tag=f"{roof.tag}-KingPost-1",
+                    member_type="KING_POST",
+                    name_th="เสาดั้ง (King Post)",
+                    start_point=(r.start_point[0], r.start_point[1], z0),
+                    end_point=r.start_point,
+                    length=r.start_point[2] - z0,
+                    color="#A855F7",  # Purple
+                    material=f_mat,
+                    profile="2C100x50x20x3.2",
+                ))
+                if r.length > 0.01:
+                    framing_members.append(ResolvedRoofFramingMember(
+                        tag=f"{roof.tag}-KingPost-2",
+                        member_type="KING_POST",
+                        name_th="เสาดั้ง (King Post)",
+                        start_point=(r.end_point[0], r.end_point[1], z0),
+                        end_point=r.end_point,
+                        length=r.end_point[2] - z0,
+                        color="#A855F7",  # Purple
+                        material=f_mat,
+                        profile="2C100x50x20x3.2",
+                    ))
+                    # ขื่อ (Tie Beam) เชื่อมใต้ดั้งทั้งสอง
+                    framing_members.append(ResolvedRoofFramingMember(
+                        tag=f"{roof.tag}-TieBeam",
+                        member_type="TIE_BEAM",
+                        name_th="ขื่อ (Tie Beam)",
+                        start_point=(r.start_point[0], r.start_point[1], z0),
+                        end_point=(r.end_point[0], r.end_point[1], z0),
+                        length=r.length,
+                        color="#6366F1",  # Indigo
+                        material=f_mat,
+                        profile="2C125x50x20x3.2",
+                    ))
+            elif r.ridge_type == "HIP":
+                framing_members.append(ResolvedRoofFramingMember(
+                    tag=r.tag.replace("Roof", "HipRafter"),
+                    member_type="HIP_RAFTER",
+                    name_th="ตะเข้สัน (Hip Rafter)",
+                    start_point=r.start_point,
+                    end_point=r.end_point,
+                    length=r.length,
+                    color="#F59E0B",  # Amber
+                    material=f_mat,
+                    profile="2C150x50x20x3.2",
+                ))
+
+        # 3. จันทัน (Rafters - Common & Jack Rafters) ตามระยะสแปน
+        r_spacing = roof.framing.spacing if roof.framing and roof.framing.spacing else 1.0
+        # กระจายจันทันบนแต่ละผืนหลังคา (Planes)
+        rafter_idx = 1
+        for plane in planes:
+            poly = plane.polygon
+            poly_xs = [p[0] for p in poly]
+            poly_ys = [p[1] for p in poly]
+            min_px, max_px = min(poly_xs), max(poly_xs)
+            min_py, max_py = min(poly_ys), max(poly_ys)
+
+            # ตรวจสอบว่าลาดเอียงไปทางแกนไหน
+            # ถ้าความกว้างใน X กว้างกว่า Y หรือความลาดเอียงหลัก
+            nx, ny, nz = plane.normal
+            if abs(nx) > abs(ny):
+                # ลาดเอียงทาง X -> จันทันวางขนานแนว X, เรียงไปตามแนว Y
+                y_curr = min_py + r_spacing
+                while y_curr < max_py - 0.2:
+                    # หาจุดตัดกับขอบของ poly ที่ y = y_curr
+                    x_pts = []
+                    n_pts = len(poly)
+                    for i in range(n_pts):
+                        p_a = poly[i]
+                        p_b = poly[(i + 1) % n_pts]
+                        if (p_a[1] <= y_curr <= p_b[1]) or (p_b[1] <= y_curr <= p_a[1]):
+                            if abs(p_b[1] - p_a[1]) > 1e-4:
+                                t = (y_curr - p_a[1]) / (p_b[1] - p_a[1])
+                                ix = p_a[0] + t * (p_b[0] - p_a[0])
+                                iz = p_a[2] + t * (p_b[2] - p_a[2])
+                                x_pts.append((ix, y_curr, iz))
+                    if len(x_pts) >= 2:
+                        x_pts.sort(key=lambda p: p[0])
+                        p_start = x_pts[0]
+                        p_end = x_pts[-1]
+                        l_raf = math.dist(p_start, p_end)
+                        if l_raf > 0.3:
+                            framing_members.append(ResolvedRoofFramingMember(
+                                tag=f"{roof.tag}-Rafter-{rafter_idx}",
+                                member_type="COMMON_RAFTER" if abs(l_raf - half_span / math.cos(pitch_rad)) < 0.5 else "JACK_RAFTER",
+                                name_th="จันทัน (Rafter)",
+                                start_point=p_start,
+                                end_point=p_end,
+                                length=l_raf,
+                                color="#06B6D4",  # Cyan
+                                material=f_mat,
+                                profile="C100x50x20x3.2",
+                            ))
+                            rafter_idx += 1
+                    y_curr += r_spacing
+            else:
+                # ลาดเอียงทาง Y -> จันทันวางขนานแนว Y, เรียงไปตามแนว X
+                x_curr = min_px + r_spacing
+                while x_curr < max_px - 0.2:
+                    # หาจุดตัดกับขอบของ poly ที่ x = x_curr
+                    y_pts = []
+                    n_pts = len(poly)
+                    for i in range(n_pts):
+                        p_a = poly[i]
+                        p_b = poly[(i + 1) % n_pts]
+                        if (p_a[0] <= x_curr <= p_b[0]) or (p_b[0] <= x_curr <= p_a[0]):
+                            if abs(p_b[0] - p_a[0]) > 1e-4:
+                                t = (x_curr - p_a[0]) / (p_b[0] - p_a[0])
+                                iy = p_a[1] + t * (p_b[1] - p_a[1])
+                                iz = p_a[2] + t * (p_b[2] - p_a[2])
+                                y_pts.append((x_curr, iy, iz))
+                    if len(y_pts) >= 2:
+                        y_pts.sort(key=lambda p: p[1])
+                        p_start = y_pts[0]
+                        p_end = y_pts[-1]
+                        l_raf = math.dist(p_start, p_end)
+                        if l_raf > 0.3:
+                            framing_members.append(ResolvedRoofFramingMember(
+                                tag=f"{roof.tag}-Rafter-{rafter_idx}",
+                                member_type="COMMON_RAFTER" if abs(l_raf - half_span / math.cos(pitch_rad)) < 0.5 else "JACK_RAFTER",
+                                name_th="จันทัน (Rafter)",
+                                start_point=p_start,
+                                end_point=p_end,
+                                length=l_raf,
+                                color="#06B6D4",  # Cyan
+                                material=f_mat,
+                                profile="C100x50x20x3.2",
+                            ))
+                            rafter_idx += 1
+                    x_curr += r_spacing
+
+        # 4. แป (Purlins) กระจายตามแนวระดับความสูง (Purlin Rings / Lines)
+        purlin_idx = 1
+        p_spacing = roof.framing.purlin_spacing if roof.framing and roof.framing.purlin_spacing else 0.50
+        # ระยะห่างในแนวลาดเอียงแปลงเป็นความสูงในแนวดิ่ง delta_z
+        dz_purlin = p_spacing * math.sin(pitch_rad)
+        if dz_purlin > 0.05:
+            z_curr = z0 + dz_purlin
+            while z_curr < zr - 0.05:
+                # ในแต่ละความสูง z_curr หาเส้นตัดแนวนอนบนแต่ละ plane
+                for plane in planes:
+                    poly = plane.polygon
+                    pts_at_z = []
+                    n_pts = len(poly)
+                    for i in range(n_pts):
+                        p_a = poly[i]
+                        p_b = poly[(i + 1) % n_pts]
+                        if (p_a[2] <= z_curr <= p_b[2]) or (p_b[2] <= z_curr <= p_a[2]):
+                            if abs(p_b[2] - p_a[2]) > 1e-4:
+                                t = (z_curr - p_a[2]) / (p_b[2] - p_a[2])
+                                ix = p_a[0] + t * (p_b[0] - p_a[0])
+                                iy = p_a[1] + t * (p_b[1] - p_a[1])
+                                pts_at_z.append((ix, iy, z_curr))
+                    if len(pts_at_z) >= 2:
+                        p_start = pts_at_z[0]
+                        p_end = pts_at_z[-1]
+                        l_pur = math.dist(p_start, p_end)
+                        if l_pur > 0.2:
+                            framing_members.append(ResolvedRoofFramingMember(
+                                tag=f"{roof.tag}-Purlin-{purlin_idx}",
+                                member_type="PURLIN",
+                                name_th="แป (Purlin)",
+                                start_point=p_start,
+                                end_point=p_end,
+                                length=l_pur,
+                                color="#10B981",  # Emerald Green
+                                material=f_mat,
+                                profile="C75x45x15x2.3",
+                            ))
+                            purlin_idx += 1
+                z_curr += dz_purlin
+
+        return ResolvedRoof(
+            tag=roof.tag,
+            element=roof,
+            roof_type=roof_type,
+            pitch=pitch,
+            eaves_elevation=z0,
+            ridge_elevation=zr,
+            footprint_polygon=footprint_poly,
+            planes=planes,
+            ridges=ridges,
+            framing_members=framing_members,
+            total_footprint_area=footprint_area,
+            total_sloped_area=tot_sloped_area,
+            total_ridge_length=tot_ridge_len,
+            total_hip_length=tot_hip_len,
+            total_eaves_length=eaves_perimeter,
+            total_steel_weight=tot_steel,
+        )
+
+    def resolve_pipe(self, pipe: IfcPipeSegment) -> ResolvedPipeSegment:
+        z_base = self.storeys[pipe.placement.storey].elevation
+        waypoints: List[Tuple[float, float, float]] = []
+
+        if pipe.placement.path and len(pipe.placement.path) >= 2:
+            for pt in pipe.placement.path:
+                if pt.x is not None and pt.y is not None:
+                    x = float(pt.x)
+                    y = float(pt.y)
+                    z = float(pt.z) if pt.z is not None else (z_base + pt.offset_z)
+                elif pt.grid:
+                    gx, gy = pt.grid
+                    x = self.axes_x[gx] + pt.offset_x
+                    y = self.axes_y[gy] + pt.offset_y
+                    z = z_base + pt.offset_z
+                else:
+                    x, y, z = (0.0, 0.0, z_base + pt.offset_z)
+                waypoints.append((x, y, z))
+        else:
+            gx1, gy1 = pipe.placement.from_grid or ("1", "A")
+            gx2, gy2 = pipe.placement.to_grid or ("1", "A")
+            fo = pipe.placement.from_offset
+            to = pipe.placement.to_offset
+            p1 = (self.axes_x[gx1] + fo[0], self.axes_y[gy1] + fo[1], z_base + fo[2])
+            p2 = (self.axes_x[gx2] + to[0], self.axes_y[gy2] + to[1], z_base + to[2])
+            if pipe.placement.slope != 0.0:
+                dist_xy = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+                p2 = (p2[0], p2[1], p2[2] - dist_xy * pipe.placement.slope)
+
+            routing_strat = getattr(pipe.placement, "routing", "DIRECT")
+            if routing_strat != "DIRECT":
+                waypoints = _generate_orthogonal_waypoints(p1, p2, routing_strat)
+            else:
+                waypoints = [p1, p2]
+
+        total_length = sum(
+            math.dist(waypoints[i], waypoints[i + 1]) for i in range(len(waypoints) - 1)
+        )
+        fittings = max(1, len(waypoints) - 1)
+        color = MEP_PIPE_COLORS.get(pipe.system_type, "#0284C7")
+
+        return ResolvedPipeSegment(
+            tag=pipe.tag,
+            element=pipe,
+            system_type=pipe.system_type,
+            nominal_diameter=pipe.nominal_diameter,
+            length=total_length,
+            slope=pipe.placement.slope,
+            start_point=waypoints[0],
+            end_point=waypoints[-1],
+            waypoints=waypoints,
+            color=color,
+            fittings_count=fittings,
+        )
+
+    def resolve_conduit(self, conduit: IfcCableCarrierSegment) -> ResolvedCableCarrierSegment:
+        z_base = self.storeys[conduit.placement.storey].elevation
+        waypoints: List[Tuple[float, float, float]] = []
+
+        if conduit.placement.path and len(conduit.placement.path) >= 2:
+            for pt in conduit.placement.path:
+                if pt.x is not None and pt.y is not None:
+                    x = float(pt.x)
+                    y = float(pt.y)
+                    z = float(pt.z) if pt.z is not None else (z_base + pt.offset_z)
+                elif pt.grid:
+                    gx, gy = pt.grid
+                    x = self.axes_x[gx] + pt.offset_x
+                    y = self.axes_y[gy] + pt.offset_y
+                    z = z_base + pt.offset_z
+                else:
+                    x, y, z = (0.0, 0.0, z_base + pt.offset_z)
+                waypoints.append((x, y, z))
+        else:
+            gx1, gy1 = conduit.placement.from_grid or ("1", "A")
+            gx2, gy2 = conduit.placement.to_grid or ("1", "A")
+            fo = conduit.placement.from_offset
+            to = conduit.placement.to_offset
+            p1 = (self.axes_x[gx1] + fo[0], self.axes_y[gy1] + fo[1], z_base + fo[2])
+            p2 = (self.axes_x[gx2] + to[0], self.axes_y[gy2] + to[1], z_base + to[2])
+
+            routing_strat = getattr(conduit.placement, "routing", "DIRECT")
+            if routing_strat != "DIRECT":
+                waypoints = _generate_orthogonal_waypoints(p1, p2, routing_strat)
+            else:
+                waypoints = [p1, p2]
+
+        total_length = sum(
+            math.dist(waypoints[i], waypoints[i + 1]) for i in range(len(waypoints) - 1)
+        )
+        fittings = max(1, len(waypoints) - 1)
+        color = MEP_CONDUIT_COLORS.get(conduit.system_type, "#F97316")
+
+        return ResolvedCableCarrierSegment(
+            tag=conduit.tag,
+            element=conduit,
+            system_type=conduit.system_type,
+            nominal_diameter=conduit.nominal_diameter,
+            length=total_length,
+            start_point=waypoints[0],
+            end_point=waypoints[-1],
+            waypoints=waypoints,
+            color=color,
+            fittings_count=fittings,
+        )
+
+    def resolve_sanitary_terminal(self, term: IfcSanitaryTerminal) -> ResolvedSanitaryTerminal:
+        z_base = self.storeys[term.placement.storey].elevation
+        gx, gy = term.placement.grid
+        pos = (
+            self.axes_x[gx] + term.placement.offset_x,
+            self.axes_y[gy] + term.placement.offset_y,
+            z_base + term.placement.offset_z,
+        )
+        dims = (
+            (term.dimensions.width, term.dimensions.depth, term.dimensions.height)
+            if term.dimensions
+            else DEFAULT_TERMINAL_DIMENSIONS.get(term.terminal_type, (0.50, 0.50, 0.50))
+        )
+        color = DEFAULT_TERMINAL_COLORS.get(term.terminal_type, "#F8FAFC")
+        return ResolvedSanitaryTerminal(
+            tag=term.tag,
+            element=term,
+            terminal_type=term.terminal_type,
+            position=pos,
+            rotation=term.placement.rotation,
+            dimensions=dims,
+            color=color,
+        )
+
+    def resolve_distribution_board(self, board: IfcDistributionBoard) -> ResolvedDistributionBoard:
+        z_base = self.storeys[board.placement.storey].elevation
+        gx, gy = board.placement.grid
+        pos = (
+            self.axes_x[gx] + board.placement.offset_x,
+            self.axes_y[gy] + board.placement.offset_y,
+            z_base + board.placement.offset_z,
+        )
+        dims = (
+            (board.dimensions.width, board.dimensions.depth, board.dimensions.height)
+            if board.dimensions
+            else DEFAULT_TERMINAL_DIMENSIONS.get(board.board_type, (0.35, 0.12, 0.45))
+        )
+        color = DEFAULT_TERMINAL_COLORS.get(board.board_type, "#334155")
+        return ResolvedDistributionBoard(
+            tag=board.tag,
+            element=board,
+            board_type=board.board_type,
+            position=pos,
+            rotation=board.placement.rotation,
+            dimensions=dims,
+            color=color,
+            circuits_count=board.circuits_count,
+        )
+
+    def resolve_light_fixture(self, fixture: IfcLightFixture) -> ResolvedLightFixture:
+        z_base = self.storeys[fixture.placement.storey].elevation
+        gx, gy = fixture.placement.grid
+        pos = (
+            self.axes_x[gx] + fixture.placement.offset_x,
+            self.axes_y[gy] + fixture.placement.offset_y,
+            z_base + fixture.placement.offset_z,
+        )
+        dims = (
+            (fixture.dimensions.width, fixture.dimensions.depth, fixture.dimensions.height)
+            if fixture.dimensions
+            else DEFAULT_TERMINAL_DIMENSIONS.get(fixture.fixture_type, (0.15, 0.15, 0.05))
+        )
+        color = DEFAULT_TERMINAL_COLORS.get(fixture.fixture_type, "#FEF08A")
+        return ResolvedLightFixture(
+            tag=fixture.tag,
+            element=fixture,
+            fixture_type=fixture.fixture_type,
+            position=pos,
+            dimensions=dims,
+            color=color,
+            wattage=fixture.wattage or 12.0,
+        )
+
+    def resolve_switch(self, sw: IfcSwitchingDevice) -> ResolvedSwitchingDevice:
+        z_base = self.storeys[sw.placement.storey].elevation
+        gx, gy = sw.placement.grid
+        pos = (
+            self.axes_x[gx] + sw.placement.offset_x,
+            self.axes_y[gy] + sw.placement.offset_y,
+            z_base + sw.placement.offset_z,
+        )
+        dims = (
+            (sw.dimensions.width, sw.dimensions.depth, sw.dimensions.height)
+            if sw.dimensions
+            else DEFAULT_TERMINAL_DIMENSIONS.get(sw.switch_type, (0.07, 0.04, 0.12))
+        )
+        color = DEFAULT_TERMINAL_COLORS.get(sw.switch_type, "#E2E8F0")
+        return ResolvedSwitchingDevice(
+            tag=sw.tag,
+            element=sw,
+            switch_type=sw.switch_type,
+            position=pos,
+            dimensions=dims,
+            color=color,
+            gangs=sw.gangs,
+        )
+
+    def resolve_outlet(self, out: IfcOutlet) -> ResolvedOutlet:
+        z_base = self.storeys[out.placement.storey].elevation
+        gx, gy = out.placement.grid
+        pos = (
+            self.axes_x[gx] + out.placement.offset_x,
+            self.axes_y[gy] + out.placement.offset_y,
+            z_base + out.placement.offset_z,
+        )
+        dims = (
+            (out.dimensions.width, out.dimensions.depth, out.dimensions.height)
+            if out.dimensions
+            else DEFAULT_TERMINAL_DIMENSIONS.get(out.outlet_type, (0.07, 0.04, 0.12))
+        )
+        color = DEFAULT_TERMINAL_COLORS.get(out.outlet_type, "#E2E8F0")
+        return ResolvedOutlet(
+            tag=out.tag,
+            element=out,
+            outlet_type=out.outlet_type,
+            position=pos,
+            dimensions=dims,
+            color=color,
+        )
+
+    def resolve_duct(self, duct: IfcDuctSegment) -> ResolvedDuctSegment:
+        z_base = self.storeys[duct.placement.storey].elevation
+        waypoints: List[Tuple[float, float, float]] = []
+
+        if duct.placement.path and len(duct.placement.path) >= 2:
+            for pt in duct.placement.path:
+                if pt.x is not None and pt.y is not None:
+                    x = float(pt.x)
+                    y = float(pt.y)
+                    z = float(pt.z) if pt.z is not None else (z_base + pt.offset_z)
+                elif pt.grid:
+                    gx, gy = pt.grid
+                    x = self.axes_x[gx] + pt.offset_x
+                    y = self.axes_y[gy] + pt.offset_y
+                    z = z_base + pt.offset_z
+                else:
+                    x, y, z = (0.0, 0.0, z_base + pt.offset_z)
+                waypoints.append((x, y, z))
+        else:
+            gx1, gy1 = duct.placement.from_grid or ("1", "A")
+            gx2, gy2 = duct.placement.to_grid or ("1", "A")
+            fo = duct.placement.from_offset
+            to = duct.placement.to_offset
+            p1 = (self.axes_x[gx1] + fo[0], self.axes_y[gy1] + fo[1], z_base + fo[2])
+            p2 = (self.axes_x[gx2] + to[0], self.axes_y[gy2] + to[1], z_base + to[2])
+
+            routing_strat = getattr(duct.placement, "routing", "DIRECT")
+            if routing_strat != "DIRECT":
+                waypoints = _generate_orthogonal_waypoints(p1, p2, routing_strat)
+            else:
+                waypoints = [p1, p2]
+
+        total_length = sum(
+            math.dist(waypoints[i], waypoints[i + 1]) for i in range(len(waypoints) - 1)
+        )
+        fittings = max(1, len(waypoints) - 1)
+        color = MEP_DUCT_COLORS.get(duct.system_type, "#64748B")
+
+        return ResolvedDuctSegment(
+            tag=duct.tag,
+            element=duct,
+            system_type=duct.system_type,
+            width=duct.width,
+            height=duct.height,
+            length=total_length,
+            start_point=waypoints[0],
+            end_point=waypoints[-1],
+            waypoints=waypoints,
+            color=color,
+            fittings_count=fittings,
+        )
+
+    def resolve_air_terminal(self, term: IfcAirTerminal) -> ResolvedAirTerminal:
+        z_base = self.storeys[term.placement.storey].elevation
+        gx, gy = term.placement.grid
+        pos = (
+            self.axes_x[gx] + term.placement.offset_x,
+            self.axes_y[gy] + term.placement.offset_y,
+            z_base + term.placement.offset_z,
+        )
+        dims = (
+            (term.dimensions.width, term.dimensions.depth, term.dimensions.height)
+            if term.dimensions
+            else DEFAULT_TERMINAL_DIMENSIONS.get(term.terminal_type, (0.30, 0.30, 0.20))
+        )
+        color = DEFAULT_TERMINAL_COLORS.get(term.terminal_type, "#F1F5F9")
+        return ResolvedAirTerminal(
+            tag=term.tag,
+            element=term,
+            terminal_type=term.terminal_type,
+            position=pos,
+            rotation=term.placement.rotation,
+            dimensions=dims,
+            color=color,
+            flow_rate_cfm=term.flow_rate_cfm,
+        )
+
+    def resolve_unitary_equipment(self, equip: IfcUnitaryEquipment) -> ResolvedUnitaryEquipment:
+        z_base = self.storeys[equip.placement.storey].elevation
+        gx, gy = equip.placement.grid
+        pos = (
+            self.axes_x[gx] + equip.placement.offset_x,
+            self.axes_y[gy] + equip.placement.offset_y,
+            z_base + equip.placement.offset_z,
+        )
+        dims = (
+            (equip.dimensions.width, equip.dimensions.depth, equip.dimensions.height)
+            if equip.dimensions
+            else DEFAULT_TERMINAL_DIMENSIONS.get(equip.equipment_type, (0.85, 0.22, 0.30))
+        )
+        color = DEFAULT_TERMINAL_COLORS.get(equip.equipment_type, "#FFFFFF")
+        return ResolvedUnitaryEquipment(
+            tag=equip.tag,
+            element=equip,
+            equipment_type=equip.equipment_type,
+            position=pos,
+            rotation=equip.placement.rotation,
+            dimensions=dims,
+            color=color,
+            cooling_capacity_btu=equip.cooling_capacity_btu,
+        )
+
     def resolve(self) -> ResolvedManifest:
         resolved_manifest = ResolvedManifest(manifest=self.manifest)
 
@@ -1089,6 +2341,10 @@ class SpatialResolver:
                 r_stair = self.resolve_stair(elem)
                 resolved_manifest.stairs.append(r_stair)
                 resolved_manifest.elements.append(r_stair)
+            elif isinstance(elem, IfcRoof):
+                r_roof = self.resolve_roof(elem)
+                resolved_manifest.roofs.append(r_roof)
+                resolved_manifest.elements.append(r_roof)
             elif isinstance(elem, IfcColumn):
                 r_col = self.resolve_column(elem)
                 resolved_manifest.columns.append(r_col)
@@ -1103,6 +2359,46 @@ class SpatialResolver:
                 resolved_manifest.doors.extend(doors)
                 resolved_manifest.windows.extend(windows)
                 resolved_manifest.elements.append(r_wall)
+            elif isinstance(elem, IfcPipeSegment):
+                r_pipe = self.resolve_pipe(elem)
+                resolved_manifest.pipes.append(r_pipe)
+                resolved_manifest.elements.append(r_pipe)
+            elif isinstance(elem, IfcCableCarrierSegment):
+                r_conduit = self.resolve_conduit(elem)
+                resolved_manifest.conduits.append(r_conduit)
+                resolved_manifest.elements.append(r_conduit)
+            elif isinstance(elem, IfcDuctSegment):
+                r_duct = self.resolve_duct(elem)
+                resolved_manifest.ducts.append(r_duct)
+                resolved_manifest.elements.append(r_duct)
+            elif isinstance(elem, IfcSanitaryTerminal):
+                r_term = self.resolve_sanitary_terminal(elem)
+                resolved_manifest.sanitary_terminals.append(r_term)
+                resolved_manifest.elements.append(r_term)
+            elif isinstance(elem, IfcDistributionBoard):
+                r_board = self.resolve_distribution_board(elem)
+                resolved_manifest.distribution_boards.append(r_board)
+                resolved_manifest.elements.append(r_board)
+            elif isinstance(elem, IfcLightFixture):
+                r_light = self.resolve_light_fixture(elem)
+                resolved_manifest.light_fixtures.append(r_light)
+                resolved_manifest.elements.append(r_light)
+            elif isinstance(elem, IfcSwitchingDevice):
+                r_sw = self.resolve_switch(elem)
+                resolved_manifest.switches.append(r_sw)
+                resolved_manifest.elements.append(r_sw)
+            elif isinstance(elem, IfcOutlet):
+                r_out = self.resolve_outlet(elem)
+                resolved_manifest.outlets.append(r_out)
+                resolved_manifest.elements.append(r_out)
+            elif isinstance(elem, IfcAirTerminal):
+                r_air = self.resolve_air_terminal(elem)
+                resolved_manifest.air_terminals.append(r_air)
+                resolved_manifest.elements.append(r_air)
+            elif isinstance(elem, IfcUnitaryEquipment):
+                r_eq = self.resolve_unitary_equipment(elem)
+                resolved_manifest.unitary_equipments.append(r_eq)
+                resolved_manifest.elements.append(r_eq)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

@@ -54,6 +54,38 @@ materials:
     name: "Precast Concrete Plank 5cm + Topping"
     category: concrete
     unit_cost_ref: "MAT-SLAB-PLANK"
+  - id: ROOF_TILE_CONC
+    name: "CPAC Monier Concrete Roof Tile (กระเบื้องหลังคาคอนกรีตซีแพคโมเนีย)"
+    category: covering
+    unit_cost_ref: "MAT-ROOF-TILE"
+  - id: PIPE_PPR
+    name: "PPR Hot/Cold Water Pipe (ท่อน้ำดี PPR)"
+    category: plumbing
+    unit_cost_ref: "MAT-PIPE-PPR-25"
+  - id: PIPE_PVC_BLUE
+    name: "PVC Pipe Class 8.5 Blue (ท่อน้ำดี PVC ฟ้า)"
+    category: plumbing
+    unit_cost_ref: "MAT-PIPE-PVC-BLUE-20"
+  - id: PIPE_PVC_GREY
+    name: "PVC Soil & Waste Pipe (ท่อน้ำเสีย/ท่อน้ำทิ้ง PVC)"
+    category: drainage
+    unit_cost_ref: "MAT-PIPE-PVC-GREY-100"
+  - id: CONDUIT_EMT
+    name: "Electrical Metallic Tubing (ท่อร้อยสายไฟ EMT)"
+    category: electrical
+    unit_cost_ref: "MAT-CONDUIT-EMT-20"
+  - id: SANITARY_WARE
+    name: "Sanitary Ceramic Fixtures (สุขภัณฑ์และอุปกรณ์)"
+    category: sanitary
+    unit_cost_ref: "MAT-WC-SET"
+  - id: ELEC_SYSTEM
+    name: "Electrical Devices & Fixtures (ตู้ไฟและดวงโคม)"
+    category: electrical
+    unit_cost_ref: "MAT-CONSUMER-UNIT"
+  - id: HVAC_SYSTEM
+    name: "Air Conditioning & Ventilation (ระบบปรับอากาศและระบายอากาศ)"
+    category: hvac
+    unit_cost_ref: "MAT-AC-WALL-18000"
 
 elements:
   # ==========================================
@@ -1399,5 +1431,1059 @@ elements:
     reinforcement:
       main: "DB12 @ 0.15m"
       temperature: "RB9 @ 0.20m"
+
+  # ==========================================
+  # 9. WALLS & OPENINGS (งานผนังและช่องเปิด - AR-01 / AR-02)
+  # ==========================================
+  # Level 1 Ground Floor Walls
+  - class: IfcWall
+    tag: WALL-L1-B_1-2
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["1", "B"], to_grid: ["2", "B"], storey: L1_GROUND }
+    children:
+      - class: IfcDoor
+        tag: D-L1-01
+        dimensions: { width: 2.00, height: 2.05 }
+        offset_distance: 1.00
+        sill_height: 0.00
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L1-1_B-C
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["1", "B"], to_grid: ["1", "C"], storey: L1_GROUND }
+    children:
+      - class: IfcWindow
+        tag: W-L1-01
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 1.05
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L1-2_B-C
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["2", "B"], to_grid: ["2", "C"], storey: L1_GROUND }
+    children:
+      - class: IfcDoor
+        tag: D-L1-02
+        dimensions: { width: 1.00, height: 2.00 }
+        offset_distance: 1.35
+        sill_height: 0.00
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L1-C_2-4
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["2", "C"], to_grid: ["4", "C"], storey: L1_GROUND }
+    children:
+      - class: IfcWindow
+        tag: W-L1-02
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 0.60
+        sill_height: 0.90
+      - class: IfcDoor
+        tag: D-L1-03
+        dimensions: { width: 0.90, height: 2.00 }
+        offset_distance: 3.20
+        sill_height: 0.00
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L1-1_C-D
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["1", "C"], to_grid: ["1", "D"], storey: L1_GROUND }
+    children:
+      - class: IfcWindow
+        tag: W-L1-03
+        dimensions: { width: 1.20, height: 1.80 }
+        offset_distance: 0.50
+        sill_height: 1.00
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L1-4_C-D
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["4", "C"], to_grid: ["4", "D"], storey: L1_GROUND }
+    children:
+      - class: IfcWindow
+        tag: W-L1-04
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 0.30
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L1-D_1-2
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["1", "D"], to_grid: ["2", "D"], storey: L1_GROUND }
+    children:
+      - class: IfcDoor
+        tag: D-L1-04
+        dimensions: { width: 0.90, height: 2.00 }
+        offset_distance: 1.55
+        sill_height: 0.00
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L1-D_2-3
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["2", "D"], to_grid: ["3", "D"], storey: L1_GROUND }
+    children:
+      - class: IfcDoor
+        tag: D-L1-05
+        dimensions: { width: 0.80, height: 2.00 }
+        offset_distance: 0.60
+        sill_height: 0.00
+    finishes:
+      plaster: BOTH
+      interior_finish: TILES
+      exterior_finish: PAINT
+      tile_height: 2.60
+
+  - class: IfcWall
+    tag: WALL-L1-D_3-4
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["3", "D"], to_grid: ["4", "D"], storey: L1_GROUND }
+    children:
+      - class: IfcDoor
+        tag: D-L1-06
+        dimensions: { width: 0.90, height: 2.00 }
+        offset_distance: 0.50
+        sill_height: 0.00
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L1-1_D-E
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["1", "D"], to_grid: ["1", "E"], storey: L1_GROUND }
+    children:
+      - class: IfcWindow
+        tag: W-L1-05
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 1.05
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L1-E_1-2
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["1", "E"], to_grid: ["2", "E"], storey: L1_GROUND }
+    children:
+      - class: IfcDoor
+        tag: D-L1-07
+        dimensions: { width: 0.80, height: 2.00 }
+        offset_distance: 0.50
+        sill_height: 0.00
+      - class: IfcWindow
+        tag: W-L1-06
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 1.80
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L1-3_D-E
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["3", "D"], to_grid: ["3", "E"], storey: L1_GROUND }
+    finishes:
+      plaster: BOTH
+      interior_finish: TILES
+      exterior_finish: PAINT
+      tile_height: 2.60
+
+  - class: IfcWall
+    tag: WALL-L1-E_2-3
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["2", "E"], to_grid: ["3", "E"], storey: L1_GROUND }
+    children:
+      - class: IfcWindow
+        tag: W-L1-07
+        dimensions: { width: 0.60, height: 0.60 }
+        offset_distance: 0.70
+        sill_height: 1.80
+    finishes:
+      plaster: BOTH
+      interior_finish: TILES
+      exterior_finish: PAINT
+      tile_height: 2.60
+
+  - class: IfcWall
+    tag: WALL-L1-4_D-E
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["4", "D"], to_grid: ["4", "E"], storey: L1_GROUND }
+    children:
+      - class: IfcWindow
+        tag: W-L1-08
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 1.05
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L1-E_3-4
+    material: BRICK_MON
+    thickness: 0.10
+    height: 3.00
+    placement: { from_grid: ["3", "E"], to_grid: ["4", "E"], storey: L1_GROUND }
+    children:
+      - class: IfcWindow
+        tag: W-L1-09
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 0.70
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  # Level 2 Second Floor Walls
+  - class: IfcWall
+    tag: WALL-L2-B_1-2
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["1", "B"], to_grid: ["2", "B"], storey: L2_SECOND }
+    children:
+      - class: IfcWindow
+        tag: W-L2-01
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 1.20
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L2-1_B-C
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["1", "B"], to_grid: ["1", "C"], storey: L2_SECOND }
+    children:
+      - class: IfcWindow
+        tag: W-L2-02
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 1.05
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L2-2_B-C
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["2", "B"], to_grid: ["2", "C"], storey: L2_SECOND }
+    children:
+      - class: IfcDoor
+        tag: D-L2-01
+        dimensions: { width: 1.80, height: 2.05 }
+        offset_distance: 0.95
+        sill_height: 0.00
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L2-C_1-2
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["1", "C"], to_grid: ["2", "C"], storey: L2_SECOND }
+    children:
+      - class: IfcDoor
+        tag: D-L2-02
+        dimensions: { width: 0.90, height: 2.00 }
+        offset_distance: 2.30
+        sill_height: 0.00
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L2-1_C-D
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["1", "C"], to_grid: ["1", "D"], storey: L2_SECOND }
+    children:
+      - class: IfcWindow
+        tag: W-L2-03
+        dimensions: { width: 0.60, height: 0.60 }
+        offset_distance: 0.80
+        sill_height: 1.80
+    finishes:
+      plaster: BOTH
+      interior_finish: TILES
+      exterior_finish: PAINT
+      tile_height: 2.60
+
+  - class: IfcWall
+    tag: WALL-L2-C_3-4
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["3", "C"], to_grid: ["4", "C"], storey: L2_SECOND }
+    children:
+      - class: IfcDoor
+        tag: D-L2-03
+        dimensions: { width: 0.90, height: 2.00 }
+        offset_distance: 0.50
+        sill_height: 0.00
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L2-4_C-D
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["4", "C"], to_grid: ["4", "D"], storey: L2_SECOND }
+    children:
+      - class: IfcWindow
+        tag: W-L2-04
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 0.30
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L2-D_1-2
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["1", "D"], to_grid: ["2", "D"], storey: L2_SECOND }
+    children:
+      - class: IfcDoor
+        tag: D-L2-04
+        dimensions: { width: 0.80, height: 2.00 }
+        offset_distance: 0.80
+        sill_height: 0.00
+    finishes:
+      plaster: BOTH
+      interior_finish: TILES
+      exterior_finish: PAINT
+      tile_height: 2.60
+
+  - class: IfcWall
+    tag: WALL-L2-D_2-3
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["2", "D"], to_grid: ["3", "D"], storey: L2_SECOND }
+    children:
+      - class: IfcDoor
+        tag: D-L2-05
+        dimensions: { width: 0.80, height: 2.00 }
+        offset_distance: 0.60
+        sill_height: 0.00
+    finishes:
+      plaster: BOTH
+      interior_finish: TILES
+      exterior_finish: PAINT
+      tile_height: 2.60
+
+  - class: IfcWall
+    tag: WALL-L2-D_3-4
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["3", "D"], to_grid: ["4", "D"], storey: L2_SECOND }
+    children:
+      - class: IfcDoor
+        tag: D-L2-06
+        dimensions: { width: 0.90, height: 2.00 }
+        offset_distance: 0.50
+        sill_height: 0.00
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L2-1_D-E
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["1", "D"], to_grid: ["1", "E"], storey: L2_SECOND }
+    children:
+      - class: IfcWindow
+        tag: W-L2-05
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 1.05
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L2-E_1-2
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["1", "E"], to_grid: ["2", "E"], storey: L2_SECOND }
+    children:
+      - class: IfcWindow
+        tag: W-L2-06
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 1.20
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L2-3_D-E
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["3", "D"], to_grid: ["3", "E"], storey: L2_SECOND }
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L2-E_2-3
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["2", "E"], to_grid: ["3", "E"], storey: L2_SECOND }
+    children:
+      - class: IfcWindow
+        tag: W-L2-07
+        dimensions: { width: 0.60, height: 0.60 }
+        offset_distance: 0.70
+        sill_height: 1.80
+    finishes:
+      plaster: BOTH
+      interior_finish: TILES
+      exterior_finish: PAINT
+      tile_height: 2.60
+
+  - class: IfcWall
+    tag: WALL-L2-4_D-E
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["4", "D"], to_grid: ["4", "E"], storey: L2_SECOND }
+    children:
+      - class: IfcWindow
+        tag: W-L2-08
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 1.05
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  - class: IfcWall
+    tag: WALL-L2-E_3-4
+    material: BRICK_MON
+    thickness: 0.10
+    height: 2.60
+    placement: { from_grid: ["3", "E"], to_grid: ["4", "E"], storey: L2_SECOND }
+    children:
+      - class: IfcWindow
+        tag: W-L2-09
+        dimensions: { width: 1.60, height: 1.20 }
+        offset_distance: 0.70
+        sill_height: 0.90
+    finishes:
+      plaster: BOTH
+      interior_finish: PAINT
+      exterior_finish: PAINT
+
+  # ==========================================
+  # 7. ROOF STRUCTURE & COVERING (โครงหลังคาและกระเบื้องมุงหลังคาปั้นหยา)
+  # ==========================================
+  - class: IfcRoof
+    tag: ROOF-MAIN
+    material: STEEL_SS400
+    roof_type: HIP
+    placement:
+      boundary: [["1", "B"], ["4", "B"], ["4", "E"], ["1", "E"]]
+      storey: L3_ROOF
+      offset_z: 0.00
+      overhang: 1.00
+      ridge_orientation: Y
+    covering:
+      tile_type: CONCRETE_TILE
+      material: ROOF_TILE_CONC
+      pitch: 30.0
+      insulation: true
+      fascia_board: true
+      ridge_cap: true
+    framing:
+      truss_type: STEEL_TRUSS
+      material: STEEL_SS400
+      spacing: 1.00
+      purlin_spacing: 0.32
+      steel_weight_per_sqm: 18.0
+
+  # ==========================================
+  # 8. MEP - SANITARY & PLUMBING FIXTURES (สุขภัณฑ์และอุปกรณ์ระบบสุขาภิบาล)
+  # ==========================================
+  # Outdoor Equipment
+  - class: IfcSanitaryTerminal
+    tag: SEPTIC-01
+    terminal_type: SEPTIC_TANK
+    material: SANITARY_WARE
+    placement: { grid: ["4", "E"], storey: L1_GROUND, offset_x: 1.50, offset_y: 0.50, offset_z: -0.80 }
+    dimensions: { width: 1.40, depth: 1.40, height: 1.60 }
+
+  - class: IfcSanitaryTerminal
+    tag: GREASE-01
+    terminal_type: GREASE_TRAP
+    material: SANITARY_WARE
+    placement: { grid: ["1", "E"], storey: L1_GROUND, offset_x: 0.50, offset_y: 0.60, offset_z: -0.20 }
+    dimensions: { width: 0.40, depth: 0.50, height: 0.40 }
+
+  - class: IfcSanitaryTerminal
+    tag: TANK-01
+    terminal_type: WATER_TANK
+    material: SANITARY_WARE
+    placement: { grid: ["4", "F"], storey: L1_GROUND, offset_x: 1.20, offset_y: 0.50, offset_z: 0.00 }
+    dimensions: { width: 1.10, depth: 1.10, height: 1.80 }
+
+  - class: IfcSanitaryTerminal
+    tag: PUMP-01
+    terminal_type: WATER_PUMP
+    material: SANITARY_WARE
+    placement: { grid: ["4", "F"], storey: L1_GROUND, offset_x: 1.20, offset_y: 1.80, offset_z: 0.00 }
+    dimensions: { width: 0.35, depth: 0.35, height: 0.35 }
+
+  # Level 1 Fixtures (Bathroom 1 & Kitchen)
+  - class: IfcSanitaryTerminal
+    tag: WC-L1-01
+    terminal_type: WATER_CLOSET
+    material: SANITARY_WARE
+    placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 1.20, offset_y: 2.20, offset_z: 0.00, rotation: 0.0 }
+    dimensions: { width: 0.42, depth: 0.72, height: 0.78 }
+
+  - class: IfcSanitaryTerminal
+    tag: LAV-L1-01
+    terminal_type: LAVATORY
+    material: SANITARY_WARE
+    placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 0.60, offset_y: 0.80, offset_z: 0.00, rotation: 90.0 }
+    dimensions: { width: 0.55, depth: 0.45, height: 0.82 }
+
+  - class: IfcSanitaryTerminal
+    tag: SH-L1-01
+    terminal_type: SHOWER
+    material: SANITARY_WARE
+    placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 2.20, offset_y: 2.20, offset_z: 0.00 }
+    dimensions: { width: 0.20, depth: 0.20, height: 1.00 }
+
+  - class: IfcSanitaryTerminal
+    tag: FD-L1-01
+    terminal_type: FLOOR_DRAIN
+    material: SANITARY_WARE
+    placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 1.80, offset_y: 1.50, offset_z: 0.00 }
+    dimensions: { width: 0.15, depth: 0.15, height: 0.05 }
+
+  - class: IfcSanitaryTerminal
+    tag: SINK-L1-01
+    terminal_type: KITCHEN_SINK
+    material: SANITARY_WARE
+    placement: { grid: ["1", "D"], storey: L1_GROUND, offset_x: 1.20, offset_y: 1.60, offset_z: 0.00 }
+    dimensions: { width: 0.60, depth: 1.20, height: 0.85 }
+
+  # Level 2 Fixtures (Master Bathroom & Central Bathroom)
+  - class: IfcSanitaryTerminal
+    tag: WC-L2-01
+    terminal_type: WATER_CLOSET
+    material: SANITARY_WARE
+    placement: { grid: ["3", "B"], storey: L2_SECOND, offset_x: 1.20, offset_y: 1.80, offset_z: 0.00 }
+    dimensions: { width: 0.42, depth: 0.72, height: 0.78 }
+
+  - class: IfcSanitaryTerminal
+    tag: LAV-L2-01
+    terminal_type: LAVATORY
+    material: SANITARY_WARE
+    placement: { grid: ["3", "B"], storey: L2_SECOND, offset_x: 0.60, offset_y: 0.80, offset_z: 0.00 }
+    dimensions: { width: 0.55, depth: 0.45, height: 0.82 }
+
+  - class: IfcSanitaryTerminal
+    tag: SH-L2-01
+    terminal_type: SHOWER
+    material: SANITARY_WARE
+    placement: { grid: ["3", "B"], storey: L2_SECOND, offset_x: 2.20, offset_y: 1.80, offset_z: 0.00 }
+    dimensions: { width: 0.20, depth: 0.20, height: 1.00 }
+
+  - class: IfcSanitaryTerminal
+    tag: FD-L2-01
+    terminal_type: FLOOR_DRAIN
+    material: SANITARY_WARE
+    placement: { grid: ["3", "B"], storey: L2_SECOND, offset_x: 1.80, offset_y: 1.20, offset_z: 0.00 }
+    dimensions: { width: 0.15, depth: 0.15, height: 0.05 }
+
+  - class: IfcSanitaryTerminal
+    tag: WC-L2-02
+    terminal_type: WATER_CLOSET
+    material: SANITARY_WARE
+    placement: { grid: ["3", "D"], storey: L2_SECOND, offset_x: 1.20, offset_y: 2.20, offset_z: 0.00 }
+    dimensions: { width: 0.42, depth: 0.72, height: 0.78 }
+
+  - class: IfcSanitaryTerminal
+    tag: LAV-L2-02
+    terminal_type: LAVATORY
+    material: SANITARY_WARE
+    placement: { grid: ["3", "D"], storey: L2_SECOND, offset_x: 0.60, offset_y: 0.80, offset_z: 0.00 }
+    dimensions: { width: 0.55, depth: 0.45, height: 0.82 }
+
+  - class: IfcSanitaryTerminal
+    tag: SH-L2-02
+    terminal_type: SHOWER
+    material: SANITARY_WARE
+    placement: { grid: ["3", "D"], storey: L2_SECOND, offset_x: 2.20, offset_y: 2.20, offset_z: 0.00 }
+    dimensions: { width: 0.20, depth: 0.20, height: 1.00 }
+
+  - class: IfcSanitaryTerminal
+    tag: FD-L2-02
+    terminal_type: FLOOR_DRAIN
+    material: SANITARY_WARE
+    placement: { grid: ["3", "D"], storey: L2_SECOND, offset_x: 1.80, offset_y: 1.50, offset_z: 0.00 }
+    dimensions: { width: 0.15, depth: 0.15, height: 0.05 }
+
+  # ==========================================
+  # 9. MEP - PIPING NETWORK (ระบบท่อประปาน้ำดี, น้ำเสีย, น้ำทิ้ง และท่ออากาศ)
+  # ==========================================
+  # Cold Water Supply Network (PPR / PVC ฟ้า)
+  - class: IfcPipeSegment
+    tag: PIPE-CW-MAIN-01
+    system_type: COLD_WATER
+    material: PIPE_PPR
+    nominal_diameter: 0.025
+    placement:
+      storey: L1_GROUND
+      path:
+        - { grid: ["4", "F"], offset_x: 1.20, offset_y: 1.80, offset_z: 0.10 }
+        - { grid: ["4", "F"], offset_x: 0.20, offset_y: 1.80, offset_z: 0.10 }
+        - { grid: ["4", "E"], offset_x: 0.20, offset_y: 0.00, offset_z: 0.10 }
+        - { grid: ["4", "D"], offset_x: 0.20, offset_y: 0.10, offset_z: 0.10 }
+
+  - class: IfcPipeSegment
+    tag: PIPE-CW-RISER-01
+    system_type: COLD_WATER
+    material: PIPE_PPR
+    nominal_diameter: 0.025
+    placement:
+      storey: L1_GROUND
+      from_grid: ["4", "D"]
+      to_grid: ["4", "D"]
+      from_offset: [0.10, 0.10, 0.10]
+      to_offset: [0.10, 0.10, 3.85]
+
+  - class: IfcPipeSegment
+    tag: PIPE-CW-BRANCH-L1
+    system_type: COLD_WATER
+    material: PIPE_PVC_BLUE
+    nominal_diameter: 0.020
+    placement:
+      storey: L1_GROUND
+      path:
+        - { grid: ["4", "D"], offset_x: 0.10, offset_y: 0.10, offset_z: 0.40 }
+        - { grid: ["3", "D"], offset_x: 0.60, offset_y: 0.10, offset_z: 0.40 }
+        - { grid: ["3", "D"], offset_x: 0.60, offset_y: 0.80, offset_z: 0.50 }
+        - { grid: ["3", "D"], offset_x: 0.60, offset_y: 2.20, offset_z: 0.30 }
+        - { grid: ["3", "D"], offset_x: 1.20, offset_y: 2.20, offset_z: 0.30 }
+        - { grid: ["3", "D"], offset_x: 2.20, offset_y: 2.20, offset_z: 1.00 }
+
+  - class: IfcPipeSegment
+    tag: PIPE-CW-BRANCH-L2
+    system_type: COLD_WATER
+    material: PIPE_PVC_BLUE
+    nominal_diameter: 0.020
+    placement:
+      storey: L2_SECOND
+      path:
+        - { grid: ["4", "D"], offset_x: 0.10, offset_y: 0.10, offset_z: 0.40 }
+        - { grid: ["3", "D"], offset_x: 0.60, offset_y: 0.10, offset_z: 0.40 }
+        - { grid: ["3", "D"], offset_x: 0.60, offset_y: 0.80, offset_z: 0.50 }
+        - { grid: ["3", "D"], offset_x: 1.20, offset_y: 2.20, offset_z: 0.30 }
+        - { grid: ["3", "B"], offset_x: 1.20, offset_y: 1.80, offset_z: 0.30 }
+
+  # Soil Pipe Network (ท่อโสโครก PVC 4" วิ่งตามแนวผนังใต้คานพร้อม Slope)
+  - class: IfcPipeSegment
+    tag: PIPE-SOIL-STACK-01
+    system_type: SOIL
+    material: PIPE_PVC_GREY
+    nominal_diameter: 0.100
+    placement:
+      storey: L1_GROUND
+      from_grid: ["4", "D"]
+      to_grid: ["4", "D"]
+      from_offset: [0.30, 0.10, 3.75]
+      to_offset: [0.30, 0.10, -0.45]
+
+  - class: IfcPipeSegment
+    tag: PIPE-SOIL-MAIN-OUT
+    system_type: SOIL
+    material: PIPE_PVC_GREY
+    nominal_diameter: 0.100
+    placement:
+      storey: L1_GROUND
+      path:
+        - { grid: ["4", "D"], offset_x: 0.30, offset_y: 0.10, offset_z: -0.45 }
+        - { grid: ["4", "E"], offset_x: 0.30, offset_y: 0.50, offset_z: -0.55 }
+        - { grid: ["4", "E"], offset_x: 1.50, offset_y: 0.50, offset_z: -0.65 }
+
+  - class: IfcPipeSegment
+    tag: PIPE-SOIL-BRANCH-L1
+    system_type: SOIL
+    material: PIPE_PVC_GREY
+    nominal_diameter: 0.100
+    placement:
+      storey: L1_GROUND
+      path:
+        - { grid: ["3", "D"], offset_x: 1.20, offset_y: 2.20, offset_z: 0.00 }
+        - { grid: ["3", "D"], offset_x: 1.20, offset_y: 2.20, offset_z: -0.30 }
+        - { grid: ["4", "D"], offset_x: 0.30, offset_y: 2.20, offset_z: -0.35 }
+        - { grid: ["4", "D"], offset_x: 0.30, offset_y: 0.10, offset_z: -0.45 }
+
+  # Waste Pipe Network (ท่อน้ำทิ้ง PVC 2" พร้อม Slope)
+  - class: IfcPipeSegment
+    tag: PIPE-WASTE-MAIN-01
+    system_type: WASTE
+    material: PIPE_PVC_GREY
+    nominal_diameter: 0.050
+    placement:
+      storey: L1_GROUND
+      path:
+        - { grid: ["3", "D"], offset_x: 0.60, offset_y: 0.80, offset_z: -0.20 }
+        - { grid: ["3", "D"], offset_x: 1.80, offset_y: 1.50, offset_z: -0.25 }
+        - { grid: ["4", "D"], offset_x: 0.30, offset_y: 1.50, offset_z: -0.30 }
+        - { grid: ["4", "E"], offset_x: 0.30, offset_y: 0.50, offset_z: -0.40 }
+
+  - class: IfcPipeSegment
+    tag: PIPE-WASTE-KITCHEN
+    system_type: WASTE
+    material: PIPE_PVC_GREY
+    nominal_diameter: 0.050
+    placement:
+      storey: L1_GROUND
+      path:
+        - { grid: ["1", "D"], offset_x: 1.20, offset_y: 1.60, offset_z: -0.10 }
+        - { grid: ["1", "E"], offset_x: 0.50, offset_y: 0.00, offset_z: -0.15 }
+        - { grid: ["1", "E"], offset_x: 0.50, offset_y: 0.60, offset_z: -0.20 }
+
+  # Vent Pipe Network (ท่อระบายอากาศ PVC 2" ทะลุหลังคา)
+  - class: IfcPipeSegment
+    tag: PIPE-VENT-STACK-01
+    system_type: VENT
+    material: PIPE_PVC_GREY
+    nominal_diameter: 0.050
+    placement:
+      storey: L2_SECOND
+      from_grid: ["4", "D"]
+      to_grid: ["4", "D"]
+      from_offset: [0.40, 0.10, 0.00]
+      to_offset: [0.40, 0.10, 3.50]
+
+  # ==========================================
+  # 10. MEP - ELECTRICAL SYSTEM (ตู้ควบคุมไฟฟ้า, ท่อร้อยสาย, โคมไฟ, สวิตช์ และเต้ารับ)
+  # ==========================================
+  # Consumer Unit
+  - class: IfcDistributionBoard
+    tag: CU-MAIN-01
+    board_type: CONSUMER_UNIT
+    material: ELEC_SYSTEM
+    placement: { grid: ["2", "C"], storey: L1_GROUND, offset_x: 0.20, offset_y: 0.10, offset_z: 1.60 }
+    dimensions: { width: 0.40, depth: 0.12, height: 0.50 }
+    circuits_count: 12
+
+  # Electrical Conduits (ท่อร้อยสายไฟ EMT / PVC เหลือง)
+  - class: IfcCableCarrierSegment
+    tag: CONDUIT-FEEDER-01
+    system_type: MAIN_FEEDER
+    material: CONDUIT_EMT
+    nominal_diameter: 0.032
+    placement:
+      storey: L1_GROUND
+      path:
+        - { grid: ["1", "A"], offset_x: 0.00, offset_y: 0.00, offset_z: 2.80 }
+        - { grid: ["2", "A"], offset_x: 0.00, offset_y: 0.00, offset_z: 2.80 }
+        - { grid: ["2", "C"], offset_x: 0.00, offset_y: 0.00, offset_z: 2.80 }
+        - { grid: ["2", "C"], offset_x: 0.20, offset_y: 0.10, offset_z: 1.60 }
+
+  - class: IfcCableCarrierSegment
+    tag: CONDUIT-LIGHT-L1
+    system_type: LIGHTING
+    material: CONDUIT_EMT
+    nominal_diameter: 0.020
+    placement:
+      storey: L1_GROUND
+      path:
+        - { grid: ["2", "C"], offset_x: 0.20, offset_y: 0.10, offset_z: 1.60 }
+        - { grid: ["2", "C"], offset_x: 0.20, offset_y: 0.10, offset_z: 3.20 }
+        - { grid: ["2", "B"], offset_x: 0.20, offset_y: 1.00, offset_z: 3.20 }
+        - { grid: ["2", "B"], offset_x: 1.00, offset_y: 1.00, offset_z: 3.20 }
+        - { grid: ["3", "C"], offset_x: 1.00, offset_y: 1.00, offset_z: 3.20 }
+        - { grid: ["3", "D"], offset_x: 1.50, offset_y: 1.50, offset_z: 3.20 }
+
+  - class: IfcCableCarrierSegment
+    tag: CONDUIT-POWER-L1
+    system_type: POWER
+    material: CONDUIT_EMT
+    nominal_diameter: 0.020
+    placement:
+      storey: L1_GROUND
+      path:
+        - { grid: ["2", "C"], offset_x: 0.20, offset_y: 0.10, offset_z: 1.60 }
+        - { grid: ["2", "C"], offset_x: 0.20, offset_y: 0.10, offset_z: 0.30 }
+        - { grid: ["1", "C"], offset_x: 0.20, offset_y: 0.10, offset_z: 0.30 }
+        - { grid: ["1", "B"], offset_x: 1.50, offset_y: 0.10, offset_z: 0.30 }
+
+  # Lighting Fixtures
+  - class: IfcLightFixture
+    tag: LIGHT-L1-LIVING
+    fixture_type: DOWNLIGHT
+    material: ELEC_SYSTEM
+    placement: { grid: ["2", "B"], storey: L1_GROUND, offset_x: 1.00, offset_y: 1.00, offset_z: 3.20 }
+    dimensions: { width: 0.18, depth: 0.18, height: 0.06 }
+    wattage: 12.0
+
+  - class: IfcLightFixture
+    tag: LIGHT-L1-HALL
+    fixture_type: DOWNLIGHT
+    material: ELEC_SYSTEM
+    placement: { grid: ["2", "C"], storey: L1_GROUND, offset_x: 1.00, offset_y: 1.00, offset_z: 3.20 }
+    dimensions: { width: 0.18, depth: 0.18, height: 0.06 }
+    wattage: 12.0
+
+  - class: IfcLightFixture
+    tag: LIGHT-L1-BATH
+    fixture_type: DOWNLIGHT
+    material: ELEC_SYSTEM
+    placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 1.50, offset_y: 1.50, offset_z: 3.20 }
+    dimensions: { width: 0.18, depth: 0.18, height: 0.06 }
+    wattage: 9.0
+
+  - class: IfcLightFixture
+    tag: LIGHT-L2-BED1
+    fixture_type: DOWNLIGHT
+    material: ELEC_SYSTEM
+    placement: { grid: ["2", "B"], storey: L2_SECOND, offset_x: 1.00, offset_y: 1.00, offset_z: 2.70 }
+    dimensions: { width: 0.18, depth: 0.18, height: 0.06 }
+    wattage: 12.0
+
+  - class: IfcLightFixture
+    tag: LIGHT-L2-BATH1
+    fixture_type: DOWNLIGHT
+    material: ELEC_SYSTEM
+    placement: { grid: ["3", "B"], storey: L2_SECOND, offset_x: 1.50, offset_y: 1.50, offset_z: 2.70 }
+    dimensions: { width: 0.18, depth: 0.18, height: 0.06 }
+    wattage: 9.0
+
+  # Switches & Outlets
+  - class: IfcSwitchingDevice
+    tag: SW-L1-01
+    switch_type: ONE_WAY
+    material: ELEC_SYSTEM
+    placement: { grid: ["2", "B"], storey: L1_GROUND, offset_x: 0.20, offset_y: 0.10, offset_z: 1.20 }
+    dimensions: { width: 0.07, depth: 0.04, height: 0.12 }
+    gangs: 2
+
+  - class: IfcSwitchingDevice
+    tag: SW-L1-02
+    switch_type: ONE_WAY
+    material: ELEC_SYSTEM
+    placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 0.10, offset_y: 0.10, offset_z: 1.20 }
+    dimensions: { width: 0.07, depth: 0.04, height: 0.12 }
+    gangs: 1
+
+  - class: IfcOutlet
+    tag: REC-L1-01
+    outlet_type: DUPLEX_GROUNDED
+    material: ELEC_SYSTEM
+    placement: { grid: ["1", "B"], storey: L1_GROUND, offset_x: 1.50, offset_y: 0.05, offset_z: 0.30 }
+    dimensions: { width: 0.07, depth: 0.04, height: 0.12 }
+
+  - class: IfcOutlet
+    tag: REC-L1-02
+    outlet_type: DUPLEX_GROUNDED
+    material: ELEC_SYSTEM
+    placement: { grid: ["3", "C"], storey: L1_GROUND, offset_x: 1.00, offset_y: 0.05, offset_z: 0.30 }
+    dimensions: { width: 0.07, depth: 0.04, height: 0.12 }
+
+  # =========================================================================
+  # 11. HVAC & VENTILATION (ระบบปรับอากาศและระบายอากาศ)
+  # แอร์, พัดลมระบายอากาศ, ฮูดดูดควัน, ท่อน้ำยาแอร์, ท่อลมระบายอากาศ
+  # =========================================================================
+  # 1. Air Conditioners - Living Room & Master Bedroom (Indoor FCU & Outdoor CDU)
+  - class: IfcUnitaryEquipment
+    tag: AC-FCU-LIVING
+    equipment_type: AC_INDOOR_WALL
+    material: HVAC_SYSTEM
+    placement: { grid: ["2", "B"], storey: L1_GROUND, offset_x: 1.00, offset_y: 0.15, offset_z: 2.60 }
+    cooling_capacity_btu: 18000.0
+
+  - class: IfcUnitaryEquipment
+    tag: AC-CDU-LIVING
+    equipment_type: AC_OUTDOOR_CONDENSER
+    material: HVAC_SYSTEM
+    placement: { grid: ["1", "B"], storey: L1_GROUND, offset_x: -0.60, offset_y: 0.80, offset_z: 0.30 }
+    cooling_capacity_btu: 18000.0
+
+  - class: IfcUnitaryEquipment
+    tag: AC-FCU-BED1
+    equipment_type: AC_INDOOR_WALL
+    material: HVAC_SYSTEM
+    placement: { grid: ["2", "B"], storey: L2_SECOND, offset_x: 1.00, offset_y: 0.15, offset_z: 2.40 }
+    cooling_capacity_btu: 12000.0
+
+  - class: IfcUnitaryEquipment
+    tag: AC-CDU-BED1
+    equipment_type: AC_OUTDOOR_CONDENSER
+    material: HVAC_SYSTEM
+    placement: { grid: ["1", "B"], storey: L2_SECOND, offset_x: -0.60, offset_y: 0.80, offset_z: 0.20 }
+    cooling_capacity_btu: 12000.0
+
+  # 2. Kitchen Range Hood & Exhaust Duct
+  - class: IfcAirTerminal
+    tag: HOOD-KITCHEN
+    terminal_type: KITCHEN_HOOD
+    material: HVAC_SYSTEM
+    placement: { grid: ["1", "D"], storey: L1_GROUND, offset_x: 0.80, offset_y: 1.00, offset_z: 1.80 }
+    dimensions: { width: 0.90, depth: 0.55, height: 0.50 }
+    flow_rate_cfm: 650.0
+
+  - class: IfcDuctSegment
+    tag: DUCT-HOOD-01
+    system_type: EXHAUST_AIR
+    material: HVAC_SYSTEM
+    width: 0.20
+    height: 0.20
+    placement:
+      storey: L1_GROUND
+      path:
+        - { grid: ["1", "D"], offset_x: 0.80, offset_y: 1.00, offset_z: 2.30 }
+        - { grid: ["1", "D"], offset_x: 0.80, offset_y: 1.00, offset_z: 3.20 }
+        - { grid: ["1", "D"], offset_x: -0.30, offset_y: 1.00, offset_z: 3.20 }
+
+  # 3. Bathroom Exhaust Fans
+  - class: IfcAirTerminal
+    tag: EXH-FAN-BATH-L1
+    terminal_type: EXHAUST_FAN_CEILING
+    material: HVAC_SYSTEM
+    placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 1.00, offset_y: 1.00, offset_z: 3.10 }
+    dimensions: { width: 0.30, depth: 0.30, height: 0.20 }
+    flow_rate_cfm: 120.0
+
+  - class: IfcAirTerminal
+    tag: EXH-FAN-BATH-L2
+    terminal_type: EXHAUST_FAN_CEILING
+    material: HVAC_SYSTEM
+    placement: { grid: ["3", "B"], storey: L2_SECOND, offset_x: 1.00, offset_y: 1.00, offset_z: 2.60 }
+    dimensions: { width: 0.30, depth: 0.30, height: 0.20 }
+    flow_rate_cfm: 120.0
+
+  # 4. Refrigerant Pipes & Condensate Drains (เดินฉากเลียบผนังและดิ่งลง CDU)
+  - class: IfcPipeSegment
+    tag: PIPE-REF-LIVING
+    system_type: REFRIGERANT
+    material: PIPE_PPR
+    nominal_diameter: 0.012
+    placement:
+      storey: L1_GROUND
+      path:
+        - { grid: ["2", "B"], offset_x: 1.00, offset_y: 0.15, offset_z: 2.60 }
+        - { grid: ["2", "B"], offset_x: 0.00, offset_y: 0.15, offset_z: 2.60 }
+        - { grid: ["1", "B"], offset_x: 0.00, offset_y: 0.15, offset_z: 2.60 }
+        - { grid: ["1", "B"], offset_x: -0.60, offset_y: 0.15, offset_z: 2.60 }
+        - { grid: ["1", "B"], offset_x: -0.60, offset_y: 0.80, offset_z: 2.60 }
+        - { grid: ["1", "B"], offset_x: -0.60, offset_y: 0.80, offset_z: 0.30 }
+
+  - class: IfcPipeSegment
+    tag: PIPE-COND-LIVING
+    system_type: CONDENSATE
+    material: PIPE_PVC_BLUE
+    nominal_diameter: 0.020
+    placement:
+      storey: L1_GROUND
+      path:
+        - { grid: ["2", "B"], offset_x: 1.00, offset_y: 0.15, offset_z: 2.50 }
+        - { grid: ["2", "B"], offset_x: 0.00, offset_y: 0.15, offset_z: 2.50 }
+        - { grid: ["1", "B"], offset_x: 0.00, offset_y: 0.15, offset_z: 2.50 }
+        - { grid: ["1", "B"], offset_x: -0.30, offset_y: 0.15, offset_z: 2.50 }
+        - { grid: ["1", "B"], offset_x: -0.30, offset_y: 0.15, offset_z: 0.15 }
+
+
 
 
