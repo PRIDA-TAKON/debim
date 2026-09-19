@@ -704,6 +704,7 @@ class ProjectManifest(BaseModel):
     grids: Grids
     materials: List[Material]
     elements: List[Element] = Field(default_factory=list)
+    includes: List[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_references(self) -> "ProjectManifest":
@@ -930,13 +931,96 @@ class ProjectManifest(BaseModel):
         return self
 
 
+def _process_includes(
+    includes: List[str], base_dir: Path, visited: set, mat_ids: set
+) -> Tuple[List[dict], List[dict]]:
+    included_materials = []
+    included_elements = []
+
+    for pattern in includes:
+        is_glob = any(char in pattern for char in ["*", "?", "["])
+        if is_glob:
+            matching_paths = sorted(base_dir.glob(pattern))
+            if not matching_paths:
+                raise FileNotFoundError(f"No files matched include pattern: {pattern}")
+        else:
+            inc_path = base_dir / pattern
+            if not inc_path.exists():
+                raise FileNotFoundError(f"Included file not found: {pattern}")
+            matching_paths = [inc_path]
+
+        for inc_path in matching_paths:
+            inc_canonical = inc_path.resolve()
+            if inc_canonical in visited:
+                raise ValueError(f"Circular include detected: {pattern}")
+
+            sub_visited = set(visited)
+            sub_visited.add(inc_canonical)
+
+            with open(inc_canonical, "r", encoding="utf-8") as f:
+                content = yaml.safe_load(f) or []
+
+            if isinstance(content, list):
+                included_elements.extend(content)
+            elif isinstance(content, dict):
+                sub_mats = list(content.get("materials", []) or [])
+                sub_elems = list(content.get("elements", []) or [])
+                sub_includes = content.get("includes", [])
+
+                for m in sub_mats:
+                    if isinstance(m, dict) and "id" in m:
+                        if m["id"] not in mat_ids:
+                            mat_ids.add(m["id"])
+                            included_materials.append(m)
+                    else:
+                        included_materials.append(m)
+
+                included_elements.extend(sub_elems)
+
+                if sub_includes:
+                    nested_mats, nested_elems = _process_includes(
+                        sub_includes, inc_canonical.parent, sub_visited, mat_ids
+                    )
+                    included_materials.extend(nested_mats)
+                    included_elements.extend(nested_elems)
+            else:
+                raise ValueError(
+                    f"Invalid YAML content in {inc_path}: expected list or dictionary"
+                )
+
+    return included_materials, included_elements
+
+
 def load_manifest(path: Path | str) -> ProjectManifest:
-    """Load and validate project.yaml manifest file."""
+    """Load and validate project.yaml manifest file, resolving included modular files."""
     manifest_path = Path(path)
     if not manifest_path.exists():
         raise FileNotFoundError(f"Manifest file not found: {manifest_path}")
 
-    with open(manifest_path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
+    canonical_path = manifest_path.resolve()
+    with open(canonical_path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+
+    if not isinstance(data, dict):
+        raise ValueError(f"Manifest file {manifest_path} must be a dictionary")
+
+    visited = {canonical_path}
+    base_dir = canonical_path.parent
+
+    includes = data.get("includes", [])
+    merged_materials = list(data.get("materials", []) or [])
+    merged_elements = list(data.get("elements", []) or [])
+
+    mat_ids = {m["id"] for m in merged_materials if isinstance(m, dict) and "id" in m}
+
+    if includes:
+        inc_materials, inc_elements = _process_includes(
+            includes, base_dir, visited, mat_ids
+        )
+        merged_materials.extend(inc_materials)
+        merged_elements.extend(inc_elements)
+
+    data["materials"] = merged_materials
+    data["elements"] = merged_elements
 
     return ProjectManifest.model_validate(data)

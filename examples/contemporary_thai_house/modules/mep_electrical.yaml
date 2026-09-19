@@ -1,0 +1,219 @@
+# MEP - Electrical & HVAC Systems (ระบบไฟฟ้า, ระบบปรับอากาศและระบายอากาศ)
+# Consumer Unit & Conduits
+- class: IfcDistributionBoard
+  tag: CU-MAIN-01
+  board_type: CONSUMER_UNIT
+  material: ELEC_SYSTEM
+  placement: { wall: "WALL-L1-C_2-4", distance: 0.50, side: "INTERIOR", standoff: 0.00, offset_z: 1.60 }
+  dimensions: { width: 0.40, depth: 0.12, height: 0.50 }
+  circuits_count: 12
+
+- class: IfcCableCarrierSegment
+  tag: CONDUIT-FEEDER-01
+  system_type: MAIN_FEEDER
+  material: CONDUIT_EMT
+  nominal_diameter: 0.032
+  placement:
+    storey: L1_GROUND
+    path:
+      - { grid: ["1", "A"], offset_x: 0.00, offset_y: 0.00, offset_z: 2.80 }
+      - { grid: ["2", "A"], offset_x: 0.00, offset_y: 0.00, offset_z: 2.80 }
+      - { grid: ["2", "C"], offset_x: 0.00, offset_y: 0.00, offset_z: 2.80 }
+      - { grid: ["2", "C"], offset_x: 0.50, offset_y: 0.00, offset_z: 1.60 }
+
+- class: IfcCableCarrierSegment
+  tag: CONDUIT-LIGHT-L1
+  system_type: LIGHTING
+  material: CONDUIT_EMT
+  nominal_diameter: 0.020
+  placement:
+    storey: L1_GROUND
+    path:
+      - { grid: ["2", "C"], offset_x: 0.50, offset_y: 0.00, offset_z: 1.60 }
+      - { grid: ["2", "C"], offset_x: 0.50, offset_y: 0.00, offset_z: 3.20 }
+      - { grid: ["2", "B"], offset_x: 0.20, offset_y: 1.00, offset_z: 3.20 }
+      - { grid: ["2", "B"], offset_x: 1.00, offset_y: 1.00, offset_z: 3.20 }
+      - { grid: ["3", "C"], offset_x: 1.00, offset_y: 1.00, offset_z: 3.20 }
+      - { grid: ["3", "D"], offset_x: 1.50, offset_y: 1.50, offset_z: 3.20 }
+
+- class: IfcCableCarrierSegment
+  tag: CONDUIT-POWER-L1
+  system_type: POWER
+  material: CONDUIT_EMT
+  nominal_diameter: 0.020
+  placement:
+    storey: L1_GROUND
+    path:
+      - { grid: ["2", "C"], offset_x: 0.50, offset_y: 0.00, offset_z: 1.60 }
+      - { grid: ["2", "C"], offset_x: 0.50, offset_y: 0.00, offset_z: 0.30 }
+      - { grid: ["1", "C"], offset_x: 0.00, offset_y: 0.00, offset_z: 0.30 }
+      - { grid: ["1", "B"], offset_x: 1.50, offset_y: 0.00, offset_z: 0.30 }
+
+# Lighting Fixtures
+- class: IfcLightFixture
+  tag: LIGHT-L1-LIVING
+  fixture_type: DOWNLIGHT
+  material: ELEC_SYSTEM
+  placement: { grid: ["2", "B"], storey: L1_GROUND, offset_x: 1.00, offset_y: 1.00, offset_z: 3.20 }
+  dimensions: { width: 0.18, depth: 0.18, height: 0.06 }
+  wattage: 12.0
+
+- class: IfcLightFixture
+  tag: LIGHT-L1-HALL
+  fixture_type: DOWNLIGHT
+  material: ELEC_SYSTEM
+  placement: { grid: ["2", "C"], storey: L1_GROUND, offset_x: 1.00, offset_y: 1.00, offset_z: 3.20 }
+  dimensions: { width: 0.18, depth: 0.18, height: 0.06 }
+  wattage: 12.0
+
+- class: IfcLightFixture
+  tag: LIGHT-L1-BATH
+  fixture_type: DOWNLIGHT
+  material: ELEC_SYSTEM
+  placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 1.50, offset_y: 1.50, offset_z: 3.20 }
+  dimensions: { width: 0.18, depth: 0.18, height: 0.06 }
+  wattage: 9.0
+
+- class: IfcLightFixture
+  tag: LIGHT-L2-BED1
+  fixture_type: DOWNLIGHT
+  material: ELEC_SYSTEM
+  placement: { grid: ["2", "B"], storey: L2_SECOND, offset_x: 1.00, offset_y: 1.00, offset_z: 2.70 }
+  dimensions: { width: 0.18, depth: 0.18, height: 0.06 }
+  wattage: 12.0
+
+- class: IfcLightFixture
+  tag: LIGHT-L2-BATH1
+  fixture_type: DOWNLIGHT
+  material: ELEC_SYSTEM
+  placement: { grid: ["3", "B"], storey: L2_SECOND, offset_x: 1.50, offset_y: 1.50, offset_z: 2.70 }
+  dimensions: { width: 0.18, depth: 0.18, height: 0.06 }
+  wattage: 9.0
+
+# Switches & Outlets
+- class: IfcSwitchingDevice
+  tag: SW-L1-01
+  switch_type: ONE_WAY
+  material: ELEC_SYSTEM
+  placement: { wall: "WALL-L1-2_B-C", distance: 0.30, side: "INTERIOR", standoff: 0.00, offset_z: 1.20 }
+  dimensions: { width: 0.07, depth: 0.04, height: 0.12 }
+  gangs: 2
+
+- class: IfcSwitchingDevice
+  tag: SW-L1-02
+  switch_type: ONE_WAY
+  material: ELEC_SYSTEM
+  placement: { wall: "WALL-L1-D_3-4", distance: 0.20, side: "INTERIOR", standoff: 0.00, offset_z: 1.20 }
+  dimensions: { width: 0.07, depth: 0.04, height: 0.12 }
+  gangs: 1
+
+- class: IfcOutlet
+  tag: REC-L1-01
+  outlet_type: DUPLEX_GROUNDED
+  material: ELEC_SYSTEM
+  placement: { wall: "WALL-L1-B_1-2", distance: 1.50, side: "INTERIOR", standoff: 0.00, offset_z: 0.30 }
+  dimensions: { width: 0.07, depth: 0.04, height: 0.12 }
+
+- class: IfcOutlet
+  tag: REC-L1-02
+  outlet_type: DUPLEX_GROUNDED
+  material: ELEC_SYSTEM
+  placement: { wall: "WALL-L1-C_2-4", distance: 3.00, side: "INTERIOR", standoff: 0.00, offset_z: 0.30 }
+  dimensions: { width: 0.07, depth: 0.04, height: 0.12 }
+
+# HVAC Equipment (Air Conditioners)
+- class: IfcUnitaryEquipment
+  tag: AC-FCU-LIVING
+  equipment_type: AC_INDOOR_WALL
+  material: HVAC_SYSTEM
+  placement: { wall: "WALL-L1-B_1-2", distance: 2.00, side: "INTERIOR", standoff: 0.00, offset_z: 2.50 }
+  cooling_capacity_btu: 18000.0
+
+- class: IfcUnitaryEquipment
+  tag: AC-CDU-LIVING
+  equipment_type: AC_OUTDOOR_CONDENSER
+  material: HVAC_SYSTEM
+  placement: { wall: "WALL-L1-1_B-C", distance: 0.80, side: "EXTERIOR", standoff: 0.10, offset_z: 0.50 }
+  cooling_capacity_btu: 18000.0
+
+- class: IfcUnitaryEquipment
+  tag: AC-FCU-BED1
+  equipment_type: AC_INDOOR_WALL
+  material: HVAC_SYSTEM
+  placement: { wall: "WALL-L2-B_1-2", distance: 2.00, side: "INTERIOR", standoff: 0.00, offset_z: 2.40 }
+  cooling_capacity_btu: 12000.0
+
+- class: IfcUnitaryEquipment
+  tag: AC-CDU-BED1
+  equipment_type: AC_OUTDOOR_CONDENSER
+  material: HVAC_SYSTEM
+  placement: { wall: "WALL-L2-1_B-C", distance: 0.80, side: "EXTERIOR", standoff: 0.10, offset_z: 0.50 }
+  cooling_capacity_btu: 12000.0
+
+# Kitchen Range Hood & Exhaust Fans
+- class: IfcAirTerminal
+  tag: HOOD-KITCHEN
+  terminal_type: KITCHEN_HOOD
+  material: HVAC_SYSTEM
+  placement: { grid: ["1", "D"], storey: L1_GROUND, offset_x: 0.80, offset_y: 1.00, offset_z: 1.80 }
+  dimensions: { width: 0.90, depth: 0.55, height: 0.50 }
+  flow_rate_cfm: 650.0
+
+- class: IfcDuctSegment
+  tag: DUCT-HOOD-01
+  system_type: EXHAUST_AIR
+  material: HVAC_SYSTEM
+  width: 0.20
+  height: 0.20
+  placement:
+    storey: L1_GROUND
+    path:
+      - { grid: ["1", "D"], offset_x: 0.80, offset_y: 1.00, offset_z: 2.30 }
+      - { grid: ["1", "D"], offset_x: 0.80, offset_y: 1.00, offset_z: 3.20 }
+      - { grid: ["1", "D"], offset_x: -0.30, offset_y: 1.00, offset_z: 3.20 }
+
+- class: IfcAirTerminal
+  tag: EXH-FAN-BATH-L1
+  terminal_type: EXHAUST_FAN_CEILING
+  material: HVAC_SYSTEM
+  placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 1.00, offset_y: 1.00, offset_z: 3.10 }
+  dimensions: { width: 0.30, depth: 0.30, height: 0.20 }
+  flow_rate_cfm: 120.0
+
+- class: IfcAirTerminal
+  tag: EXH-FAN-BATH-L2
+  terminal_type: EXHAUST_FAN_CEILING
+  material: HVAC_SYSTEM
+  placement: { grid: ["3", "B"], storey: L2_SECOND, offset_x: 1.00, offset_y: 1.00, offset_z: 2.60 }
+  dimensions: { width: 0.30, depth: 0.30, height: 0.20 }
+  flow_rate_cfm: 120.0
+
+# Refrigerant Pipes & Condensate Drains
+- class: IfcPipeSegment
+  tag: PIPE-REF-LIVING
+  system_type: REFRIGERANT
+  material: PIPE_PPR
+  nominal_diameter: 0.012
+  placement:
+    storey: L1_GROUND
+    path:
+      - { grid: ["2", "B"], offset_x: 1.00, offset_y: 0.15, offset_z: 2.60 }
+      - { grid: ["2", "B"], offset_x: 0.00, offset_y: 0.15, offset_z: 2.60 }
+      - { grid: ["1", "B"], offset_x: 0.00, offset_y: 0.15, offset_z: 2.60 }
+      - { grid: ["1", "B"], offset_x: -0.60, offset_y: 0.15, offset_z: 2.60 }
+      - { grid: ["1", "B"], offset_x: -0.60, offset_y: 0.80, offset_z: 2.60 }
+      - { grid: ["1", "B"], offset_x: -0.60, offset_y: 0.80, offset_z: 0.30 }
+
+- class: IfcPipeSegment
+  tag: PIPE-COND-LIVING
+  system_type: CONDENSATE
+  material: PIPE_PVC_BLUE
+  nominal_diameter: 0.020
+  placement:
+    storey: L1_GROUND
+    path:
+      - { grid: ["2", "B"], offset_x: 1.00, offset_y: 0.15, offset_z: 2.50 }
+      - { grid: ["2", "B"], offset_x: 0.00, offset_y: 0.15, offset_z: 2.50 }
+      - { grid: ["1", "B"], offset_x: 0.00, offset_y: 0.15, offset_z: 2.50 }
+      - { grid: ["1", "B"], offset_x: -0.30, offset_y: 0.15, offset_z: 2.50 }
+      - { grid: ["1", "B"], offset_x: -0.30, offset_y: 0.15, offset_z: 0.15 }

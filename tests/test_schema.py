@@ -181,3 +181,138 @@ def test_ifcstair_schema():
     assert stair.steps.tread == 0.25
     assert stair.landing.depth == 1.00
 
+
+def test_includes_directive_list_and_dict_format(tmp_path):
+    modules_dir = tmp_path / "modules"
+    modules_dir.mkdir()
+
+    # Create module with raw list of elements
+    cols_file = modules_dir / "columns.yaml"
+    cols_content = """
+- class: IfcColumn
+  tag: C-01
+  material: CONC_210
+  profile: { shape: BOX, width: 0.20, depth: 0.20 }
+  placement: { grid: ["1", "A"], base_storey: L1, top_storey: L2 }
+"""
+    cols_file.write_text(cols_content, encoding="utf-8")
+
+    # Create module with dict format (materials and elements)
+    extra_file = modules_dir / "extra.yaml"
+    extra_content = """
+materials:
+  - id: CONC_210
+    name: "Concrete 210"
+    category: concrete
+    unit_cost_ref: "REF-01"
+  - id: EXTRA_MAT
+    name: "Extra Material"
+    category: misc
+    unit_cost_ref: "REF-02"
+elements:
+  - class: IfcBeam
+    tag: B-01
+    material: CONC_210
+    profile: { shape: BOX, width: 0.20, depth: 0.40 }
+    placement: { from_grid: ["1", "A"], to_grid: ["2", "A"], storey: L1 }
+"""
+    extra_file.write_text(extra_content, encoding="utf-8")
+
+    root_file = tmp_path / "project.yaml"
+    root_content = """
+schema: IFC4-Minimal
+project:
+  id: PRJ-TEST-MODULAR
+  name: "Modular Project Test"
+  units: { length: METER, area: SQUARE_METER, volume: CUBIC_METER }
+spatial_structure:
+  storeys:
+    - id: L1
+      name: "Level 1"
+      elevation: 0.00
+      height: 3.50
+    - id: L2
+      name: "Level 2"
+      elevation: 3.50
+      height: 3.50
+grids:
+  axes_x: { "1": 0.0, "2": 4.0 }
+  axes_y: { "A": 0.0, "B": 5.0 }
+materials:
+  - id: CONC_210
+    name: "Concrete 210"
+    category: concrete
+    unit_cost_ref: "REF-01"
+includes:
+  - "modules/columns.yaml"
+  - "modules/extra.yaml"
+"""
+    root_file.write_text(root_content, encoding="utf-8")
+
+    manifest = load_manifest(root_file)
+    assert len(manifest.materials) == 2
+    assert {m.id for m in manifest.materials} == {"CONC_210", "EXTRA_MAT"}
+    assert len(manifest.elements) == 2
+    assert manifest.elements[0].tag == "C-01"
+    assert manifest.elements[1].tag == "B-01"
+
+
+def test_includes_missing_file_error(tmp_path):
+    root_file = tmp_path / "project.yaml"
+    root_content = """
+schema: IFC4-Minimal
+project:
+  id: PRJ-TEST-MISSING
+  name: "Missing Include Test"
+spatial_structure:
+  storeys:
+    - id: L1
+      name: "Level 1"
+      elevation: 0.00
+      height: 3.50
+grids:
+  axes_x: { "1": 0.0 }
+  axes_y: { "A": 0.0 }
+materials: []
+includes:
+  - "modules/non_existent.yaml"
+"""
+    root_file.write_text(root_content, encoding="utf-8")
+
+    with pytest.raises(FileNotFoundError):
+        load_manifest(root_file)
+
+
+def test_includes_circular_reference_prevention(tmp_path):
+    file_a = tmp_path / "a.yaml"
+    file_b = tmp_path / "b.yaml"
+
+    content_a = f"""
+schema: IFC4-Minimal
+project:
+  id: PRJ-CIRCULAR
+  name: "Circular Include Test"
+spatial_structure:
+  storeys:
+    - id: L1
+      name: "Level 1"
+      elevation: 0.00
+      height: 3.50
+grids:
+  axes_x: {{ "1": 0.0 }}
+  axes_y: {{ "A": 0.0 }}
+materials: []
+includes:
+  - "{file_b.name}"
+"""
+    content_b = f"""
+includes:
+  - "{file_a.name}"
+elements: []
+"""
+    file_a.write_text(content_a, encoding="utf-8")
+    file_b.write_text(content_b, encoding="utf-8")
+
+    with pytest.raises(ValueError) as exc_info:
+        load_manifest(file_a)
+    assert "Circular include detected" in str(exc_info.value)

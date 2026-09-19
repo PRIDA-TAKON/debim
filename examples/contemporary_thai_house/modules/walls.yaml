@@ -1,0 +1,533 @@
+# Level 1 Ground Floor Walls
+- class: IfcWall
+  tag: WALL-L1-B_1-2
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["1", "B"], to_grid: ["2", "B"], storey: L1_GROUND }
+  children:
+    - class: IfcDoor
+      tag: D-L1-01
+      dimensions: { width: 2.00, height: 2.05 }
+      offset_distance: 1.00
+      sill_height: 0.00
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L1-1_B-C
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["1", "B"], to_grid: ["1", "C"], storey: L1_GROUND }
+  children:
+    - class: IfcWindow
+      tag: W-L1-01
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 1.05
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L1-2_B-C
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["2", "B"], to_grid: ["2", "C"], storey: L1_GROUND }
+  children:
+    - class: IfcDoor
+      tag: D-L1-02
+      dimensions: { width: 1.00, height: 2.00 }
+      offset_distance: 1.35
+      sill_height: 0.00
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L1-C_2-4
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["2", "C"], to_grid: ["4", "C"], storey: L1_GROUND }
+  children:
+    - class: IfcWindow
+      tag: W-L1-02
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 0.60
+      sill_height: 0.90
+    - class: IfcDoor
+      tag: D-L1-03
+      dimensions: { width: 0.90, height: 2.00 }
+      offset_distance: 3.20
+      sill_height: 0.00
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L1-1_C-D
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["1", "C"], to_grid: ["1", "D"], storey: L1_GROUND }
+  children:
+    - class: IfcWindow
+      tag: W-L1-03
+      dimensions: { width: 1.20, height: 1.80 }
+      offset_distance: 0.50
+      sill_height: 1.00
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L1-4_C-D
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["4", "C"], to_grid: ["4", "D"], storey: L1_GROUND }
+  children:
+    - class: IfcWindow
+      tag: W-L1-04
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 0.30
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L1-D_1-2
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["1", "D"], to_grid: ["2", "D"], storey: L1_GROUND }
+  children:
+    - class: IfcDoor
+      tag: D-L1-04
+      dimensions: { width: 0.90, height: 2.00 }
+      offset_distance: 1.55
+      sill_height: 0.00
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L1-D_2-3
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["2", "D"], to_grid: ["3", "D"], storey: L1_GROUND }
+  children:
+    - class: IfcDoor
+      tag: D-L1-05
+      dimensions: { width: 0.80, height: 2.00 }
+      offset_distance: 0.60
+      sill_height: 0.00
+  finishes:
+    plaster: BOTH
+    interior_finish: TILES
+    exterior_finish: PAINT
+    tile_height: 2.60
+
+- class: IfcWall
+  tag: WALL-L1-D_3-4
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["3", "D"], to_grid: ["4", "D"], storey: L1_GROUND }
+  children:
+    - class: IfcDoor
+      tag: D-L1-06
+      dimensions: { width: 0.90, height: 2.00 }
+      offset_distance: 0.50
+      sill_height: 0.00
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L1-1_D-E
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["1", "D"], to_grid: ["1", "E"], storey: L1_GROUND }
+  children:
+    - class: IfcWindow
+      tag: W-L1-05
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 1.05
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L1-E_1-2
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["1", "E"], to_grid: ["2", "E"], storey: L1_GROUND }
+  children:
+    - class: IfcDoor
+      tag: D-L1-07
+      dimensions: { width: 0.80, height: 2.00 }
+      offset_distance: 0.50
+      sill_height: 0.00
+    - class: IfcWindow
+      tag: W-L1-06
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 1.80
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L1-3_D-E
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["3", "D"], to_grid: ["3", "E"], storey: L1_GROUND }
+  finishes:
+    plaster: BOTH
+    interior_finish: TILES
+    exterior_finish: PAINT
+    tile_height: 2.60
+
+- class: IfcWall
+  tag: WALL-L1-E_2-3
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["2", "E"], to_grid: ["3", "E"], storey: L1_GROUND }
+  children:
+    - class: IfcWindow
+      tag: W-L1-07
+      dimensions: { width: 0.60, height: 0.60 }
+      offset_distance: 0.70
+      sill_height: 1.80
+  finishes:
+    plaster: BOTH
+    interior_finish: TILES
+    exterior_finish: PAINT
+    tile_height: 2.60
+
+- class: IfcWall
+  tag: WALL-L1-4_D-E
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["4", "D"], to_grid: ["4", "E"], storey: L1_GROUND }
+  children:
+    - class: IfcWindow
+      tag: W-L1-08
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 1.05
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L1-E_3-4
+  material: BRICK_MON
+  thickness: 0.10
+  height: 3.00
+  placement: { from_grid: ["3", "E"], to_grid: ["4", "E"], storey: L1_GROUND }
+  children:
+    - class: IfcWindow
+      tag: W-L1-09
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 0.70
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+# Level 2 Second Floor Walls
+- class: IfcWall
+  tag: WALL-L2-B_1-2
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["1", "B"], to_grid: ["2", "B"], storey: L2_SECOND }
+  children:
+    - class: IfcWindow
+      tag: W-L2-01
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 1.20
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L2-1_B-C
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["1", "B"], to_grid: ["1", "C"], storey: L2_SECOND }
+  children:
+    - class: IfcWindow
+      tag: W-L2-02
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 1.05
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L2-2_B-C
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["2", "B"], to_grid: ["2", "C"], storey: L2_SECOND }
+  children:
+    - class: IfcDoor
+      tag: D-L2-01
+      dimensions: { width: 1.80, height: 2.05 }
+      offset_distance: 0.95
+      sill_height: 0.00
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L2-C_1-2
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["1", "C"], to_grid: ["2", "C"], storey: L2_SECOND }
+  children:
+    - class: IfcDoor
+      tag: D-L2-02
+      dimensions: { width: 0.90, height: 2.00 }
+      offset_distance: 2.30
+      sill_height: 0.00
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L2-1_C-D
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["1", "C"], to_grid: ["1", "D"], storey: L2_SECOND }
+  children:
+    - class: IfcWindow
+      tag: W-L2-03
+      dimensions: { width: 0.60, height: 0.60 }
+      offset_distance: 0.80
+      sill_height: 1.80
+  finishes:
+    plaster: BOTH
+    interior_finish: TILES
+    exterior_finish: PAINT
+    tile_height: 2.60
+
+- class: IfcWall
+  tag: WALL-L2-C_3-4
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["3", "C"], to_grid: ["4", "C"], storey: L2_SECOND }
+  children:
+    - class: IfcDoor
+      tag: D-L2-03
+      dimensions: { width: 0.90, height: 2.00 }
+      offset_distance: 0.50
+      sill_height: 0.00
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L2-4_C-D
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["4", "C"], to_grid: ["4", "D"], storey: L2_SECOND }
+  children:
+    - class: IfcWindow
+      tag: W-L2-04
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 0.30
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L2-D_1-2
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["1", "D"], to_grid: ["2", "D"], storey: L2_SECOND }
+  children:
+    - class: IfcDoor
+      tag: D-L2-04
+      dimensions: { width: 0.80, height: 2.00 }
+      offset_distance: 0.80
+      sill_height: 0.00
+  finishes:
+    plaster: BOTH
+    interior_finish: TILES
+    exterior_finish: PAINT
+    tile_height: 2.60
+
+- class: IfcWall
+  tag: WALL-L2-D_2-3
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["2", "D"], to_grid: ["3", "D"], storey: L2_SECOND }
+  children:
+    - class: IfcDoor
+      tag: D-L2-05
+      dimensions: { width: 0.80, height: 2.00 }
+      offset_distance: 0.60
+      sill_height: 0.00
+  finishes:
+    plaster: BOTH
+    interior_finish: TILES
+    exterior_finish: PAINT
+    tile_height: 2.60
+
+- class: IfcWall
+  tag: WALL-L2-D_3-4
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["3", "D"], to_grid: ["4", "D"], storey: L2_SECOND }
+  children:
+    - class: IfcDoor
+      tag: D-L2-06
+      dimensions: { width: 0.90, height: 2.00 }
+      offset_distance: 0.50
+      sill_height: 0.00
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L2-1_D-E
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["1", "D"], to_grid: ["1", "E"], storey: L2_SECOND }
+  children:
+    - class: IfcWindow
+      tag: W-L2-05
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 1.05
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L2-E_1-2
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["1", "E"], to_grid: ["2", "E"], storey: L2_SECOND }
+  children:
+    - class: IfcWindow
+      tag: W-L2-06
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 1.20
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L2-3_D-E
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["3", "D"], to_grid: ["3", "E"], storey: L2_SECOND }
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L2-E_2-3
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["2", "E"], to_grid: ["3", "E"], storey: L2_SECOND }
+  children:
+    - class: IfcWindow
+      tag: W-L2-07
+      dimensions: { width: 0.60, height: 0.60 }
+      offset_distance: 0.70
+      sill_height: 1.80
+  finishes:
+    plaster: BOTH
+    interior_finish: TILES
+    exterior_finish: PAINT
+    tile_height: 2.60
+
+- class: IfcWall
+  tag: WALL-L2-4_D-E
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["4", "D"], to_grid: ["4", "E"], storey: L2_SECOND }
+  children:
+    - class: IfcWindow
+      tag: W-L2-08
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 1.05
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT
+
+- class: IfcWall
+  tag: WALL-L2-E_3-4
+  material: BRICK_MON
+  thickness: 0.10
+  height: 2.60
+  placement: { from_grid: ["3", "E"], to_grid: ["4", "E"], storey: L2_SECOND }
+  children:
+    - class: IfcWindow
+      tag: W-L2-09
+      dimensions: { width: 1.60, height: 1.20 }
+      offset_distance: 0.70
+      sill_height: 0.90
+  finishes:
+    plaster: BOTH
+    interior_finish: PAINT
+    exterior_finish: PAINT

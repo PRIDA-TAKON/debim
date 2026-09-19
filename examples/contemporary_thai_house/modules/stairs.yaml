@@ -1,0 +1,44 @@
+# Stairs (บันได ค.ส.ล.)
+- class: IfcStair
+  tag: ST-01
+  material: CONC_210
+  stair_type: DOG_LEG
+  width: 1.00
+  waist_thickness: 0.12
+  placement:
+    grid_anchor: ["2", "C"]
+    from_storey: L1_GROUND
+    to_storey: L2_SECOND
+    offset_x: 0.00
+    offset_y: 0.00
+    offset_z: 0.00
+    orientation: "+Y"
+  landing:
+    elevation: 1.875
+    depth: 1.00
+    thickness: 0.12
+    edge_beam:
+      width: 0.20
+      depth: 0.35
+      edges: "FRONT_REAR"
+  steps:
+    tread: 0.25
+    riser: 0.1875
+  stringer:
+    material: CONC_210
+    width: 0.20
+    depth: 0.25
+    stringer_type: WAIST_SLAB
+  finishes:
+    tread_finish: "WOOD_PLANK"
+    riser_finish: "PAINT_WHITE"
+    nosing: true
+    nosing_type: "ALUMINUM_STRIP"
+  railing:
+    height: 0.90
+    type: "STEEL_HANDRAIL"
+    side: "BOTH"
+    layout: "DOUBLE"
+  reinforcement:
+    main: "DB12 @ 0.15m"
+    temperature: "RB9 @ 0.20m"

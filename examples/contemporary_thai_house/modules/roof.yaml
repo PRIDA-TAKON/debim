@@ -1,0 +1,24 @@
+# Roof Structure & Covering (โครงหลังคาและกระเบื้องมุงหลังคาปั้นหยา)
+- class: IfcRoof
+  tag: ROOF-MAIN
+  material: STEEL_SS400
+  roof_type: HIP
+  placement:
+    boundary: [["1", "B"], ["4", "B"], ["4", "E"], ["1", "E"]]
+    storey: L3_ROOF
+    offset_z: 0.00
+    overhang: 1.00
+    ridge_orientation: Y
+  covering:
+    tile_type: CONCRETE_TILE
+    material: ROOF_TILE_CONC
+    pitch: 30.0
+    insulation: true
+    fascia_board: true
+    ridge_cap: true
+  framing:
+    truss_type: STEEL_TRUSS
+    material: STEEL_SS400
+    spacing: 1.00
+    purlin_spacing: 0.32
+    steel_weight_per_sqm: 18.0

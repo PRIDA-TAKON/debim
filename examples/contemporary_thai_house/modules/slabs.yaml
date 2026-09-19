@@ -1,0 +1,210 @@
+# Level 1 Ground Floor Slabs (GS: Ground Slab)
+- class: IfcSlab
+  tag: SLAB-L1-A1_B2
+  material: CONC_210
+  thickness: 0.10
+  slab_type: GROUND_SLAB
+  placement:
+    boundary: [["1", "A"], ["2", "A"], ["2", "B"], ["1", "B"]]
+    storey: L1_GROUND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L1-B1_C2
+  material: CONC_210
+  thickness: 0.10
+  slab_type: GROUND_SLAB
+  placement:
+    boundary: [["1", "B"], ["2", "B"], ["2", "C"], ["1", "C"]]
+    storey: L1_GROUND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L1-B2_C4
+  material: CONC_210
+  thickness: 0.10
+  slab_type: GROUND_SLAB
+  placement:
+    boundary: [["2", "B"], ["4", "B"], ["4", "C"], ["2", "C"]]
+    storey: L1_GROUND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L1-C1_D2
+  material: CONC_210
+  thickness: 0.10
+  slab_type: GROUND_SLAB
+  placement:
+    boundary: [["1", "C"], ["2", "C"], ["2", "D"], ["1", "D"]]
+    storey: L1_GROUND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L1-C2_D3
+  material: CONC_210
+  thickness: 0.10
+  slab_type: GROUND_SLAB
+  placement:
+    boundary: [["2", "C"], ["3", "C"], ["3", "D"], ["2", "D"]]
+    storey: L1_GROUND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L1-C3_D4
+  material: CONC_210
+  thickness: 0.10
+  slab_type: GROUND_SLAB
+  placement:
+    boundary: [["3", "C"], ["4", "C"], ["4", "D"], ["3", "D"]]
+    storey: L1_GROUND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L1-D1_E2
+  material: CONC_210
+  thickness: 0.10
+  slab_type: GROUND_SLAB
+  placement:
+    boundary: [["1", "D"], ["2", "D"], ["2", "E"], ["1", "E"]]
+    storey: L1_GROUND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L1-D2_E3
+  material: CONC_210
+  thickness: 0.10
+  slab_type: GROUND_SLAB
+  placement:
+    boundary: [["2", "D"], ["3", "D"], ["3", "E"], ["2", "E"]]
+    storey: L1_GROUND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L1-D3_E4
+  material: CONC_210
+  thickness: 0.10
+  slab_type: GROUND_SLAB
+  placement:
+    boundary: [["3", "D"], ["4", "D"], ["4", "E"], ["3", "E"]]
+    storey: L1_GROUND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L1-E2_F4
+  material: CONC_210
+  thickness: 0.10
+  slab_type: GROUND_SLAB
+  placement:
+    boundary: [["2", "E"], ["4", "E"], ["4", "F"], ["2", "F"]]
+    storey: L1_GROUND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+# Level 2 Second Floor Slabs (Precast Plank 5cm + Topping 5cm = 10cm)
+- class: IfcSlab
+  tag: SLAB-L2-B1_C2
+  material: CONC_PLANK
+  thickness: 0.10
+  slab_type: PRECAST_PLANK
+  placement:
+    boundary: [["1", "B"], ["2", "B"], ["2", "C"], ["1", "C"]]
+    storey: L2_SECOND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L2-B2_C4
+  material: CONC_PLANK
+  thickness: 0.10
+  slab_type: PRECAST_PLANK
+  placement:
+    boundary: [["2", "B"], ["4", "B"], ["4", "C"], ["2", "C"]]
+    storey: L2_SECOND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L2-C1_D2
+  material: CONC_PLANK
+  thickness: 0.10
+  slab_type: PRECAST_PLANK
+  placement:
+    boundary: [["1", "C"], ["2", "C"], ["2", "D"], ["1", "D"]]
+    storey: L2_SECOND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L2-C2_D3
+  material: CONC_PLANK
+  thickness: 0.10
+  slab_type: PRECAST_PLANK
+  placement:
+    boundary: [["2", "C"], ["3", "C"], ["3", "D"], ["2", "D"]]
+    storey: L2_SECOND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L2-C3_D4
+  material: CONC_PLANK
+  thickness: 0.10
+  slab_type: PRECAST_PLANK
+  placement:
+    boundary: [["3", "C"], ["4", "C"], ["4", "D"], ["3", "D"]]
+    storey: L2_SECOND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L2-D1_E2
+  material: CONC_PLANK
+  thickness: 0.10
+  slab_type: PRECAST_PLANK
+  placement:
+    boundary: [["1", "D"], ["2", "D"], ["2", "E"], ["1", "E"]]
+    storey: L2_SECOND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L2-D2_E3
+  material: CONC_PLANK
+  thickness: 0.10
+  slab_type: PRECAST_PLANK
+  placement:
+    boundary: [["2", "D"], ["3", "D"], ["3", "E"], ["2", "E"]]
+    storey: L2_SECOND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L2-D3_E4
+  material: CONC_PLANK
+  thickness: 0.10
+  slab_type: PRECAST_PLANK
+  placement:
+    boundary: [["3", "D"], ["4", "D"], ["4", "E"], ["3", "E"]]
+    storey: L2_SECOND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"
+
+- class: IfcSlab
+  tag: SLAB-L2-E2_F4
+  material: CONC_PLANK
+  thickness: 0.10
+  slab_type: PRECAST_PLANK
+  placement:
+    boundary: [["2", "E"], ["4", "E"], ["4", "F"], ["2", "F"]]
+    storey: L2_SECOND
+  reinforcement:
+    mesh: "Wire Mesh Ø 4mm @ 0.20m"

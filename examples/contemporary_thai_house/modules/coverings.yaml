@@ -1,0 +1,156 @@
+# Architectural Coverings & Finishes (งานฝ้าเพดาน, งานปูพื้น และบัวเชิงผนัง)
+# 1. งานฝ้าเพดาน (IfcCovering - CEILING)
+- class: IfcCovering
+  tag: CEIL-L1-GYPSUM-WEST
+  covering_type: CEILING
+  material: CEIL_GYPSUM
+  thickness: 0.009
+  placement: { storey: L1_GROUND, offset_z: 2.80, boundary: [["1", "B"], ["3", "B"], ["3", "E"], ["1", "E"]], area: 57.60 }
+
+- class: IfcCovering
+  tag: CEIL-L1-GYPSUM-EAST
+  covering_type: CEILING
+  material: CEIL_GYPSUM
+  thickness: 0.009
+  placement: { storey: L1_GROUND, offset_z: 2.80, boundary: [["3", "B"], ["4", "B"], ["4", "D"], ["3", "D"]], area: 17.70 }
+
+- class: IfcCovering
+  tag: CEIL-L1-GYPSUM-HALL
+  covering_type: CEILING
+  material: CEIL_GYPSUM
+  thickness: 0.009
+  placement: { storey: L1_GROUND, offset_z: 2.80, boundary: [["3", "D1"], ["4", "D1"], ["4", "E"], ["3", "E"]], area: 5.10 }
+
+- class: IfcCovering
+  tag: CEIL-L1-GYPSUM-PORCH
+  covering_type: CEILING
+  material: CEIL_GYPSUM
+  thickness: 0.009
+  placement: { storey: L1_GROUND, offset_z: 2.80, boundary: [["1", "A"], ["2", "A"], ["2", "A1"], ["1", "A1"]], area: 4.60 }
+
+- class: IfcCovering
+  tag: CEIL-L2-GYPSUM-WEST
+  covering_type: CEILING
+  material: CEIL_GYPSUM
+  thickness: 0.009
+  placement: { storey: L2_SECOND, offset_z: 2.70, boundary: [["1", "B"], ["3", "B"], ["3", "E"], ["1", "E"]], area: 57.60 }
+
+- class: IfcCovering
+  tag: CEIL-L2-GYPSUM-EAST
+  covering_type: CEILING
+  material: CEIL_GYPSUM
+  thickness: 0.009
+  placement: { storey: L2_SECOND, offset_z: 2.70, boundary: [["3", "B"], ["4", "B"], ["4", "C1"], ["3", "C1"]], area: 13.20 }
+
+- class: IfcCovering
+  tag: CEIL-L2-GYPSUM-HALL
+  covering_type: CEILING
+  material: CEIL_GYPSUM
+  thickness: 0.009
+  placement: { storey: L2_SECOND, offset_z: 2.70, boundary: [["3", "D3"], ["4", "D3"], ["4", "E"], ["3", "E"]], area: 5.20 }
+
+- class: IfcCovering
+  tag: CEIL-L1-BATH
+  covering_type: CEILING
+  material: CEIL_TBAR
+  thickness: 0.009
+  placement: { storey: L1_GROUND, offset_z: 2.60, boundary: [["3", "D"], ["4", "D"], ["4", "D1"], ["3", "D1"]], area: 6.00 }
+
+- class: IfcCovering
+  tag: CEIL-L2-BATH1
+  covering_type: CEILING
+  material: CEIL_TBAR
+  thickness: 0.009
+  placement: { storey: L2_SECOND, offset_z: 2.60, boundary: [["3", "C1"], ["4", "C1"], ["4", "D"], ["3", "D"]], area: 4.50 }
+
+- class: IfcCovering
+  tag: CEIL-L2-BATH2
+  covering_type: CEILING
+  material: CEIL_TBAR
+  thickness: 0.009
+  placement: { storey: L2_SECOND, offset_z: 2.60, boundary: [["3", "D"], ["4", "D"], ["4", "D2"], ["3", "D2"]], area: 4.50 }
+
+- class: IfcCovering
+  tag: CEIL-ROOF-EAVES-FRONT
+  covering_type: CEILING
+  material: CEIL_EAVES
+  thickness: 0.004
+  placement: { storey: L2_SECOND, offset_z: 2.90, boundary: [["0", "00"], ["5", "00"], ["5", "0"], ["0", "0"]], area: 11.00 }
+
+- class: IfcCovering
+  tag: CEIL-ROOF-EAVES-REAR
+  covering_type: CEILING
+  material: CEIL_EAVES
+  thickness: 0.004
+  placement: { storey: L2_SECOND, offset_z: 2.90, boundary: [["0", "G"], ["5", "G"], ["5", "G1"], ["0", "G1"]], area: 11.00 }
+
+- class: IfcCovering
+  tag: CEIL-ROOF-EAVES-LEFT
+  covering_type: CEILING
+  material: CEIL_EAVES
+  thickness: 0.004
+  placement: { storey: L2_SECOND, offset_z: 2.90, boundary: [["0", "0"], ["1", "0"], ["1", "G"], ["0", "G"]], area: 13.00 }
+
+- class: IfcCovering
+  tag: CEIL-ROOF-EAVES-RIGHT
+  covering_type: CEILING
+  material: CEIL_EAVES
+  thickness: 0.004
+  placement: { storey: L2_SECOND, offset_z: 2.90, boundary: [["4", "0"], ["5", "0"], ["5", "G"], ["4", "G"]], area: 13.00 }
+
+# 2. งานปูพื้นและตกแต่งผิว (IfcCovering - FLOORING & SKIRTING)
+- class: IfcCovering
+  tag: FLOOR-POLISH-CARPORT
+  covering_type: FLOORING
+  material: FIN_CONC_POLISH
+  thickness: 0.050
+  placement: { storey: L1_GROUND, offset_z: -0.05, boundary: [["2", "A"], ["4", "A"], ["4", "C"], ["2", "C"]], area: 27.50 }
+
+- class: IfcCovering
+  tag: FLOOR-POLISH-WASH
+  covering_type: FLOORING
+  material: FIN_CONC_POLISH
+  thickness: 0.050
+  placement: { storey: L1_GROUND, offset_z: -0.05, boundary: [["2", "E"], ["4", "E"], ["4", "F"], ["2", "F"]], area: 10.00 }
+
+- class: IfcCovering
+  tag: FLOOR-POLISH-PORCH
+  covering_type: FLOORING
+  material: FIN_CONC_POLISH
+  thickness: 0.050
+  placement: { storey: L1_GROUND, offset_z: -0.05, boundary: [["1", "A"], ["2", "A"], ["2", "B"], ["1", "B"]], area: 7.20 }
+
+- class: IfcCovering
+  tag: FLOOR-POLISH-SIDE
+  covering_type: FLOORING
+  material: FIN_CONC_POLISH
+  thickness: 0.050
+  placement: { storey: L1_GROUND, offset_z: -0.05, boundary: [["0", "B0"], ["1", "B0"], ["1", "E"], ["0", "E"]], area: 10.30 }
+
+- class: IfcCovering
+  tag: FLOOR-TILE-L1
+  covering_type: FLOORING
+  material: FIN_TILE_FLOOR
+  thickness: 0.012
+  placement: { storey: L1_GROUND, offset_z: 0.00, boundary: [["1", "B"], ["3", "B"], ["3", "E"], ["1", "E"]], area: 55.00 }
+
+- class: IfcCovering
+  tag: FLOOR-TILE-L2
+  covering_type: FLOORING
+  material: FIN_TILE_FLOOR
+  thickness: 0.012
+  placement: { storey: L2_SECOND, offset_z: 0.00, boundary: [["1", "B"], ["3", "B"], ["3", "E"], ["1", "E"]], area: 55.00 }
+
+- class: IfcCovering
+  tag: SKIRTING-L1
+  covering_type: SKIRTING
+  material: FIN_SKIRTING
+  thickness: 0.012
+  placement: { storey: L1_GROUND, offset_z: 0.00, boundary: [["1", "B"], ["4", "B"], ["4", "E"], ["1", "E"]], length: 65.00 }
+
+- class: IfcCovering
+  tag: SKIRTING-L2
+  covering_type: SKIRTING
+  material: FIN_SKIRTING
+  thickness: 0.012
+  placement: { storey: L2_SECOND, offset_z: 0.00, boundary: [["1", "B"], ["4", "B"], ["4", "E"], ["1", "E"]], length: 58.00 }
