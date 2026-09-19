@@ -256,6 +256,27 @@ def qto(
             f"[bold cyan]Total Formwork Area:[/bold cyan] {project_qto.total_formwork_area:.3f} m2\n"
             f"[bold cyan]Total Rebar Weight:[/bold cyan] {project_qto.total_rebar_weight:.3f} kg"
         )
+        if project_qto.total_excavation_volume > 0 or project_qto.total_lean_concrete_volume > 0 or project_qto.total_sand_bedding_volume > 0:
+            summary_text += (
+                f"\n[bold magenta]--- Substructure & Earthwork ---[/bold magenta]\n"
+                f"[bold cyan]Excavation (งานดินขุดฐานราก):[/bold cyan] {project_qto.total_excavation_volume:.2f} m3\n"
+                f"[bold cyan]Lean Concrete (คอนกรีตหยาบ):[/bold cyan] {project_qto.total_lean_concrete_volume:.2f} m3\n"
+                f"[bold cyan]Sand Bedding (ทรายหยาบรองฐานราก/พื้น):[/bold cyan] {project_qto.total_sand_bedding_volume:.2f} m3"
+            )
+        if project_qto.total_ceiling_gypsum_area > 0 or project_qto.total_ceiling_tbar_area > 0 or project_qto.total_ceiling_eaves_area > 0:
+            summary_text += (
+                f"\n[bold magenta]--- Ceilings (งานฝ้าเพดาน) ---[/bold magenta]\n"
+                f"[bold cyan]Gypsum Ceiling (ฝ้ายิปซั่มฉาบเรียบ):[/bold cyan] {project_qto.total_ceiling_gypsum_area:.2f} m2\n"
+                f"[bold cyan]T-Bar Ceiling (ฝ้าทีบาร์ทนชื้นห้องน้ำ):[/bold cyan] {project_qto.total_ceiling_tbar_area:.2f} m2\n"
+                f"[bold cyan]Eaves Ceiling (ฝ้าชายคาระบายอากาศ):[/bold cyan] {project_qto.total_ceiling_eaves_area:.2f} m2"
+            )
+        if project_qto.total_floor_tile_area > 0 or project_qto.total_floor_polish_area > 0 or project_qto.total_skirting_length > 0:
+            summary_text += (
+                f"\n[bold magenta]--- Flooring & Finishes (งานปูพื้นและตกแต่งผิว) ---[/bold magenta]\n"
+                f"[bold cyan]Ceramic Floor Tiles (ปูกระเบื้องเซรามิค):[/bold cyan] {project_qto.total_floor_tile_area:.2f} m2\n"
+                f"[bold cyan]Polished Concrete (คอนกรีตขัดเรียบ/ขัดมัน):[/bold cyan] {project_qto.total_floor_polish_area:.2f} m2\n"
+                f"[bold cyan]Skirting Board (บัวเชิงผนัง):[/bold cyan] {project_qto.total_skirting_length:.2f} m"
+            )
         if project_qto.total_roof_covering_area > 0:
             summary_text += (
                 f"\n[bold cyan]Roof Covering Tiles:[/bold cyan] {project_qto.total_roof_covering_area:.2f} m2\n"

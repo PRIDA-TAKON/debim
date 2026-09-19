@@ -288,6 +288,48 @@
       "unit": "m",
       "material_cost": 280.0,
       "labor_cost": 90.0
+    },
+    "MAT-EARTH-EXCAV": {
+      "name": "Excavation for Footings (งานดินขุดฐานราก)",
+      "unit": "m3",
+      "material_cost": 0.0,
+      "labor_cost": 99.0
+    },
+    "MAT-CEIL-GYPSUM": {
+      "name": "Gypsum Board Ceiling 9mm with Concealed Grid (ฝ้าเพดานยิปซั่ม 9 มม. ฉาบเรียบ)",
+      "unit": "m2",
+      "material_cost": 195.0,
+      "labor_cost": 75.0
+    },
+    "MAT-CEIL-TBAR": {
+      "name": "Moisture Resistant Gypsum Ceiling 9mm with T-Bar Grid (ฝ้าเพดานทีบาร์ทนชื้น 9 มม.)",
+      "unit": "m2",
+      "material_cost": 215.0,
+      "labor_cost": 80.0
+    },
+    "MAT-CEIL-EAVES": {
+      "name": "Ventilated Fiber Cement Eaves Ceiling 4mm (ฝ้าเพดานชายคาระบายอากาศ 4 มม.)",
+      "unit": "m2",
+      "material_cost": 185.0,
+      "labor_cost": 75.0
+    },
+    "MAT-TILE-FLOOR": {
+      "name": "Ceramic Floor Tile (งานปูกระเบื้องพื้นเซรามิค)",
+      "unit": "m2",
+      "material_cost": 280.0,
+      "labor_cost": 150.0
+    },
+    "MAT-CONC-POLISH": {
+      "name": "Polished Concrete / Troweled Finish (ผิวคอนกรีตขัดเรียบ/ขัดมัน)",
+      "unit": "m2",
+      "material_cost": 45.0,
+      "labor_cost": 65.0
+    },
+    "MAT-SKIRTING": {
+      "name": "Fiber Cement Skirting Board 4\" (บัวเชิงผนังไฟเบอร์ซีเมนต์ 4 นิ้ว)",
+      "unit": "m",
+      "material_cost": 65.0,
+      "labor_cost": 35.0
     }
   }
 }

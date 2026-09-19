@@ -316,6 +316,24 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        # 3.1 Coverings
+        for cov in resolved.coverings:
+            st_id = cov.element.placement.storey
+            ptype = cov.covering_type.upper() if cov.covering_type else "CEILING"
+            elem_ref = self.create_entity(
+                "IfcCovering",
+                generate_ifc_guid(),
+                None,
+                cov.tag,
+                None,
+                None,
+                None,
+                None,
+                ptype,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
         # 4. Stairs
         for stair in resolved.stairs:
             st_id = stair.element.placement.from_storey
@@ -752,6 +770,16 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = slab.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(slab_obj)
+
+    # 3.1 Coverings
+    for cov in resolved.coverings:
+        ptype = cov.covering_type.upper() if cov.covering_type else "CEILING"
+        cov_obj = ifcopenshell.api.run(
+            "root.create_entity", model, ifc_class="IfcCovering", predefined_type=ptype, name=cov.tag
+        )
+        st_id = cov.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(cov_obj)
 
     # 4. Stairs
     for stair in resolved.stairs:

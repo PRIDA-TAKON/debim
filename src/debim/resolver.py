@@ -13,6 +13,7 @@ from debim.schema import (
     IfcBeam,
     IfcCableCarrierSegment,
     IfcColumn,
+    IfcCovering,
     IfcCustomElement,
     IfcDistributionBoard,
     IfcDoor,
@@ -227,6 +228,19 @@ class ResolvedSlab(BaseModel):
     polygon: List[Tuple[float, float, float]]  # Vertices in 3D (x, y, z)
     thickness: float
     area: float  # Top surface area (m2)
+    center: Tuple[float, float, float]  # Centroid (cx, cy, cz)
+
+
+class ResolvedCovering(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcCovering
+    covering_type: str
+    polygon: List[Tuple[float, float, float]]  # Vertices in 3D (x, y, z)
+    thickness: float
+    area: float  # Surface area (m2)
+    perimeter: float = 0.0  # Perimeter length (m)
     center: Tuple[float, float, float]  # Centroid (cx, cy, cz)
 
 
@@ -638,6 +652,7 @@ ResolvedElement = Union[
     ResolvedWall,
     ResolvedFooting,
     ResolvedSlab,
+    ResolvedCovering,
     ResolvedStair,
     ResolvedRoof,
     ResolvedPipeSegment,
@@ -664,6 +679,7 @@ class ResolvedManifest(BaseModel):
     beams: List[ResolvedBeam] = []
     walls: List[ResolvedWall] = []
     slabs: List[ResolvedSlab] = []
+    coverings: List[ResolvedCovering] = []
     stairs: List[ResolvedStair] = []
     roofs: List[ResolvedRoof] = []
     doors: List[ResolvedDoor] = []
@@ -969,6 +985,63 @@ class SpatialResolver:
             polygon=poly_3d,
             thickness=slab.thickness,
             area=area,
+            center=(cx, cy, z),
+        )
+
+    def resolve_covering(self, covering: IfcCovering) -> ResolvedCovering:
+        storey = self.get_storey(covering.placement.storey)
+        z = storey.elevation + covering.placement.offset_z
+
+        poly_3d: List[Tuple[float, float, float]] = []
+        pts_2d: List[Tuple[float, float]] = []
+        area = 0.0
+        perimeter = 0.0
+
+        if covering.placement.boundary:
+            for grid_pt in covering.placement.boundary:
+                x, y = self.get_grid_xy(grid_pt)
+                pts_2d.append((x, y))
+                poly_3d.append((x, y, z))
+
+            n = len(pts_2d)
+            calc_area = 0.0
+            calc_perimeter = 0.0
+            if n >= 3:
+                for i in range(n):
+                    j = (i + 1) % n
+                    calc_area += pts_2d[i][0] * pts_2d[j][1]
+                    calc_area -= pts_2d[j][0] * pts_2d[i][1]
+                    dx = pts_2d[j][0] - pts_2d[i][0]
+                    dy = pts_2d[j][1] - pts_2d[i][1]
+                    calc_perimeter += math.sqrt(dx * dx + dy * dy)
+                calc_area = abs(calc_area) / 2.0
+            
+            area = covering.placement.area if covering.placement.area is not None else calc_area
+            perimeter = covering.placement.length if covering.placement.length is not None else calc_perimeter
+        elif covering.placement.area is not None:
+            area = covering.placement.area
+            perimeter = covering.placement.length or (4.0 * math.sqrt(area) if area > 0 else 0.0)
+
+        if covering.placement.length is not None:
+            perimeter = covering.placement.length
+
+        if pts_2d:
+            cx = sum(p[0] for p in pts_2d) / len(pts_2d)
+            cy = sum(p[1] for p in pts_2d) / len(pts_2d)
+        else:
+            all_x = list(self.axes_x.values())
+            all_y = list(self.axes_y.values())
+            cx = (min(all_x) + max(all_x)) / 2.0 if all_x else 0.0
+            cy = (min(all_y) + max(all_y)) / 2.0 if all_y else 0.0
+
+        return ResolvedCovering(
+            tag=covering.tag,
+            element=covering,
+            covering_type=covering.covering_type,
+            polygon=poly_3d,
+            thickness=covering.thickness,
+            area=area,
+            perimeter=perimeter,
             center=(cx, cy, z),
         )
 
@@ -2449,6 +2522,10 @@ class SpatialResolver:
                 r_slab = self.resolve_slab(elem)
                 resolved_manifest.slabs.append(r_slab)
                 resolved_manifest.elements.append(r_slab)
+            elif isinstance(elem, IfcCovering):
+                r_cov = self.resolve_covering(elem)
+                resolved_manifest.coverings.append(r_cov)
+                resolved_manifest.elements.append(r_cov)
             elif isinstance(elem, IfcStair):
                 r_stair = self.resolve_stair(elem)
                 resolved_manifest.stairs.append(r_stair)

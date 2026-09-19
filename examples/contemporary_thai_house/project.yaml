@@ -25,17 +25,29 @@ spatial_structure:
 
 grids:
   axes_x:
+    "0": -1.00   # Eaves overhang left
     "1": 0.00
     "2": 4.00
     "3": 6.00
     "4": 9.00
+    "5": 10.00   # Eaves overhang right
   axes_y:
+    "00": -0.20  # Eaves overhang front outer
+    "0": 0.80    # Eaves overhang front inner
     "A": 0.00
+    "A1": 1.15   # Porch net ceiling (4.00m x 1.15m = 4.60m2)
+    "B0": 1.10   # Side terrace front start (10.30m length from y=1.10 to y=11.40)
     "B": 1.80
     "C": 5.50
+    "C1": 6.20   # Bath 1 level 2 divider (3.00m x 1.50m = 4.50m2)
     "D": 7.70
+    "D1": 9.70   # Bath level 1 divider (3.00m x 2.00m = 6.00m2)
+    "D2": 9.20   # Bath 2 level 2 divider (3.00m x 1.50m = 4.50m2)
+    "D3": 9.666666666666666   # Hall level 2 rear divider (3.00m x 1.7333m = 5.20m2)
     "E": 11.40
     "F": 13.40
+    "G": 13.80   # Eaves overhang rear inner
+    "G1": 14.80  # Eaves overhang rear outer
 
 materials:
   - id: CONC_210
@@ -86,6 +98,34 @@ materials:
     name: "Air Conditioning & Ventilation (ระบบปรับอากาศและระบายอากาศ)"
     category: hvac
     unit_cost_ref: "MAT-AC-WALL-18000"
+  - id: CEIL_GYPSUM
+    name: "Gypsum Board Ceiling 9mm (ฝ้าเพดานยิปซั่มฉาบเรียบ 9 มม.)"
+    category: covering
+    unit_cost_ref: "MAT-CEIL-GYPSUM"
+  - id: CEIL_TBAR
+    name: "T-Bar Moisture Resistant Ceiling 9mm (ฝ้าเพดานทีบาร์ทนชื้นห้องน้ำ 9 มม.)"
+    category: covering
+    unit_cost_ref: "MAT-CEIL-TBAR"
+  - id: CEIL_EAVES
+    name: "Ventilated Eaves Ceiling (ฝ้าเพดานชายคาระบายอากาศ)"
+    category: covering
+    unit_cost_ref: "MAT-CEIL-EAVES"
+  - id: FIN_TILE_FLOOR
+    name: "Ceramic Floor Tiles (งานปูกระเบื้องพื้นเซรามิค)"
+    category: covering
+    unit_cost_ref: "MAT-TILE-FLOOR"
+  - id: FIN_CONC_POLISH
+    name: "Polished Concrete Finish (ผิวคอนกรีตขัดเรียบ/ขัดมัน)"
+    category: finishes
+    unit_cost_ref: "MAT-CONC-POLISH"
+  - id: FIN_SKIRTING
+    name: "Fiber Cement Skirting Board 4\" (บัวเชิงผนังไฟเบอร์ซีเมนต์ 4 นิ้ว)"
+    category: finishes
+    unit_cost_ref: "MAT-SKIRTING"
+  - id: EARTH_EXCAV
+    name: "Excavation for Footings (งานดินขุดฐานราก)"
+    category: earthwork
+    unit_cost_ref: "MAT-EARTH-EXCAV"
 
 elements:
   # ==========================================
@@ -2033,35 +2073,35 @@ elements:
     tag: WC-L1-01
     terminal_type: WATER_CLOSET
     material: SANITARY_WARE
-    placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 1.20, offset_y: 2.20, offset_z: 0.00, rotation: 0.0 }
+    placement: { wall: "WALL-L1-E_3-4", distance: 1.20, side: "EXTERIOR", standoff: 0.00, offset_z: 0.00 }
     dimensions: { width: 0.42, depth: 0.72, height: 0.78 }
 
   - class: IfcSanitaryTerminal
     tag: LAV-L1-01
     terminal_type: LAVATORY
     material: SANITARY_WARE
-    placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 0.60, offset_y: 0.80, offset_z: 0.00, rotation: 90.0 }
+    placement: { wall: "WALL-L1-3_D-E", distance: 0.80, side: "EXTERIOR", standoff: 0.00, offset_z: 0.80 }
     dimensions: { width: 0.55, depth: 0.45, height: 0.82 }
 
   - class: IfcSanitaryTerminal
     tag: SH-L1-01
     terminal_type: SHOWER
     material: SANITARY_WARE
-    placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 2.20, offset_y: 2.20, offset_z: 0.00 }
+    placement: { wall: "WALL-L1-E_3-4", distance: 2.20, side: "EXTERIOR", standoff: 0.00, offset_z: 1.00 }
     dimensions: { width: 0.20, depth: 0.20, height: 1.00 }
 
   - class: IfcSanitaryTerminal
     tag: FD-L1-01
     terminal_type: FLOOR_DRAIN
     material: SANITARY_WARE
-    placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 1.80, offset_y: 1.50, offset_z: 0.00 }
+    placement: { wall: "WALL-L1-4_D-E", distance: 1.50, side: "INTERIOR", standoff: 0.20, offset_z: 0.00 }
     dimensions: { width: 0.15, depth: 0.15, height: 0.05 }
 
   - class: IfcSanitaryTerminal
     tag: SINK-L1-01
     terminal_type: KITCHEN_SINK
     material: SANITARY_WARE
-    placement: { grid: ["1", "D"], storey: L1_GROUND, offset_x: 1.20, offset_y: 1.60, offset_z: 0.00 }
+    placement: { wall: "WALL-L1-1_D-E", distance: 1.60, side: "EXTERIOR", standoff: 0.00, offset_z: 0.85 }
     dimensions: { width: 0.60, depth: 1.20, height: 0.85 }
 
   # Level 2 Fixtures (Master Bathroom & Central Bathroom)
@@ -2069,56 +2109,56 @@ elements:
     tag: WC-L2-01
     terminal_type: WATER_CLOSET
     material: SANITARY_WARE
-    placement: { grid: ["3", "B"], storey: L2_SECOND, offset_x: 1.20, offset_y: 1.80, offset_z: 0.00 }
+    placement: { wall: "WALL-L2-C_3-4", distance: 1.20, side: "EXTERIOR", standoff: 0.00, offset_z: 0.00 }
     dimensions: { width: 0.42, depth: 0.72, height: 0.78 }
 
   - class: IfcSanitaryTerminal
     tag: LAV-L2-01
     terminal_type: LAVATORY
     material: SANITARY_WARE
-    placement: { grid: ["3", "B"], storey: L2_SECOND, offset_x: 0.60, offset_y: 0.80, offset_z: 0.00 }
+    placement: { wall: "WALL-L2-C_3-4", distance: 0.50, side: "EXTERIOR", standoff: 0.00, offset_z: 0.80 }
     dimensions: { width: 0.55, depth: 0.45, height: 0.82 }
 
   - class: IfcSanitaryTerminal
     tag: SH-L2-01
     terminal_type: SHOWER
     material: SANITARY_WARE
-    placement: { grid: ["3", "B"], storey: L2_SECOND, offset_x: 2.20, offset_y: 1.80, offset_z: 0.00 }
+    placement: { wall: "WALL-L2-C_3-4", distance: 2.20, side: "EXTERIOR", standoff: 0.00, offset_z: 1.00 }
     dimensions: { width: 0.20, depth: 0.20, height: 1.00 }
 
   - class: IfcSanitaryTerminal
     tag: FD-L2-01
     terminal_type: FLOOR_DRAIN
     material: SANITARY_WARE
-    placement: { grid: ["3", "B"], storey: L2_SECOND, offset_x: 1.80, offset_y: 1.20, offset_z: 0.00 }
+    placement: { wall: "WALL-L2-C_3-4", distance: 1.80, side: "EXTERIOR", standoff: 0.40, offset_z: 0.00 }
     dimensions: { width: 0.15, depth: 0.15, height: 0.05 }
 
   - class: IfcSanitaryTerminal
     tag: WC-L2-02
     terminal_type: WATER_CLOSET
     material: SANITARY_WARE
-    placement: { grid: ["3", "D"], storey: L2_SECOND, offset_x: 1.20, offset_y: 2.20, offset_z: 0.00 }
+    placement: { wall: "WALL-L2-E_3-4", distance: 1.20, side: "EXTERIOR", standoff: 0.00, offset_z: 0.00 }
     dimensions: { width: 0.42, depth: 0.72, height: 0.78 }
 
   - class: IfcSanitaryTerminal
     tag: LAV-L2-02
     terminal_type: LAVATORY
     material: SANITARY_WARE
-    placement: { grid: ["3", "D"], storey: L2_SECOND, offset_x: 0.60, offset_y: 0.80, offset_z: 0.00 }
+    placement: { wall: "WALL-L2-3_D-E", distance: 0.80, side: "EXTERIOR", standoff: 0.00, offset_z: 0.80 }
     dimensions: { width: 0.55, depth: 0.45, height: 0.82 }
 
   - class: IfcSanitaryTerminal
     tag: SH-L2-02
     terminal_type: SHOWER
     material: SANITARY_WARE
-    placement: { grid: ["3", "D"], storey: L2_SECOND, offset_x: 2.20, offset_y: 2.20, offset_z: 0.00 }
+    placement: { wall: "WALL-L2-E_3-4", distance: 2.20, side: "EXTERIOR", standoff: 0.00, offset_z: 1.00 }
     dimensions: { width: 0.20, depth: 0.20, height: 1.00 }
 
   - class: IfcSanitaryTerminal
     tag: FD-L2-02
     terminal_type: FLOOR_DRAIN
     material: SANITARY_WARE
-    placement: { grid: ["3", "D"], storey: L2_SECOND, offset_x: 1.80, offset_y: 1.50, offset_z: 0.00 }
+    placement: { wall: "WALL-L2-4_D-E", distance: 1.50, side: "INTERIOR", standoff: 0.20, offset_z: 0.00 }
     dimensions: { width: 0.15, depth: 0.15, height: 0.05 }
 
   # ==========================================
@@ -2264,7 +2304,7 @@ elements:
     tag: CU-MAIN-01
     board_type: CONSUMER_UNIT
     material: ELEC_SYSTEM
-    placement: { grid: ["2", "C"], storey: L1_GROUND, offset_x: 0.20, offset_y: 0.10, offset_z: 1.60 }
+    placement: { wall: "WALL-L1-C_2-4", distance: 0.50, side: "INTERIOR", standoff: 0.00, offset_z: 1.60 }
     dimensions: { width: 0.40, depth: 0.12, height: 0.50 }
     circuits_count: 12
 
@@ -2280,7 +2320,7 @@ elements:
         - { grid: ["1", "A"], offset_x: 0.00, offset_y: 0.00, offset_z: 2.80 }
         - { grid: ["2", "A"], offset_x: 0.00, offset_y: 0.00, offset_z: 2.80 }
         - { grid: ["2", "C"], offset_x: 0.00, offset_y: 0.00, offset_z: 2.80 }
-        - { grid: ["2", "C"], offset_x: 0.20, offset_y: 0.10, offset_z: 1.60 }
+        - { grid: ["2", "C"], offset_x: 0.50, offset_y: 0.00, offset_z: 1.60 }
 
   - class: IfcCableCarrierSegment
     tag: CONDUIT-LIGHT-L1
@@ -2290,8 +2330,8 @@ elements:
     placement:
       storey: L1_GROUND
       path:
-        - { grid: ["2", "C"], offset_x: 0.20, offset_y: 0.10, offset_z: 1.60 }
-        - { grid: ["2", "C"], offset_x: 0.20, offset_y: 0.10, offset_z: 3.20 }
+        - { grid: ["2", "C"], offset_x: 0.50, offset_y: 0.00, offset_z: 1.60 }
+        - { grid: ["2", "C"], offset_x: 0.50, offset_y: 0.00, offset_z: 3.20 }
         - { grid: ["2", "B"], offset_x: 0.20, offset_y: 1.00, offset_z: 3.20 }
         - { grid: ["2", "B"], offset_x: 1.00, offset_y: 1.00, offset_z: 3.20 }
         - { grid: ["3", "C"], offset_x: 1.00, offset_y: 1.00, offset_z: 3.20 }
@@ -2305,10 +2345,10 @@ elements:
     placement:
       storey: L1_GROUND
       path:
-        - { grid: ["2", "C"], offset_x: 0.20, offset_y: 0.10, offset_z: 1.60 }
-        - { grid: ["2", "C"], offset_x: 0.20, offset_y: 0.10, offset_z: 0.30 }
-        - { grid: ["1", "C"], offset_x: 0.20, offset_y: 0.10, offset_z: 0.30 }
-        - { grid: ["1", "B"], offset_x: 1.50, offset_y: 0.10, offset_z: 0.30 }
+        - { grid: ["2", "C"], offset_x: 0.50, offset_y: 0.00, offset_z: 1.60 }
+        - { grid: ["2", "C"], offset_x: 0.50, offset_y: 0.00, offset_z: 0.30 }
+        - { grid: ["1", "C"], offset_x: 0.00, offset_y: 0.00, offset_z: 0.30 }
+        - { grid: ["1", "B"], offset_x: 1.50, offset_y: 0.00, offset_z: 0.30 }
 
   # Lighting Fixtures
   - class: IfcLightFixture
@@ -2356,7 +2396,7 @@ elements:
     tag: SW-L1-01
     switch_type: ONE_WAY
     material: ELEC_SYSTEM
-    placement: { grid: ["2", "B"], storey: L1_GROUND, offset_x: 0.20, offset_y: 0.10, offset_z: 1.20 }
+    placement: { wall: "WALL-L1-2_B-C", distance: 0.30, side: "INTERIOR", standoff: 0.00, offset_z: 1.20 }
     dimensions: { width: 0.07, depth: 0.04, height: 0.12 }
     gangs: 2
 
@@ -2364,7 +2404,7 @@ elements:
     tag: SW-L1-02
     switch_type: ONE_WAY
     material: ELEC_SYSTEM
-    placement: { grid: ["3", "D"], storey: L1_GROUND, offset_x: 0.10, offset_y: 0.10, offset_z: 1.20 }
+    placement: { wall: "WALL-L1-D_3-4", distance: 0.20, side: "INTERIOR", standoff: 0.00, offset_z: 1.20 }
     dimensions: { width: 0.07, depth: 0.04, height: 0.12 }
     gangs: 1
 
@@ -2372,14 +2412,14 @@ elements:
     tag: REC-L1-01
     outlet_type: DUPLEX_GROUNDED
     material: ELEC_SYSTEM
-    placement: { grid: ["1", "B"], storey: L1_GROUND, offset_x: 1.50, offset_y: 0.05, offset_z: 0.30 }
+    placement: { wall: "WALL-L1-B_1-2", distance: 1.50, side: "INTERIOR", standoff: 0.00, offset_z: 0.30 }
     dimensions: { width: 0.07, depth: 0.04, height: 0.12 }
 
   - class: IfcOutlet
     tag: REC-L1-02
     outlet_type: DUPLEX_GROUNDED
     material: ELEC_SYSTEM
-    placement: { grid: ["3", "C"], storey: L1_GROUND, offset_x: 1.00, offset_y: 0.05, offset_z: 0.30 }
+    placement: { wall: "WALL-L1-C_2-4", distance: 3.00, side: "INTERIOR", standoff: 0.00, offset_z: 0.30 }
     dimensions: { width: 0.07, depth: 0.04, height: 0.12 }
 
   # =========================================================================
@@ -2391,29 +2431,30 @@ elements:
     tag: AC-FCU-LIVING
     equipment_type: AC_INDOOR_WALL
     material: HVAC_SYSTEM
-    placement: { grid: ["2", "B"], storey: L1_GROUND, offset_x: 1.00, offset_y: 0.15, offset_z: 2.60 }
+    placement: { wall: "WALL-L1-B_1-2", distance: 2.00, side: "INTERIOR", standoff: 0.00, offset_z: 2.50 }
     cooling_capacity_btu: 18000.0
 
   - class: IfcUnitaryEquipment
     tag: AC-CDU-LIVING
     equipment_type: AC_OUTDOOR_CONDENSER
     material: HVAC_SYSTEM
-    placement: { grid: ["1", "B"], storey: L1_GROUND, offset_x: -0.60, offset_y: 0.80, offset_z: 0.30 }
+    placement: { wall: "WALL-L1-1_B-C", distance: 0.80, side: "EXTERIOR", standoff: 0.10, offset_z: 0.50 }
     cooling_capacity_btu: 18000.0
 
   - class: IfcUnitaryEquipment
     tag: AC-FCU-BED1
     equipment_type: AC_INDOOR_WALL
     material: HVAC_SYSTEM
-    placement: { grid: ["2", "B"], storey: L2_SECOND, offset_x: 1.00, offset_y: 0.15, offset_z: 2.40 }
+    placement: { wall: "WALL-L2-B_1-2", distance: 2.00, side: "INTERIOR", standoff: 0.00, offset_z: 2.40 }
     cooling_capacity_btu: 12000.0
 
   - class: IfcUnitaryEquipment
     tag: AC-CDU-BED1
     equipment_type: AC_OUTDOOR_CONDENSER
     material: HVAC_SYSTEM
-    placement: { grid: ["1", "B"], storey: L2_SECOND, offset_x: -0.60, offset_y: 0.80, offset_z: 0.20 }
+    placement: { wall: "WALL-L2-1_B-C", distance: 0.80, side: "EXTERIOR", standoff: 0.10, offset_z: 0.50 }
     cooling_capacity_btu: 12000.0
+
 
   # 2. Kitchen Range Hood & Exhaust Duct
   - class: IfcAirTerminal
@@ -2483,6 +2524,174 @@ elements:
         - { grid: ["1", "B"], offset_x: 0.00, offset_y: 0.15, offset_z: 2.50 }
         - { grid: ["1", "B"], offset_x: -0.30, offset_y: 0.15, offset_z: 2.50 }
         - { grid: ["1", "B"], offset_x: -0.30, offset_y: 0.15, offset_z: 0.15 }
+
+  # =========================================================================
+  # 12. ARCHITECTURAL COVERINGS & FINISHES (งานฝ้าเพดาน, งานปูพื้น และบัวเชิงผนัง)
+  # ตามแบบ ปร.4 กรมโยธาธิการและผังเมือง (กลุ่มที่ 1 และ 2)
+  # =========================================================================
+  # 1. งานฝ้าเพดาน (IfcCovering - CEILING)
+  # ฝ1: ฝ้าเพดานยิปซั่มฉาบเรียบ 9 มม. โครงเหล็กชุบสังกะสี (~161 m2)
+  # 1. งานฝ้าเพดาน (IfcCovering - CEILING)
+  # ฝ1: ฝ้าเพดานยิปซั่มฉาบเรียบ 9 มม. โครงเหล็กชุบสังกะสี (~161 m2)
+  - class: IfcCovering
+    tag: CEIL-L1-GYPSUM-WEST
+    covering_type: CEILING
+    material: CEIL_GYPSUM
+    thickness: 0.009
+    placement: { storey: L1_GROUND, offset_z: 2.80, boundary: [["1", "B"], ["3", "B"], ["3", "E"], ["1", "E"]], area: 57.60 }
+
+  - class: IfcCovering
+    tag: CEIL-L1-GYPSUM-EAST
+    covering_type: CEILING
+    material: CEIL_GYPSUM
+    thickness: 0.009
+    placement: { storey: L1_GROUND, offset_z: 2.80, boundary: [["3", "B"], ["4", "B"], ["4", "D"], ["3", "D"]], area: 17.70 }
+
+  - class: IfcCovering
+    tag: CEIL-L1-GYPSUM-HALL
+    covering_type: CEILING
+    material: CEIL_GYPSUM
+    thickness: 0.009
+    placement: { storey: L1_GROUND, offset_z: 2.80, boundary: [["3", "D1"], ["4", "D1"], ["4", "E"], ["3", "E"]], area: 5.10 }
+
+  - class: IfcCovering
+    tag: CEIL-L1-GYPSUM-PORCH
+    covering_type: CEILING
+    material: CEIL_GYPSUM
+    thickness: 0.009
+    placement: { storey: L1_GROUND, offset_z: 2.80, boundary: [["1", "A"], ["2", "A"], ["2", "A1"], ["1", "A1"]], area: 4.60 }
+
+  - class: IfcCovering
+    tag: CEIL-L2-GYPSUM-WEST
+    covering_type: CEILING
+    material: CEIL_GYPSUM
+    thickness: 0.009
+    placement: { storey: L2_SECOND, offset_z: 2.70, boundary: [["1", "B"], ["3", "B"], ["3", "E"], ["1", "E"]], area: 57.60 }
+
+  - class: IfcCovering
+    tag: CEIL-L2-GYPSUM-EAST
+    covering_type: CEILING
+    material: CEIL_GYPSUM
+    thickness: 0.009
+    placement: { storey: L2_SECOND, offset_z: 2.70, boundary: [["3", "B"], ["4", "B"], ["4", "C1"], ["3", "C1"]], area: 13.20 }
+
+  - class: IfcCovering
+    tag: CEIL-L2-GYPSUM-HALL
+    covering_type: CEILING
+    material: CEIL_GYPSUM
+    thickness: 0.009
+    placement: { storey: L2_SECOND, offset_z: 2.70, boundary: [["3", "D3"], ["4", "D3"], ["4", "E"], ["3", "E"]], area: 5.20 }
+
+  # ฝ2: ฝ้าเพดานยิปซั่มชนิดทนชื้น 9 มม. โครงทีบาร์ห้องน้ำ (~15 m2)
+  - class: IfcCovering
+    tag: CEIL-L1-BATH
+    covering_type: CEILING
+    material: CEIL_TBAR
+    thickness: 0.009
+    placement: { storey: L1_GROUND, offset_z: 2.60, boundary: [["3", "D"], ["4", "D"], ["4", "D1"], ["3", "D1"]], area: 6.00 }
+
+  - class: IfcCovering
+    tag: CEIL-L2-BATH1
+    covering_type: CEILING
+    material: CEIL_TBAR
+    thickness: 0.009
+    placement: { storey: L2_SECOND, offset_z: 2.60, boundary: [["3", "C1"], ["4", "C1"], ["4", "D"], ["3", "D"]], area: 4.50 }
+
+  - class: IfcCovering
+    tag: CEIL-L2-BATH2
+    covering_type: CEILING
+    material: CEIL_TBAR
+    thickness: 0.009
+    placement: { storey: L2_SECOND, offset_z: 2.60, boundary: [["3", "D"], ["4", "D"], ["4", "D2"], ["3", "D2"]], area: 4.50 }
+
+  # ฝ4: ฝ้าเพดานแผ่นไฟเบอร์ซีเมนต์ 4 มม. มีช่องระบายอากาศ (ฝ้าชายคา 4 ทิศรอบบ้าน ~48 m2)
+  - class: IfcCovering
+    tag: CEIL-ROOF-EAVES-FRONT
+    covering_type: CEILING
+    material: CEIL_EAVES
+    thickness: 0.004
+    placement: { storey: L2_SECOND, offset_z: 2.90, boundary: [["0", "00"], ["5", "00"], ["5", "0"], ["0", "0"]], area: 11.00 }
+
+  - class: IfcCovering
+    tag: CEIL-ROOF-EAVES-REAR
+    covering_type: CEILING
+    material: CEIL_EAVES
+    thickness: 0.004
+    placement: { storey: L2_SECOND, offset_z: 2.90, boundary: [["0", "G"], ["5", "G"], ["5", "G1"], ["0", "G1"]], area: 11.00 }
+
+  - class: IfcCovering
+    tag: CEIL-ROOF-EAVES-LEFT
+    covering_type: CEILING
+    material: CEIL_EAVES
+    thickness: 0.004
+    placement: { storey: L2_SECOND, offset_z: 2.90, boundary: [["0", "0"], ["1", "0"], ["1", "G"], ["0", "G"]], area: 13.00 }
+
+  - class: IfcCovering
+    tag: CEIL-ROOF-EAVES-RIGHT
+    covering_type: CEILING
+    material: CEIL_EAVES
+    thickness: 0.004
+    placement: { storey: L2_SECOND, offset_z: 2.90, boundary: [["4", "0"], ["5", "0"], ["5", "G"], ["4", "G"]], area: 13.00 }
+
+  # 2. งานปูพื้นและตกแต่งผิว (IfcCovering - FLOORING & SKIRTING)
+  # พ4, พ5: พื้นผิวคอนกรีตขัดเรียบ / ขัดมัน (~55 m2)
+  - class: IfcCovering
+    tag: FLOOR-POLISH-CARPORT
+    covering_type: FLOORING
+    material: FIN_CONC_POLISH
+    thickness: 0.050
+    placement: { storey: L1_GROUND, offset_z: -0.05, boundary: [["2", "A"], ["4", "A"], ["4", "C"], ["2", "C"]], area: 27.50 }
+
+  - class: IfcCovering
+    tag: FLOOR-POLISH-WASH
+    covering_type: FLOORING
+    material: FIN_CONC_POLISH
+    thickness: 0.050
+    placement: { storey: L1_GROUND, offset_z: -0.05, boundary: [["2", "E"], ["4", "E"], ["4", "F"], ["2", "F"]], area: 10.00 }
+
+  - class: IfcCovering
+    tag: FLOOR-POLISH-PORCH
+    covering_type: FLOORING
+    material: FIN_CONC_POLISH
+    thickness: 0.050
+    placement: { storey: L1_GROUND, offset_z: -0.05, boundary: [["1", "A"], ["2", "A"], ["2", "B"], ["1", "B"]], area: 7.20 }
+
+  - class: IfcCovering
+    tag: FLOOR-POLISH-SIDE
+    covering_type: FLOORING
+    material: FIN_CONC_POLISH
+    thickness: 0.050
+    placement: { storey: L1_GROUND, offset_z: -0.05, boundary: [["0", "B0"], ["1", "B0"], ["1", "E"], ["0", "E"]], area: 10.30 }
+
+  # พ1, พ3: พื้นผิวปูกระเบื้องเซรามิค ขนาด 12"x12" และ 8"x8" (~110 m2)
+  - class: IfcCovering
+    tag: FLOOR-TILE-L1
+    covering_type: FLOORING
+    material: FIN_TILE_FLOOR
+    thickness: 0.012
+    placement: { storey: L1_GROUND, offset_z: 0.00, boundary: [["1", "B"], ["3", "B"], ["3", "E"], ["1", "E"]], area: 55.00 }
+
+  - class: IfcCovering
+    tag: FLOOR-TILE-L2
+    covering_type: FLOORING
+    material: FIN_TILE_FLOOR
+    thickness: 0.012
+    placement: { storey: L2_SECOND, offset_z: 0.00, boundary: [["1", "B"], ["3", "B"], ["3", "E"], ["1", "E"]], area: 55.00 }
+
+  # บัวเชิงผนังไฟเบอร์ซีเมนต์ หนา 12 มม. กว้าง 4" (~123 m)
+  - class: IfcCovering
+    tag: SKIRTING-L1
+    covering_type: SKIRTING
+    material: FIN_SKIRTING
+    thickness: 0.012
+    placement: { storey: L1_GROUND, offset_z: 0.00, boundary: [["1", "B"], ["4", "B"], ["4", "E"], ["1", "E"]], length: 65.00 }
+
+  - class: IfcCovering
+    tag: SKIRTING-L2
+    covering_type: SKIRTING
+    material: FIN_SKIRTING
+    thickness: 0.012
+    placement: { storey: L2_SECOND, offset_z: 0.00, boundary: [["1", "B"], ["4", "B"], ["4", "E"], ["1", "E"]], length: 58.00 }
 
 
 

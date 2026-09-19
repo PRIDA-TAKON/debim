@@ -13,8 +13,8 @@ def test_contemporary_thai_house_manifest():
     manifest = load_manifest(manifest_path)
     assert manifest.project.id == "PRJ-THAI-HOUSE-05"
     assert len(manifest.spatial_structure.storeys) == 4
-    assert len(manifest.grids.axes_x) == 4
-    assert len(manifest.grids.axes_y) == 6
+    assert len(manifest.grids.axes_x) == 6
+    assert len(manifest.grids.axes_y) == 16
 
 
 def test_contemporary_thai_house_resolution_and_qto():
@@ -89,6 +89,58 @@ def test_contemporary_thai_house_resolution_and_qto():
     # Piles verification: 63 piles total, 378.0 meters total length
     assert qto_result.total_pile_count == 63
     assert qto_result.total_pile_length == 378.0
+
+    # Substructure & Earthwork verification (BOQ Group 3)
+    assert 65.0 <= qto_result.total_excavation_volume <= 70.0
+    assert 3.0 <= qto_result.total_lean_concrete_volume <= 3.5
+    assert 11.5 <= qto_result.total_sand_bedding_volume <= 12.5
+
+    # Ceilings verification (BOQ Group 1)
+    assert round(qto_result.total_ceiling_gypsum_area, 2) == 161.0
+    assert round(qto_result.total_ceiling_tbar_area, 2) == 15.0
+    assert round(qto_result.total_ceiling_eaves_area, 2) == 48.0
+
+    # Flooring & Finishes verification (BOQ Group 2)
+    assert qto_result.total_floor_tile_area == 110.0
+    assert qto_result.total_floor_polish_area == 55.0
+    assert qto_result.total_skirting_length == 123.0
+
+    # Wall-Hosted MEP Fixtures verification
+    # Check all sanitary fixtures, key switches/outlets, and AC units are wall-hosted
+    wall_hosted_sanitary = [
+        t for t in resolved.sanitary_terminals
+        if getattr(t.element.placement, "wall", None) is not None
+    ]
+    assert len(wall_hosted_sanitary) == 13
+    assert all(t.position is not None for t in wall_hosted_sanitary)
+
+    # Check electrical elements wall-hosting
+    wall_hosted_db = [
+        db for db in resolved.distribution_boards
+        if getattr(db.element.placement, "wall", None) is not None
+    ]
+    assert any(db.tag == "CU-MAIN-01" and db.element.placement.wall == "WALL-L1-C_2-4" for db in wall_hosted_db)
+
+    wall_hosted_switches = [
+        sw for sw in resolved.switches
+        if getattr(sw.element.placement, "wall", None) is not None
+    ]
+    assert len(wall_hosted_switches) == 2
+
+    wall_hosted_outlets = [
+        out for out in resolved.outlets
+        if getattr(out.element.placement, "wall", None) is not None
+    ]
+    assert len(wall_hosted_outlets) == 2
+
+    # Check HVAC elements wall-hosting
+    wall_hosted_hvac = [
+        eq for eq in resolved.unitary_equipments
+        if getattr(eq.element.placement, "wall", None) is not None
+    ]
+    assert len(wall_hosted_hvac) == 4
+
+
 
 
 

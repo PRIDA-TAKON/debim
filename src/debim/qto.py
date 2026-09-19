@@ -13,6 +13,7 @@ from debim.resolver import (
     ResolvedBeam,
     ResolvedCableCarrierSegment,
     ResolvedColumn,
+    ResolvedCovering,
     ResolvedCustomElement,
     ResolvedDistributionBoard,
     ResolvedDuctSegment,
@@ -124,9 +125,25 @@ def parse_stirrups(
 class SubstructureQTO(BaseModel):
     lean_concrete_volume: float = 0.0  # m³
     sand_bedding_volume: float = 0.0   # m³
+    excavation_volume: float = 0.0     # m³
     pile_count: int = 0                # count
     pile_total_length: float = 0.0     # m
     pile_type: Optional[str] = None
+
+
+class CoveringQTO(BaseModel):
+    covering_type: str = "CEILING"
+    area: float = 0.0                  # m²
+    length: float = 0.0                # m
+    thickness: float = 0.0             # m
+
+
+class SlabFinishesQTO(BaseModel):
+    floor_finish: Optional[str] = None
+    tile_area: float = 0.0             # m²
+    polished_concrete_area: float = 0.0 # m²
+    skirting_length: float = 0.0       # m
+    sand_bedding_volume: float = 0.0   # m³
 
 
 class StairQTO(BaseModel):
@@ -181,6 +198,8 @@ class ElementQTO(BaseModel):
     stair_assembly: Optional[StairQTO] = None
     wall_finishes: Optional[WallFinishesQTO] = None
     roof: Optional[RoofQTO] = None
+    covering: Optional[CoveringQTO] = None
+    slab_finishes: Optional[SlabFinishesQTO] = None
     mep: Optional[MepQTO] = None
 
 
@@ -190,6 +209,7 @@ class ProjectQTO(BaseModel):
     total_formwork_area: float = 0.0
     total_rebar_weight: float = 0.0
     total_rebar_by_type: Dict[str, float] = Field(default_factory=dict)
+    total_excavation_volume: float = 0.0
     total_lean_concrete_volume: float = 0.0
     total_sand_bedding_volume: float = 0.0
     total_pile_count: int = 0
@@ -207,6 +227,13 @@ class ProjectQTO(BaseModel):
     total_roof_hip_length: float = 0.0
     total_roof_eaves_length: float = 0.0
     total_roof_insulation_area: float = 0.0
+    # Ceilings & Floor Finishes Totals
+    total_ceiling_gypsum_area: float = 0.0
+    total_ceiling_tbar_area: float = 0.0
+    total_ceiling_eaves_area: float = 0.0
+    total_floor_tile_area: float = 0.0
+    total_floor_polish_area: float = 0.0
+    total_skirting_length: float = 0.0
     # MEP Totals
     total_cold_water_pipe_length: float = 0.0
     total_soil_pipe_length: float = 0.0
@@ -263,18 +290,44 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
                 rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
             total_rebar = mx_wt + my_wt
 
+        cfg = getattr(elem, "substructure", None)
+        has_substructure = cfg is not None or (elem.piles and elem.piles.count > 0)
+
         substructure = None
-        if elem.piles and elem.piles.count > 0:
-            pile_cnt = elem.piles.count
-            total_len = pile_cnt * elem.piles.length
-            pile_shape = elem.piles.profile.shape if elem.piles.profile else "HEXAGONAL"
-            pile_dim = elem.piles.profile.dimension if elem.piles.profile else 0.15
+        if has_substructure:
+            if elem.piles and elem.piles.count > 0:
+                default_lean = 0.10
+                default_sand = 0.05
+            else:
+                default_lean = 0.05
+                default_sand = 0.10
+
+            lean_thick = cfg.lean_thickness if (cfg and "lean_thickness" in cfg.model_fields_set) else default_lean
+            sand_thick = cfg.sand_thickness if (cfg and "sand_thickness" in cfg.model_fields_set) else default_sand
+            ws = cfg.excavation_working_space if cfg else 0.20
+            depth = cfg.excavation_depth if (cfg and cfg.excavation_depth) else abs(elem.placement.offset_z if elem.placement.offset_z != 0 else 1.50)
+
+            lean_vol = (w * d * lean_thick) if (not cfg or cfg.lean_concrete) else 0.0
+            sand_vol = (w * d * sand_thick) if (not cfg or cfg.sand_bedding) else 0.0
+            excav_vol = ((w + 2.0 * ws) * (d + 2.0 * ws) * depth) if (not cfg or cfg.excavation) else 0.0
+
+            pile_cnt = 0
+            total_len = 0.0
+            pile_type_str = None
+            if elem.piles and elem.piles.count > 0:
+                pile_cnt = elem.piles.count
+                total_len = pile_cnt * elem.piles.length
+                pile_shape = elem.piles.profile.shape if elem.piles.profile else "HEXAGONAL"
+                pile_dim = elem.piles.profile.dimension if elem.piles.profile else 0.15
+                pile_type_str = f"{pile_shape}-{pile_dim}"
+
             substructure = SubstructureQTO(
-                lean_concrete_volume=w * d * 0.10,
-                sand_bedding_volume=w * d * 0.05,
+                lean_concrete_volume=lean_vol,
+                sand_bedding_volume=sand_vol,
+                excavation_volume=excav_vol,
                 pile_count=pile_cnt,
                 pile_total_length=total_len,
-                pile_type=f"{pile_shape}-{pile_dim}",
+                pile_type=pile_type_str,
             )
 
         return ElementQTO(
@@ -458,6 +511,38 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
                     rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
                 total_rebar += mt_wt
 
+        slab_finishes_qto = None
+        substructure = None
+
+        if getattr(elem, "finishes", None):
+            fin = elem.finishes
+            tile_a = area if fin.floor_finish == "TILES" else 0.0
+            polish_a = area if fin.floor_finish == "POLISHED_CONCRETE" else 0.0
+            skirt_l = 0.0
+            if fin.skirting:
+                if resolved.polygon and len(resolved.polygon) >= 3:
+                    pts = resolved.polygon
+                    skirt_l = sum(
+                        math.sqrt((pts[(i+1)%len(pts)][0] - pts[i][0])**2 + (pts[(i+1)%len(pts)][1] - pts[i][1])**2)
+                        for i in range(len(pts))
+                    )
+                else:
+                    skirt_l = 4.0 * math.sqrt(area)
+            sand_v = area * fin.sand_thickness if fin.sand_bedding else 0.0
+            if fin.sand_bedding or elem.slab_type == "GROUND_SLAB":
+                sand_v = max(sand_v, area * 0.10)
+                substructure = SubstructureQTO(sand_bedding_volume=sand_v)
+
+            slab_finishes_qto = SlabFinishesQTO(
+                floor_finish=fin.floor_finish,
+                tile_area=tile_a,
+                polished_concrete_area=polish_a,
+                skirting_length=skirt_l,
+                sand_bedding_volume=sand_v,
+            )
+        elif elem.slab_type == "GROUND_SLAB":
+            substructure = SubstructureQTO(sand_bedding_volume=area * 0.10)
+
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
@@ -466,6 +551,23 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
             formwork_area=formwork,
             rebar_weights=rebar_dict,
             total_rebar_weight=total_rebar,
+            substructure=substructure,
+            slab_finishes=slab_finishes_qto,
+        )
+
+    elif isinstance(resolved, ResolvedCovering):
+        elem = resolved.element
+        cov_qto = CoveringQTO(
+            covering_type=resolved.covering_type,
+            area=resolved.area,
+            length=resolved.perimeter,
+            thickness=resolved.thickness,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            covering=cov_qto,
         )
 
     elif isinstance(resolved, ResolvedStair):
@@ -813,6 +915,7 @@ def calculate_qto(
     rebar_by_type: Dict[str, float] = {}
     total_lean_vol = 0.0
     total_sand_vol = 0.0
+    total_excav_vol = 0.0
     total_piles_count = 0
     total_piles_len = 0.0
     total_nosing_len = 0.0
@@ -828,6 +931,12 @@ def calculate_qto(
     total_roof_hip = 0.0
     total_roof_eaves = 0.0
     total_roof_insul = 0.0
+    total_ceil_gypsum = 0.0
+    total_ceil_tbar = 0.0
+    total_ceil_eaves = 0.0
+    total_floor_tile = 0.0
+    total_floor_polish = 0.0
+    total_skirting = 0.0
 
     # MEP Totals
     total_cold_water_len = 0.0
@@ -875,8 +984,36 @@ def calculate_qto(
         if eqto.substructure:
             total_lean_vol += eqto.substructure.lean_concrete_volume
             total_sand_vol += eqto.substructure.sand_bedding_volume
+            total_excav_vol += eqto.substructure.excavation_volume
             total_piles_count += eqto.substructure.pile_count
             total_piles_len += eqto.substructure.pile_total_length
+
+        if eqto.covering:
+            ctype = eqto.covering.covering_type.upper()
+            tag_low = eqto.tag.lower()
+            mat_low = (eqto.material or "").lower()
+            if ctype == "CEILING":
+                if any(k in tag_low or k in mat_low for k in ["tbar", "t-bar", "ทีบาร์"]):
+                    total_ceil_tbar += eqto.covering.area
+                elif any(k in tag_low or k in mat_low for k in ["eaves", "ชายคา", "ระบาย"]):
+                    total_ceil_eaves += eqto.covering.area
+                else:
+                    total_ceil_gypsum += eqto.covering.area
+            elif ctype == "FLOORING":
+                if any(k in tag_low or k in mat_low for k in ["tile", "กระเบื้อง"]):
+                    total_floor_tile += eqto.covering.area
+                elif any(k in tag_low or k in mat_low for k in ["polish", "ขัดเรียบ", "ขัดมัน"]):
+                    total_floor_polish += eqto.covering.area
+                else:
+                    total_floor_tile += eqto.covering.area
+            elif ctype == "SKIRTING":
+                total_skirting += eqto.covering.length or eqto.covering.area
+
+        if eqto.slab_finishes:
+            total_floor_tile += eqto.slab_finishes.tile_area
+            total_floor_polish += eqto.slab_finishes.polished_concrete_area
+            total_skirting += eqto.slab_finishes.skirting_length
+            total_sand_vol += eqto.slab_finishes.sand_bedding_volume
 
         if eqto.stair_assembly:
             total_nosing_len += eqto.stair_assembly.nosing_length
@@ -946,6 +1083,7 @@ def calculate_qto(
         total_rebar_by_type=rebar_by_type,
         total_lean_concrete_volume=total_lean_vol,
         total_sand_bedding_volume=total_sand_vol,
+        total_excavation_volume=total_excav_vol,
         total_pile_count=total_piles_count,
         total_pile_length=total_piles_len,
         total_nosing_length=total_nosing_len,
@@ -961,6 +1099,12 @@ def calculate_qto(
         total_roof_hip_length=total_roof_hip,
         total_roof_eaves_length=total_roof_eaves,
         total_roof_insulation_area=total_roof_insul,
+        total_ceiling_gypsum_area=total_ceil_gypsum,
+        total_ceiling_tbar_area=total_ceil_tbar,
+        total_ceiling_eaves_area=total_ceil_eaves,
+        total_floor_tile_area=total_floor_tile,
+        total_floor_polish_area=total_floor_polish,
+        total_skirting_length=total_skirting,
         total_cold_water_pipe_length=total_cold_water_len,
         total_soil_pipe_length=total_soil_len,
         total_waste_pipe_length=total_waste_len,

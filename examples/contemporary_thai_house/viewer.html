@@ -193,6 +193,8 @@
         <span style="font-size: 0.75rem; color: #8888aa; align-self: center; margin-right: 4px;">เลเยอร์:</span>
         <button class="layer-btn active" id="btn-layer-footings" onclick="toggleLayer('footings')">🔲 ฐานราก/เข็ม</button>
         <button class="layer-btn active" id="btn-layer-slabs" onclick="toggleLayer('slabs')">🟧 พื้น (Slabs)</button>
+        <button class="layer-btn active" id="btn-layer-ceilings" onclick="toggleLayer('ceilings')">⬜ ฝ้าเพดาน (Ceilings)</button>
+        <button class="layer-btn active" id="btn-layer-finishes" onclick="toggleLayer('finishes')">🎨 ผิวพื้น/บัว (Finishes)</button>
         <button class="layer-btn active" id="btn-layer-stairs" onclick="toggleLayer('stairs')">🪜 บันได (Stairs)</button>
         <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/คาน</button>
         <button class="layer-btn active" id="btn-layer-roof_covering" onclick="toggleLayer('roof_covering')">🏠 หลังคา</button>
@@ -271,18 +273,30 @@
   ],
   "grids": {
     "axes_x": {
+      "0": -1.0,
       "1": 0.0,
       "2": 4.0,
       "3": 6.0,
-      "4": 9.0
+      "4": 9.0,
+      "5": 10.0
     },
     "axes_y": {
+      "00": -0.2,
+      "0": 0.8,
       "A": 0.0,
+      "A1": 1.15,
+      "B0": 1.1,
       "B": 1.8,
       "C": 5.5,
+      "C1": 6.2,
       "D": 7.7,
+      "D1": 9.7,
+      "D2": 9.2,
+      "D3": 9.666666666666666,
       "E": 11.4,
-      "F": 13.4
+      "F": 13.4,
+      "G": 13.8,
+      "G1": 14.8
     }
   },
   "elements": [
@@ -11093,6 +11107,838 @@
       }
     },
     {
+      "tag": "CEIL-L1-GYPSUM-WEST",
+      "class": "IfcCovering",
+      "material": "CEIL_GYPSUM",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          0.0,
+          1.8,
+          2.8
+        ],
+        [
+          6.0,
+          1.8,
+          2.8
+        ],
+        [
+          6.0,
+          11.4,
+          2.8
+        ],
+        [
+          0.0,
+          11.4,
+          2.8
+        ]
+      ],
+      "color": "#EDE8F5",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "dimensions": {
+        "area": 57.6,
+        "thickness": 0.009
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-L1-GYPSUM-EAST",
+      "class": "IfcCovering",
+      "material": "CEIL_GYPSUM",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          6.0,
+          1.8,
+          2.8
+        ],
+        [
+          9.0,
+          1.8,
+          2.8
+        ],
+        [
+          9.0,
+          7.7,
+          2.8
+        ],
+        [
+          6.0,
+          7.7,
+          2.8
+        ]
+      ],
+      "color": "#EDE8F5",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "dimensions": {
+        "area": 17.7,
+        "thickness": 0.009
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-L1-GYPSUM-HALL",
+      "class": "IfcCovering",
+      "material": "CEIL_GYPSUM",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          6.0,
+          9.7,
+          2.8
+        ],
+        [
+          9.0,
+          9.7,
+          2.8
+        ],
+        [
+          9.0,
+          11.4,
+          2.8
+        ],
+        [
+          6.0,
+          11.4,
+          2.8
+        ]
+      ],
+      "color": "#EDE8F5",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "dimensions": {
+        "area": 5.1,
+        "thickness": 0.009
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-L1-GYPSUM-PORCH",
+      "class": "IfcCovering",
+      "material": "CEIL_GYPSUM",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          0.0,
+          0.0,
+          2.8
+        ],
+        [
+          4.0,
+          0.0,
+          2.8
+        ],
+        [
+          4.0,
+          1.15,
+          2.8
+        ],
+        [
+          0.0,
+          1.15,
+          2.8
+        ]
+      ],
+      "color": "#EDE8F5",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "dimensions": {
+        "area": 4.6,
+        "thickness": 0.009
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-L2-GYPSUM-WEST",
+      "class": "IfcCovering",
+      "material": "CEIL_GYPSUM",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          0.0,
+          1.8,
+          6.45
+        ],
+        [
+          6.0,
+          1.8,
+          6.45
+        ],
+        [
+          6.0,
+          11.4,
+          6.45
+        ],
+        [
+          0.0,
+          11.4,
+          6.45
+        ]
+      ],
+      "color": "#EDE8F5",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "dimensions": {
+        "area": 57.6,
+        "thickness": 0.009
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-L2-GYPSUM-EAST",
+      "class": "IfcCovering",
+      "material": "CEIL_GYPSUM",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          6.0,
+          1.8,
+          6.45
+        ],
+        [
+          9.0,
+          1.8,
+          6.45
+        ],
+        [
+          9.0,
+          6.2,
+          6.45
+        ],
+        [
+          6.0,
+          6.2,
+          6.45
+        ]
+      ],
+      "color": "#EDE8F5",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "dimensions": {
+        "area": 13.2,
+        "thickness": 0.009
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-L2-GYPSUM-HALL",
+      "class": "IfcCovering",
+      "material": "CEIL_GYPSUM",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          6.0,
+          9.666666666666666,
+          6.45
+        ],
+        [
+          9.0,
+          9.666666666666666,
+          6.45
+        ],
+        [
+          9.0,
+          11.4,
+          6.45
+        ],
+        [
+          6.0,
+          11.4,
+          6.45
+        ]
+      ],
+      "color": "#EDE8F5",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "dimensions": {
+        "area": 5.2,
+        "thickness": 0.009
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-L1-BATH",
+      "class": "IfcCovering",
+      "material": "CEIL_TBAR",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          6.0,
+          7.7,
+          2.6
+        ],
+        [
+          9.0,
+          7.7,
+          2.6
+        ],
+        [
+          9.0,
+          9.7,
+          2.6
+        ],
+        [
+          6.0,
+          9.7,
+          2.6
+        ]
+      ],
+      "color": "#E2E8F0",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_TBAR",
+      "dimensions": {
+        "area": 6.0,
+        "thickness": 0.009
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-L2-BATH1",
+      "class": "IfcCovering",
+      "material": "CEIL_TBAR",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          6.0,
+          6.2,
+          6.35
+        ],
+        [
+          9.0,
+          6.2,
+          6.35
+        ],
+        [
+          9.0,
+          7.7,
+          6.35
+        ],
+        [
+          6.0,
+          7.7,
+          6.35
+        ]
+      ],
+      "color": "#E2E8F0",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_TBAR",
+      "dimensions": {
+        "area": 4.5,
+        "thickness": 0.009
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-L2-BATH2",
+      "class": "IfcCovering",
+      "material": "CEIL_TBAR",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          6.0,
+          7.7,
+          6.35
+        ],
+        [
+          9.0,
+          7.7,
+          6.35
+        ],
+        [
+          9.0,
+          9.2,
+          6.35
+        ],
+        [
+          6.0,
+          9.2,
+          6.35
+        ]
+      ],
+      "color": "#E2E8F0",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_TBAR",
+      "dimensions": {
+        "area": 4.5,
+        "thickness": 0.009
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-ROOF-EAVES-FRONT",
+      "class": "IfcCovering",
+      "material": "CEIL_EAVES",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          -1.0,
+          -0.2,
+          6.65
+        ],
+        [
+          10.0,
+          -0.2,
+          6.65
+        ],
+        [
+          10.0,
+          0.8,
+          6.65
+        ],
+        [
+          -1.0,
+          0.8,
+          6.65
+        ]
+      ],
+      "color": "#D1D5DB",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_EAVES",
+      "dimensions": {
+        "area": 11.0,
+        "thickness": 0.004
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-ROOF-EAVES-REAR",
+      "class": "IfcCovering",
+      "material": "CEIL_EAVES",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          -1.0,
+          13.8,
+          6.65
+        ],
+        [
+          10.0,
+          13.8,
+          6.65
+        ],
+        [
+          10.0,
+          14.8,
+          6.65
+        ],
+        [
+          -1.0,
+          14.8,
+          6.65
+        ]
+      ],
+      "color": "#D1D5DB",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_EAVES",
+      "dimensions": {
+        "area": 11.0,
+        "thickness": 0.004
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-ROOF-EAVES-LEFT",
+      "class": "IfcCovering",
+      "material": "CEIL_EAVES",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          -1.0,
+          0.8,
+          6.65
+        ],
+        [
+          0.0,
+          0.8,
+          6.65
+        ],
+        [
+          0.0,
+          13.8,
+          6.65
+        ],
+        [
+          -1.0,
+          13.8,
+          6.65
+        ]
+      ],
+      "color": "#D1D5DB",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_EAVES",
+      "dimensions": {
+        "area": 13.0,
+        "thickness": 0.004
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "CEIL-ROOF-EAVES-RIGHT",
+      "class": "IfcCovering",
+      "material": "CEIL_EAVES",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          9.0,
+          0.8,
+          6.65
+        ],
+        [
+          10.0,
+          0.8,
+          6.65
+        ],
+        [
+          10.0,
+          13.8,
+          6.65
+        ],
+        [
+          9.0,
+          13.8,
+          6.65
+        ]
+      ],
+      "color": "#D1D5DB",
+      "layer": "ceilings",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_EAVES",
+      "dimensions": {
+        "area": 13.0,
+        "thickness": 0.004
+      },
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "FLOOR-POLISH-CARPORT",
+      "class": "IfcCovering",
+      "material": "FIN_CONC_POLISH",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          4.0,
+          0.0,
+          -0.05
+        ],
+        [
+          9.0,
+          0.0,
+          -0.05
+        ],
+        [
+          9.0,
+          5.5,
+          -0.05
+        ],
+        [
+          4.0,
+          5.5,
+          -0.05
+        ]
+      ],
+      "color": "#CBD5E1",
+      "layer": "finishes",
+      "covering_type": "FLOORING",
+      "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_CONC_POLISH",
+      "dimensions": {
+        "area": 27.5,
+        "thickness": 0.05
+      },
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "FLOOR-POLISH-WASH",
+      "class": "IfcCovering",
+      "material": "FIN_CONC_POLISH",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          4.0,
+          11.4,
+          -0.05
+        ],
+        [
+          9.0,
+          11.4,
+          -0.05
+        ],
+        [
+          9.0,
+          13.4,
+          -0.05
+        ],
+        [
+          4.0,
+          13.4,
+          -0.05
+        ]
+      ],
+      "color": "#CBD5E1",
+      "layer": "finishes",
+      "covering_type": "FLOORING",
+      "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_CONC_POLISH",
+      "dimensions": {
+        "area": 10.0,
+        "thickness": 0.05
+      },
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "FLOOR-POLISH-PORCH",
+      "class": "IfcCovering",
+      "material": "FIN_CONC_POLISH",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          0.0,
+          0.0,
+          -0.05
+        ],
+        [
+          4.0,
+          0.0,
+          -0.05
+        ],
+        [
+          4.0,
+          1.8,
+          -0.05
+        ],
+        [
+          0.0,
+          1.8,
+          -0.05
+        ]
+      ],
+      "color": "#CBD5E1",
+      "layer": "finishes",
+      "covering_type": "FLOORING",
+      "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_CONC_POLISH",
+      "dimensions": {
+        "area": 7.2,
+        "thickness": 0.05
+      },
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "FLOOR-POLISH-SIDE",
+      "class": "IfcCovering",
+      "material": "FIN_CONC_POLISH",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          -1.0,
+          1.1,
+          -0.05
+        ],
+        [
+          0.0,
+          1.1,
+          -0.05
+        ],
+        [
+          0.0,
+          11.4,
+          -0.05
+        ],
+        [
+          -1.0,
+          11.4,
+          -0.05
+        ]
+      ],
+      "color": "#CBD5E1",
+      "layer": "finishes",
+      "covering_type": "FLOORING",
+      "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_CONC_POLISH",
+      "dimensions": {
+        "area": 10.3,
+        "thickness": 0.05
+      },
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "FLOOR-TILE-L1",
+      "class": "IfcCovering",
+      "material": "FIN_TILE_FLOOR",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          0.0,
+          1.8,
+          0.0
+        ],
+        [
+          6.0,
+          1.8,
+          0.0
+        ],
+        [
+          6.0,
+          11.4,
+          0.0
+        ],
+        [
+          0.0,
+          11.4,
+          0.0
+        ]
+      ],
+      "color": "#CBD5E1",
+      "layer": "finishes",
+      "covering_type": "FLOORING",
+      "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_TILE_FLOOR",
+      "dimensions": {
+        "area": 55.0,
+        "thickness": 0.012
+      },
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "FLOOR-TILE-L2",
+      "class": "IfcCovering",
+      "material": "FIN_TILE_FLOOR",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          0.0,
+          1.8,
+          3.75
+        ],
+        [
+          6.0,
+          1.8,
+          3.75
+        ],
+        [
+          6.0,
+          11.4,
+          3.75
+        ],
+        [
+          0.0,
+          11.4,
+          3.75
+        ]
+      ],
+      "color": "#CBD5E1",
+      "layer": "finishes",
+      "covering_type": "FLOORING",
+      "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_TILE_FLOOR",
+      "dimensions": {
+        "area": 55.0,
+        "thickness": 0.012
+      },
+      "transparent": true,
+      "opacity": 0.85
+    },
+    {
+      "tag": "SKIRTING-L1",
+      "class": "IfcCovering",
+      "material": "FIN_SKIRTING",
+      "geometry_type": "line_loop",
+      "points": [
+        [
+          0.0,
+          1.8,
+          0.0
+        ],
+        [
+          9.0,
+          1.8,
+          0.0
+        ],
+        [
+          9.0,
+          11.4,
+          0.0
+        ],
+        [
+          0.0,
+          11.4,
+          0.0
+        ]
+      ],
+      "color": "#B45309",
+      "linewidth": 3,
+      "layer": "finishes",
+      "covering_type": "SKIRTING",
+      "member_name": "\u0e1a\u0e31\u0e27\u0e40\u0e0a\u0e34\u0e07\u0e1c\u0e19\u0e31\u0e07 (Skirting) - FIN_SKIRTING",
+      "dimensions": {
+        "length": 65.0
+      }
+    },
+    {
+      "tag": "SKIRTING-L2",
+      "class": "IfcCovering",
+      "material": "FIN_SKIRTING",
+      "geometry_type": "line_loop",
+      "points": [
+        [
+          0.0,
+          1.8,
+          3.75
+        ],
+        [
+          9.0,
+          1.8,
+          3.75
+        ],
+        [
+          9.0,
+          11.4,
+          3.75
+        ],
+        [
+          0.0,
+          11.4,
+          3.75
+        ]
+      ],
+      "color": "#B45309",
+      "linewidth": 3,
+      "layer": "finishes",
+      "covering_type": "SKIRTING",
+      "member_name": "\u0e1a\u0e31\u0e27\u0e40\u0e0a\u0e34\u0e07\u0e1c\u0e19\u0e31\u0e07 (Skirting) - FIN_SKIRTING",
+      "dimensions": {
+        "length": 58.0
+      }
+    },
+    {
       "tag": "PIPE-CW-MAIN-01",
       "class": "IfcPipeSegment",
       "geometry_type": "line",
@@ -11203,7 +12049,7 @@
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
       "material": "PIPE_PVC_BLUE",
       "dimensions": {
-        "length": 6.441975905133014,
+        "length": 6.441975905133013,
         "diameter": 0.02,
         "slope": 0.0
       },
@@ -11571,8 +12417,8 @@
           2.8
         ],
         [
-          4.2,
-          5.6,
+          4.5,
+          5.5,
           1.6
         ]
       ],
@@ -11583,7 +12429,7 @@
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e49\u0e2d\u0e22\u0e2a\u0e32\u0e22\u0e40\u0e21\u0e19 (Main Feeder)",
       "material": "CONDUIT_EMT",
       "dimensions": {
-        "length": 10.72065556157337,
+        "length": 10.8,
         "diameter": 0.032
       },
       "fittings_count": 3
@@ -11594,13 +12440,13 @@
       "geometry_type": "line",
       "points": [
         [
-          4.2,
-          5.6,
+          4.5,
+          5.5,
           1.6
         ],
         [
-          4.2,
-          5.6,
+          4.5,
+          5.5,
           3.2
         ],
         [
@@ -11631,7 +12477,7 @@
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e49\u0e2d\u0e22\u0e2a\u0e32\u0e22\u0e44\u0e1f\u0e41\u0e2a\u0e07\u0e2a\u0e27\u0e48\u0e32\u0e07 (Lighting Conduit)",
       "material": "CONDUIT_EMT",
       "dimensions": {
-        "length": 12.151854212511815,
+        "length": 12.068469753953039,
         "diameter": 0.02
       },
       "fittings_count": 5
@@ -11642,23 +12488,23 @@
       "geometry_type": "line",
       "points": [
         [
-          4.2,
-          5.6,
+          4.5,
+          5.5,
           1.6
         ],
         [
-          4.2,
-          5.6,
+          4.5,
+          5.5,
           0.3
         ],
         [
-          0.2,
-          5.6,
+          0.0,
+          5.5,
           0.3
         ],
         [
           1.5,
-          1.9000000000000001,
+          1.8,
           0.3
         ]
       ],
@@ -11669,7 +12515,7 @@
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e49\u0e2d\u0e22\u0e2a\u0e32\u0e22\u0e44\u0e1f\u0e01\u0e33\u0e25\u0e31\u0e07 (Power Conduit)",
       "material": "CONDUIT_EMT",
       "dimensions": {
-        "length": 9.221734310225514,
+        "length": 9.792492955535426,
         "diameter": 0.02
       },
       "fittings_count": 3
@@ -11776,13 +12622,13 @@
       "material": "SANITARY_WARE",
       "position": [
         7.2,
-        9.9,
+        10.99,
         0.39
       ],
       "rotation": [
         0,
         0,
-        0.0
+        -1.5707963267948966
       ],
       "dimensions": {
         "width": 0.42,
@@ -11799,14 +12645,14 @@
       "class": "IfcSanitaryTerminal",
       "material": "SANITARY_WARE",
       "position": [
-        6.6,
+        6.275,
         8.5,
-        0.41
+        1.21
       ],
       "rotation": [
         0,
         0,
-        1.5707963267948966
+        -0.0
       ],
       "dimensions": {
         "width": 0.55,
@@ -11824,13 +12670,13 @@
       "material": "SANITARY_WARE",
       "position": [
         8.2,
-        9.9,
-        0.5
+        11.25,
+        1.5
       ],
       "rotation": [
         0,
         0,
-        0.0
+        -1.5707963267948966
       ],
       "dimensions": {
         "width": 0.2,
@@ -11847,14 +12693,14 @@
       "class": "IfcSanitaryTerminal",
       "material": "SANITARY_WARE",
       "position": [
-        7.8,
+        8.675,
         9.2,
         0.025
       ],
       "rotation": [
         0,
         0,
-        0.0
+        3.141592653589793
       ],
       "dimensions": {
         "width": 0.15,
@@ -11871,14 +12717,14 @@
       "class": "IfcSanitaryTerminal",
       "material": "SANITARY_WARE",
       "position": [
-        1.2,
+        0.65,
         9.3,
-        0.425
+        1.275
       ],
       "rotation": [
         0,
         0,
-        0.0
+        -0.0
       ],
       "dimensions": {
         "width": 0.6,
@@ -11896,13 +12742,13 @@
       "material": "SANITARY_WARE",
       "position": [
         7.2,
-        3.6,
+        5.09,
         4.14
       ],
       "rotation": [
         0,
         0,
-        0.0
+        -1.5707963267948966
       ],
       "dimensions": {
         "width": 0.42,
@@ -11919,14 +12765,14 @@
       "class": "IfcSanitaryTerminal",
       "material": "SANITARY_WARE",
       "position": [
-        6.6,
-        2.6,
-        4.16
+        6.5,
+        5.225,
+        4.96
       ],
       "rotation": [
         0,
         0,
-        0.0
+        -1.5707963267948966
       ],
       "dimensions": {
         "width": 0.55,
@@ -11944,13 +12790,13 @@
       "material": "SANITARY_WARE",
       "position": [
         8.2,
-        3.6,
-        4.25
+        5.35,
+        5.25
       ],
       "rotation": [
         0,
         0,
-        0.0
+        -1.5707963267948966
       ],
       "dimensions": {
         "width": 0.2,
@@ -11968,13 +12814,13 @@
       "material": "SANITARY_WARE",
       "position": [
         7.8,
-        3.0,
+        4.975,
         3.775
       ],
       "rotation": [
         0,
         0,
-        0.0
+        -1.5707963267948966
       ],
       "dimensions": {
         "width": 0.15,
@@ -11992,13 +12838,13 @@
       "material": "SANITARY_WARE",
       "position": [
         7.2,
-        9.9,
+        10.99,
         4.14
       ],
       "rotation": [
         0,
         0,
-        0.0
+        -1.5707963267948966
       ],
       "dimensions": {
         "width": 0.42,
@@ -12015,14 +12861,14 @@
       "class": "IfcSanitaryTerminal",
       "material": "SANITARY_WARE",
       "position": [
-        6.6,
+        6.275,
         8.5,
-        4.16
+        4.96
       ],
       "rotation": [
         0,
         0,
-        0.0
+        -0.0
       ],
       "dimensions": {
         "width": 0.55,
@@ -12040,13 +12886,13 @@
       "material": "SANITARY_WARE",
       "position": [
         8.2,
-        9.9,
-        4.25
+        11.25,
+        5.25
       ],
       "rotation": [
         0,
         0,
-        0.0
+        -1.5707963267948966
       ],
       "dimensions": {
         "width": 0.2,
@@ -12063,14 +12909,14 @@
       "class": "IfcSanitaryTerminal",
       "material": "SANITARY_WARE",
       "position": [
-        7.8,
+        8.675,
         9.2,
         3.775
       ],
       "rotation": [
         0,
         0,
-        0.0
+        3.141592653589793
       ],
       "dimensions": {
         "width": 0.15,
@@ -12087,14 +12933,14 @@
       "class": "IfcDistributionBoard",
       "material": "ELEC_SYSTEM",
       "position": [
-        4.2,
-        5.6,
+        4.5,
+        5.61,
         1.85
       ],
       "rotation": [
         0,
         0,
-        0.0
+        1.5707963267948966
       ],
       "dimensions": {
         "width": 0.4,
@@ -12237,8 +13083,8 @@
       "class": "IfcSwitchingDevice",
       "material": "ELEC_SYSTEM",
       "position": [
-        4.2,
-        1.9000000000000001,
+        3.93,
+        2.1,
         1.26
       ],
       "rotation": [
@@ -12262,8 +13108,8 @@
       "class": "IfcSwitchingDevice",
       "material": "ELEC_SYSTEM",
       "position": [
-        6.1,
-        7.8,
+        6.2,
+        7.7700000000000005,
         1.26
       ],
       "rotation": [
@@ -12288,7 +13134,7 @@
       "material": "ELEC_SYSTEM",
       "position": [
         1.5,
-        1.85,
+        1.87,
         0.36
       ],
       "rotation": [
@@ -12312,7 +13158,7 @@
       "material": "ELEC_SYSTEM",
       "position": [
         7.0,
-        5.55,
+        5.57,
         0.36
       ],
       "rotation": [
@@ -12444,14 +13290,14 @@
       "class": "IfcUnitaryEquipment",
       "material": "HVAC_SYSTEM",
       "position": [
-        5.0,
-        1.95,
-        2.75
+        2.0,
+        1.85,
+        2.65
       ],
       "rotation": [
         0,
         0,
-        0.0
+        1.5707963267948966
       ],
       "dimensions": {
         "width": 0.85,
@@ -12469,14 +13315,14 @@
       "class": "IfcUnitaryEquipment",
       "material": "HVAC_SYSTEM",
       "position": [
-        -0.6,
+        0.15000000000000002,
         2.6,
-        0.625
+        0.825
       ],
       "rotation": [
         0,
         0,
-        0.0
+        -0.0
       ],
       "dimensions": {
         "width": 0.85,
@@ -12494,14 +13340,14 @@
       "class": "IfcUnitaryEquipment",
       "material": "HVAC_SYSTEM",
       "position": [
-        5.0,
-        1.95,
+        2.0,
+        1.85,
         6.300000000000001
       ],
       "rotation": [
         0,
         0,
-        0.0
+        1.5707963267948966
       ],
       "dimensions": {
         "width": 0.85,
@@ -12519,14 +13365,14 @@
       "class": "IfcUnitaryEquipment",
       "material": "HVAC_SYSTEM",
       "position": [
-        -0.6,
+        0.15000000000000002,
         2.6,
-        4.275
+        4.575
       ],
       "rotation": [
         0,
         0,
-        0.0
+        -0.0
       ],
       "dimensions": {
         "width": 0.85,
@@ -12968,6 +13814,11 @@
             if (data.flow_rate_cfm) {
                 mepRow += `<div class="data-row"><span class="data-label">อัตราลมระบาย (Air Flow)</span><span class="data-value">${data.flow_rate_cfm} CFM</span></div>`;
             }
+            if (data.covering_type) {
+                const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${data.color};margin-right:6px;"></span>` : '';
+                mepRow += `<div class="data-row"><span class="data-label">ประเภทงานตกแต่ง</span><span class="data-value">${colorDot}${data.covering_type}</span></div>`;
+            }
+
 
             contentEl.innerHTML = `
                 <div style="margin-bottom: 8px;"><span class="badge">${data.class}</span></div>

@@ -115,6 +115,16 @@ class FootingPiles(BaseModel):
     spacing: Optional[float] = None  # Spacing between piles if applicable (m)
 
 
+class FootingSubstructureConfig(BaseModel):
+    lean_concrete: bool = True
+    lean_thickness: float = 0.05
+    sand_bedding: bool = True
+    sand_thickness: float = 0.10
+    excavation: bool = True
+    excavation_depth: Optional[float] = None
+    excavation_working_space: float = 0.14
+
+
 class IfcFooting(BaseModel):
     class_: Literal["IfcFooting"] = Field(alias="class")
     tag: str
@@ -123,6 +133,7 @@ class IfcFooting(BaseModel):
     placement: FootingPlacement
     reinforcement: Optional[FootingReinforcement] = None
     piles: Optional[FootingPiles] = None
+    substructure: Optional[FootingSubstructureConfig] = Field(default_factory=FootingSubstructureConfig)
 
 
 # Beam placement & element
@@ -236,6 +247,15 @@ class SlabReinforcement(BaseModel):
     main_top: Optional[str] = None
 
 
+class SlabFinishesConfig(BaseModel):
+    floor_finish: Optional[Literal["TILES", "POLISHED_CONCRETE", "BARE", "WOOD_PARQUET"]] = None
+    tile_spec: Optional[str] = None
+    skirting: bool = False
+    skirting_height: float = 0.10
+    sand_bedding: bool = False
+    sand_thickness: float = 0.10
+
+
 class IfcSlab(BaseModel):
     class_: Literal["IfcSlab"] = Field(alias="class")
     tag: str
@@ -244,6 +264,7 @@ class IfcSlab(BaseModel):
     slab_type: Literal["SOLID", "PRECAST_PLANK", "TOPPING", "GROUND_SLAB"] = "SOLID"
     placement: SlabPlacement
     reinforcement: Optional[SlabReinforcement] = None
+    finishes: Optional[SlabFinishesConfig] = None
 
 
 StairType = Literal["STRAIGHT", "DOG_LEG", "L_SHAPE", "SPIRAL", "LADDER"]
@@ -616,6 +637,33 @@ class IfcUnitaryEquipment(BaseModel):
     cooling_capacity_btu: Optional[float] = 12000.0
 
 
+CoveringType = Literal["CEILING", "FLOORING", "SKIRTING", "CLADDING", "ROOFING", "INSULATION", "MEMBRANE"]
+
+
+class CoveringPlacement(BaseModel):
+    boundary: Optional[List[Tuple[str, str]]] = None  # Grid intersection polygon
+    storey: str
+    offset_z: float = 0.0  # Mounting elevation above storey level
+    area: Optional[float] = None  # Explicit area in m² if boundary not given
+    length: Optional[float] = None  # Explicit length in meters (useful for SKIRTING)
+
+    @field_validator("boundary", mode="before")
+    @classmethod
+    def convert_boundary_to_str(cls, v):
+        if isinstance(v, list):
+            return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+
+class IfcCovering(BaseModel):
+    class_: Literal["IfcCovering"] = Field(alias="class", default="IfcCovering")
+    tag: str
+    covering_type: CoveringType = "CEILING"
+    material: str
+    thickness: float = 0.009  # Thickness in meters
+    placement: CoveringPlacement
+
+
 Element = Annotated[
     Union[
         IfcColumn,
@@ -623,6 +671,7 @@ Element = Annotated[
         IfcWall,
         IfcFooting,
         IfcSlab,
+        IfcCovering,
         IfcStair,
         IfcRoof,
         IfcPipeSegment,
@@ -773,6 +822,23 @@ class ProjectManifest(BaseModel):
                         raise ValueError(
                             f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'"
                         )
+
+            elif isinstance(elem, IfcCovering):
+                if elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                if elem.placement.boundary:
+                    for pt in elem.placement.boundary:
+                        gx, gy = pt
+                        if gx not in grid_x_ids:
+                            raise ValueError(
+                                f"Element '{elem.tag}' boundary references unknown X grid '{gx}'"
+                            )
+                        if gy not in grid_y_ids:
+                            raise ValueError(
+                                f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'"
+                            )
 
             elif isinstance(elem, IfcStair):
                 if elem.placement.from_storey not in storey_ids:

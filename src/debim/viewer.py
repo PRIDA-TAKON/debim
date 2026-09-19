@@ -445,6 +445,89 @@ def generate_viewer_html(
             "color": color,
         })
 
+    # Coverings (Ceilings, Flooring & Skirting)
+    for cov in resolved.coverings:
+        c_type = cov.covering_type
+        if c_type == "CEILING":
+            c_th = "ฝ้าเพดาน (Ceiling)"
+            color = "#EDE8F5" if "GYPSUM" in (cov.element.material or "") else ("#E2E8F0" if "TBAR" in (cov.element.material or "") else "#D1D5DB")
+            layer = "ceilings"
+            opacity = 0.50
+        elif c_type == "FLOORING":
+            c_th = "งานปูพื้น / ผิวตกแต่ง (Flooring)"
+            color = "#CBD5E1"
+            layer = "finishes"
+            opacity = 0.85
+        elif c_type == "SKIRTING":
+            c_th = "บัวเชิงผนัง (Skirting)"
+            color = "#B45309"
+            layer = "finishes"
+            opacity = 1.0
+        else:
+            c_th = f"วัสดุตกแต่งผิว ({c_type})"
+            color = "#E5E7EB"
+            layer = "finishes"
+            opacity = 0.70
+
+        if c_type == "SKIRTING" and cov.polygon and len(cov.polygon) >= 3:
+            elements_data.append({
+                "tag": cov.tag,
+                "class": "IfcCovering",
+                "material": cov.element.material,
+                "geometry_type": "line_loop",
+                "points": cov.polygon,
+                "color": color,
+                "linewidth": 3,
+                "layer": layer,
+                "covering_type": c_type,
+                "member_name": f"{c_th} - {cov.element.material}",
+                "dimensions": {
+                    "length": cov.perimeter or cov.area,
+                },
+            })
+        elif cov.polygon and len(cov.polygon) >= 3:
+            elements_data.append({
+                "tag": cov.tag,
+                "class": "IfcCovering",
+                "material": cov.element.material,
+                "geometry_type": "polygon",
+                "points": cov.polygon,
+                "color": color,
+                "layer": layer,
+                "covering_type": c_type,
+                "member_name": f"{c_th} - {cov.element.material}",
+                "dimensions": {
+                    "area": cov.area,
+                    "thickness": cov.thickness,
+                },
+                "transparent": True,
+                "opacity": opacity,
+            })
+        else:
+            w = math.sqrt(cov.area) if cov.area > 0 else 2.0
+            elements_data.append({
+                "tag": cov.tag,
+                "class": "IfcCovering",
+                "material": cov.element.material,
+                "position": [cov.center[0], cov.center[1], cov.center[2]],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": w,
+                    "depth": w,
+                    "height": cov.thickness,
+                    "area": cov.area,
+                    "length": cov.perimeter if cov.perimeter > 0 else None,
+                },
+                "color": color,
+                "layer": layer,
+                "covering_type": c_type,
+                "member_name": f"{c_th} - {cov.element.material}",
+                "transparent": True,
+                "opacity": opacity,
+            })
+
+
+
     # MEP Elements: Pipes (Sanitary, Plumbing & HVAC Refrigerant/Drain)
     for pipe in resolved.pipes:
         if pipe.system_type in ("REFRIGERANT", "CONDENSATE"):
@@ -950,6 +1033,8 @@ def generate_viewer_html(
         <span style="font-size: 0.75rem; color: #8888aa; align-self: center; margin-right: 4px;">เลเยอร์:</span>
         <button class="layer-btn active" id="btn-layer-footings" onclick="toggleLayer('footings')">🔲 ฐานราก/เข็ม</button>
         <button class="layer-btn active" id="btn-layer-slabs" onclick="toggleLayer('slabs')">🟧 พื้น (Slabs)</button>
+        <button class="layer-btn active" id="btn-layer-ceilings" onclick="toggleLayer('ceilings')">⬜ ฝ้าเพดาน (Ceilings)</button>
+        <button class="layer-btn active" id="btn-layer-finishes" onclick="toggleLayer('finishes')">🎨 ผิวพื้น/บัว (Finishes)</button>
         <button class="layer-btn active" id="btn-layer-stairs" onclick="toggleLayer('stairs')">🪜 บันได (Stairs)</button>
         <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/คาน</button>
         <button class="layer-btn active" id="btn-layer-roof_covering" onclick="toggleLayer('roof_covering')">🏠 หลังคา</button>
@@ -1418,6 +1503,11 @@ def generate_viewer_html(
             if (data.flow_rate_cfm) {{
                 mepRow += `<div class="data-row"><span class="data-label">อัตราลมระบาย (Air Flow)</span><span class="data-value">${{data.flow_rate_cfm}} CFM</span></div>`;
             }}
+            if (data.covering_type) {{
+                const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${{data.color}};margin-right:6px;"></span>` : '';
+                mepRow += `<div class="data-row"><span class="data-label">ประเภทงานตกแต่ง</span><span class="data-value">${{colorDot}}${{data.covering_type}}</span></div>`;
+            }}
+
 
             contentEl.innerHTML = `
                 <div style="margin-bottom: 8px;"><span class="badge">${{data.class}}</span></div>

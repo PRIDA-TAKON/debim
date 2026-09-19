@@ -75,7 +75,7 @@ class CostEstimate(BaseModel):
             "Total Amount",
         ]
 
-        with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        with open(csv_path, "w", newline="", encoding="utf-8-sig") as f:
             writer = csv.writer(f)
             writer.writerow(fieldnames)
 
@@ -144,6 +144,8 @@ def estimate_cost(
             elif unit in ("m2", "square_meter"):
                 if eqto.roof:
                     qty = eqto.roof.sloped_area
+                elif eqto.covering:
+                    qty = eqto.covering.area
                 # For wall, net surface area = volume / thickness if thickness > 0
                 elif hasattr(resolved_elem, "thickness") and resolved_elem.thickness > 0:
                     qty = eqto.concrete_volume / resolved_elem.thickness
@@ -157,6 +159,8 @@ def estimate_cost(
             elif unit in ("m", "meter", "linear_meter"):
                 if eqto.mep:
                     qty = eqto.mep.length
+                elif eqto.covering:
+                    qty = eqto.covering.length
                 else:
                     qty = 1.0
             elif unit in ("set", "item", "ea", "ชุด", "จุด", "ตัว"):
@@ -360,6 +364,65 @@ def estimate_cost(
                             quantities_by_code.get(code, 0.0) + amount
                         )
                         break
+
+    # 8. Map Earth excavation
+    if qto.total_excavation_volume > 0:
+        has_excav = any("excav" in c.lower() or "ขุด" in c.lower() for c in quantities_by_code.keys())
+        if not has_excav:
+            for code, item in catalog.items.items():
+                if "excav" in code.lower() or "ขุด" in item.name:
+                    quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_excavation_volume
+                    break
+
+    # 9. Map Ceilings (Gypsum, T-Bar, Eaves) if not already mapped via material ref
+    if qto.total_ceiling_gypsum_area > 0:
+        has_gyp = any("ceil-gypsum" in c.lower() or "gypsum" in c.lower() for c in quantities_by_code.keys())
+        if not has_gyp:
+            for code, item in catalog.items.items():
+                if "ceil-gypsum" in code.lower() or "ยิปซั่ม" in item.name:
+                    quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_ceiling_gypsum_area
+                    break
+
+    if qto.total_ceiling_tbar_area > 0:
+        has_tbar = any("ceil-tbar" in c.lower() or "tbar" in c.lower() for c in quantities_by_code.keys())
+        if not has_tbar:
+            for code, item in catalog.items.items():
+                if "ceil-tbar" in code.lower() or "tbar" in code.lower() or "ทีบาร์" in item.name:
+                    quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_ceiling_tbar_area
+                    break
+
+    if qto.total_ceiling_eaves_area > 0:
+        has_eaves = any("ceil-eaves" in c.lower() or "eaves" in c.lower() for c in quantities_by_code.keys())
+        if not has_eaves:
+            for code, item in catalog.items.items():
+                if "ceil-eaves" in code.lower() or "ชายคาระบาย" in item.name or ("ระบาย" in item.name and "ฝ้า" in item.name):
+                    quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_ceiling_eaves_area
+                    break
+
+    # 10. Map Floor finishes (Tile, Polished concrete, Skirting)
+    if qto.total_floor_tile_area > 0:
+        has_floor_tile = any("tile-floor" in c.lower() for c in quantities_by_code.keys())
+        if not has_floor_tile:
+            for code, item in catalog.items.items():
+                if "tile-floor" in code.lower() or "กระเบื้องพื้น" in item.name or ("tile" in code.lower() and "floor" in item.name.lower()):
+                    quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_floor_tile_area
+                    break
+
+    if qto.total_floor_polish_area > 0:
+        has_polish = any("conc-polish" in c.lower() or "polish" in c.lower() for c in quantities_by_code.keys())
+        if not has_polish:
+            for code, item in catalog.items.items():
+                if "conc-polish" in code.lower() or "polish" in code.lower() or "ขัดเรียบ" in item.name or "ขัดมัน" in item.name:
+                    quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_floor_polish_area
+                    break
+
+    if qto.total_skirting_length > 0:
+        has_skirt = any("skirting" in c.lower() for c in quantities_by_code.keys())
+        if not has_skirt:
+            for code, item in catalog.items.items():
+                if "skirting" in code.lower() or "บัวเชิง" in item.name:
+                    quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_skirting_length
+                    break
 
     # Build line items
     line_items: List[CostLineItem] = []
