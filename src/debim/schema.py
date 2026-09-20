@@ -176,7 +176,7 @@ class Dimensions(BaseModel):
 
 
 class IfcDoor(BaseModel):
-    class_: Literal["IfcDoor"] = Field(alias="class")
+    class_: Literal["IfcDoor"] = Field(alias="class", default="IfcDoor")
     tag: str
     dimensions: Dimensions
     offset_distance: float
@@ -185,7 +185,7 @@ class IfcDoor(BaseModel):
 
 
 class IfcWindow(BaseModel):
-    class_: Literal["IfcWindow"] = Field(alias="class")
+    class_: Literal["IfcWindow"] = Field(alias="class", default="IfcWindow")
     tag: str
     dimensions: Dimensions
     offset_distance: float
@@ -222,7 +222,7 @@ class WallFinishesConfig(BaseModel):
 
 
 class IfcWall(BaseModel):
-    class_: Literal["IfcWall"] = Field(alias="class")
+    class_: Literal["IfcWall"] = Field(alias="class", default="IfcWall")
     tag: str
     material: str
     thickness: float

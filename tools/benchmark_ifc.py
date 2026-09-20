@@ -4,6 +4,7 @@ Downloads standardized models, measures conversion ratio, roundtrip fidelity, an
 """
 
 import os
+import tempfile
 from pathlib import Path
 import urllib.request
 from typing import Dict, List, Any
@@ -23,7 +24,7 @@ from tools.compare_ifc import count_ifc_elements
 
 console = Console()
 
-DEFAULT_CACHE_DIR = Path(r"C:\Users\takon\OneDrive\Desktop\งานปี2024")
+DEFAULT_CACHE_DIR = Path(os.environ.get("DEBIM_CACHE_DIR", tempfile.gettempdir())) / "debim_benchmark_cache"
 
 BENCHMARK_MODELS = [
     {

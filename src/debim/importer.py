@@ -15,13 +15,16 @@ from debim.schema import (
     ColumnReinforcement,
     BeamPlacement,
     BeamReinforcement,
+    Dimensions,
     IfcBeam,
     IfcColumn,
     IfcCustomElement,
     CustomElementPlacement,
-    IfcWall,
-    WallPlacement,
+    IfcDoor,
     IfcSlab,
+    IfcWall,
+    IfcWindow,
+    WallPlacement,
     SlabPlacement,
     Material,
     ProjectInfo,
@@ -171,6 +174,138 @@ def import_ifc_to_manifest(
 
     # 5. Elements extraction
     elements: List[Any] = []
+
+    # Build wall children map (IfcDoor and IfcWindow openings)
+    wall_children_map: Dict[str, List[Union[IfcDoor, IfcWindow]]] = {}
+
+    for door in ifc_file.by_type("IfcDoor"):
+        parent_wall_id = None
+        parent_wall_elem = None
+        try:
+            for rel in getattr(door, "FillsVoids", []):
+                opening = rel.RelatingOpeningElement
+                for vrel in getattr(opening, "VoidsElements", []):
+                    parent_wall_elem = vrel.RelatingBuildingElement
+                    parent_wall_id = parent_wall_elem.GlobalId
+                    break
+                if parent_wall_id:
+                    break
+        except Exception:
+            pass
+
+        w = 0.90
+        if getattr(door, "OverallWidth", None):
+            w = float(door.OverallWidth)
+            if w > 10:
+                w /= 1000.0
+        else:
+            ps = ifcopenshell.util.element.get_psets(door)
+            dims = ps.get("PSet_Revit_Dimensions", {}) or ps.get("Dimensions", {})
+            if dims.get("Width"):
+                w = float(dims["Width"])
+                if w > 10:
+                    w /= 1000.0
+
+        h = 2.00
+        if getattr(door, "OverallHeight", None):
+            h = float(door.OverallHeight)
+            if h > 10:
+                h /= 1000.0
+        else:
+            ps = ifcopenshell.util.element.get_psets(door)
+            dims = ps.get("PSet_Revit_Dimensions", {}) or ps.get("Dimensions", {})
+            if dims.get("Height"):
+                h = float(dims["Height"])
+                if h > 10:
+                    h /= 1000.0
+
+        offset = 1.0
+        if parent_wall_elem:
+            try:
+                d_mat = ifcopenshell.util.placement.get_local_placement(door.ObjectPlacement)
+                w_mat = ifcopenshell.util.placement.get_local_placement(parent_wall_elem.ObjectPlacement)
+                dx = float(d_mat[0, 3] - w_mat[0, 3])
+                dy = float(d_mat[1, 3] - w_mat[1, 3])
+                w_dir = w_mat[:2, 0]
+                offset = float(dx * w_dir[0] + dy * w_dir[1])
+                if offset < 0:
+                    offset = abs(offset)
+            except Exception:
+                offset = 1.0
+
+        d_obj = IfcDoor(
+            class_="IfcDoor",
+            tag=door.Name or f"DOOR-{door.GlobalId[:8]}",
+            dimensions=Dimensions(width=round(w, 3), height=round(h, 3)),
+            offset_distance=round(offset, 2),
+        )
+        if parent_wall_id:
+            wall_children_map.setdefault(parent_wall_id, []).append(d_obj)
+
+    for window in ifc_file.by_type("IfcWindow"):
+        parent_wall_id = None
+        parent_wall_elem = None
+        try:
+            for rel in getattr(window, "FillsVoids", []):
+                opening = rel.RelatingOpeningElement
+                for vrel in getattr(opening, "VoidsElements", []):
+                    parent_wall_elem = vrel.RelatingBuildingElement
+                    parent_wall_id = parent_wall_elem.GlobalId
+                    break
+                if parent_wall_id:
+                    break
+        except Exception:
+            pass
+
+        w = 1.20
+        if getattr(window, "OverallWidth", None):
+            w = float(window.OverallWidth)
+            if w > 10:
+                w /= 1000.0
+        else:
+            ps = ifcopenshell.util.element.get_psets(window)
+            dims = ps.get("PSet_Revit_Dimensions", {}) or ps.get("Dimensions", {})
+            if dims.get("Width"):
+                w = float(dims["Width"])
+                if w > 10:
+                    w /= 1000.0
+
+        h = 1.50
+        if getattr(window, "OverallHeight", None):
+            h = float(window.OverallHeight)
+            if h > 10:
+                h /= 1000.0
+        else:
+            ps = ifcopenshell.util.element.get_psets(window)
+            dims = ps.get("PSet_Revit_Dimensions", {}) or ps.get("Dimensions", {})
+            if dims.get("Height"):
+                h = float(dims["Height"])
+                if h > 10:
+                    h /= 1000.0
+
+        offset = 1.0
+        if parent_wall_elem:
+            try:
+                win_mat = ifcopenshell.util.placement.get_local_placement(window.ObjectPlacement)
+                w_mat = ifcopenshell.util.placement.get_local_placement(parent_wall_elem.ObjectPlacement)
+                dx = float(win_mat[0, 3] - w_mat[0, 3])
+                dy = float(win_mat[1, 3] - w_mat[1, 3])
+                w_dir = w_mat[:2, 0]
+                offset = float(dx * w_dir[0] + dy * w_dir[1])
+                if offset < 0:
+                    offset = abs(offset)
+            except Exception:
+                offset = 1.0
+
+        win_obj = IfcWindow(
+            class_="IfcWindow",
+            tag=window.Name or f"WIN-{window.GlobalId[:8]}",
+            dimensions=Dimensions(width=round(w, 3), height=round(h, 3)),
+            offset_distance=round(offset, 2),
+            sill_height=0.80,
+        )
+        if parent_wall_id:
+            wall_children_map.setdefault(parent_wall_id, []).append(win_obj)
 
     # 5.1 Extract Columns
     for col in ifc_file.by_type("IfcColumn"):
@@ -368,6 +503,7 @@ def import_ifc_to_manifest(
                         to_grid=(gx2, gy2),
                         storey=st_id,
                     ),
+                    "children": wall_children_map.get(wall.GlobalId, []),
                 }
             )
         )
