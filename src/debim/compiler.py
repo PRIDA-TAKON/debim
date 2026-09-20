@@ -23,6 +23,28 @@ from debim.resolver import (
 from debim.schema import ProjectManifest, load_manifest
 
 
+def derive_custom_ifc_class(layer: Optional[str]) -> str:
+    """Derive appropriate target IFC entity class for a custom element based on its layer."""
+    if not layer:
+        return "IfcBuildingElementProxy"
+    l = layer.lower()
+    if "furn" in l:
+        return "IfcFurnishingElement"
+    if "railing" in l:
+        return "IfcRailing"
+    if "member" in l:
+        return "IfcMember"
+    if "covering" in l:
+        return "IfcCovering"
+    if "stairflight" in l or "stair_flight" in l or "stair flight" in l or "stairflights" in l:
+        return "IfcStairFlight"
+    if "stair" in l:
+        return "IfcStair"
+    if "footing" in l:
+        return "IfcFooting"
+    return "IfcBuildingElementProxy"
+
+
 def generate_ifc_guid() -> str:
     """Generate a valid 22-character IFC base64 encoded GUID."""
     # Standard 64-char alphabet for IFC GUIDs
@@ -465,11 +487,7 @@ class StepSerializer:
         # 4. Custom Elements
         for custom in resolved.custom_elements:
             st_id = custom.element.placement.storey
-            ifc_cls = (
-                "IfcFurnishingElement"
-                if (custom.layer and (custom.layer == "interior/furniture" or "furn" in custom.layer.lower()))
-                else "IfcBuildingElementProxy"
-            )
+            ifc_cls = derive_custom_ifc_class(custom.layer)
             elem_ref = self.create_entity(
                 ifc_cls,
                 generate_ifc_guid(),
@@ -484,10 +502,10 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
-        # 6. Roofs
+        # 6. Roofs & Roof Openings / Skylights
         for roof in resolved.roofs:
             st_id = roof.element.placement.storey
-            elem_ref = self.create_entity(
+            roof_ref = self.create_entity(
                 "IfcRoof",
                 generate_ifc_guid(),
                 None,
@@ -499,7 +517,98 @@ class StepSerializer:
                 None,
             )
             if st_id in storey_elements:
-                storey_elements[st_id].append(elem_ref)
+                storey_elements[st_id].append(roof_ref)
+
+            for child in roof.children:
+                if isinstance(child, ResolvedDoor):
+                    door_ref = self.create_entity(
+                        "IfcDoor",
+                        generate_ifc_guid(),
+                        None,
+                        child.tag,
+                        None,
+                        None,
+                        None,
+                        None,
+                        float(child.height),
+                        float(child.width),
+                    )
+                    opening_ref = self.create_entity(
+                        "IfcOpeningElement",
+                        generate_ifc_guid(),
+                        None,
+                        f"{child.tag}_Opening",
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                    )
+                    self.create_entity(
+                        "IfcRelVoidsElement",
+                        generate_ifc_guid(),
+                        None,
+                        None,
+                        None,
+                        roof_ref,
+                        opening_ref,
+                    )
+                    self.create_entity(
+                        "IfcRelFillsElement",
+                        generate_ifc_guid(),
+                        None,
+                        None,
+                        None,
+                        opening_ref,
+                        door_ref,
+                    )
+                    if st_id in storey_elements:
+                        storey_elements[st_id].append(door_ref)
+
+                elif isinstance(child, ResolvedWindow):
+                    win_ref = self.create_entity(
+                        "IfcWindow",
+                        generate_ifc_guid(),
+                        None,
+                        child.tag,
+                        None,
+                        None,
+                        None,
+                        None,
+                        float(child.height),
+                        float(child.width),
+                    )
+                    opening_ref = self.create_entity(
+                        "IfcOpeningElement",
+                        generate_ifc_guid(),
+                        None,
+                        f"{child.tag}_Opening",
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                    )
+                    self.create_entity(
+                        "IfcRelVoidsElement",
+                        generate_ifc_guid(),
+                        None,
+                        None,
+                        None,
+                        roof_ref,
+                        opening_ref,
+                    )
+                    self.create_entity(
+                        "IfcRelFillsElement",
+                        generate_ifc_guid(),
+                        None,
+                        None,
+                        None,
+                        opening_ref,
+                        win_ref,
+                    )
+                    if st_id in storey_elements:
+                        storey_elements[st_id].append(win_ref)
 
         # 7. MEP Elements (Pipes, Conduits, Terminals, Electrical)
         for pipe in resolved.pipes:
@@ -845,11 +954,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
 
     # 4. Custom Elements
     for custom in resolved.custom_elements:
-        ifc_cls = (
-            "IfcFurnishingElement"
-            if (custom.layer and (custom.layer == "interior/furniture" or "furn" in custom.layer.lower()))
-            else "IfcBuildingElementProxy"
-        )
+        ifc_cls = derive_custom_ifc_class(custom.layer)
         custom_obj = ifcopenshell.api.run(
             "root.create_entity",
             model,
@@ -860,7 +965,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id in storey_products:
             storey_products[st_id].append(custom_obj)
 
-    # 6. Roofs
+    # 6. Roofs & Roof Openings / Skylights
     for roof in resolved.roofs:
         pred_type = roof.element.roof_type if roof.element.roof_type in ("GABLE_ROOF", "HIP_ROOF", "SHED_ROOF", "FLAT_ROOF") else "NOTDEFINED"
         roof_obj = ifcopenshell.api.run(
@@ -873,6 +978,45 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = roof.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(roof_obj)
+
+        for child in roof.children:
+            if isinstance(child, ResolvedDoor):
+                door_obj = ifcopenshell.api.run(
+                    "root.create_entity", model, ifc_class="IfcDoor", name=child.tag
+                )
+                door_obj.OverallHeight = float(child.height)
+                door_obj.OverallWidth = float(child.width)
+
+                opening_obj = ifcopenshell.api.run(
+                    "root.create_entity",
+                    model,
+                    ifc_class="IfcOpeningElement",
+                    name=f"{child.tag}_Opening",
+                )
+                ifcopenshell.api.run("feature.add_feature", model, feature=opening_obj, element=roof_obj)
+                ifcopenshell.api.run("feature.add_filling", model, opening=opening_obj, element=door_obj)
+
+                if st_id in storey_products:
+                    storey_products[st_id].append(door_obj)
+
+            elif isinstance(child, ResolvedWindow):
+                win_obj = ifcopenshell.api.run(
+                    "root.create_entity", model, ifc_class="IfcWindow", name=child.tag
+                )
+                win_obj.OverallHeight = float(child.height)
+                win_obj.OverallWidth = float(child.width)
+
+                opening_obj = ifcopenshell.api.run(
+                    "root.create_entity",
+                    model,
+                    ifc_class="IfcOpeningElement",
+                    name=f"{child.tag}_Opening",
+                )
+                ifcopenshell.api.run("feature.add_feature", model, feature=opening_obj, element=roof_obj)
+                ifcopenshell.api.run("feature.add_filling", model, opening=opening_obj, element=win_obj)
+
+                if st_id in storey_products:
+                    storey_products[st_id].append(win_obj)
 
     # 7. MEP Elements (Pipes, Conduits, Terminals, Electrical)
     for pipe in resolved.pipes:

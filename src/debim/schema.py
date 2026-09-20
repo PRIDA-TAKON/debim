@@ -422,6 +422,7 @@ class IfcRoof(BaseModel):
     placement: RoofPlacement
     covering: Optional[RoofCoveringConfig] = Field(default_factory=RoofCoveringConfig)
     framing: Optional[RoofFramingConfig] = Field(default_factory=RoofFramingConfig)
+    children: List[WallChild] = Field(default_factory=list)
     layer: Optional[str] = None
 
 
