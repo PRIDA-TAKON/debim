@@ -278,6 +278,18 @@ def qto(
                 f"[bold cyan]Polished Concrete (คอนกรีตขัดเรียบ/ขัดมัน):[/bold cyan] {project_qto.total_floor_polish_area:.2f} m2\n"
                 f"[bold cyan]Skirting Board (บัวเชิงผนัง):[/bold cyan] {project_qto.total_skirting_length:.2f} m"
             )
+        if project_qto.total_structural_steel_weight > 0 or project_qto.total_painting_area > 0 or project_qto.total_timber_volume > 0:
+            summary_text += (
+                f"\n[bold magenta]--- Structural Steel & Timber (งานโครงสร้างเหล็กและไม้) ---[/bold magenta]\n"
+            )
+            if project_qto.total_structural_steel_weight > 0:
+                summary_text += f"[bold cyan]Structural Steel Weight (เหล็กรูปพรรณ):[/bold cyan] {project_qto.total_structural_steel_weight:.2f} kg ({project_qto.total_structural_steel_weight/1000.0:.3f} tons)\n"
+            if project_qto.total_painting_area > 0:
+                summary_text += f"[bold cyan]Painting Area (พื้นที่ทาสีจริง):[/bold cyan] {project_qto.total_painting_area:.2f} m2\n"
+            if project_qto.total_weld_touchup_area > 0:
+                summary_text += f"[bold cyan]Weld Touch-Up Area (พื้นที่สีกันสนิมรอยเชื่อม 10%):[/bold cyan] {project_qto.total_weld_touchup_area:.2f} m2\n"
+            if project_qto.total_timber_volume > 0:
+                summary_text += f"[bold cyan]Timber Volume (ปริมาตรไม้โครงสร้าง):[/bold cyan] {project_qto.total_timber_volume:.3f} m3\n"
         if project_qto.total_roof_covering_area > 0:
             summary_text += (
                 f"\n[bold cyan]Roof Covering Tiles:[/bold cyan] {project_qto.total_roof_covering_area:.2f} m2\n"
