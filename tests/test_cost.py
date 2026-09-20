@@ -2,11 +2,21 @@
 Unit tests for Cost Estimation Engine (debim.cost).
 """
 
+import json
+from pathlib import Path
+import yaml
 import pytest
 from typer.testing import CliRunner
 
 from debim.cli import app
-from debim.cost import estimate_cost, load_price_catalog
+from debim.cost import (
+    PriceCatalog,
+    PriceItem,
+    PriceItemStandards,
+    estimate_cost,
+    generate_cost_template,
+    load_price_catalog,
+)
 from debim.qto import calculate_qto
 from debim.schema import load_manifest
 
@@ -25,6 +35,127 @@ def test_load_price_catalog(sample_prices_path):
     item_conc = catalog.items["MAT-CONC-01"]
     assert item_conc.material_cost == 2100.0
     assert item_conc.labor_cost == 450.0
+
+
+def test_price_item_standards_and_backward_compatibility():
+    # Test PriceItem creation with standards
+    standards = PriceItemStandards(masterformat="03 31 00", uniformat="B1010", unspsc="30111500")
+    item = PriceItem(
+        name="Concrete 240 ksc",
+        unit="m3",
+        material_cost=2100.0,
+        labor_cost=450.0,
+        standards=standards,
+    )
+    assert item.standards.masterformat == "03 31 00"
+    assert item.standards.uniformat == "B1010"
+    assert item.standards.unspsc == "30111500"
+
+    # Test legacy backward compatibility without standards and default costs
+    item_legacy = PriceItem(name="Sample Item", unit="m2")
+    assert item_legacy.material_cost == 0.0
+    assert item_legacy.labor_cost == 0.0
+    assert item_legacy.standards is None
+
+
+def test_modular_yaml_catalog_loading(tmp_path):
+    prices_dir = tmp_path / "prices"
+    modules_dir = prices_dir / "modules"
+    modules_dir.mkdir(parents=True)
+
+    # Sub-module 1: Concrete & Masonry
+    mod1_content = {
+        "items": {
+            "MAT-CONC-01": {
+                "name": "Concrete 240 ksc",
+                "unit": "m3",
+                "material_cost": 2100.0,
+                "labor_cost": 450.0,
+                "standards": {"masterformat": "03 31 00", "uniformat": "B1010"},
+            }
+        }
+    }
+    with open(modules_dir / "structure.yaml", "w", encoding="utf-8") as f:
+        yaml.safe_dump(mod1_content, f)
+
+    # Sub-module 2: Architecture
+    mod2_content = {
+        "items": {
+            "MAT-AAC-01": {
+                "name": "AAC Block 7.5cm",
+                "unit": "m2",
+                "material_cost": 280.0,
+                "labor_cost": 120.0,
+                "standards": {"masterformat": "04 22 00", "uniformat": "C1010"},
+            }
+        }
+    }
+    with open(modules_dir / "architecture.yaml", "w", encoding="utf-8") as f:
+        yaml.safe_dump(mod2_content, f)
+
+    # Master catalog
+    master_content = {
+        "currency": "THB",
+        "includes": ["modules/*.yaml"],
+        "items": {
+            "MAT-FORMWORK": {
+                "name": "Timber Formwork",
+                "unit": "m2",
+                "material_cost": 350.0,
+                "labor_cost": 150.0,
+            }
+        },
+    }
+    master_file = prices_dir / "catalog.yaml"
+    with open(master_file, "w", encoding="utf-8") as f:
+        yaml.safe_dump(master_content, f)
+
+    catalog = load_price_catalog(master_file)
+    assert catalog.currency == "THB"
+    assert "MAT-CONC-01" in catalog.items
+    assert "MAT-AAC-01" in catalog.items
+    assert "MAT-FORMWORK" in catalog.items
+    assert catalog.items["MAT-CONC-01"].standards.masterformat == "03 31 00"
+
+
+def test_generate_cost_template_single_file(sample_project_path, tmp_path):
+    out_yaml = tmp_path / "prices.template.yaml"
+    res_path = generate_cost_template(sample_project_path, output_path=out_yaml, format="yaml", modular=False)
+
+    assert res_path.exists()
+    catalog = load_price_catalog(res_path)
+    assert catalog.currency == "THB"
+
+    # Verify active items from townhouse manifest & QTO
+    assert "MAT-CONC-01" in catalog.items
+    assert "MAT-AAC-01" in catalog.items
+    assert "MAT-FORMWORK" in catalog.items
+    assert "MAT-REBAR-DB16" in catalog.items
+
+    item_conc = catalog.items["MAT-CONC-01"]
+    assert item_conc.material_cost == 0.0
+    assert item_conc.labor_cost == 0.0
+    assert item_conc.unit == "m3"
+    assert item_conc.standards is not None
+    assert item_conc.standards.masterformat == "03 30 00"
+
+
+def test_generate_cost_template_modular(sample_project_path, tmp_path):
+    out_main = tmp_path / "prices" / "catalog.yaml"
+    res_path = generate_cost_template(sample_project_path, output_path=out_main, modular=True)
+
+    assert res_path.exists()
+    modules_dir = tmp_path / "prices" / "modules"
+    assert modules_dir.exists()
+    assert (modules_dir / "structure.yaml").exists()
+    assert (modules_dir / "architecture.yaml").exists()
+
+    # Verify loading the modular template works seamlessly
+    catalog = load_price_catalog(out_main)
+    assert "MAT-CONC-01" in catalog.items
+    assert "MAT-AAC-01" in catalog.items
+    assert "MAT-FORMWORK" in catalog.items
+    assert "MAT-REBAR-DB16" in catalog.items
 
 
 def test_townhouse_cost_estimate(sample_project_path, sample_prices_path):
@@ -91,7 +222,7 @@ def test_export_csv(sample_project_path, sample_prices_path, tmp_path):
     assert "TOTAL,Project Grand Total" in content
 
 
-def test_cli_qto_and_cost_commands(sample_project_path, sample_prices_path, tmp_path):
+def test_cli_cost_and_template_commands(sample_project_path, sample_prices_path, tmp_path):
     # Test `bim qto`
     res_qto = runner.invoke(app, ["qto", "--manifest", str(sample_project_path)])
     assert res_qto.exit_code == 0
@@ -119,3 +250,31 @@ def test_cli_qto_and_cost_commands(sample_project_path, sample_prices_path, tmp_
     assert "19,102.30" in res_cost.output
     assert "Exported BOQ CSV to:" in res_cost.output
     assert out_csv.exists()
+
+    # Test `bim cost -p -` (stdin piping)
+    sample_prices_content = Path(sample_prices_path).read_text(encoding="utf-8")
+    res_stdin = runner.invoke(
+        app,
+        ["cost", "--manifest", str(sample_project_path), "-p", "-"],
+        input=sample_prices_content,
+    )
+    assert res_stdin.exit_code == 0
+    assert "Cost Estimate Summary" in res_stdin.output
+    assert "19,102.30" in res_stdin.output
+
+    # Test `bim cost template`
+    tmpl_file = tmp_path / "prices.template.yaml"
+    res_tmpl = runner.invoke(
+        app,
+        [
+            "cost",
+            "template",
+            "--manifest",
+            str(sample_project_path),
+            "--output",
+            str(tmpl_file),
+        ],
+    )
+    assert res_tmpl.exit_code == 0
+    assert "Cost Catalog Template Generated Successfully!" in res_tmpl.output
+    assert tmpl_file.exists()
