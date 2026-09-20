@@ -302,5 +302,5 @@ def test_roof_viewer_generation(sample_roof_manifest):
     assert "IfcRoofCovering" in html
     assert "IfcRoofFraming" in html
     assert "polygon" in html
-    assert "btn-layer-roof_covering" in html
-    assert "btn-layer-roof_framing" in html
+    assert "architecture/roofs/covering" in html
+    assert "architecture/roofs/framing" in html

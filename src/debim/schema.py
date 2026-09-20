@@ -75,6 +75,7 @@ class IfcColumn(BaseModel):
     profile: BoxProfile
     placement: ColumnPlacement
     reinforcement: Optional[ColumnReinforcement] = None
+    layer: Optional[str] = None
 
 
 class FootingProfile(BaseModel):
@@ -134,6 +135,7 @@ class IfcFooting(BaseModel):
     reinforcement: Optional[FootingReinforcement] = None
     piles: Optional[FootingPiles] = None
     substructure: Optional[FootingSubstructureConfig] = Field(default_factory=FootingSubstructureConfig)
+    layer: Optional[str] = None
 
 
 # Beam placement & element
@@ -164,6 +166,7 @@ class IfcBeam(BaseModel):
     profile: BoxProfile
     placement: BeamPlacement
     reinforcement: Optional[BeamReinforcement] = None
+    layer: Optional[str] = None
 
 
 # Wall children (Doors / Windows)
@@ -178,6 +181,7 @@ class IfcDoor(BaseModel):
     dimensions: Dimensions
     offset_distance: float
     sill_height: float = 0.00
+    layer: Optional[str] = None
 
 
 class IfcWindow(BaseModel):
@@ -186,6 +190,7 @@ class IfcWindow(BaseModel):
     dimensions: Dimensions
     offset_distance: float
     sill_height: float = 0.00
+    layer: Optional[str] = None
 
 
 WallChild = Annotated[Union[IfcDoor, IfcWindow], Field(discriminator="class_")]
@@ -225,6 +230,7 @@ class IfcWall(BaseModel):
     placement: WallPlacement
     children: List[WallChild] = Field(default_factory=list)
     finishes: Optional[WallFinishesConfig] = None
+    layer: Optional[str] = None
 
 
 # Slab placement & element
@@ -265,6 +271,7 @@ class IfcSlab(BaseModel):
     placement: SlabPlacement
     reinforcement: Optional[SlabReinforcement] = None
     finishes: Optional[SlabFinishesConfig] = None
+    layer: Optional[str] = None
 
 
 StairType = Literal["STRAIGHT", "DOG_LEG", "L_SHAPE", "SPIRAL", "LADDER"]
@@ -351,6 +358,7 @@ class IfcStair(BaseModel):
     finishes: Optional[StairFinishesConfig] = None
     railing: Optional[StairRailingConfig] = None
     reinforcement: Optional[StairReinforcement] = None
+    layer: Optional[str] = None
 
 
 
@@ -366,6 +374,7 @@ class IfcCustomElement(BaseModel):
     name: str
     source: str
     placement: CustomElementPlacement
+    layer: Optional[str] = None
 
 
 # Roof element definitions
@@ -413,6 +422,7 @@ class IfcRoof(BaseModel):
     placement: RoofPlacement
     covering: Optional[RoofCoveringConfig] = Field(default_factory=RoofCoveringConfig)
     framing: Optional[RoofFramingConfig] = Field(default_factory=RoofFramingConfig)
+    layer: Optional[str] = None
 
 
 
@@ -491,6 +501,7 @@ class IfcPipeSegment(BaseModel):
     material: Optional[str] = None
     nominal_diameter: float = 0.020  # Nominal diameter in meters (e.g. 0.020 for 3/4", 0.100 for 4")
     placement: PipePlacement
+    layer: Optional[str] = None
 
 
 class IfcCableCarrierSegment(BaseModel):
@@ -500,6 +511,7 @@ class IfcCableCarrierSegment(BaseModel):
     material: Optional[str] = None
     nominal_diameter: float = 0.020  # Conduit diameter in meters
     placement: PipePlacement
+    layer: Optional[str] = None
 
 
 class TerminalDimensions(BaseModel):
@@ -548,6 +560,7 @@ class IfcSanitaryTerminal(BaseModel):
     height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
+    layer: Optional[str] = None
 
 
 class IfcDistributionBoard(BaseModel):
@@ -561,6 +574,7 @@ class IfcDistributionBoard(BaseModel):
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     circuits_count: int = 12
+    layer: Optional[str] = None
 
 
 class IfcLightFixture(BaseModel):
@@ -574,6 +588,7 @@ class IfcLightFixture(BaseModel):
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     wattage: Optional[float] = 12.0
+    layer: Optional[str] = None
 
 
 class IfcSwitchingDevice(BaseModel):
@@ -587,6 +602,7 @@ class IfcSwitchingDevice(BaseModel):
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     gangs: int = 1
+    layer: Optional[str] = None
 
 
 class IfcOutlet(BaseModel):
@@ -599,6 +615,7 @@ class IfcOutlet(BaseModel):
     height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
+    layer: Optional[str] = None
 
 
 class IfcDuctSegment(BaseModel):
@@ -609,6 +626,7 @@ class IfcDuctSegment(BaseModel):
     width: float = 0.25   # Duct width in meters (or diameter if circular)
     height: float = 0.20  # Duct height in meters
     placement: PipePlacement
+    layer: Optional[str] = None
 
 
 class IfcAirTerminal(BaseModel):
@@ -622,6 +640,7 @@ class IfcAirTerminal(BaseModel):
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     flow_rate_cfm: Optional[float] = None
+    layer: Optional[str] = None
 
 
 class IfcUnitaryEquipment(BaseModel):
@@ -635,6 +654,7 @@ class IfcUnitaryEquipment(BaseModel):
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     cooling_capacity_btu: Optional[float] = 12000.0
+    layer: Optional[str] = None
 
 
 CoveringType = Literal["CEILING", "FLOORING", "SKIRTING", "CLADDING", "ROOFING", "INSULATION", "MEMBRANE"]
@@ -662,6 +682,7 @@ class IfcCovering(BaseModel):
     material: str
     thickness: float = 0.009  # Thickness in meters
     placement: CoveringPlacement
+    layer: Optional[str] = None
 
 
 Element = Annotated[
@@ -989,6 +1010,60 @@ def _process_includes(
                 )
 
     return included_materials, included_elements
+
+
+def derive_default_layer(elem) -> str:
+    """Derive hierarchical layer path for an element if not explicitly specified."""
+    if hasattr(elem, "layer") and elem.layer:
+        return elem.layer
+    cls = getattr(elem, "class_", "")
+    if cls == "IfcColumn":
+        return "structure/framing/columns"
+    elif cls == "IfcFooting":
+        return "structure/substructure/footings"
+    elif cls == "IfcBeam":
+        return "structure/framing/beams"
+    elif cls == "IfcWall":
+        return "architecture/walls"
+    elif cls == "IfcDoor":
+        return "architecture/openings/doors"
+    elif cls == "IfcWindow":
+        return "architecture/openings/windows"
+    elif cls == "IfcSlab":
+        return "structure/slabs"
+    elif cls == "IfcStair":
+        return "architecture/stairs"
+    elif cls == "IfcRoof":
+        return "architecture/roofs"
+    elif cls == "IfcCovering":
+        cov_type = getattr(elem, "covering_type", "general").lower()
+        return f"architecture/coverings/{cov_type}"
+    elif cls == "IfcPipeSegment":
+        sys_type = getattr(elem, "system_type", "general").lower()
+        return f"mep/plumbing/{sys_type}"
+    elif cls == "IfcCableCarrierSegment":
+        sys_type = getattr(elem, "system_type", "general").lower()
+        return f"mep/electrical/{sys_type}"
+    elif cls == "IfcDuctSegment":
+        sys_type = getattr(elem, "system_type", "general").lower()
+        return f"mep/hvac/{sys_type}"
+    elif cls == "IfcSanitaryTerminal":
+        return "mep/plumbing/fixtures"
+    elif cls == "IfcDistributionBoard":
+        return "mep/electrical/distribution"
+    elif cls == "IfcLightFixture":
+        return "mep/electrical/lighting"
+    elif cls == "IfcSwitchingDevice":
+        return "mep/electrical/switches"
+    elif cls == "IfcOutlet":
+        return "mep/electrical/outlets"
+    elif cls == "IfcAirTerminal":
+        return "mep/hvac/terminals"
+    elif cls == "IfcUnitaryEquipment":
+        return "mep/hvac/equipment"
+    elif cls == "IfcCustomElement":
+        return "general/custom"
+    return "general/other"
 
 
 def load_manifest(path: Path | str) -> ProjectManifest:

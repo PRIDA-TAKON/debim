@@ -23,7 +23,7 @@ def generate_viewer_html(
 ) -> str:
     """
     Generate a self-contained, standalone 3D web viewer HTML string
-    using CDN-hosted Three.js and OrbitControls.
+    using CDN-hosted Three.js and OrbitControls with a Hierarchical Layer Explorer.
     """
     if isinstance(manifest, (str, Path)):
         manifest_obj = load_manifest(manifest)
@@ -62,6 +62,7 @@ def generate_viewer_html(
                 "height": footing.thickness,
             },
             "color": "#6A6A6A",
+            "layer": footing.layer,
         })
 
         for pile in footing.piles:
@@ -81,6 +82,7 @@ def generate_viewer_html(
                     "height": pile.length,
                 },
                 "color": "#4F4F4F",
+                "layer": pile.layer,
             })
 
     # Columns
@@ -101,6 +103,7 @@ def generate_viewer_html(
                 "height": col.height,
             },
             "color": "#808080",
+            "layer": col.layer,
         })
 
     # Beams
@@ -120,11 +123,11 @@ def generate_viewer_html(
                 "depth": beam.element.profile.depth,
             },
             "color": "#9A9A9A",
+            "layer": beam.layer,
         })
 
     # Slabs
     for slab in resolved.slabs:
-        # Bounding box of slab polygon
         xs = [pt[0] for pt in slab.polygon]
         ys = [pt[1] for pt in slab.polygon]
         min_x, max_x = min(xs), max(xs)
@@ -134,7 +137,7 @@ def generate_viewer_html(
         h = slab.thickness
         cx = (min_x + max_x) / 2.0
         cy = (min_y + max_y) / 2.0
-        cz = slab.center[2] - h / 2.0  # Top of slab flush with storey elevation
+        cz = slab.center[2] - h / 2.0
 
         elements_data.append({
             "tag": slab.tag,
@@ -150,11 +153,11 @@ def generate_viewer_html(
             "color": "#A8B2C1",
             "transparent": True,
             "opacity": 0.85,
+            "layer": slab.layer,
         })
 
-    # Stairs Assembly (Individual Steps, Stringers, Landing, Railing)
+    # Stairs Assembly
     for stair in resolved.stairs:
-        # 1. Individual Step Boxes (ลูกบันได: ลูกตั้ง + ลูกนอน เป็นขั้นจริง)
         for step in stair.steps:
             elements_data.append({
                 "tag": f"{stair.tag}-Step-{step.step_index}",
@@ -167,22 +170,21 @@ def generate_viewer_html(
                     "depth": step.tread,
                     "height": step.riser,
                 },
-                "color": "#D4A373",  # Warm timber tone for steps
+                "color": "#D4A373",
+                "layer": f"{stair.layer}/steps",
             })
 
-        # 2. Structural Stringer Beams / Waist (แม่บันได: เส้นแกนกลาง + กรอบหน้าตัดหัวท้าย)
         for stringer in stair.stringers:
-            # Centerline connecting start to end
             elements_data.append({
                 "tag": f"{stringer.tag}-Centerline",
                 "class": "IfcStairStringer",
                 "geometry_type": "line",
                 "points": [stringer.start_point, stringer.end_point],
-                "color": "#3B82F6",  # Bright engineering blue
+                "color": "#3B82F6",
                 "linewidth": 3,
+                "layer": f"{stair.layer}/stringers",
             })
 
-            # Start profile cross-section loop
             if stringer.start_profile_corners and len(stringer.start_profile_corners) == 4:
                 sc = stringer.start_profile_corners
                 elements_data.append({
@@ -192,9 +194,9 @@ def generate_viewer_html(
                     "points": [sc[0], sc[1], sc[2], sc[3], sc[0]],
                     "color": "#2563EB",
                     "linewidth": 2,
+                    "layer": f"{stair.layer}/stringers",
                 })
 
-            # End profile cross-section loop
             if stringer.end_profile_corners and len(stringer.end_profile_corners) == 4:
                 ec = stringer.end_profile_corners
                 elements_data.append({
@@ -204,9 +206,9 @@ def generate_viewer_html(
                     "points": [ec[0], ec[1], ec[2], ec[3], ec[0]],
                     "color": "#2563EB",
                     "linewidth": 2,
+                    "layer": f"{stair.layer}/stringers",
                 })
 
-        # 3. Landing (ชานพักแบนราบ)
         if stair.landing_polygon and len(stair.landing_polygon) >= 4:
             l_xs = [p[0] for p in stair.landing_polygon]
             l_ys = [p[1] for p in stair.landing_polygon]
@@ -228,21 +230,20 @@ def generate_viewer_html(
                     "depth": l_max_y - l_min_y,
                     "height": stair.landing_thickness,
                 },
-                "color": "#BC6C25",  # Landing tone
+                "color": "#BC6C25",
+                "layer": f"{stair.layer}/landing",
             })
 
-            # Landing Edge Beams Wireframe (คานขอบชานพัก / เทหนาใต้ชานพัก: เส้นวิ่งรอบ + กรอบหน้าตัด)
             for eb in stair.landing_edge_beams:
-                # Centerline of edge beam
                 elements_data.append({
                     "tag": f"{eb.tag}-Centerline",
                     "class": "IfcStairLanding",
                     "geometry_type": "line",
                     "points": [eb.start_point, eb.end_point],
-                    "color": "#1D4ED8",  # Deep royal blue for landing edge beam
+                    "color": "#1D4ED8",
                     "linewidth": 3,
+                    "layer": f"{stair.layer}/landing",
                 })
-                # Start profile loop
                 if eb.start_profile_corners and len(eb.start_profile_corners) == 4:
                     c = eb.start_profile_corners
                     elements_data.append({
@@ -252,8 +253,8 @@ def generate_viewer_html(
                         "points": [c[0], c[1], c[2], c[3], c[0]],
                         "color": "#1E40AF",
                         "linewidth": 2,
+                        "layer": f"{stair.layer}/landing",
                     })
-                # End profile loop
                 if eb.end_profile_corners and len(eb.end_profile_corners) == 4:
                     c = eb.end_profile_corners
                     elements_data.append({
@@ -263,30 +264,29 @@ def generate_viewer_html(
                         "points": [c[0], c[1], c[2], c[3], c[0]],
                         "color": "#1E40AF",
                         "linewidth": 2,
+                        "layer": f"{stair.layer}/landing",
                     })
 
-        # 4. Railing (ราวกันตก: เสาตั้งหัว-ท้าย + ราวเอียง)
         if stair.railing:
-
-            # Vertical posts
             for p_idx, (p_base, p_top) in enumerate(stair.railing.posts):
                 elements_data.append({
                     "tag": f"{stair.tag}-Railing-Post-{p_idx+1}",
                     "class": "IfcRailing",
                     "geometry_type": "line",
                     "points": [p_base, p_top],
-                    "color": "#0F172A",  # Dark post line
+                    "color": "#0F172A",
                     "linewidth": 3,
+                    "layer": f"{stair.layer}/railing",
                 })
-            # Sloping rails connecting post tops
             for r_idx, (r_start, r_end) in enumerate(stair.railing.rails):
                 elements_data.append({
                     "tag": f"{stair.tag}-Railing-Rail-{r_idx+1}",
                     "class": "IfcRailing",
                     "geometry_type": "line",
                     "points": [r_start, r_end],
-                    "color": "#E11D48",  # Bold crimson handrail line
+                    "color": "#E11D48",
                     "linewidth": 4,
+                    "layer": f"{stair.layer}/railing",
                 })
 
     # Walls & Children
@@ -310,6 +310,7 @@ def generate_viewer_html(
                 "height": wall.height,
             },
             "color": "#D3D3D3",
+            "layer": wall.layer,
         })
 
         for child in wall.children:
@@ -330,6 +331,7 @@ def generate_viewer_html(
                         "height": child.height,
                     },
                     "color": "#8B4513",
+                    "layer": child.layer,
                 })
             elif isinstance(child, ResolvedWindow):
                 elements_data.append({
@@ -350,11 +352,11 @@ def generate_viewer_html(
                     "color": "#00FFFF",
                     "transparent": True,
                     "opacity": 0.6,
+                    "layer": child.layer,
                 })
 
-    # Roofs (Covering Planes & Framing Members)
+    # Roofs
     for roof in resolved.roofs:
-        # Sloped facet planes (Roof Covering - กระเบื้องมุงหลังคา)
         for plane in roof.planes:
             elements_data.append({
                 "tag": plane.tag,
@@ -362,8 +364,8 @@ def generate_viewer_html(
                 "geometry_type": "polygon",
                 "points": plane.polygon,
                 "material": roof.element.covering.tile_type if roof.element.covering else "Roof Tiles",
-                "color": "#9E4734",  # Warm terracotta tile color
-                "layer": "roof_covering",
+                "color": "#9E4734",
+                "layer": f"{roof.layer}/covering",
                 "member_name": "กระเบื้องมุงหลังคา (Roof Covering)",
                 "dimensions": {
                     "area": plane.area,
@@ -371,7 +373,6 @@ def generate_viewer_html(
                 },
             })
 
-        # Framing members (โครงสร้างหลังคาแยกชิ้น: อกไก่, ตะเข้สัน, เสาดั้ง, อะเส, ขื่อ, จันทัน, แป)
         for member in roof.framing_members:
             elements_data.append({
                 "tag": member.tag,
@@ -380,7 +381,7 @@ def generate_viewer_html(
                 "points": [member.start_point, member.end_point],
                 "color": member.color,
                 "linewidth": 3 if member.member_type in ("RIDGE_BEAM", "HIP_RAFTER", "KING_POST", "WALL_PLATE") else 2,
-                "layer": "roof_framing",
+                "layer": f"{roof.layer}/framing",
                 "member_type": member.member_type,
                 "member_name": member.name_th,
                 "material": member.material or "STEEL_SS400",
@@ -390,7 +391,6 @@ def generate_viewer_html(
                 },
             })
 
-        # Ridge & Hip Caps (สันหลังคา/ครอบสัน)
         for ridge in roof.ridges:
             color = "#DC2626" if ridge.ridge_type == "RIDGE" else ("#F59E0B" if ridge.ridge_type == "HIP" else "#64748B")
             elements_data.append({
@@ -400,7 +400,7 @@ def generate_viewer_html(
                 "points": [ridge.start_point, ridge.end_point],
                 "color": color,
                 "linewidth": 3 if ridge.ridge_type in ("RIDGE", "HIP") else 2,
-                "layer": "roof_covering",
+                "layer": f"{roof.layer}/covering",
                 "member_name": f"แนวสันหลังคา ({ridge.ridge_type})",
                 "dimensions": {
                     "length": ridge.length,
@@ -443,30 +443,27 @@ def generate_viewer_html(
                 "height": h,
             },
             "color": color,
+            "layer": custom.layer,
         })
 
-    # Coverings (Ceilings, Flooring & Skirting)
+    # Coverings
     for cov in resolved.coverings:
         c_type = cov.covering_type
         if c_type == "CEILING":
             c_th = "ฝ้าเพดาน (Ceiling)"
             color = "#EDE8F5" if "GYPSUM" in (cov.element.material or "") else ("#E2E8F0" if "TBAR" in (cov.element.material or "") else "#D1D5DB")
-            layer = "ceilings"
             opacity = 0.50
         elif c_type == "FLOORING":
             c_th = "งานปูพื้น / ผิวตกแต่ง (Flooring)"
             color = "#CBD5E1"
-            layer = "finishes"
             opacity = 0.85
         elif c_type == "SKIRTING":
             c_th = "บัวเชิงผนัง (Skirting)"
             color = "#B45309"
-            layer = "finishes"
             opacity = 1.0
         else:
             c_th = f"วัสดุตกแต่งผิว ({c_type})"
             color = "#E5E7EB"
-            layer = "finishes"
             opacity = 0.70
 
         if c_type == "SKIRTING" and cov.polygon and len(cov.polygon) >= 3:
@@ -478,7 +475,7 @@ def generate_viewer_html(
                 "points": cov.polygon,
                 "color": color,
                 "linewidth": 3,
-                "layer": layer,
+                "layer": cov.layer,
                 "covering_type": c_type,
                 "member_name": f"{c_th} - {cov.element.material}",
                 "dimensions": {
@@ -493,7 +490,7 @@ def generate_viewer_html(
                 "geometry_type": "polygon",
                 "points": cov.polygon,
                 "color": color,
-                "layer": layer,
+                "layer": cov.layer,
                 "covering_type": c_type,
                 "member_name": f"{c_th} - {cov.element.material}",
                 "dimensions": {
@@ -519,24 +516,15 @@ def generate_viewer_html(
                     "length": cov.perimeter if cov.perimeter > 0 else None,
                 },
                 "color": color,
-                "layer": layer,
+                "layer": cov.layer,
                 "covering_type": c_type,
                 "member_name": f"{c_th} - {cov.element.material}",
                 "transparent": True,
                 "opacity": opacity,
             })
 
-
-
-    # MEP Elements: Pipes (Sanitary, Plumbing & HVAC Refrigerant/Drain)
+    # MEP Elements: Pipes
     for pipe in resolved.pipes:
-        if pipe.system_type in ("REFRIGERANT", "CONDENSATE"):
-            layer = "mep_hvac"
-        elif pipe.system_type == "COLD_WATER":
-            layer = "mep_cold_water"
-        else:
-            layer = "mep_drainage"
-
         sys_th = {
             "COLD_WATER": "ท่อน้ำดี (Cold Water)",
             "HOT_WATER": "ท่อน้ำร้อน (Hot Water)",
@@ -555,7 +543,7 @@ def generate_viewer_html(
             "points": pipe.waypoints,
             "color": pipe.color,
             "linewidth": 4,
-            "layer": layer,
+            "layer": pipe.layer,
             "system_type": pipe.system_type,
             "system_name_th": sys_th,
             "material": pipe.element.material or ("PPR" if pipe.system_type == "COLD_WATER" else "PVC"),
@@ -567,7 +555,7 @@ def generate_viewer_html(
             "fittings_count": pipe.fittings_count,
         })
 
-    # MEP Elements: Conduits (Electrical)
+    # MEP Elements: Conduits
     for conduit in resolved.conduits:
         sys_th = {
             "POWER": "ท่อร้อยสายไฟกำลัง (Power Conduit)",
@@ -584,7 +572,7 @@ def generate_viewer_html(
             "points": conduit.waypoints,
             "color": conduit.color,
             "linewidth": 3,
-            "layer": "mep_electrical",
+            "layer": conduit.layer,
             "system_type": conduit.system_type,
             "system_name_th": sys_th,
             "material": conduit.element.material or "EMT / PVC",
@@ -595,7 +583,7 @@ def generate_viewer_html(
             "fittings_count": conduit.fittings_count,
         })
 
-    # MEP Elements: Sanitary Terminals (Fixtures)
+    # MEP Elements: Sanitary Terminals
     for term in resolved.sanitary_terminals:
         type_th = {
             "WATER_CLOSET": "โถส้วม / สุขภัณฑ์ (WC)",
@@ -625,7 +613,7 @@ def generate_viewer_html(
                 "height": term.dimensions[2],
             },
             "color": term.color,
-            "layer": "mep_fixtures",
+            "layer": term.layer,
             "fixture_type": term.terminal_type,
             "fixture_name_th": type_th,
         })
@@ -649,7 +637,7 @@ def generate_viewer_html(
                 "height": board.dimensions[2],
             },
             "color": board.color,
-            "layer": "mep_electrical",
+            "layer": board.layer,
             "board_type": board.board_type,
             "circuits_count": board.circuits_count,
             "fixture_name_th": b_th,
@@ -681,7 +669,7 @@ def generate_viewer_html(
                 "height": light.dimensions[2],
             },
             "color": light.color,
-            "layer": "mep_electrical",
+            "layer": light.layer,
             "fixture_type": light.fixture_type,
             "wattage": light.wattage,
             "fixture_name_th": l_th,
@@ -706,7 +694,7 @@ def generate_viewer_html(
                 "height": sw.dimensions[2],
             },
             "color": sw.color,
-            "layer": "mep_electrical",
+            "layer": sw.layer,
             "switch_type": sw.switch_type,
             "gangs": sw.gangs,
             "fixture_name_th": s_th,
@@ -731,12 +719,12 @@ def generate_viewer_html(
                 "height": out.dimensions[2],
             },
             "color": out.color,
-            "layer": "mep_electrical",
+            "layer": out.layer,
             "outlet_type": out.outlet_type,
             "fixture_name_th": o_th,
         })
 
-    # MEP Elements: Ducts (HVAC & Ventilation)
+    # MEP Elements: Ducts
     for duct in resolved.ducts:
         sys_th = {
             "SUPPLY_AIR": "ท่อลมจ่าย (Supply Air Duct)",
@@ -752,7 +740,7 @@ def generate_viewer_html(
             "points": duct.waypoints,
             "color": duct.color,
             "linewidth": 4,
-            "layer": "mep_hvac",
+            "layer": duct.layer,
             "system_type": duct.system_type,
             "system_name_th": sys_th,
             "material": duct.element.material or "Galvanized Steel / Aluminum",
@@ -764,7 +752,7 @@ def generate_viewer_html(
             "fittings_count": duct.fittings_count,
         })
 
-    # MEP Elements: Air Terminals (Exhaust Fans, Kitchen Hoods, Diffusers)
+    # MEP Elements: Air Terminals
     for air in resolved.air_terminals:
         type_th = {
             "EXHAUST_FAN_CEILING": "พัดลมดูดอากาศติดเพดาน (Ceiling Exhaust Fan)",
@@ -790,13 +778,13 @@ def generate_viewer_html(
                 "height": air.dimensions[2],
             },
             "color": air.color,
-            "layer": "mep_hvac",
+            "layer": air.layer,
             "terminal_type": air.terminal_type,
             "flow_rate_cfm": air.flow_rate_cfm,
             "fixture_name_th": type_th,
         })
 
-    # MEP Elements: Unitary Equipment (Air Conditioners - Split Wall, Cassette, Condenser)
+    # MEP Elements: Unitary Equipment
     for eq in resolved.unitary_equipments:
         eq_th = {
             "AC_INDOOR_WALL": "เครื่องปรับอากาศแบบติดผนัง (Wall Mounted AC)",
@@ -821,7 +809,7 @@ def generate_viewer_html(
                 "height": eq.dimensions[2],
             },
             "color": eq.color,
-            "layer": "mep_hvac",
+            "layer": eq.layer,
             "equipment_type": eq.equipment_type,
             "cooling_capacity_btu": eq.cooling_capacity_btu,
             "fixture_name_th": eq_th,
@@ -877,10 +865,106 @@ def generate_viewer_html(
             pointer-events: auto;
             z-index: 10;
         }}
-        #info-panel {{
+        #layer-explorer-panel {{
             top: 16px;
             left: 16px;
-            width: 300px;
+            width: 310px;
+            max-height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+        }}
+        #layer-tree-container {{
+            overflow-y: auto;
+            max-height: calc(100vh - 280px);
+            margin-top: 8px;
+            padding-right: 4px;
+        }}
+        .search-box {{
+            width: 100%;
+            padding: 6px 10px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+        }}
+        .search-box:focus {{
+            outline: none;
+            border-color: #3b82f6;
+        }}
+        .batch-controls {{
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }}
+        .batch-btn {{
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }}
+        .batch-btn:hover {{
+            background: #3b82f6;
+            color: #ffffff;
+        }}
+        .tree-node {{
+            user-select: none;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }}
+        .tree-node-content {{
+            display: flex;
+            align-items: center;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }}
+        .tree-node-content:hover {{
+            background: rgba(255, 255, 255, 0.05);
+        }}
+        .tree-expander {{
+            cursor: pointer;
+            width: 16px;
+            text-align: center;
+            margin-right: 4px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }}
+        .tree-checkbox {{
+            margin-right: 6px;
+            cursor: pointer;
+        }}
+        .tree-label {{
+            cursor: pointer;
+            flex-grow: 1;
+            color: #e2e8f0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }}
+        .tree-count {{
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-left: 6px;
+        }}
+        .tree-children {{
+            margin-left: 16px;
+            display: block;
+        }}
+        .tree-children.collapsed {{
+            display: none;
+        }}
+        #info-panel {{
+            bottom: 16px;
+            left: 16px;
+            width: 310px;
+            max-height: 200px;
+            overflow-y: auto;
         }}
         #inspector-panel {{
             top: 16px;
@@ -961,41 +1045,10 @@ def generate_viewer_html(
             background: #3b82f6;
             color: #ffffff;
         }}
-        #layer-toolbar {{
-            position: absolute;
-            top: 64px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 8px;
-            background: rgba(20, 24, 33, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 4px 10px;
-            border-radius: 20px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-            z-index: 100;
-        }}
-        .layer-btn {{
-            background: #222d3d;
-            color: #94a3b8;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 4px 10px;
-            border-radius: 14px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }}
-        .layer-btn.active {{
-            background: #1e3a8a;
-            color: #60a5fa;
-            border-color: #3b82f6;
-        }}
         #axes-legend {{
             position: absolute;
             bottom: 16px;
-            left: 20px;
+            right: 16px;
             background: rgba(20, 24, 33, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 8px 12px;
@@ -1029,28 +1082,23 @@ def generate_viewer_html(
         <button class="view-btn" onclick="setView('side')">↕️ ด้านข้าง (Side)</button>
     </div>
 
-    <div id="layer-toolbar">
-        <span style="font-size: 0.75rem; color: #8888aa; align-self: center; margin-right: 4px;">เลเยอร์:</span>
-        <button class="layer-btn active" id="btn-layer-footings" onclick="toggleLayer('footings')">🔲 ฐานราก/เข็ม</button>
-        <button class="layer-btn active" id="btn-layer-slabs" onclick="toggleLayer('slabs')">🟧 พื้น (Slabs)</button>
-        <button class="layer-btn active" id="btn-layer-ceilings" onclick="toggleLayer('ceilings')">⬜ ฝ้าเพดาน (Ceilings)</button>
-        <button class="layer-btn active" id="btn-layer-finishes" onclick="toggleLayer('finishes')">🎨 ผิวพื้น/บัว (Finishes)</button>
-        <button class="layer-btn active" id="btn-layer-stairs" onclick="toggleLayer('stairs')">🪜 บันได (Stairs)</button>
-        <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/คาน</button>
-        <button class="layer-btn active" id="btn-layer-roof_covering" onclick="toggleLayer('roof_covering')">🏠 หลังคา</button>
-        <button class="layer-btn active" id="btn-layer-roof_framing" onclick="toggleLayer('roof_framing')">🏗️ โครงหลังคา</button>
-        <button class="layer-btn active" id="btn-layer-mep_cold_water" onclick="toggleLayer('mep_cold_water')">💧 น้ำดี</button>
-        <button class="layer-btn active" id="btn-layer-mep_drainage" onclick="toggleLayer('mep_drainage')">🚽 น้ำเสีย/น้ำทิ้ง</button>
-        <button class="layer-btn active" id="btn-layer-mep_fixtures" onclick="toggleLayer('mep_fixtures')">🛁 สุขภัณฑ์</button>
-        <button class="layer-btn active" id="btn-layer-mep_electrical" onclick="toggleLayer('mep_electrical')">⚡ ไฟฟ้า</button>
-        <button class="layer-btn active" id="btn-layer-mep_hvac" onclick="toggleLayer('mep_hvac')">❄️ แอร์/ระบายอากาศ</button>
-        <button class="layer-btn active" id="btn-layer-grids" onclick="toggleLayer('grids')">📐 กริด/ผัง</button>
+    <div id="layer-explorer-panel" class="ui-panel">
+        <h1>Hierarchical Layer Explorer</h1>
+        <div class="subtitle">Filter and toggle layers dynamically</div>
+        <input type="text" id="layer-search-input" class="search-box" placeholder="🔍 Search layers..." oninput="filterLayerTree(this.value)">
+        <div class="batch-controls">
+            <button class="batch-btn" onclick="setAllLayers(true)">Show All</button>
+            <button class="batch-btn" onclick="setAllLayers(false)">Hide All</button>
+            <button class="batch-btn" onclick="toggleExpandAll(true)">Expand All</button>
+            <button class="batch-btn" onclick="toggleExpandAll(false)">Collapse All</button>
+        </div>
+        <div id="layer-tree-container"></div>
     </div>
 
     <div id="axes-legend">
-        <div><span style="color:#ff4d4d; font-weight:bold;">🔴 แกน X:</span> กริด 1 ถึง 15 (แนวนอน)</div>
-        <div><span style="color:#4dff4d; font-weight:bold;">🟢 แกน Y:</span> กริด E ถึง A (แนวตั้ง)</div>
-        <div><span style="color:#4da6ff; font-weight:bold;">🔵 แกน Z:</span> ระดับความสูง Elevation (+0.00)</div>
+        <div><span style="color:#ff4d4d; font-weight:bold;">🔴 แกน X:</span> แนวนอน</div>
+        <div><span style="color:#4dff4d; font-weight:bold;">🟢 แกน Y:</span> แนวตั้ง</div>
+        <div><span style="color:#4da6ff; font-weight:bold;">🔵 แกน Z:</span> Elevation</div>
     </div>
 
     <div id="info-panel" class="ui-panel">
@@ -1171,7 +1219,7 @@ def generate_viewer_html(
             linewidth: 1
         }});
 
-        // X Grids (Vertical lines running along Y)
+        // X Grids
         Object.entries(sceneData.grids.axes_x).forEach(([name, xVal]) => {{
             const pts = [
                 new THREE.Vector3(xVal, minGridY - 6, 0),
@@ -1182,7 +1230,6 @@ def generate_viewer_html(
             line.computeLineDistances();
             gridGroup.add(line);
 
-            // Bubble at top and bottom
             const topBubble = makeGridSprite(name, '#38bdf8');
             topBubble.position.set(xVal, maxGridY + 8, 0.1);
             gridGroup.add(topBubble);
@@ -1191,7 +1238,7 @@ def generate_viewer_html(
             gridGroup.add(botBubble);
         }});
 
-        // Y Grids (Horizontal lines running along X)
+        // Y Grids
         Object.entries(sceneData.grids.axes_y).forEach(([name, yVal]) => {{
             const pts = [
                 new THREE.Vector3(minGridX - 6, yVal, 0),
@@ -1202,7 +1249,6 @@ def generate_viewer_html(
             line.computeLineDistances();
             gridGroup.add(line);
 
-            // Bubble at left and right
             const leftBubble = makeGridSprite(name, '#4ade80');
             leftBubble.position.set(minGridX - 8, yVal, 0.1);
             gridGroup.add(leftBubble);
@@ -1211,7 +1257,6 @@ def generate_viewer_html(
             gridGroup.add(rightBubble);
         }});
 
-        // Visible Coordinate Axes (Red = X, Green = Y, Blue = Z)
         const axesHelper = new THREE.AxesHelper(15);
         axesHelper.position.set(0, 0, 0.05);
         gridGroup.add(axesHelper);
@@ -1221,7 +1266,6 @@ def generate_viewer_html(
         gridHelper.position.set(centerX, centerY, -0.05);
         gridGroup.add(gridHelper);
 
-        // Storey elevation guide planes / lines
         sceneData.storeys.forEach(s => {{
             if (s.elevation > 0) {{
                 const storeyGrid = new THREE.GridHelper(gridSize, 10, 0x334466, 0x112233);
@@ -1308,7 +1352,6 @@ def generate_viewer_html(
                 mesh.position.set(...data.position);
                 mesh.rotation.set(...data.rotation);
 
-                // Wireframe / Edges for visual clarity
                 const edges = new THREE.EdgesGeometry(geometry);
                 const line = new THREE.LineSegments(
                     edges,
@@ -1320,38 +1363,22 @@ def generate_viewer_html(
 
             object3D.userData = data;
 
-            // Layer assignment for filtering
-            const tagUpper = (data.tag || "").toUpperCase();
-            if (data.layer) {{
-                object3D.userData.layer = data.layer;
-            }} else if (tagUpper.includes("F2") || tagUpper.includes("FOOTING") || data.class === "IfcFooting" || data.class === "IfcPile") {{
-                object3D.userData.layer = "footings";
-            }} else if (data.class === "IfcRoofCovering" || data.class === "IfcRoofRidge") {{
-                object3D.userData.layer = "roof_covering";
-            }} else if (data.class === "IfcRoofFraming") {{
-                object3D.userData.layer = "roof_framing";
-            }} else if (data.class === "IfcRoof" || tagUpper.includes("ROOF") || tagUpper.includes("RIDGE") || tagUpper.includes("HIP") || tagUpper.includes("EAVE") || tagUpper.includes("SLOPE")) {{
-                object3D.userData.layer = "roof_covering";
-            }} else if (data.class === "IfcSlab" || tagUpper.includes("SLAB") || tagUpper.startsWith("S-") || tagUpper.startsWith("GS-")) {{
-                object3D.userData.layer = "slabs";
-            }} else if (data.class.startsWith("IfcStair") || data.class === "IfcRailing" || tagUpper.startsWith("ST-")) {{
-                object3D.userData.layer = "stairs";
-            }} else if (tagUpper.includes("PIN") || tagUpper.includes("BOUNDARY") || tagUpper.includes("LINE")) {{
-                object3D.userData.layer = "grids";
-            }} else {{
-                object3D.userData.layer = "structure";
+            let layerPath = data.layer || "general/other";
+            if (!layerPath.includes("/")) {{
+                layerPath = "general/" + layerPath;
             }}
+            object3D.userData.layer = layerPath;
 
             scene.add(object3D);
             pickableObjects.push(object3D);
         }});
 
-        // Camera position setup - Start with Top View (locked to 2D Plan View)
+        // Camera position setup
         camera.position.set(centerX, centerY, 160);
         camera.up.set(0, 1, 0);
         controls.target.set(centerX, centerY, 0);
         controls.minPolarAngle = 0;
-        controls.maxPolarAngle = 0; // 🔒 2D Plan view lock
+        controls.maxPolarAngle = 0;
         controls.update();
 
         window.setView = function(mode) {{
@@ -1360,13 +1387,13 @@ def generate_viewer_html(
                 camera.up.set(0, 1, 0);
                 controls.target.set(centerX, centerY, 0);
                 controls.minPolarAngle = 0;
-                controls.maxPolarAngle = 0; // 🔒 Lock to true 2D Plan View
+                controls.maxPolarAngle = 0;
             }} else if (mode === 'iso') {{
                 camera.position.set(centerX + 60, centerY - 80, 60);
                 camera.up.set(0, 0, 1);
                 controls.target.set(centerX, centerY, 0);
                 controls.minPolarAngle = 0;
-                controls.maxPolarAngle = Math.PI; // 🔓 Unlock 3D rotation
+                controls.maxPolarAngle = Math.PI;
             }} else if (mode === 'front') {{
                 camera.position.set(centerX, minGridY - 90, 15);
                 camera.up.set(0, 0, 1);
@@ -1383,30 +1410,195 @@ def generate_viewer_html(
             controls.update();
         }};
 
-        window.toggleLayer = function(layerName) {{
-            const btn = document.getElementById('btn-layer-' + layerName);
-            if (!btn) return;
-            const isActive = btn.classList.toggle('active');
-            if (layerName === 'grids') {{
-                gridGroup.visible = isActive;
-                pickableObjects.forEach(mesh => {{
-                    if (mesh.userData.layer === 'grids') mesh.visible = isActive;
-                }});
-            }} else {{
-                pickableObjects.forEach(mesh => {{
-                    if (mesh.userData.layer === layerName) {{
-                        mesh.visible = isActive;
+        // Hierarchical Tree Layer Explorer Engine
+        const layerTreeRoot = {{ children: {{}}, count: 0, path: "" }};
+
+        function buildLayerTree() {{
+            pickableObjects.forEach(obj => {{
+                let layerPath = obj.userData.layer || "general/other";
+                if (!layerPath.includes("/")) {{
+                    layerPath = "general/" + layerPath;
+                }}
+                const parts = layerPath.split("/");
+                let curr = layerTreeRoot;
+                curr.count++;
+                let pathSoFar = "";
+
+                parts.forEach((part, idx) => {{
+                    pathSoFar = pathSoFar ? (pathSoFar + "/" + part) : part;
+                    if (!curr.children[part]) {{
+                        curr.children[part] = {{
+                            name: part,
+                            path: pathSoFar,
+                            children: {{}},
+                            count: 0,
+                            checked: true,
+                            expanded: true,
+                            objects: []
+                        }};
+                    }}
+                    curr = curr.children[part];
+                    curr.count++;
+                    if (idx === parts.length - 1) {{
+                        curr.objects.push(obj);
                     }}
                 }});
+            }});
+
+            layerTreeRoot.children["general"] = layerTreeRoot.children["general"] || {{
+                name: "general",
+                path: "general",
+                children: {{}},
+                count: 0,
+                checked: true,
+                expanded: true,
+                objects: []
+            }};
+            layerTreeRoot.children["general"].children["grids"] = {{
+                name: "grids",
+                path: "general/grids",
+                children: {{}},
+                count: 1,
+                checked: true,
+                expanded: true,
+                objects: []
+            }};
+            layerTreeRoot.children["general"].count++;
+        }}
+
+        function renderLayerTree(node, containerEl) {{
+            containerEl.innerHTML = "";
+            const keys = Object.keys(node.children).sort();
+
+            keys.forEach(key => {{
+                const childNode = node.children[key];
+                const nodeEl = document.createElement("div");
+                nodeEl.className = "tree-node";
+                nodeEl.dataset.path = childNode.path;
+
+                const hasChildren = Object.keys(childNode.children).length > 0;
+                const folderIcon = hasChildren ? (childNode.expanded ? "📂" : "📁") : "📄";
+                const expanderSymbol = hasChildren ? (childNode.expanded ? "▼" : "▶") : "";
+
+                const contentEl = document.createElement("div");
+                contentEl.className = "tree-node-content";
+
+                const expanderEl = document.createElement("span");
+                expanderEl.className = "tree-expander";
+                expanderEl.textContent = expanderSymbol;
+                expanderEl.onclick = (e) => {{
+                    e.stopPropagation();
+                    childNode.expanded = !childNode.expanded;
+                    renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+                }};
+
+                const checkboxEl = document.createElement("input");
+                checkboxEl.type = "checkbox";
+                checkboxEl.className = "tree-checkbox";
+                checkboxEl.checked = childNode.checked;
+                checkboxEl.onclick = (e) => {{
+                    e.stopPropagation();
+                    setNodeChecked(childNode, checkboxEl.checked);
+                    update3DVisibility();
+                    renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+                }};
+
+                const labelEl = document.createElement("span");
+                labelEl.className = "tree-label";
+                labelEl.innerHTML = `${{folderIcon}} ${{childNode.name}}`;
+                labelEl.onclick = () => {{
+                    if (hasChildren) {{
+                        childNode.expanded = !childNode.expanded;
+                        renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+                    }}
+                }};
+
+                const countEl = document.createElement("span");
+                countEl.className = "tree-count";
+                countEl.textContent = `(${{childNode.count}})`;
+
+                contentEl.appendChild(expanderEl);
+                contentEl.appendChild(checkboxEl);
+                contentEl.appendChild(labelEl);
+                contentEl.appendChild(countEl);
+                nodeEl.appendChild(contentEl);
+
+                if (hasChildren) {{
+                    const childrenContainer = document.createElement("div");
+                    childrenContainer.className = "tree-children" + (childNode.expanded ? "" : " collapsed");
+                    renderLayerTree(childNode, childrenContainer);
+                    nodeEl.appendChild(childrenContainer);
+                }}
+
+                containerEl.appendChild(nodeEl);
+            }});
+        }}
+
+        function setNodeChecked(node, isChecked) {{
+            node.checked = isChecked;
+            Object.values(node.children).forEach(child => setNodeChecked(child, isChecked));
+        }}
+
+        function update3DVisibility() {{
+            function checkObjectVisible(obj) {{
+                let layerPath = obj.userData.layer || "general/other";
+                if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
+                const parts = layerPath.split("/");
+                let curr = layerTreeRoot;
+                for (let part of parts) {{
+                    if (!curr.children[part]) return true;
+                    curr = curr.children[part];
+                    if (!curr.checked) return false;
+                }}
+                return true;
             }}
+
+            pickableObjects.forEach(obj => {{
+                obj.visible = checkObjectVisible(obj);
+            }});
+
+            if (layerTreeRoot.children["general"] && layerTreeRoot.children["general"].children["grids"]) {{
+                gridGroup.visible = layerTreeRoot.children["general"].children["grids"].checked && layerTreeRoot.children["general"].checked;
+            }}
+        }}
+
+        window.setAllLayers = function(visible) {{
+            setNodeChecked(layerTreeRoot, visible);
+            update3DVisibility();
+            renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
         }};
+
+        window.toggleExpandAll = function(expanded) {{
+            function setExpanded(node) {{
+                node.expanded = expanded;
+                Object.values(node.children).forEach(child => setExpanded(child));
+            }}
+            setExpanded(layerTreeRoot);
+            renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+        }};
+
+        window.filterLayerTree = function(keyword) {{
+            const query = keyword.trim().toLowerCase();
+            const nodes = document.querySelectorAll("#layer-tree-container .tree-node");
+            nodes.forEach(n => {{
+                const path = (n.dataset.path || "").toLowerCase();
+                if (!query || path.includes(query)) {{
+                    n.style.display = "";
+                }} else {{
+                    n.style.display = "none";
+                }}
+            }});
+        }};
+
+        buildLayerTree();
+        renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
 
         // Select first element by default if available
         if (sceneData.elements.length > 0) {{
             showInspector(sceneData.elements[0]);
         }}
 
-        // Element Selection / Raycasting (with line threshold for easy wire picking)
+        // Element Selection / Raycasting
         const raycaster = new THREE.Raycaster();
         raycaster.params.Line = {{ threshold: 0.35 }};
         const mouse = new THREE.Vector2();
@@ -1414,7 +1606,6 @@ def generate_viewer_html(
         let originalColor = null;
 
         window.addEventListener('click', (event) => {{
-            // Ignore click if clicking on UI panels
             if (event.target.closest('.ui-panel')) return;
 
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -1512,6 +1703,7 @@ def generate_viewer_html(
             contentEl.innerHTML = `
                 <div style="margin-bottom: 8px;"><span class="badge">${{data.class}}</span></div>
                 <div class="data-row"><span class="data-label">Tag</span><span class="data-value">${{data.tag}}</span></div>
+                <div class="data-row"><span class="data-label">Layer</span><span class="data-value">${{data.layer || 'general/other'}}</span></div>
                 ${{memberRow}}
                 ${{profileRow}}
                 ${{mepRow}}
@@ -1553,7 +1745,6 @@ class _ViewerHTTPRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(self.html_content)
 
     def log_message(self, format: str, *args: Any) -> None:
-        # Suppress verbose standard HTTP server logging
         pass
 
 
