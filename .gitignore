@@ -31,3 +31,8 @@ dist/
 *.swp
 *.swo
 .DS_Store
+
+# Benchmark runs
+kaggle_results/
+benchmark_output/
+*.sqlite
