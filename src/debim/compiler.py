@@ -465,8 +465,13 @@ class StepSerializer:
         # 4. Custom Elements
         for custom in resolved.custom_elements:
             st_id = custom.element.placement.storey
+            ifc_cls = (
+                "IfcFurnishingElement"
+                if (custom.layer and (custom.layer == "interior/furniture" or "furn" in custom.layer.lower()))
+                else "IfcBuildingElementProxy"
+            )
             elem_ref = self.create_entity(
-                "IfcBuildingElementProxy",
+                ifc_cls,
                 generate_ifc_guid(),
                 None,
                 custom.tag,
@@ -840,10 +845,15 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
 
     # 4. Custom Elements
     for custom in resolved.custom_elements:
+        ifc_cls = (
+            "IfcFurnishingElement"
+            if (custom.layer and (custom.layer == "interior/furniture" or "furn" in custom.layer.lower()))
+            else "IfcBuildingElementProxy"
+        )
         custom_obj = ifcopenshell.api.run(
             "root.create_entity",
             model,
-            ifc_class="IfcBuildingElementProxy",
+            ifc_class=ifc_cls,
             name=custom.tag,
         )
         st_id = custom.element.placement.storey

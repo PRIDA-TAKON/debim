@@ -36,6 +36,26 @@ from debim.schema import (
 )
 
 
+def _derive_furniture_slug(name: Optional[str]) -> str:
+    """Derive clean slug from element family name."""
+    if not name:
+        return "furniture"
+    family = name.split(":")[0]
+    if family.startswith(("M_", "m_")):
+        family = family[2:]
+    family = re.sub(r"\([^)]*\)", "", family)
+    parts = family.split("-")
+    if len(parts) > 1:
+        if any(kw in parts[1].lower() for kw in ["single", "double", "wall", "drawer", "sink"]):
+            family = parts[0]
+        else:
+            family = "_".join(parts)
+    else:
+        family = parts[0]
+    slug = re.sub(r"[^a-zA-Z0-9]+", "_", family).strip("_").lower()
+    return slug or "furniture"
+
+
 def import_ifc_to_manifest(
     ifc_path: Union[str, Path],
     project_name: Optional[str] = None,
@@ -576,6 +596,36 @@ def import_ifc_to_manifest(
                         position=pos,
                         storey=st_id,
                     ),
+                }
+            )
+        )
+
+    # 5.6 Extract Furnishing Elements
+    for furn in ifc_file.by_type("IfcFurnishingElement"):
+        tag = furn.Name or f"FURN-{furn.GlobalId[:8]}"
+        name = furn.Name or tag
+        slug = _derive_furniture_slug(furn.Name)
+
+        pos = (0.0, 0.0, 0.0)
+        try:
+            mat = ifcopenshell.util.placement.get_local_placement(furn.ObjectPlacement)
+            pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
+        except Exception:
+            pass
+
+        st_id = get_elem_storey(furn)
+        elements.append(
+            IfcCustomElement(
+                **{
+                    "class": "IfcCustomElement",
+                    "tag": tag,
+                    "name": name,
+                    "source": f"assets/furniture/{slug}.glb",
+                    "placement": CustomElementPlacement(
+                        position=pos,
+                        storey=st_id,
+                    ),
+                    "layer": "interior/furniture",
                 }
             )
         )
