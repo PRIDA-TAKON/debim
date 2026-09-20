@@ -15,15 +15,20 @@ from debim.schema import (
     ColumnReinforcement,
     BeamPlacement,
     BeamReinforcement,
+    CoveringPlacement,
     Dimensions,
     IfcBeam,
     IfcColumn,
+    IfcCovering,
     IfcCustomElement,
     CustomElementPlacement,
     IfcDoor,
+    IfcRoof,
     IfcSlab,
     IfcWall,
     IfcWindow,
+    RoofCoveringConfig,
+    RoofPlacement,
     WallPlacement,
     SlabPlacement,
     Material,
@@ -195,20 +200,19 @@ def import_ifc_to_manifest(
     # 5. Elements extraction
     elements: List[Any] = []
 
-    # Build wall children map (IfcDoor and IfcWindow openings)
+    # Build wall and roof children maps (IfcDoor and IfcWindow openings)
     wall_children_map: Dict[str, List[Union[IfcDoor, IfcWindow]]] = {}
+    roof_children_map: Dict[str, List[Union[IfcDoor, IfcWindow]]] = {}
 
     for door in ifc_file.by_type("IfcDoor"):
-        parent_wall_id = None
-        parent_wall_elem = None
+        parent_host_elem = None
         try:
             for rel in getattr(door, "FillsVoids", []):
                 opening = rel.RelatingOpeningElement
                 for vrel in getattr(opening, "VoidsElements", []):
-                    parent_wall_elem = vrel.RelatingBuildingElement
-                    parent_wall_id = parent_wall_elem.GlobalId
+                    parent_host_elem = vrel.RelatingBuildingElement
                     break
-                if parent_wall_id:
+                if parent_host_elem:
                     break
         except Exception:
             pass
@@ -240,10 +244,10 @@ def import_ifc_to_manifest(
                     h /= 1000.0
 
         offset = 1.0
-        if parent_wall_elem:
+        if parent_host_elem:
             try:
                 d_mat = ifcopenshell.util.placement.get_local_placement(door.ObjectPlacement)
-                w_mat = ifcopenshell.util.placement.get_local_placement(parent_wall_elem.ObjectPlacement)
+                w_mat = ifcopenshell.util.placement.get_local_placement(parent_host_elem.ObjectPlacement)
                 dx = float(d_mat[0, 3] - w_mat[0, 3])
                 dy = float(d_mat[1, 3] - w_mat[1, 3])
                 w_dir = w_mat[:2, 0]
@@ -259,20 +263,21 @@ def import_ifc_to_manifest(
             dimensions=Dimensions(width=round(w, 3), height=round(h, 3)),
             offset_distance=round(offset, 2),
         )
-        if parent_wall_id:
-            wall_children_map.setdefault(parent_wall_id, []).append(d_obj)
+        if parent_host_elem:
+            if parent_host_elem.is_a("IfcRoof"):
+                roof_children_map.setdefault(parent_host_elem.GlobalId, []).append(d_obj)
+            else:
+                wall_children_map.setdefault(parent_host_elem.GlobalId, []).append(d_obj)
 
     for window in ifc_file.by_type("IfcWindow"):
-        parent_wall_id = None
-        parent_wall_elem = None
+        parent_host_elem = None
         try:
             for rel in getattr(window, "FillsVoids", []):
                 opening = rel.RelatingOpeningElement
                 for vrel in getattr(opening, "VoidsElements", []):
-                    parent_wall_elem = vrel.RelatingBuildingElement
-                    parent_wall_id = parent_wall_elem.GlobalId
+                    parent_host_elem = vrel.RelatingBuildingElement
                     break
-                if parent_wall_id:
+                if parent_host_elem:
                     break
         except Exception:
             pass
@@ -304,10 +309,10 @@ def import_ifc_to_manifest(
                     h /= 1000.0
 
         offset = 1.0
-        if parent_wall_elem:
+        if parent_host_elem:
             try:
                 win_mat = ifcopenshell.util.placement.get_local_placement(window.ObjectPlacement)
-                w_mat = ifcopenshell.util.placement.get_local_placement(parent_wall_elem.ObjectPlacement)
+                w_mat = ifcopenshell.util.placement.get_local_placement(parent_host_elem.ObjectPlacement)
                 dx = float(win_mat[0, 3] - w_mat[0, 3])
                 dy = float(win_mat[1, 3] - w_mat[1, 3])
                 w_dir = w_mat[:2, 0]
@@ -324,8 +329,11 @@ def import_ifc_to_manifest(
             offset_distance=round(offset, 2),
             sill_height=0.80,
         )
-        if parent_wall_id:
-            wall_children_map.setdefault(parent_wall_id, []).append(win_obj)
+        if parent_host_elem:
+            if parent_host_elem.is_a("IfcRoof"):
+                roof_children_map.setdefault(parent_host_elem.GlobalId, []).append(win_obj)
+            else:
+                wall_children_map.setdefault(parent_host_elem.GlobalId, []).append(win_obj)
 
     # 5.1 Extract Columns
     for col in ifc_file.by_type("IfcColumn"):
@@ -596,6 +604,192 @@ def import_ifc_to_manifest(
                         position=pos,
                         storey=st_id,
                     ),
+                    "layer": "structure/footings",
+                }
+            )
+        )
+
+    # 5.6 Extract Roofs (IfcRoof)
+    for idx, roof in enumerate(ifc_file.by_type("IfcRoof")):
+        tag = roof.Name or f"ROOF-{roof.GlobalId[:8]}"
+        st_id = get_elem_storey(roof)
+        ps = ifcopenshell.util.element.get_psets(roof)
+
+        pitch = 0.0
+        if ps.get("PSet_Revit_Type_Construction", {}).get("Pitch"):
+            pitch = float(ps["PSet_Revit_Type_Construction"]["Pitch"])
+        elif "Flat Roof" in (roof.Name or ""):
+            pitch = 0.0
+
+        roof_type = "FLAT" if pitch == 0.0 else "HIP"
+
+        gx_keys = list(grid_x_vals.keys()) or ["GX_1", "GX_2"]
+        gy_keys = list(grid_y_vals.keys()) or ["GY_1", "GY_2"]
+        boundary = [
+            (gx_keys[0], gy_keys[0]),
+            (gx_keys[-1], gy_keys[0]),
+            (gx_keys[-1], gy_keys[-1]),
+            (gx_keys[0], gy_keys[-1]),
+        ]
+
+        mat_id = resolve_material(roof, "CONC_280")
+        roof_children = roof_children_map.get(roof.GlobalId, [])
+
+        elements.append(
+            IfcRoof(
+                **{
+                    "class": "IfcRoof",
+                    "tag": tag,
+                    "material": mat_id,
+                    "roof_type": roof_type,
+                    "placement": RoofPlacement(
+                        boundary=boundary,
+                        storey=st_id,
+                    ),
+                    "covering": RoofCoveringConfig(pitch=pitch),
+                    "children": roof_children,
+                }
+            )
+        )
+
+    # 5.7 Extract Coverings (IfcCovering / Ceilings)
+    for cov in ifc_file.by_type("IfcCovering"):
+        tag = cov.Name or f"COV-{cov.GlobalId[:8]}"
+        st_id = get_elem_storey(cov)
+        ps = ifcopenshell.util.element.get_psets(cov)
+        dims = ps.get("PSet_Revit_Dimensions", {}) or ps.get("Dimensions", {}) or ps.get("Qto_CoveringBaseQuantities", {})
+        area = float(dims.get("Area", 10.0)) if dims.get("Area") else 10.0
+        th = 0.057
+        if dims.get("Thickness"):
+            th = float(dims["Thickness"])
+        elif ps.get("PSet_Revit_Type_Construction", {}).get("Thickness"):
+            th = float(ps["PSet_Revit_Type_Construction"]["Thickness"])
+        if th > 10:
+            th /= 1000.0
+
+        pred_type = "CEILING"
+        if getattr(cov, "PredefinedType", None):
+            pred_type = str(cov.PredefinedType)
+        if pred_type not in ["CEILING", "FLOORING", "SKIRTING", "CLADDING", "ROOFING", "INSULATION", "MEMBRANE"]:
+            pred_type = "CEILING"
+
+        mat_id = resolve_material(cov, "CONC_280")
+        elements.append(
+            IfcCovering(
+                **{
+                    "class": "IfcCovering",
+                    "tag": tag,
+                    "covering_type": pred_type,
+                    "material": mat_id,
+                    "thickness": round(th, 3),
+                    "placement": CoveringPlacement(
+                        storey=st_id,
+                        area=round(area, 3),
+                    ),
+                }
+            )
+        )
+
+    # 5.8 Extract Stairs
+    for stair in ifc_file.by_type("IfcStair"):
+        tag = stair.Name or f"STAIR-{stair.GlobalId[:8]}"
+        pos = (0.0, 0.0, 0.0)
+        try:
+            mat = ifcopenshell.util.placement.get_local_placement(stair.ObjectPlacement)
+            pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
+        except Exception:
+            pass
+        st_id = get_elem_storey(stair)
+        elements.append(
+            IfcCustomElement(
+                **{
+                    "class": "IfcCustomElement",
+                    "tag": tag,
+                    "name": tag,
+                    "source": f"ifc/stair/{tag}",
+                    "placement": CustomElementPlacement(
+                        position=pos,
+                        storey=st_id,
+                    ),
+                    "layer": "circulation/stairs",
+                }
+            )
+        )
+
+    # 5.9 Extract Stair Flights
+    for flight in ifc_file.by_type("IfcStairFlight"):
+        tag = flight.Name or f"FLIGHT-{flight.GlobalId[:8]}"
+        pos = (0.0, 0.0, 0.0)
+        try:
+            mat = ifcopenshell.util.placement.get_local_placement(flight.ObjectPlacement)
+            pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
+        except Exception:
+            pass
+        st_id = get_elem_storey(flight)
+        elements.append(
+            IfcCustomElement(
+                **{
+                    "class": "IfcCustomElement",
+                    "tag": tag,
+                    "name": tag,
+                    "source": f"ifc/stairflight/{tag}",
+                    "placement": CustomElementPlacement(
+                        position=pos,
+                        storey=st_id,
+                    ),
+                    "layer": "circulation/stairflights",
+                }
+            )
+        )
+
+    # 5.10 Extract Railings
+    for railing in ifc_file.by_type("IfcRailing"):
+        tag = railing.Name or f"RAILING-{railing.GlobalId[:8]}"
+        pos = (0.0, 0.0, 0.0)
+        try:
+            mat = ifcopenshell.util.placement.get_local_placement(railing.ObjectPlacement)
+            pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
+        except Exception:
+            pass
+        st_id = get_elem_storey(railing)
+        elements.append(
+            IfcCustomElement(
+                **{
+                    "class": "IfcCustomElement",
+                    "tag": tag,
+                    "name": tag,
+                    "source": f"ifc/railing/{tag}",
+                    "placement": CustomElementPlacement(
+                        position=pos,
+                        storey=st_id,
+                    ),
+                    "layer": "circulation/railings",
+                }
+            )
+        )
+
+    # 5.11 Extract Members
+    for member in ifc_file.by_type("IfcMember"):
+        tag = member.Name or f"MEMBER-{member.GlobalId[:8]}"
+        pos = (0.0, 0.0, 0.0)
+        try:
+            mat = ifcopenshell.util.placement.get_local_placement(member.ObjectPlacement)
+            pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
+        except Exception:
+            pass
+        st_id = get_elem_storey(member)
+        elements.append(
+            IfcCustomElement(
+                **{
+                    "class": "IfcCustomElement",
+                    "tag": tag,
+                    "name": tag,
+                    "source": f"ifc/member/{tag}",
+                    "placement": CustomElementPlacement(
+                        position=pos,
+                        storey=st_id,
+                    ),
+                    "layer": "structure/members",
                 }
             )
         )

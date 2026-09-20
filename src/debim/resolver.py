@@ -407,6 +407,7 @@ class ResolvedRoof(BaseModel):
     planes: List[ResolvedRoofPlane] = []
     ridges: List[ResolvedRoofRidge] = []
     framing_members: List[ResolvedRoofFramingMember] = []
+    children: List[ResolvedWallChild] = []
 
     total_footprint_area: float  # Projected horizontal area including overhang (m2)
     total_sloped_area: float     # Actual sloped roof covering area (m2)
@@ -1730,6 +1731,7 @@ class SpatialResolver:
 
         width = x1 - x0
         length = y1 - y0
+        half_span = min(width, length) / 2.0
 
         st = self.storeys[roof.placement.storey]
         z0 = st.elevation + roof.placement.offset_z
@@ -2210,6 +2212,35 @@ class SpatialResolver:
                             purlin_idx += 1
                 z_curr += dz_purlin
 
+        resolved_children: List[ResolvedWallChild] = []
+        st = self.storeys[roof.placement.storey]
+        for child in roof.children:
+            pos = (0.0, 0.0, st.elevation + child.sill_height)
+            if isinstance(child, IfcDoor):
+                r_door = ResolvedDoor(
+                    tag=child.tag,
+                    element=child,
+                    position=pos,
+                    width=child.dimensions.width,
+                    height=child.dimensions.height,
+                    offset_distance=child.offset_distance,
+                    sill_height=child.sill_height,
+                    layer=derive_default_layer(child),
+                )
+                resolved_children.append(r_door)
+            elif isinstance(child, IfcWindow):
+                r_win = ResolvedWindow(
+                    tag=child.tag,
+                    element=child,
+                    position=pos,
+                    width=child.dimensions.width,
+                    height=child.dimensions.height,
+                    offset_distance=child.offset_distance,
+                    sill_height=child.sill_height,
+                    layer=derive_default_layer(child),
+                )
+                resolved_children.append(r_win)
+
         return ResolvedRoof(
             tag=roof.tag,
             element=roof,
@@ -2221,6 +2252,7 @@ class SpatialResolver:
             planes=planes,
             ridges=ridges,
             framing_members=framing_members,
+            children=resolved_children,
             total_footprint_area=footprint_area,
             total_sloped_area=tot_sloped_area,
             total_ridge_length=tot_ridge_len,
@@ -2580,6 +2612,11 @@ class SpatialResolver:
             elif isinstance(elem, IfcRoof):
                 r_roof = self.resolve_roof(elem)
                 resolved_manifest.roofs.append(r_roof)
+                for child in r_roof.children:
+                    if isinstance(child, ResolvedDoor):
+                        resolved_manifest.doors.append(child)
+                    elif isinstance(child, ResolvedWindow):
+                        resolved_manifest.windows.append(child)
                 resolved_manifest.elements.append(r_roof)
             elif isinstance(elem, IfcColumn):
                 r_col = self.resolve_column(elem)
