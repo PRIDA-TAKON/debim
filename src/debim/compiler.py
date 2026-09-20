@@ -42,6 +42,20 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcStair"
     if "footing" in l:
         return "IfcFooting"
+    if "proxy" in l:
+        return "IfcBuildingElementProxy"
+    if "chimney" in l:
+        return "IfcChimney"
+    if "accessory" in l or "accessories" in l or "accessor" in l:
+        return "IfcDiscreteAccessory"
+    if "duct" in l:
+        return "IfcDuctSegment"
+    if "pipe" in l:
+        return "IfcPipeSegment"
+    if "terminal" in l or "air_terminal" in l:
+        return "IfcAirTerminal"
+    if "fitting" in l:
+        return "IfcFlowFitting"
     return "IfcBuildingElementProxy"
 
 

@@ -73,7 +73,38 @@ def import_ifc_to_manifest(
     import ifcopenshell.util.element
     import ifcopenshell.util.placement
 
-    ifc_file = ifcopenshell.open(str(ifc_path))
+    # 0. Graceful Legacy Schema Handling
+    unsupported_schemas = {"IFC20_LONGFORM", "IFC2X_FINAL", "IFC2X2_FINAL"}
+    try:
+        with open(str(ifc_path), "r", encoding="utf-8", errors="ignore") as f_head:
+            header_sample = f_head.read(4096)
+        match = re.search(r"FILE_SCHEMA\s*\(\s*\('([^']+)'\)", header_sample, re.IGNORECASE)
+        if match:
+            schema_name = match.group(1).upper()
+            if schema_name in unsupported_schemas:
+                raise ValueError(
+                    f"Unsupported legacy IFC schema '{schema_name}'. debim supports IFC2X3, IFC4, and IFC4X3."
+                )
+    except ValueError:
+        raise
+    except Exception:
+        pass
+
+    try:
+        ifc_file = ifcopenshell.open(str(ifc_path))
+    except Exception as e:
+        err_msg = str(e)
+        for un_schema in unsupported_schemas:
+            if un_schema in err_msg:
+                raise ValueError(
+                    f"Unsupported legacy IFC schema '{un_schema}'. debim supports IFC2X3, IFC4, and IFC4X3."
+                ) from e
+        raise e
+
+    if hasattr(ifc_file, "schema") and ifc_file.schema in unsupported_schemas:
+        raise ValueError(
+            f"Unsupported legacy IFC schema '{ifc_file.schema}'. debim supports IFC2X3, IFC4, and IFC4X3."
+        )
 
     # 1. Project Info
     proj_entities = ifc_file.by_type("IfcProject")
@@ -794,8 +825,19 @@ def import_ifc_to_manifest(
             )
         )
 
-    # 5.6 Extract Furnishing Elements
-    for furn in ifc_file.by_type("IfcFurnishingElement"):
+    def safe_by_type(type_name: str) -> List[Any]:
+        try:
+            return list(ifc_file.by_type(type_name))
+        except Exception:
+            return []
+
+    # 5.12 Extract Furnishing Elements & Furniture
+    extracted_custom_ids = set()
+
+    for furn in safe_by_type("IfcFurnishingElement") + safe_by_type("IfcFurniture"):
+        if furn.GlobalId in extracted_custom_ids:
+            continue
+        extracted_custom_ids.add(furn.GlobalId)
         tag = furn.Name or f"FURN-{furn.GlobalId[:8]}"
         name = furn.Name or tag
         slug = _derive_furniture_slug(furn.Name)
@@ -823,6 +865,132 @@ def import_ifc_to_manifest(
                 }
             )
         )
+
+    # 5.13 Extract MEP Flow Segments (IfcDuctSegment, IfcPipeSegment, IfcFlowSegment)
+    for seg_cls in ["IfcDuctSegment", "IfcPipeSegment", "IfcFlowSegment"]:
+        for seg in safe_by_type(seg_cls):
+            if seg.GlobalId in extracted_custom_ids:
+                continue
+            extracted_custom_ids.add(seg.GlobalId)
+            tag = seg.Name or f"SEG-{seg.GlobalId[:8]}"
+            pos = (0.0, 0.0, 0.0)
+            try:
+                mat = ifcopenshell.util.placement.get_local_placement(seg.ObjectPlacement)
+                pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
+            except Exception:
+                pass
+            st_id = get_elem_storey(seg)
+            layer = "mep/pipes" if seg.is_a("IfcPipeSegment") else "mep/ducts"
+            elements.append(
+                IfcCustomElement(
+                    **{
+                        "class": "IfcCustomElement",
+                        "tag": tag,
+                        "name": tag,
+                        "source": f"ifc/segment/{tag}",
+                        "placement": CustomElementPlacement(
+                            position=pos,
+                            storey=st_id,
+                        ),
+                        "layer": layer,
+                    }
+                )
+            )
+
+    # 5.14 Extract MEP Terminals (IfcAirTerminal, IfcSanitaryTerminal, IfcFlowTerminal)
+    for term_cls in ["IfcAirTerminal", "IfcSanitaryTerminal", "IfcFlowTerminal"]:
+        for term in safe_by_type(term_cls):
+            if term.GlobalId in extracted_custom_ids:
+                continue
+            extracted_custom_ids.add(term.GlobalId)
+            tag = term.Name or f"TERM-{term.GlobalId[:8]}"
+            pos = (0.0, 0.0, 0.0)
+            try:
+                mat = ifcopenshell.util.placement.get_local_placement(term.ObjectPlacement)
+                pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
+            except Exception:
+                pass
+            st_id = get_elem_storey(term)
+            elements.append(
+                IfcCustomElement(
+                    **{
+                        "class": "IfcCustomElement",
+                        "tag": tag,
+                        "name": tag,
+                        "source": f"ifc/terminal/{tag}",
+                        "placement": CustomElementPlacement(
+                            position=pos,
+                            storey=st_id,
+                        ),
+                        "layer": "mep/terminals",
+                    }
+                )
+            )
+
+    # 5.15 Extract MEP Fittings (IfcFlowFitting, IfcPipeFitting, IfcDuctFitting)
+    for fit_cls in ["IfcFlowFitting", "IfcPipeFitting", "IfcDuctFitting"]:
+        for fit in safe_by_type(fit_cls):
+            if fit.GlobalId in extracted_custom_ids:
+                continue
+            extracted_custom_ids.add(fit.GlobalId)
+            tag = fit.Name or f"FIT-{fit.GlobalId[:8]}"
+            pos = (0.0, 0.0, 0.0)
+            try:
+                mat = ifcopenshell.util.placement.get_local_placement(fit.ObjectPlacement)
+                pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
+            except Exception:
+                pass
+            st_id = get_elem_storey(fit)
+            elements.append(
+                IfcCustomElement(
+                    **{
+                        "class": "IfcCustomElement",
+                        "tag": tag,
+                        "name": tag,
+                        "source": f"ifc/fitting/{tag}",
+                        "placement": CustomElementPlacement(
+                            position=pos,
+                            storey=st_id,
+                        ),
+                        "layer": "mep/fittings",
+                    }
+                )
+            )
+
+    # 5.16 Extract Generic Proxies & Accessories (IfcBuildingElementProxy, IfcChimney, IfcDiscreteAccessory)
+    proxy_configs = [
+        ("IfcBuildingElementProxy", "architecture/proxies", "PROXY"),
+        ("IfcChimney", "architecture/chimneys", "CHIMNEY"),
+        ("IfcDiscreteAccessory", "structure/accessories", "ACC"),
+    ]
+    for p_cls, p_layer, p_prefix in proxy_configs:
+        for proxy in safe_by_type(p_cls):
+            if proxy.GlobalId in extracted_custom_ids:
+                continue
+            extracted_custom_ids.add(proxy.GlobalId)
+            tag = proxy.Name or f"{p_prefix}-{proxy.GlobalId[:8]}"
+            pos = (0.0, 0.0, 0.0)
+            try:
+                mat = ifcopenshell.util.placement.get_local_placement(proxy.ObjectPlacement)
+                pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
+            except Exception:
+                pass
+            st_id = get_elem_storey(proxy)
+            elements.append(
+                IfcCustomElement(
+                    **{
+                        "class": "IfcCustomElement",
+                        "tag": tag,
+                        "name": tag,
+                        "source": f"ifc/proxy/{tag}",
+                        "placement": CustomElementPlacement(
+                            position=pos,
+                            storey=st_id,
+                        ),
+                        "layer": p_layer,
+                    }
+                )
+            )
 
     # Fallback grids if none created
     if not grid_x_vals:
