@@ -1,0 +1,18 @@
+{
+  "id": "pridatakon/debim-ifc-stress-test",
+  "title": "debim ifc stress test",
+  "code_file": "debim_stress_test.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "false",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [
+    "claytonmiller/example-ifc-file",
+    "sc0v1n0/ifc-samples-daa"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
