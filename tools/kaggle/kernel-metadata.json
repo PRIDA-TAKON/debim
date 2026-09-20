@@ -10,7 +10,9 @@
   "enable_internet": "true",
   "dataset_sources": [
     "claytonmiller/example-ifc-file",
-    "sc0v1n0/ifc-samples-daa"
+    "sc0v1n0/ifc-samples-daa",
+    "pridatakon/debim-5000-ifc-benchmark",
+    "mac999/bim-ifc-examples-kict-buildings"
   ],
   "competition_sources": [],
   "kernel_sources": [],
