@@ -24,9 +24,10 @@ debim/
 │       ├── schema.py          # Pydantic v2 data models for project.yaml
 │       ├── resolver.py        # Resolves relative grid & storey coordinates to 3D world vectors
 │       ├── qto.py             # Quantitative Take-Off (concrete vol, formwork area, rebar)
-│       ├── cost.py            # Pricing engine matching QTO with prices.json
+│       ├── cost.py            # Pricing engine matching QTO with prices.yaml/prices.json
 │       ├── compiler.py        # IFC4 compilation via IfcOpenShell
-│       └── viewer.py          # Standalone lightweight 3D viewer generator
+│       ├── viewer.py          # Standalone lightweight 3D viewer generator
+│       └── scaffold.py        # Element code generator & boilerplate scaffolder
 ├── examples/
 │   └── townhouse/
 │       ├── project.yaml       # Sample project manifest
@@ -55,6 +56,22 @@ debim/
 
 ---
 
+## 💰 Pricing Catalog Conventions (prices.yaml vs prices.json)
+
+debim supports both YAML and JSON price catalogs with standard classification metadata (`standards: {masterformat: ..., uniformat: ...}`):
+
+- **Default to `prices.yaml` (or modular `prices/modules/*.yaml`):**
+  - Use when authoring, reviewing, or version-controlling prices with Git.
+  - Allows human-readable comments (`# e.g. Q3-2026 commercial benchmark`).
+  - Supports modular multi-file catalogs via `includes: ["modules/*.yaml"]` to prevent token bloat (saving up to 99% tokens for large catalogs).
+- **Use `prices.json` or Stdin Pipe (`-p -`):**
+  - Use when streaming raw price payloads directly from external REST APIs, ERP systems, or database queries.
+- **Generate Project-Scoped Active Templates:**
+  - Never parse tens of thousands of global catalog items into an agent's context.
+  - Run `bim cost template -m project.yaml -o prices.template.yaml` to extract only the active items used by the building model.
+
+---
+
 ## 🧪 Testing & Quality Standards
 
 When working on any GitHub Issue or Pull Request:
@@ -78,6 +95,9 @@ The CLI tool exposes the binary aliases `debim` and `bim`:
 | `bim validate` | Validate schema syntax, grid consistency, and placement links |
 | `bim test` | Execute compliance & building law tests via pytest |
 | `bim qto` | Calculate material quantities (concrete volume, formwork, rebar) |
-| `bim cost` | Map QTO against `prices.json` and generate cost summary / CSV |
+| `bim cost` | Map QTO against `prices.yaml`/`prices.json` (or stdin `-p -`) and generate cost summary / CSV |
+| `bim cost template` | Scan project manifest & generate minimal, project-scoped price catalog template |
+| `bim scaffold element <Name>` | Scaffold Pydantic model, resolver logic, QTO branch, and Pytest test skeleton |
 | `bim compile` | Compile declarative YAML to standardized IFC4 file (`dist/model.ifc`) |
-| `bim view` | Launch a lightweight local 3D preview server in browser |
+| `bim view` | Launch a lightweight local 3D preview server with hierarchical layer tree explorer |
+

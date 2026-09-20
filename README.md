@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![BIM: IFC4](https://img.shields.io/badge/IFC-IFC4--Minimal-brightgreen.svg)](https://technical.buildingsmart.org/)
-[![Tests: 31 Passed](https://img.shields.io/badge/tests-31%20passed-success.svg)](tests/)
+[![Tests: 82 Passed](https://img.shields.io/badge/tests-82%20passed-success.svg)](tests/)
 
 ---
 
@@ -65,10 +65,16 @@ bim test
 # Calculate Quantitative Take-Off (Concrete vol, formwork, rebar schedule)
 bim qto -m examples/townhouse/project.yaml
 
+# Generate project-scoped price template with international classifications
+bim cost template -m examples/townhouse/project.yaml -o prices.template.yaml
+
 # Estimate project budget & export BOQ to CSV
 bim cost -m examples/townhouse/project.yaml -p examples/townhouse/prices.json -o dist/boq.csv
 
-# Preview 3D model in your browser (Three.js with OrbitControls)
+# Scaffold a new BIM element class boilerplate
+bim scaffold element IfcRailing
+
+# Preview 3D model in your browser (Three.js with Hierarchical Layer Explorer)
 bim view -m examples/townhouse/project.yaml
 
 # Compile declarative YAML to standard IFC4 building model
