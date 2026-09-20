@@ -139,15 +139,30 @@ def import_ifc_to_manifest(
                     if layers and layers[0].Material and layers[0].Material.Name:
                         mat_name = str(layers[0].Material.Name)
 
-            if mat_name:
-                clean_id = re.sub(r"[^A-Za-z0-9_]", "_", mat_name.strip()).upper()[:24]
+            tag_str = getattr(elem, "Name", "") or ""
+            combined_str = f"{mat_name or ''} {tag_str}".upper()
+
+            if mat_name or tag_str:
+                clean_id = re.sub(r"[^A-Za-z0-9_]", "_", (mat_name or tag_str).strip()).upper()[:24]
                 if clean_id not in materials_dict:
-                    cat = "concrete" if "conc" in clean_id.lower() else ("steel" if "steel" in clean_id.lower() else "masonry")
+                    if any(k in combined_str for k in ["TIMBER", "WOOD", "LUMBER", "PLYWOOD"]):
+                        cat = "timber"
+                        cost_ref = "MAT-TIMBER-01"
+                    elif any(k in combined_str for k in ["STEEL", "METAL", "SS400", "SM490", "WIDE", "W-"]) or re.search(r"\b(W|H|2L|UB|UC)\d", combined_str):
+                        cat = "steel"
+                        cost_ref = "MAT-STEEL-STRUCT"
+                    elif "CONC" in combined_str:
+                        cat = "concrete"
+                        cost_ref = "MAT-CONC-01"
+                    else:
+                        cat = "masonry"
+                        cost_ref = "MAT-BRICK-01"
+
                     materials_dict[clean_id] = Material(
                         id=clean_id,
-                        name=mat_name,
+                        name=mat_name or tag_str,
                         category=cat,
-                        unit_cost_ref="MAT-CONC-01" if cat == "concrete" else "MAT-STEEL-DB16",
+                        unit_cost_ref=cost_ref,
                     )
                 return clean_id
         except Exception:
@@ -163,13 +178,22 @@ def import_ifc_to_manifest(
         w, d = 0.3, 0.3
 
         ps = ifcopenshell.util.element.get_psets(col)
-        dims = ps.get("Dimensions", {}) or ps.get("PSet_Revit_Dimensions", {})
+        dims = ps.get("Dimensions", {}) or ps.get("PSet_Revit_Dimensions", {}) or ps.get("Qto_ColumnBaseQuantities", {})
         if "Width" in dims and dims["Width"]:
             w = float(dims["Width"])
             if w > 10:
                 w /= 1000.0
+        elif "OverallWidth" in dims and dims["OverallWidth"]:
+            w = float(dims["OverallWidth"])
+            if w > 10:
+                w /= 1000.0
+
         if "Depth" in dims and dims["Depth"]:
             d = float(dims["Depth"])
+            if d > 10:
+                d /= 1000.0
+        elif "OverallDepth" in dims and dims["OverallDepth"]:
+            d = float(dims["OverallDepth"])
             if d > 10:
                 d /= 1000.0
 
@@ -183,6 +207,15 @@ def import_ifc_to_manifest(
 
         st_id = get_elem_storey(col)
         mat_id = resolve_material(col, "CONC_280")
+        mat_obj = materials_dict.get(mat_id)
+        mat_cat = mat_obj.category if mat_obj else "concrete"
+
+        rebar_cfg = (
+            ColumnReinforcement(main="4-DB16", stirrups="RB6 @ 0.15m")
+            if mat_cat == "concrete"
+            else None
+        )
+
         elements.append(
             IfcColumn(
                 **{
@@ -195,10 +228,7 @@ def import_ifc_to_manifest(
                         base_storey=st_id,
                         top_storey=st_id,
                     ),
-                    "reinforcement": ColumnReinforcement(
-                        main="4-DB16",
-                        stirrups="RB6 @ 0.15m",
-                    ),
+                    "reinforcement": rebar_cfg,
                 }
             )
         )
@@ -208,8 +238,28 @@ def import_ifc_to_manifest(
         tag = beam.Name or f"BEAM-{beam.GlobalId[:8]}"
         w, d = 0.2, 0.4
         ps = ifcopenshell.util.element.get_psets(beam)
-        dims = ps.get("Dimensions", {}) or ps.get("PSet_Revit_Dimensions", {})
+        dims = ps.get("Dimensions", {}) or ps.get("PSet_Revit_Dimensions", {}) or ps.get("Qto_BeamBaseQuantities", {})
         length = float(dims.get("Length", 4.0)) if dims.get("Length") else 4.0
+        if length > 100:
+            length /= 1000.0
+
+        if "Width" in dims and dims["Width"]:
+            w = float(dims["Width"])
+            if w > 10:
+                w /= 1000.0
+        elif "OverallWidth" in dims and dims["OverallWidth"]:
+            w = float(dims["OverallWidth"])
+            if w > 10:
+                w /= 1000.0
+
+        if "Depth" in dims and dims["Depth"]:
+            d = float(dims["Depth"])
+            if d > 10:
+                d /= 1000.0
+        elif "OverallDepth" in dims and dims["OverallDepth"]:
+            d = float(dims["OverallDepth"])
+            if d > 10:
+                d /= 1000.0
 
         try:
             mat = ifcopenshell.util.placement.get_local_placement(beam.ObjectPlacement)
@@ -228,6 +278,19 @@ def import_ifc_to_manifest(
 
         st_id = get_elem_storey(beam)
         mat_id = resolve_material(beam, "CONC_280")
+        mat_obj = materials_dict.get(mat_id)
+        mat_cat = mat_obj.category if mat_obj else "concrete"
+
+        rebar_cfg = (
+            BeamReinforcement(
+                main_top="2-DB16",
+                main_bottom="2-DB16",
+                stirrups="RB6 @ 0.15m",
+            )
+            if mat_cat == "concrete"
+            else None
+        )
+
         elements.append(
             IfcBeam(
                 **{
@@ -240,11 +303,7 @@ def import_ifc_to_manifest(
                         to_grid=to_g,
                         storey=st_id,
                     ),
-                    "reinforcement": BeamReinforcement(
-                        main_top="2-DB16",
-                        main_bottom="2-DB16",
-                        stirrups="RB6 @ 0.15m",
-                    ),
+                    "reinforcement": rebar_cfg,
                 }
             )
         )
