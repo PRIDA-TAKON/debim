@@ -522,11 +522,10 @@ def test_mep_ifc_compilation(sample_mep_manifest: ProjectManifest, tmp_path: Pat
 def test_mep_viewer_html_generation(sample_mep_manifest: ProjectManifest):
     """Test generating 3D web viewer with MEP layers and inspector metadata."""
     html = generate_viewer_html(sample_mep_manifest)
-    assert "mep_cold_water" in html
-    assert "mep_drainage" in html
-    assert "mep_fixtures" in html
-    assert "mep_electrical" in html
-    assert "mep_hvac" in html
+    assert "mep/plumbing/cold_water" in html
+    assert "mep/plumbing/fixtures" in html
+    assert "mep/electrical" in html
+    assert "mep/hvac" in html
     assert "PIPE-CW-01" in html
     assert "CU-01" in html
     assert "WC-01" in html

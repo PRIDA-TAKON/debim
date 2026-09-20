@@ -12,6 +12,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from debim.compiler import compile_to_ifc
+from debim.scaffold import scaffold_element
 from debim.cost import estimate_cost, load_price_catalog
 from debim.qto import calculate_qto
 from debim.resolver import resolve_manifest
@@ -686,6 +687,84 @@ def diff(
         summary_msg += f"\n[bold green]Net Budget Variance:[/bold green] {cost_b.grand_total - cost_a.grand_total:+,.2f} {cost_b.currency}"
 
     console.print(Panel(summary_msg, title="[bold green]Diff Summary[/bold green]"))
+
+
+scaffold_app = typer.Typer(
+    help="Developer scaffolding commands to generate BIM boilerplate & test skeletons",
+    add_completion=False,
+)
+app.add_typer(scaffold_app, name="scaffold")
+
+
+@scaffold_app.command(name="element")
+def scaffold_element_cmd(
+    class_name: str = typer.Argument(..., help="BIM Element class name (e.g. IfcRailing, IfcCurtainWall)"),
+    placement_type: str = typer.Option(
+        "grid", "--placement-type", "-p", help="Placement geometry type (grid, span, boundary, path, point)"
+    ),
+    layer: Optional[str] = typer.Option(
+        None, "--layer", "-l", help="Default hierarchical layer path (e.g., architecture/openings/doors)"
+    ),
+    dry_run: bool = typer.Option(
+        True, "--dry-run/--no-dry-run", help="Print generated code to stdout without writing files (default: true for safety)"
+    ),
+    output_dir: Optional[Path] = typer.Option(
+        None, "--output-dir", "-o", help="Optional directory path to emit generated code modules or test templates"
+    ),
+):
+    """Generate Pydantic v2 data model, resolver logic, QTO formula, and pytest test skeletons for a new element class."""
+    if not class_name.startswith("Ifc"):
+        class_name = f"Ifc{class_name[0].upper()}{class_name[1:]}"
+
+    console.print(
+        Panel(
+            f"[bold cyan]debim Element Scaffolder[/bold cyan]\n"
+            f"[bold yellow]Element Class:[/bold yellow] {class_name}\n"
+            f"[bold yellow]Placement Type:[/bold yellow] {placement_type}\n"
+            f"[bold yellow]Default Layer:[/bold yellow] {layer or 'derived'}\n"
+            f"[bold yellow]Dry Run Mode:[/bold yellow] {dry_run}",
+            title="[bold green]scaffold element[/bold green]",
+        )
+    )
+
+    artifacts = scaffold_element(
+        class_name=class_name,
+        placement_type=placement_type,
+        layer=layer,
+        dry_run=dry_run,
+        output_dir=output_dir,
+    )
+
+    if dry_run:
+        console.print("[bold magenta]=== 1. Generated Pydantic v2 Model (for schema.py) ===[/bold magenta]")
+        console.print(artifacts["schema_code"])
+
+        console.print("\n[bold magenta]=== 2. Generated Resolver Logic (for resolver.py) ===[/bold magenta]")
+        console.print(artifacts["resolver_code"])
+
+        console.print("\n[bold magenta]=== 3. Generated QTO Formula (for qto.py) ===[/bold magenta]")
+        console.print(artifacts["qto_code"])
+
+        console.print("\n[bold magenta]=== 4. Generated Pytest Skeleton ===[/bold magenta]")
+        console.print(artifacts["test_code"])
+
+        console.print(
+            Panel(
+                "[bold green]Dry-run complete![/bold green] Pass [cyan]--no-dry-run -o <output_dir>[/cyan] to write files to disk.",
+                style="green",
+            )
+        )
+    else:
+        if output_dir:
+            console.print(
+                Panel(
+                    f"[bold green]Scaffold artifacts successfully written to:[/bold green] [cyan]{output_dir}[/cyan]",
+                    style="green",
+                )
+            )
+        else:
+            console.print("[bold red]Error:[/bold red] --no-dry-run requires --output-dir (-o) specified.")
+            raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

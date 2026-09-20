@@ -23,6 +23,12 @@ def test_generate_viewer_html_from_path(sample_project_path: Path):
     assert "W-A1_A2" in html
     assert "D1" in html
 
+    # Check hierarchical layer tree UI
+    assert "Hierarchical Layer Explorer" in html
+    assert "layerTreeRoot" in html
+    assert "buildLayerTree" in html
+    assert "renderLayerTree" in html
+
     # Check project metadata
     assert "Townhouse-Feasibility" in html
     assert "PRJ-2026-001" in html

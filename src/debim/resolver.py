@@ -32,6 +32,7 @@ from debim.schema import (
     IfcWindow,
     ProjectManifest,
     Storey,
+    derive_default_layer,
 )
 
 TerminalElement = Union[
@@ -125,6 +126,7 @@ class ResolvedColumn(BaseModel):
     start_point: Tuple[float, float, float]
     end_point: Tuple[float, float, float]
     height: float
+    layer: str = "structure/framing/columns"
 
 
 class ResolvedBeam(BaseModel):
@@ -137,6 +139,7 @@ class ResolvedBeam(BaseModel):
     span_length: float
     direction_vector: Tuple[float, float]
     rotation_angle: float
+    layer: str = "structure/framing/beams"
 
 
 class ResolvedDoor(BaseModel):
@@ -149,6 +152,7 @@ class ResolvedDoor(BaseModel):
     height: float
     offset_distance: float
     sill_height: float
+    layer: str = "architecture/openings/doors"
 
 
 class ResolvedWindow(BaseModel):
@@ -161,6 +165,7 @@ class ResolvedWindow(BaseModel):
     height: float
     offset_distance: float
     sill_height: float
+    layer: str = "architecture/openings/windows"
 
 
 ResolvedWallChild = Union[ResolvedDoor, ResolvedWindow]
@@ -177,6 +182,7 @@ class ResolvedWall(BaseModel):
     thickness: float
     height: float
     children: List[ResolvedWallChild] = []
+    layer: str = "architecture/walls"
 
 
 class ResolvedCustomElement(BaseModel):
@@ -185,6 +191,7 @@ class ResolvedCustomElement(BaseModel):
     tag: str
     element: IfcCustomElement
     position: Tuple[float, float, float]
+    layer: str = "general/custom"
 
 
 class ResolvedTerminal(BaseModel):
@@ -195,6 +202,7 @@ class ResolvedTerminal(BaseModel):
     position: Tuple[float, float, float]
     rotation_angle: float
     hosting_wall: Optional[ResolvedWall] = None
+    layer: str = "mep/terminals"
 
 
 class ResolvedPile(BaseModel):
@@ -206,6 +214,7 @@ class ResolvedPile(BaseModel):
     dimension: float
     shape: str = "HEXAGONAL"
     material: Optional[str] = None
+    layer: str = "structure/substructure/piles"
 
 
 class ResolvedFooting(BaseModel):
@@ -218,6 +227,7 @@ class ResolvedFooting(BaseModel):
     depth: float
     thickness: float
     piles: List[ResolvedPile] = []
+    layer: str = "structure/substructure/footings"
 
 
 class ResolvedSlab(BaseModel):
@@ -229,6 +239,7 @@ class ResolvedSlab(BaseModel):
     thickness: float
     area: float  # Top surface area (m2)
     center: Tuple[float, float, float]  # Centroid (cx, cy, cz)
+    layer: str = "structure/slabs"
 
 
 class ResolvedCovering(BaseModel):
@@ -242,6 +253,7 @@ class ResolvedCovering(BaseModel):
     area: float  # Surface area (m2)
     perimeter: float = 0.0  # Perimeter length (m)
     center: Tuple[float, float, float]  # Centroid (cx, cy, cz)
+    layer: str = "architecture/coverings"
 
 
 class ResolvedStairStep(BaseModel):
@@ -333,6 +345,7 @@ class ResolvedStair(BaseModel):
     total_riser_finish_area: float = 0.0
     total_concrete_volume: float = 0.0
     total_formwork_area: float = 0.0
+    layer: str = "architecture/stairs"
 
 
 
@@ -401,6 +414,7 @@ class ResolvedRoof(BaseModel):
     total_hip_length: float      # Hip ridge cap length (m)
     total_eaves_length: float    # Fascia / gutter perimeter length (m)
     total_steel_weight: float    # Structural steel framing weight (kg)
+    layer: str = "architecture/roofs"
 
 
 # MEP Colors & Defaults
@@ -517,6 +531,7 @@ class ResolvedPipeSegment(BaseModel):
     waypoints: List[Tuple[float, float, float]]
     color: str
     fittings_count: int = 0
+    layer: str = "mep/plumbing/pipes"
 
 
 class ResolvedCableCarrierSegment(BaseModel):
@@ -532,6 +547,7 @@ class ResolvedCableCarrierSegment(BaseModel):
     waypoints: List[Tuple[float, float, float]]
     color: str
     fittings_count: int = 0
+    layer: str = "mep/electrical/conduits"
 
 
 class ResolvedSanitaryTerminal(BaseModel):
@@ -545,6 +561,7 @@ class ResolvedSanitaryTerminal(BaseModel):
     rotation_angle: float = 0.0
     dimensions: Tuple[float, float, float]  # width, depth, height
     color: str
+    layer: str = "mep/plumbing/fixtures"
 
 
 class ResolvedDistributionBoard(BaseModel):
@@ -559,6 +576,7 @@ class ResolvedDistributionBoard(BaseModel):
     dimensions: Tuple[float, float, float]
     color: str
     circuits_count: int
+    layer: str = "mep/electrical/distribution"
 
 
 class ResolvedLightFixture(BaseModel):
@@ -573,6 +591,7 @@ class ResolvedLightFixture(BaseModel):
     dimensions: Tuple[float, float, float]
     color: str
     wattage: float
+    layer: str = "mep/electrical/lighting"
 
 
 class ResolvedSwitchingDevice(BaseModel):
@@ -587,6 +606,7 @@ class ResolvedSwitchingDevice(BaseModel):
     dimensions: Tuple[float, float, float]
     color: str
     gangs: int
+    layer: str = "mep/electrical/switches"
 
 
 class ResolvedOutlet(BaseModel):
@@ -600,6 +620,7 @@ class ResolvedOutlet(BaseModel):
     rotation_angle: float = 0.0
     dimensions: Tuple[float, float, float]
     color: str
+    layer: str = "mep/electrical/outlets"
 
 
 class ResolvedDuctSegment(BaseModel):
@@ -616,6 +637,7 @@ class ResolvedDuctSegment(BaseModel):
     waypoints: List[Tuple[float, float, float]]
     color: str
     fittings_count: int = 0
+    layer: str = "mep/hvac/ducts"
 
 
 class ResolvedAirTerminal(BaseModel):
@@ -630,6 +652,7 @@ class ResolvedAirTerminal(BaseModel):
     dimensions: Tuple[float, float, float]
     color: str
     flow_rate_cfm: Optional[float] = None
+    layer: str = "mep/hvac/terminals"
 
 
 class ResolvedUnitaryEquipment(BaseModel):
@@ -644,6 +667,7 @@ class ResolvedUnitaryEquipment(BaseModel):
     dimensions: Tuple[float, float, float]
     color: str
     cooling_capacity_btu: Optional[float] = None
+    layer: str = "mep/hvac/equipment"
 
 
 ResolvedElement = Union[
@@ -746,6 +770,7 @@ class SpatialResolver:
             start_point=start_point,
             end_point=end_point,
             height=height,
+            layer=derive_default_layer(col),
         )
 
     def resolve_beam(self, beam: IfcBeam) -> ResolvedBeam:
@@ -776,6 +801,7 @@ class SpatialResolver:
             span_length=span_length,
             direction_vector=direction_vector,
             rotation_angle=rotation_angle,
+            layer=derive_default_layer(beam),
         )
 
     def resolve_wall(
@@ -819,6 +845,7 @@ class SpatialResolver:
                     height=child.dimensions.height,
                     offset_distance=child.offset_distance,
                     sill_height=child.sill_height,
+                    layer=derive_default_layer(child),
                 )
                 resolved_children.append(r_door)
                 resolved_doors.append(r_door)
@@ -831,6 +858,7 @@ class SpatialResolver:
                     height=child.dimensions.height,
                     offset_distance=child.offset_distance,
                     sill_height=child.sill_height,
+                    layer=derive_default_layer(child),
                 )
                 resolved_children.append(r_win)
                 resolved_windows.append(r_win)
@@ -844,6 +872,7 @@ class SpatialResolver:
             thickness=wall.thickness,
             height=wall.height,
             children=resolved_children,
+            layer=derive_default_layer(wall),
         )
 
         return r_wall, resolved_doors, resolved_windows
@@ -859,6 +888,7 @@ class SpatialResolver:
             tag=custom.tag,
             element=custom,
             position=world_pos,
+            layer=derive_default_layer(custom),
         )
 
     def resolve_footing(self, footing: IfcFooting) -> ResolvedFooting:
@@ -948,6 +978,7 @@ class SpatialResolver:
             depth=footing.profile.depth,
             thickness=footing.profile.thickness,
             piles=resolved_piles,
+            layer=derive_default_layer(footing),
         )
 
     def resolve_slab(self, slab: IfcSlab) -> ResolvedSlab:
@@ -986,6 +1017,7 @@ class SpatialResolver:
             thickness=slab.thickness,
             area=area,
             center=(cx, cy, z),
+            layer=derive_default_layer(slab),
         )
 
     def resolve_covering(self, covering: IfcCovering) -> ResolvedCovering:
@@ -1043,6 +1075,7 @@ class SpatialResolver:
             area=area,
             perimeter=perimeter,
             center=(cx, cy, z),
+            layer=derive_default_layer(covering),
         )
 
     def resolve_stair(self, stair: IfcStair) -> ResolvedStair:
@@ -1580,6 +1613,7 @@ class SpatialResolver:
             total_riser_finish_area=tot_riser_area,
             total_concrete_volume=tot_conc_vol,
             total_formwork_area=tot_formwork,
+            layer=derive_default_layer(stair),
         )
 
     def resolve_terminal(self, terminal: TerminalElement) -> ResolvedTerminal:
@@ -1648,6 +1682,7 @@ class SpatialResolver:
                 position=(px, py, pz),
                 rotation_angle=rot_angle,
                 hosting_wall=r_wall,
+                layer=derive_default_layer(terminal),
             )
 
         elif placement.grid:
@@ -1668,6 +1703,7 @@ class SpatialResolver:
                 position=(px, py, pz),
                 rotation_angle=rot_angle,
                 hosting_wall=None,
+                layer=derive_default_layer(terminal),
             )
 
         else:
@@ -2191,6 +2227,7 @@ class SpatialResolver:
             total_hip_length=tot_hip_len,
             total_eaves_length=eaves_perimeter,
             total_steel_weight=tot_steel,
+            layer=derive_default_layer(roof),
         )
 
     def resolve_pipe(self, pipe: IfcPipeSegment) -> ResolvedPipeSegment:
@@ -2246,6 +2283,7 @@ class SpatialResolver:
             waypoints=waypoints,
             color=color,
             fittings_count=fittings,
+            layer=derive_default_layer(pipe),
         )
 
     def resolve_conduit(self, conduit: IfcCableCarrierSegment) -> ResolvedCableCarrierSegment:
@@ -2297,6 +2335,7 @@ class SpatialResolver:
             waypoints=waypoints,
             color=color,
             fittings_count=fittings,
+            layer=derive_default_layer(conduit),
         )
 
     def resolve_sanitary_terminal(self, term: IfcSanitaryTerminal) -> ResolvedSanitaryTerminal:
@@ -2318,6 +2357,7 @@ class SpatialResolver:
             rotation_angle=r_term.rotation_angle,
             dimensions=dims,
             color=color,
+            layer=derive_default_layer(term),
         )
 
     def resolve_distribution_board(self, board: IfcDistributionBoard) -> ResolvedDistributionBoard:
@@ -2340,6 +2380,7 @@ class SpatialResolver:
             dimensions=dims,
             color=color,
             circuits_count=board.circuits_count,
+            layer=derive_default_layer(board),
         )
 
     def resolve_light_fixture(self, fixture: IfcLightFixture) -> ResolvedLightFixture:
@@ -2362,6 +2403,7 @@ class SpatialResolver:
             dimensions=dims,
             color=color,
             wattage=fixture.wattage or 12.0,
+            layer=derive_default_layer(fixture),
         )
 
     def resolve_switch(self, sw: IfcSwitchingDevice) -> ResolvedSwitchingDevice:
@@ -2384,6 +2426,7 @@ class SpatialResolver:
             dimensions=dims,
             color=color,
             gangs=sw.gangs,
+            layer=derive_default_layer(sw),
         )
 
     def resolve_outlet(self, out: IfcOutlet) -> ResolvedOutlet:
@@ -2405,6 +2448,7 @@ class SpatialResolver:
             rotation_angle=r_term.rotation_angle,
             dimensions=dims,
             color=color,
+            layer=derive_default_layer(out),
         )
 
     def resolve_duct(self, duct: IfcDuctSegment) -> ResolvedDuctSegment:
@@ -2457,6 +2501,7 @@ class SpatialResolver:
             waypoints=waypoints,
             color=color,
             fittings_count=fittings,
+            layer=derive_default_layer(duct),
         )
 
     def resolve_air_terminal(self, term: IfcAirTerminal) -> ResolvedAirTerminal:
@@ -2479,6 +2524,7 @@ class SpatialResolver:
             dimensions=dims,
             color=color,
             flow_rate_cfm=term.flow_rate_cfm,
+            layer=derive_default_layer(term),
         )
 
     def resolve_unitary_equipment(self, equip: IfcUnitaryEquipment) -> ResolvedUnitaryEquipment:
@@ -2501,6 +2547,7 @@ class SpatialResolver:
             dimensions=dims,
             color=color,
             cooling_capacity_btu=equip.cooling_capacity_btu,
+            layer=derive_default_layer(equip),
         )
 
     def resolve(self) -> ResolvedManifest:
