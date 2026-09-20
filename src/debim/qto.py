@@ -122,6 +122,66 @@ def parse_stirrups(
     return {bar_type: weight}, weight
 
 
+def parse_steel_linear_mass(text: str) -> Optional[float]:
+    """
+    Parse linear mass (kg/m) from steel section designation (e.g., 'W310X60' -> 60.0 kg/m).
+    """
+    if not text:
+        return None
+    match = re.search(r"[A-Za-z0-9]+\s*[Xx]\s*([0-9]+(?:\.[0-9]+)?)$", text.strip())
+    if match:
+        try:
+            return float(match.group(1))
+        except ValueError:
+            pass
+    return None
+
+
+def is_steel_element(
+    elem_class: str,
+    tag: str,
+    material_id: Optional[str],
+    material_category: Optional[str],
+    material_name: Optional[str],
+) -> bool:
+    """Check if element is structural steel/metal based on category, material, or section tag."""
+    if material_category in ("steel", "metal"):
+        return True
+
+    combined = f"{tag} {material_id or ''} {material_name or ''}".upper()
+    keywords = [
+        "STEEL", "METAL", "SS400", "SM490", "WIDE-FLANGE", "WIDE_FLANGE",
+        "H-BEAM", "I-BEAM", "STRUCTURAL STEEL"
+    ]
+    if any(k in combined for k in keywords):
+        return True
+
+    # Search for standard steel profile designations like W310X60, H200, UB200, UC200, 2L50x5
+    if re.search(r"\b(W|H|2L|UB|UC)\d", combined):
+        return True
+
+    return False
+
+
+def is_timber_element(
+    elem_class: str,
+    tag: str,
+    material_id: Optional[str],
+    material_category: Optional[str],
+    material_name: Optional[str],
+) -> bool:
+    """Check if element is timber/wood based on category, material, or section tag."""
+    if material_category in ("timber", "wood"):
+        return True
+
+    combined = f"{tag} {material_id or ''} {material_name or ''}".upper()
+    keywords = ["TIMBER", "WOOD", "LUMBER", "PLYWOOD", "GLULAM", "TEAK", "OAK", "PINE"]
+    if any(k in combined for k in keywords):
+        return True
+
+    return False
+
+
 class SubstructureQTO(BaseModel):
     lean_concrete_volume: float = 0.0  # m³
     sand_bedding_volume: float = 0.0   # m³
@@ -190,10 +250,15 @@ class ElementQTO(BaseModel):
     tag: str
     element_class: str
     material: Optional[str] = None
+    length: float = 0.0
     concrete_volume: float = 0.0  # m³
     formwork_area: float = 0.0  # m²
     rebar_weights: Dict[str, float] = Field(default_factory=dict)  # kg by bar type
     total_rebar_weight: float = 0.0  # kg
+    structural_steel_weight: float = 0.0
+    painting_area: float = 0.0
+    weld_touchup_area: float = 0.0
+    timber_volume: float = 0.0
     substructure: Optional[SubstructureQTO] = None
     stair_assembly: Optional[StairQTO] = None
     wall_finishes: Optional[WallFinishesQTO] = None
@@ -209,6 +274,10 @@ class ProjectQTO(BaseModel):
     total_formwork_area: float = 0.0
     total_rebar_weight: float = 0.0
     total_rebar_by_type: Dict[str, float] = Field(default_factory=dict)
+    total_structural_steel_weight: float = 0.0
+    total_painting_area: float = 0.0
+    total_weld_touchup_area: float = 0.0
+    total_timber_volume: float = 0.0
     total_excavation_volume: float = 0.0
     total_lean_concrete_volume: float = 0.0
     total_sand_bedding_volume: float = 0.0
@@ -263,11 +332,25 @@ class ProjectQTO(BaseModel):
         return None
 
 
-def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
+def calculate_element_qto(
+    resolved: ResolvedElement,
+    manifest: Optional[ProjectManifest] = None,
+) -> ElementQTO:
     """Calculate QTO for a resolved element."""
     tag = resolved.tag
     rebar_dict: Dict[str, float] = {}
     total_rebar = 0.0
+
+    # Look up material details from manifest if provided
+    mat_cat = None
+    mat_name = None
+    if manifest and hasattr(resolved, "element") and getattr(resolved.element, "material", None):
+        mat_id = resolved.element.material
+        for m in manifest.materials:
+            if m.id == mat_id:
+                mat_cat = m.category.lower() if m.category else None
+                mat_name = m.name
+                break
 
     if isinstance(resolved, ResolvedFooting):
         elem = resolved.element
@@ -347,28 +430,76 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
         d = elem.profile.depth
         h = resolved.height
 
-        vol = w * d * h
-        formwork = 2.0 * (w + d) * h
+        is_steel = is_steel_element(elem.class_, tag, elem.material, mat_cat, mat_name)
+        is_timber = is_timber_element(elem.class_, tag, elem.material, mat_cat, mat_name)
 
-        if elem.reinforcement:
-            m_dict, m_wt = parse_main_bars(elem.reinforcement.main, h)
-            s_dict, s_wt = parse_stirrups(elem.reinforcement.stirrups, h, w, d)
+        if is_steel:
+            linear_mass = parse_steel_linear_mass(tag) or parse_steel_linear_mass(mat_name or "") or parse_steel_linear_mass(elem.material or "")
+            if linear_mass is not None:
+                steel_wt = linear_mass * h
+            else:
+                steel_wt = (w * d * h) * 7850.0
 
-            for btype, wt in m_dict.items():
-                rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
-            for btype, wt in s_dict.items():
-                rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
-            total_rebar = m_wt + s_wt
+            perimeter = 2.0 * (w + d)
+            paint_area = perimeter * h
+            weld_area = paint_area * 0.10
 
-        return ElementQTO(
-            tag=tag,
-            element_class=elem.class_,
-            material=elem.material,
-            concrete_volume=vol,
-            formwork_area=formwork,
-            rebar_weights=rebar_dict,
-            total_rebar_weight=total_rebar,
-        )
+            return ElementQTO(
+                tag=tag,
+                element_class=elem.class_,
+                material=elem.material,
+                length=h,
+                concrete_volume=0.0,
+                formwork_area=0.0,
+                rebar_weights={},
+                total_rebar_weight=0.0,
+                structural_steel_weight=steel_wt,
+                painting_area=paint_area,
+                weld_touchup_area=weld_area,
+            )
+
+        elif is_timber:
+            timber_vol = w * d * h
+            perimeter = 2.0 * (w + d)
+            paint_area = perimeter * h
+
+            return ElementQTO(
+                tag=tag,
+                element_class=elem.class_,
+                material=elem.material,
+                length=h,
+                concrete_volume=0.0,
+                formwork_area=0.0,
+                rebar_weights={},
+                total_rebar_weight=0.0,
+                timber_volume=timber_vol,
+                painting_area=paint_area,
+            )
+
+        else:
+            vol = w * d * h
+            formwork = 2.0 * (w + d) * h
+
+            if elem.reinforcement:
+                m_dict, m_wt = parse_main_bars(elem.reinforcement.main, h)
+                s_dict, s_wt = parse_stirrups(elem.reinforcement.stirrups, h, w, d)
+
+                for btype, wt in m_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                for btype, wt in s_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                total_rebar = m_wt + s_wt
+
+            return ElementQTO(
+                tag=tag,
+                element_class=elem.class_,
+                material=elem.material,
+                length=h,
+                concrete_volume=vol,
+                formwork_area=formwork,
+                rebar_weights=rebar_dict,
+                total_rebar_weight=total_rebar,
+            )
 
     elif isinstance(resolved, ResolvedBeam):
         elem = resolved.element
@@ -376,35 +507,83 @@ def calculate_element_qto(resolved: ResolvedElement) -> ElementQTO:
         d = elem.profile.depth
         length = resolved.span_length
 
-        vol = w * d * length
-        formwork = (2.0 * d + w) * length
+        is_steel = is_steel_element(elem.class_, tag, elem.material, mat_cat, mat_name)
+        is_timber = is_timber_element(elem.class_, tag, elem.material, mat_cat, mat_name)
 
-        if elem.reinforcement:
-            m_top_dict, m_top_wt = parse_main_bars(elem.reinforcement.main_top, length)
-            m_bot_dict, m_bot_wt = parse_main_bars(
-                elem.reinforcement.main_bottom, length
+        if is_steel:
+            linear_mass = parse_steel_linear_mass(tag) or parse_steel_linear_mass(mat_name or "") or parse_steel_linear_mass(elem.material or "")
+            if linear_mass is not None:
+                steel_wt = linear_mass * length
+            else:
+                steel_wt = (w * d * length) * 7850.0
+
+            perimeter = 2.0 * (w + d)
+            paint_area = perimeter * length
+            weld_area = paint_area * 0.10
+
+            return ElementQTO(
+                tag=tag,
+                element_class=elem.class_,
+                material=elem.material,
+                length=length,
+                concrete_volume=0.0,
+                formwork_area=0.0,
+                rebar_weights={},
+                total_rebar_weight=0.0,
+                structural_steel_weight=steel_wt,
+                painting_area=paint_area,
+                weld_touchup_area=weld_area,
             )
-            s_dict, s_wt = parse_stirrups(
-                elem.reinforcement.stirrups, length, w, d
+
+        elif is_timber:
+            timber_vol = w * d * length
+            perimeter = 2.0 * (w + d)
+            paint_area = perimeter * length
+
+            return ElementQTO(
+                tag=tag,
+                element_class=elem.class_,
+                material=elem.material,
+                length=length,
+                concrete_volume=0.0,
+                formwork_area=0.0,
+                rebar_weights={},
+                total_rebar_weight=0.0,
+                timber_volume=timber_vol,
+                painting_area=paint_area,
             )
 
-            for btype, wt in m_top_dict.items():
-                rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
-            for btype, wt in m_bot_dict.items():
-                rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
-            for btype, wt in s_dict.items():
-                rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
-            total_rebar = m_top_wt + m_bot_wt + s_wt
+        else:
+            vol = w * d * length
+            formwork = (2.0 * d + w) * length
 
-        return ElementQTO(
-            tag=tag,
-            element_class=elem.class_,
-            material=elem.material,
-            concrete_volume=vol,
-            formwork_area=formwork,
-            rebar_weights=rebar_dict,
-            total_rebar_weight=total_rebar,
-        )
+            if elem.reinforcement:
+                m_top_dict, m_top_wt = parse_main_bars(elem.reinforcement.main_top, length)
+                m_bot_dict, m_bot_wt = parse_main_bars(
+                    elem.reinforcement.main_bottom, length
+                )
+                s_dict, s_wt = parse_stirrups(
+                    elem.reinforcement.stirrups, length, w, d
+                )
+
+                for btype, wt in m_top_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                for btype, wt in m_bot_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                for btype, wt in s_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                total_rebar = m_top_wt + m_bot_wt + s_wt
+
+            return ElementQTO(
+                tag=tag,
+                element_class=elem.class_,
+                material=elem.material,
+                length=length,
+                concrete_volume=vol,
+                formwork_area=formwork,
+                rebar_weights=rebar_dict,
+                total_rebar_weight=total_rebar,
+            )
 
     elif isinstance(resolved, ResolvedWall):
         elem = resolved.element
@@ -913,6 +1092,10 @@ def calculate_qto(
     total_formwork = 0.0
     total_rebar_wt = 0.0
     rebar_by_type: Dict[str, float] = {}
+    total_struct_steel_wt = 0.0
+    total_paint_area = 0.0
+    total_weld_touchup = 0.0
+    total_timber_vol = 0.0
     total_lean_vol = 0.0
     total_sand_vol = 0.0
     total_excav_vol = 0.0
@@ -964,19 +1147,25 @@ def calculate_qto(
         m.id: m.category.lower() for m in resolved.manifest.materials
     }
 
+    manifest_obj = resolved.manifest if hasattr(resolved, "manifest") else None
+
     for elem in resolved.elements:
-        eqto = calculate_element_qto(elem)
+        eqto = calculate_element_qto(elem, manifest=manifest_obj)
         qto_elements.append(eqto)
 
         # Include volume in concrete volume total if element's material category is concrete
         mat_cat = material_categories.get(eqto.material, "") if eqto.material else ""
-        if mat_cat == "concrete" or eqto.element_class in ("IfcColumn", "IfcBeam", "IfcSlab", "IfcStair"):
+        if mat_cat == "concrete" or (eqto.element_class in ("IfcColumn", "IfcBeam", "IfcSlab", "IfcStair") and mat_cat not in ("steel", "metal", "timber", "wood")):
             total_conc_vol += eqto.concrete_volume
         elif "footing" in eqto.element_class.lower() or "f2" in eqto.tag.lower() or "footing" in eqto.tag.lower():
             total_conc_vol += eqto.concrete_volume
 
         total_formwork += eqto.formwork_area
         total_rebar_wt += eqto.total_rebar_weight
+        total_struct_steel_wt += eqto.structural_steel_weight
+        total_paint_area += eqto.painting_area
+        total_weld_touchup += eqto.weld_touchup_area
+        total_timber_vol += eqto.timber_volume
 
         for btype, wt in eqto.rebar_weights.items():
             rebar_by_type[btype] = rebar_by_type.get(btype, 0.0) + wt
@@ -1081,6 +1270,10 @@ def calculate_qto(
         total_formwork_area=total_formwork,
         total_rebar_weight=total_rebar_wt,
         total_rebar_by_type=rebar_by_type,
+        total_structural_steel_weight=total_struct_steel_wt,
+        total_painting_area=total_paint_area,
+        total_weld_touchup_area=total_weld_touchup,
+        total_timber_volume=total_timber_vol,
         total_lean_concrete_volume=total_lean_vol,
         total_sand_bedding_volume=total_sand_vol,
         total_excavation_volume=total_excav_vol,
