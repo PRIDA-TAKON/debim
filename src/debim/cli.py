@@ -13,7 +13,7 @@ from rich.table import Table
 
 from debim.compiler import compile_to_ifc
 from debim.scaffold import scaffold_element
-from debim.cost import estimate_cost, load_price_catalog
+from debim.cost import estimate_cost, generate_cost_template, load_price_catalog
 from debim.qto import calculate_qto
 from debim.resolver import resolve_manifest
 from debim.schema import ProjectManifest, load_manifest
@@ -325,23 +325,37 @@ def qto(
         raise typer.Exit(code=1)
 
 
-@app.command()
-def cost(
+cost_app = typer.Typer(
+    help="Calculate cost estimate or generate price catalog templates",
+    add_completion=False,
+    invoke_without_command=True,
+)
+app.add_typer(cost_app, name="cost")
+
+
+@cost_app.callback(invoke_without_command=True)
+def cost_main(
+    ctx: typer.Context,
     manifest: Path = typer.Option(
         Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
     ),
     prices: Path = typer.Option(
-        Path("prices.json"), "--prices", "-p", help="Path to price catalog"
+        Path("prices.json"), "--prices", "-p", help="Path or '-' to read price catalog"
     ),
     output: Optional[Path] = typer.Option(
         None, "--output", "-o", help="Path to export BOQ CSV (e.g. dist/boq.csv)"
     ),
 ):
     """Calculate cost estimate by matching QTO with price catalog"""
+    if ctx.invoked_subcommand is not None:
+        return
+
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
         raise typer.Exit(code=1)
-    if not prices.exists():
+
+    prices_str = str(prices)
+    if prices_str != "-" and not prices.exists():
         console.print(f"[bold red]Error:[/bold red] Price catalog '{prices}' not found.")
         raise typer.Exit(code=1)
 
@@ -402,6 +416,57 @@ def cost(
 
     except Exception as e:
         console.print(f"[bold red]Cost Estimation Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
+@cost_app.command(name="template")
+def cost_template(
+    manifest: Path = typer.Option(
+        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
+    ),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Path for generated template file"
+    ),
+    format: str = typer.Option(
+        "yaml", "--format", help="Output format (yaml or json)"
+    ),
+    modular: bool = typer.Option(
+        False, "--modular/--no-modular", help="Generate modular folder structure"
+    ),
+):
+    """Automatically scan project manifest and generate minimal project-scoped price catalog template"""
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        raise typer.Exit(code=1)
+
+    if output is None:
+        if modular:
+            output = Path("prices/catalog.yaml")
+        else:
+            ext = "json" if format.lower() == "json" else "yaml"
+            output = Path(f"prices.template.{ext}")
+
+    console.print(
+        f"[bold green]Generating cost template from:[/bold green] {manifest} -> [cyan]{output}[/cyan]"
+    )
+    try:
+        out_path = generate_cost_template(
+            manifest=manifest,
+            output_path=output,
+            format=format,
+            modular=modular,
+        )
+        console.print(
+            Panel(
+                f"[bold green]Cost Catalog Template Generated Successfully![/bold green]\n"
+                f"[bold cyan]Output File:[/bold cyan] {out_path}\n"
+                f"[bold cyan]Modular Mode:[/bold cyan] {modular}\n"
+                f"[dim]Populate material_cost and labor_cost fields to complete the pricing catalog.[/dim]",
+                title="[bold green]debim Cost Template Generator[/bold green]",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Cost Template Error:[/bold red]\n{e}")
         raise typer.Exit(code=1)
 
 
@@ -769,4 +834,3 @@ def scaffold_element_cmd(
 
 if __name__ == "__main__":
     app()
-
