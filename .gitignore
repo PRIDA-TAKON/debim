@@ -21,6 +21,7 @@ htmlcov/
 # CAD / BIM temporary / generated artifacts
 dist/
 *.ifc
+!tests/fixtures/*.ifc
 *.glb
 !examples/**/assets/*.glb
 

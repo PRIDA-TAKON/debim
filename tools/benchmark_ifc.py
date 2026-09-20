@@ -90,16 +90,21 @@ def run_benchmark(cache_dir: Path = DEFAULT_CACHE_DIR):
         yaml_file = cache_dir / f"{Path(bm['name']).stem}.yaml"
         recomp_ifc = cache_dir / f"{Path(bm['name']).stem}_recompiled.ifc"
 
-        # 1. Download if missing
+        # 1. Resolve IFC file (check tests/fixtures first, then cache, then download)
+        fixture_file = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / bm["name"]
         if not ifc_file.exists():
-            console.print(f"[dim]Downloading {bm['name']}...[/dim]")
-            try:
-                urllib.request.urlretrieve(bm["url"], str(ifc_file))
-            except Exception as e:
-                table.add_row(
-                    bm["id"], bm["name"], bm["category"], "-", "-", "-", "-", "-", "-", "-", f"[red]DL Fail: {e}[/red]"
-                )
-                continue
+            if fixture_file.exists():
+                import shutil
+                shutil.copy(str(fixture_file), str(ifc_file))
+            else:
+                console.print(f"[dim]Downloading {bm['name']}...[/dim]")
+                try:
+                    urllib.request.urlretrieve(bm["url"], str(ifc_file))
+                except Exception as e:
+                    table.add_row(
+                        bm["id"], bm["name"], bm["category"], "-", "-", "-", "-", "-", "-", "-", f"[red]DL Fail: {e}[/red]"
+                    )
+                    continue
 
         ifc_size = ifc_file.stat().st_size
         ifc_size_str = f"{ifc_size / 1024:.1f} KB" if ifc_size < 1024 * 1024 else f"{ifc_size / (1024 * 1024):.2f} MB"
