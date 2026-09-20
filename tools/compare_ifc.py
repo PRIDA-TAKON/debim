@@ -36,9 +36,13 @@ def count_ifc_elements(ifc_path: Path) -> Tuple[int, Counter]:
     counter = Counter()
     for elem in elements:
         entity_type = elem.is_a()
-        # Group IfcWallStandardCase into IfcWall for fair comparison
+        # Group StandardCase variants for fair comparison
         if entity_type == "IfcWallStandardCase":
             entity_type = "IfcWall"
+        elif entity_type == "IfcDoorStandardCase":
+            entity_type = "IfcDoor"
+        elif entity_type == "IfcWindowStandardCase":
+            entity_type = "IfcWindow"
         counter[entity_type] += 1
 
     return len(elements), counter
