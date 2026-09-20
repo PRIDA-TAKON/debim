@@ -152,7 +152,7 @@ def download_and_extract_sources(target_dir: Path, download_limit: Optional[int]
 
     # Generate dataset-metadata.json for Kaggle
     kaggle_meta = {
-        "title": "debim 5000 IFC Benchmark Dataset",
+        "title": "debim 5000 ifc benchmark",
         "id": "pridatakon/debim-5000-ifc-benchmark",
         "licenses": [
             {
@@ -163,6 +163,46 @@ def download_and_extract_sources(target_dir: Path, download_limit: Optional[int]
     meta_json_path = target_dir / "dataset-metadata.json"
     meta_json_path.write_text(json.dumps(kaggle_meta, indent=2), encoding="utf-8")
     print(f"[INFO] Generated Kaggle metadata: {meta_json_path}")
+
+    # Generate README.md for the dataset
+    readme_path = target_dir / "README.md"
+    readme_content = f"""# 🏛️ debim OpenBIM Benchmark Dataset
+
+A curated, deduplicated, and indexed collection of real-world Industry Foundation Classes (IFC) building and infrastructure models for AI agents, machine learning research, and BIM compiler validation.
+
+---
+
+## 📂 Overview & Contents
+- **Total Unique Models:** {len(records)} verified IFC files
+- **Primary Standard Schemas:** IFC4X3, IFC4, IFC2X3
+- **Metadata Index:** `dataset_index.csv` includes schema, file size, MD5 hash, and source repository.
+
+## 🏛️ Sources & Provenance
+All models in this dataset originate from official open-standard testing and certification suites:
+- **buildingSMART Official Sample Test Files** (`buildingSMART/Sample-Test-Files`)
+- **buildingSMART IFC4.x Specification Models** (`buildingSMART/IFC4.x-specification-models`)
+- **buildingSMART Certification Datasets** (`buildingSMART/Certification-datasets`)
+- **buildingSMART Community Sample Files** (`buildingsmart-community/Community-Sample-Test-Files`)
+
+## 📜 Licensing & Attribution
+This dataset is published under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** license.
+Original models copyright by **buildingSMART International Ltd** and their respective community contributors.
+
+## 🚀 Quickstart
+Inspect and parse models with `ifcopenshell` or `debim`:
+```python
+import ifcopenshell
+import pandas as pd
+
+df = pd.read_csv("dataset_index.csv")
+print(df.head())
+
+model = ifcopenshell.open(df.iloc[0]["relative_path"])
+print(f"Schema: {{model.schema}}, Total Elements: {{len(model.by_type('IfcElement'))}}")
+```
+"""
+    readme_path.write_text(readme_content, encoding="utf-8")
+    print(f"[INFO] Generated Dataset README: {readme_path}")
 
     # Cleanup raw download zip files to minimize storage
     shutil.rmtree(raw_dir, ignore_errors=True)
