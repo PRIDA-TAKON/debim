@@ -1,0 +1,138 @@
+currency: THB
+items:
+  MAT-CONC-01:
+    name: Structural Concrete 280 ksc
+    unit: m3
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 03 30 00
+      uniformat: B1010
+  MAT-STEEL-DB16:
+    name: Structural Steel
+    unit: kg
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 05 12 00
+      uniformat: B10
+  MAT-STEEL-STRUCT:
+    name: Metal - Steel - 345 MPa
+    unit: kg
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 05 12 00
+      uniformat: B10
+  MAT-BRICK-01:
+    name: Plasterboard
+    unit: m3
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 03 00 00
+      uniformat: B10
+  MAT-TIMBER-01:
+    name: Wood - Sheathing - plywood
+    unit: m3
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 03 00 00
+      uniformat: B10
+  MAT-FORMWORK:
+    name: Timber Formwork
+    unit: m2
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 03 11 00
+      uniformat: B1010
+  MAT-REBAR-DB16:
+    name: Steel Reinforcement Bar DB16
+    unit: kg
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 03 21 00
+      uniformat: B1010
+  MAT-LEAN-CONC:
+    name: Lean Concrete Bedding (1:3:6)
+    unit: m3
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 03 30 00
+      uniformat: A1010
+  MAT-SAND-BEDDING:
+    name: Compacted Sand Bedding
+    unit: m3
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 31 23 23
+      uniformat: A1010
+  MAT-PILE-PC:
+    name: Precast Concrete Pile
+    unit: m
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 31 62 00
+      uniformat: A1020
+  MAT-PILE-DRIVE:
+    name: Pile Driving Service
+    unit: set
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 31 62 00
+      uniformat: A1020
+  MAT-PILE-CUT:
+    name: Pile Head Cut & Trimming
+    unit: set
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 31 62 00
+      uniformat: A1020
+  FIN-CEIL-GYPSUM:
+    name: Gypsum Board Ceiling
+    unit: m2
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 09 29 00
+      uniformat: C3010
+  ROOF-STEEL-TRUSS:
+    name: Roof Structural Steel Truss
+    unit: kg
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 05 12 00
+      uniformat: B1020
+  ROOF-TILE-CONC:
+    name: Roof Tile Covering
+    unit: m2
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 07 31 00
+      uniformat: B1020
+  ROOF-FASCIA:
+    name: Fascia Board
+    unit: m
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 06 20 00
+      uniformat: B1020
+  ROOF-INSULATION:
+    name: Roof Thermal Foil Insulation
+    unit: m2
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 07 21 00
+      uniformat: B1020

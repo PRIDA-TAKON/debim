@@ -1,0 +1,204 @@
+schema: IFC4-Minimal
+project:
+  id: PRJ-OPENBIM-DUPLEX-01
+  name: OpenBIM Standard Duplex House (สถาปัตยกรรม โครงสร้าง ระบบอาคาร เฟอร์นิเจอร์)
+  units:
+    length: METER
+    area: SQUARE_METER
+    volume: CUBIC_METER
+spatial_structure:
+  storeys:
+  - id: Level 1
+    name: Level 1
+    elevation: 0.0
+    height: 3.5
+  - id: Level 2
+    name: Level 2
+    elevation: 3.1
+    height: 3.5
+  - id: T/FDN
+    name: T/FDN
+    elevation: -1.25
+    height: 3.5
+  - id: Roof
+    name: Roof
+    elevation: 6.0
+    height: 3.5
+grids:
+  axes_x:
+    GX_1: 4.4
+    GX_2: -3.12
+    GX_3: 0.21
+    GX_4: 0.27
+    GX_5: -3.85
+    GX_6: 11.92
+    GX_7: 8.59
+    GX_8: 8.53
+    GX_9: 12.65
+    GX_10: 2.54
+    GX_11: 8.38
+    GX_12: 4.19
+    GX_13: 0.42
+    GX_14: 4.61
+    GX_15: 4.77
+    GX_16: 6.36
+    GX_17: 6.26
+    GX_18: 0.0
+    GX_19: 4.46
+    GX_20: 4.12
+    GX_21: 2.17
+    GX_22: 4.67
+    GX_23: 6.63
+    GX_24: 4.34
+    GX_25: 8.8
+    GX_26: 2.65
+    GX_27: 6.15
+    GX_28: 2.38
+    GX_29: 0.15
+    GX_30: 6.42
+    GX_31: 8.65
+    GX_32: 2.44
+    GX_33: 3.9
+    GX_34: 4.03
+    GX_35: 4.9
+    GX_36: 1.49
+    GX_37: 7.31
+    GX_38: 6.84
+    GX_39: 7.92
+    GX_40: 7.98
+    GX_41: 0.81
+    GX_42: 1.89
+    GX_43: 1.94
+    GX_44: 8.47
+    GX_45: 8.11
+    GX_46: 12.38
+    GX_47: 5.11
+    GX_48: 9.37
+    GX_49: 3.1
+    GX_50: 8.98
+    GX_51: 5.02
+    GX_52: 6.55
+    GX_53: 7.64
+    GX_54: 5.44
+  axes_y:
+    GY_1: -10.0
+    GY_2: -17.52
+    GY_3: -23.7
+    GY_4: -13.4
+    GY_5: -21.63
+    GY_6: -7.8
+    GY_7: -0.28
+    GY_8: 5.9
+    GY_9: -4.4
+    GY_10: 3.83
+    GY_11: -0.42
+    GY_12: -17.8
+    GY_13: -4.21
+    GY_14: -10.31
+    GY_15: -13.8
+    GY_16: -17.59
+    GY_17: -0.21
+    GY_18: -17.38
+    GY_19: 0.0
+    GY_20: -9.78
+    GY_21: -7.58
+    GY_22: -6.76
+    GY_23: -11.07
+    GY_24: -11.0
+    GY_25: -6.19
+    GY_26: -11.61
+    GY_27: -6.25
+    GY_28: -11.67
+    GY_29: -11.55
+    GY_30: -6.13
+    GY_31: -7.51
+    GY_32: -7.22
+    GY_33: -8.07
+    GY_34: -10.58
+    GY_35: -6.7
+    GY_36: -10.06
+    GY_37: -7.74
+    GY_38: -6.57
+    GY_39: -7.68
+    GY_40: -11.26
+    GY_41: -10.12
+    GY_42: -1.68
+    GY_43: -9.33
+    GY_44: -9.69
+    GY_45: -1.97
+    GY_46: -12.69
+    GY_47: -8.99
+    GY_48: -8.49
+    GY_49: -10.95
+    GY_50: -8.43
+    GY_51: -10.52
+    GY_52: -12.6
+    GY_53: -10.25
+    GY_54: -7.95
+    GY_55: -2.86
+    GY_56: -7.43
+    GY_57: -3.83
+    GY_58: 5.04
+    GY_59: -22.18
+    GY_60: -17.14
+materials:
+- id: CONC_280
+  name: Structural Concrete 280 ksc
+  category: concrete
+  unit_cost_ref: MAT-CONC-01
+- id: STEEL_STRUCT
+  name: Structural Steel
+  category: steel
+  unit_cost_ref: MAT-STEEL-DB16
+- id: METAL___STEEL___345_MPA
+  name: Metal - Steel - 345 MPa
+  category: steel
+  unit_cost_ref: MAT-STEEL-STRUCT
+- id: PLASTERBOARD
+  name: Plasterboard
+  category: masonry
+  unit_cost_ref: MAT-BRICK-01
+- id: CONCRETE___CAST_IN_SITU
+  name: Concrete - Cast In Situ
+  category: concrete
+  unit_cost_ref: MAT-CONC-01
+- id: MASONRY___BRICK
+  name: Masonry - Brick
+  category: masonry
+  unit_cost_ref: MAT-BRICK-01
+- id: METAL___STUD_LAYER
+  name: Metal - Stud Layer
+  category: steel
+  unit_cost_ref: MAT-STEEL-STRUCT
+- id: CONCRETE
+  name: Concrete
+  category: concrete
+  unit_cost_ref: MAT-CONC-01
+- id: WOOD___SHEATHING___PLYWO
+  name: Wood - Sheathing - plywood
+  category: timber
+  unit_cost_ref: MAT-TIMBER-01
+- id: WOOD___FLOORING
+  name: Wood - Flooring
+  category: timber
+  unit_cost_ref: MAT-TIMBER-01
+- id: CERAMIC_TILE
+  name: Ceramic Tile
+  category: masonry
+  unit_cost_ref: MAT-BRICK-01
+- id: BASIC_ROOF_LIVE_ROOF_OVE
+  name: Basic Roof:Live Roof over Wood Joist Flat Roof:184483
+  category: timber
+  unit_cost_ref: MAT-TIMBER-01
+- id: SITE___GRASS
+  name: Site - Grass
+  category: timber
+  unit_cost_ref: MAT-TIMBER-01
+includes:
+- modules/structure.yaml
+- modules/architecture.yaml
+- modules/furniture.yaml
+- modules/mep_fixtures.yaml
+- modules/mep_plumbing.yaml
+- modules/mep_hvac.yaml
+- modules/mep_electrical.yaml

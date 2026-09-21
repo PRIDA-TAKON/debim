@@ -4,6 +4,8 @@ from debim.schema import load_manifest
 from debim.resolver import resolve_manifest
 from debim.qto import calculate_qto
 from debim.compiler import compile_to_ifc
+from debim.cost import estimate_cost, load_price_catalog
+from debim.viewer import generate_viewer_html
 
 
 def test_contemporary_thai_house_manifest():
@@ -151,3 +153,32 @@ def test_contemporary_thai_house_ifc_compilation(tmp_path):
     compile_to_ifc(manifest_path, out_ifc)
     assert out_ifc.exists()
     assert out_ifc.stat().st_size > 5000
+
+
+def test_contemporary_thai_house_cost_estimation():
+    manifest_path = Path("examples/contemporary_thai_house/project.yaml")
+    prices_yaml_path = Path("examples/contemporary_thai_house/prices.yaml")
+    assert prices_yaml_path.exists(), "prices.yaml should exist"
+
+    manifest = load_manifest(manifest_path)
+    qto_result = calculate_qto(manifest)
+    catalog = load_price_catalog(prices_yaml_path)
+
+    # Verify standards metadata
+    assert catalog.items["MAT-CONC-210"].standards.masterformat == "03 30 00"
+    assert catalog.items["MAT-CONC-210"].standards.uniformat == "B1010"
+    assert catalog.items["MAT-BRICK-01"].standards.masterformat == "04 21 00"
+
+    estimate = estimate_cost(qto_result, catalog, manifest)
+    assert estimate.currency == "THB"
+    assert round(estimate.total_material_cost, 2) == 1155179.08
+    assert round(estimate.total_labor_cost, 2) == 405908.54
+    assert round(estimate.grand_total, 2) == 1561087.62
+
+
+def test_contemporary_thai_house_viewer_generation():
+    manifest_path = Path("examples/contemporary_thai_house/project.yaml")
+    html = generate_viewer_html(manifest_path)
+    assert "Hierarchical Layer Explorer" in html
+    assert "layer-tree-container" in html
+

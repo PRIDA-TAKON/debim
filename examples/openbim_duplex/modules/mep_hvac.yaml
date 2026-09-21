@@ -1,0 +1,1937 @@
+elements:
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:540160
+  name: Pipe Types:Mechanical Pipe:540160
+  source: ifc/segment/Pipe Types:Mechanical Pipe:540160
+  placement:
+    position:
+    - 6.581
+    - -6.882
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:540175
+  name: Pipe Types:Mechanical Pipe:540175
+  source: ifc/segment/Pipe Types:Mechanical Pipe:540175
+  placement:
+    position:
+    - 8.137
+    - -6.155
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:540182
+  name: Pipe Types:Mechanical Pipe:540182
+  source: ifc/segment/Pipe Types:Mechanical Pipe:540182
+  placement:
+    position:
+    - 8.174
+    - -4.336
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:540200
+  name: Pipe Types:Mechanical Pipe:540200
+  source: ifc/segment/Pipe Types:Mechanical Pipe:540200
+  placement:
+    position:
+    - 8.314
+    - -4.336
+    - 2.769
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:545888
+  name: Pipe Types:Mechanical Pipe:545888
+  source: ifc/segment/Pipe Types:Mechanical Pipe:545888
+  placement:
+    position:
+    - 0.406
+    - -17.432
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:546125
+  name: Pipe Types:Mechanical Pipe:546125
+  source: ifc/segment/Pipe Types:Mechanical Pipe:546125
+  placement:
+    position:
+    - 0.369
+    - -12.791
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:546131
+  name: Pipe Types:Mechanical Pipe:546131
+  source: ifc/segment/Pipe Types:Mechanical Pipe:546131
+  placement:
+    position:
+    - 0.546
+    - -10.457
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:546374
+  name: Pipe Types:Mechanical Pipe:546374
+  source: ifc/segment/Pipe Types:Mechanical Pipe:546374
+  placement:
+    position:
+    - 4.786
+    - -8.013
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:546381
+  name: Pipe Types:Mechanical Pipe:546381
+  source: ifc/segment/Pipe Types:Mechanical Pipe:546381
+  placement:
+    position:
+    - 4.823
+    - -7.577
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:546819
+  name: Pipe Types:Mechanical Pipe:546819
+  source: ifc/segment/Pipe Types:Mechanical Pipe:546819
+  placement:
+    position:
+    - 6.052
+    - -6.919
+    - 3.172
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:546826
+  name: Pipe Types:Mechanical Pipe:546826
+  source: ifc/segment/Pipe Types:Mechanical Pipe:546826
+  placement:
+    position:
+    - 6.324
+    - -6.919
+    - 2.769
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:546828
+  name: Pipe Types:Mechanical Pipe:546828
+  source: ifc/segment/Pipe Types:Mechanical Pipe:546828
+  placement:
+    position:
+    - 6.362
+    - -6.919
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:546906
+  name: Pipe Types:Mechanical Pipe:546906
+  source: ifc/segment/Pipe Types:Mechanical Pipe:546906
+  placement:
+    position:
+    - 6.618
+    - -6.199
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:546969
+  name: Pipe Types:Mechanical Pipe:546969
+  source: ifc/segment/Pipe Types:Mechanical Pipe:546969
+  placement:
+    position:
+    - 8.314
+    - -6.155
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547114
+  name: Pipe Types:Mechanical Pipe:547114
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547114
+  placement:
+    position:
+    - 8.314
+    - -6.041
+    - 3.159
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547121
+  name: Pipe Types:Mechanical Pipe:547121
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547121
+  placement:
+    position:
+    - 8.314
+    - -6.079
+    - 2.769
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547146
+  name: Pipe Types:Mechanical Pipe:547146
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547146
+  placement:
+    position:
+    - 8.358
+    - -6.199
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547150
+  name: Pipe Types:Mechanical Pipe:547150
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547150
+  placement:
+    position:
+    - 8.18
+    - -6.199
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547183
+  name: Pipe Types:Mechanical Pipe:547183
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547183
+  placement:
+    position:
+    - 8.351
+    - -6.369
+    - 3.18
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547247
+  name: Pipe Types:Mechanical Pipe:547247
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547247
+  placement:
+    position:
+    - 8.314
+    - -15.1
+    - 2.769
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547266
+  name: Pipe Types:Mechanical Pipe:547266
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547266
+  placement:
+    position:
+    - 8.314
+    - -17.092
+    - 3.178
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547273
+  name: Pipe Types:Mechanical Pipe:547273
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547273
+  placement:
+    position:
+    - 8.314
+    - -17.129
+    - 2.769
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547286
+  name: Pipe Types:Mechanical Pipe:547286
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547286
+  placement:
+    position:
+    - 7.898
+    - -17.432
+    - 0.116
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547487
+  name: Pipe Types:Mechanical Pipe:547487
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547487
+  placement:
+    position:
+    - 6.75
+    - -17.347
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547595
+  name: Pipe Types:Mechanical Pipe:547595
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547595
+  placement:
+    position:
+    - 6.712
+    - -17.432
+    - 0.116
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547742
+  name: Pipe Types:Mechanical Pipe:547742
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547742
+  placement:
+    position:
+    - 0.369
+    - -14.841
+    - 0.116
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547784
+  name: Pipe Types:Mechanical Pipe:547784
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547784
+  placement:
+    position:
+    - 0.369
+    - -14.798
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547802
+  name: Pipe Types:Mechanical Pipe:547802
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547802
+  placement:
+    position:
+    - 0.453
+    - -12.863
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547856
+  name: Pipe Types:Mechanical Pipe:547856
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547856
+  placement:
+    position:
+    - 0.369
+    - -12.835
+    - 0.116
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:547956
+  name: Pipe Types:Mechanical Pipe:547956
+  source: ifc/segment/Pipe Types:Mechanical Pipe:547956
+  placement:
+    position:
+    - 6.157
+    - -8.057
+    - 0.116
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:548047
+  name: Pipe Types:Mechanical Pipe:548047
+  source: ifc/segment/Pipe Types:Mechanical Pipe:548047
+  placement:
+    position:
+    - 6.276
+    - -9.033
+    - 0.116
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:548082
+  name: Pipe Types:Mechanical Pipe:548082
+  source: ifc/segment/Pipe Types:Mechanical Pipe:548082
+  placement:
+    position:
+    - 4.83
+    - -8.057
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:548089
+  name: Pipe Types:Mechanical Pipe:548089
+  source: ifc/segment/Pipe Types:Mechanical Pipe:548089
+  placement:
+    position:
+    - 4.786
+    - -8.989
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:548116
+  name: Pipe Types:Mechanical Pipe:548116
+  source: ifc/segment/Pipe Types:Mechanical Pipe:548116
+  placement:
+    position:
+    - 4.83
+    - -9.033
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:548123
+  name: Pipe Types:Mechanical Pipe:548123
+  source: ifc/segment/Pipe Types:Mechanical Pipe:548123
+  placement:
+    position:
+    - 4.786
+    - -9.053
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:548835
+  name: Pipe Types:Mechanical Pipe:548835
+  source: ifc/segment/Pipe Types:Mechanical Pipe:548835
+  placement:
+    position:
+    - 8.314
+    - -7.604
+    - 3.18
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:549038
+  name: Pipe Types:Mechanical Pipe:549038
+  source: ifc/segment/Pipe Types:Mechanical Pipe:549038
+  placement:
+    position:
+    - 8.351
+    - -7.642
+    - 3.18
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:549955
+  name: Pipe Types:Mechanical Pipe:549955
+  source: ifc/segment/Pipe Types:Mechanical Pipe:549955
+  placement:
+    position:
+    - 4.83
+    - -10.293
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:549960
+  name: Pipe Types:Mechanical Pipe:549960
+  source: ifc/segment/Pipe Types:Mechanical Pipe:549960
+  placement:
+    position:
+    - 4.786
+    - -10.42
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:550018
+  name: Pipe Types:Mechanical Pipe:550018
+  source: ifc/segment/Pipe Types:Mechanical Pipe:550018
+  placement:
+    position:
+    - 6.225
+    - -10.256
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:550028
+  name: Pipe Types:Mechanical Pipe:550028
+  source: ifc/segment/Pipe Types:Mechanical Pipe:550028
+  placement:
+    position:
+    - 6.225
+    - -9.908
+    - 3.178
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:550036
+  name: Pipe Types:Mechanical Pipe:550036
+  source: ifc/segment/Pipe Types:Mechanical Pipe:550036
+  placement:
+    position:
+    - 4.83
+    - -9.097
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:550041
+  name: Pipe Types:Mechanical Pipe:550041
+  source: ifc/segment/Pipe Types:Mechanical Pipe:550041
+  placement:
+    position:
+    - 4.786
+    - -10.249
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:550067
+  name: Pipe Types:Mechanical Pipe:550067
+  source: ifc/segment/Pipe Types:Mechanical Pipe:550067
+  placement:
+    position:
+    - 6.225
+    - -9.118
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:550077
+  name: Pipe Types:Mechanical Pipe:550077
+  source: ifc/segment/Pipe Types:Mechanical Pipe:550077
+  placement:
+    position:
+    - 6.225
+    - -9.193
+    - 3.178
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:554197
+  name: Pipe Types:Mechanical Pipe:554197
+  source: ifc/segment/Pipe Types:Mechanical Pipe:554197
+  placement:
+    position:
+    - 5.449
+    - -6.919
+    - 3.172
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:554437
+  name: Pipe Types:Mechanical Pipe:554437
+  source: ifc/segment/Pipe Types:Mechanical Pipe:554437
+  placement:
+    position:
+    - 8.314
+    - -15.121
+    - 3.178
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:554580
+  name: Pipe Types:Mechanical Pipe:554580
+  source: ifc/segment/Pipe Types:Mechanical Pipe:554580
+  placement:
+    position:
+    - 8.314
+    - -6.385
+    - 3.18
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:554945
+  name: Pipe Types:Mechanical Pipe:554945
+  source: ifc/segment/Pipe Types:Mechanical Pipe:554945
+  placement:
+    position:
+    - 8.314
+    - -4.384
+    - 3.159
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:555449
+  name: Pipe Types:Mechanical Pipe:555449
+  source: ifc/segment/Pipe Types:Mechanical Pipe:555449
+  placement:
+    position:
+    - 0.453
+    - -14.804
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:555856
+  name: Pipe Types:Mechanical Pipe:555856
+  source: ifc/segment/Pipe Types:Mechanical Pipe:555856
+  placement:
+    position:
+    - 6.157
+    - -8.286
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557526
+  name: Pipe Types:Mechanical Pipe:557526
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557526
+  placement:
+    position:
+    - 2.186
+    - -11.597
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557527
+  name: Pipe Types:Mechanical Pipe:557527
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557527
+  placement:
+    position:
+    - 0.63
+    - -13.442
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557528
+  name: Pipe Types:Mechanical Pipe:557528
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557528
+  placement:
+    position:
+    - 0.49
+    - -13.48
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557530
+  name: Pipe Types:Mechanical Pipe:557530
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557530
+  placement:
+    position:
+    - 0.453
+    - -13.48
+    - 2.679
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Round Duct:Taps:557534
+  name: Round Duct:Taps:557534
+  source: ifc/segment/Round Duct:Taps:557534
+  placement:
+    position:
+    - 3.588
+    - -10.732
+    - 4.313
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557550
+  name: Pipe Types:Mechanical Pipe:557550
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557550
+  placement:
+    position:
+    - 2.101
+    - -0.396
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557552
+  name: Pipe Types:Mechanical Pipe:557552
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557552
+  placement:
+    position:
+    - 8.398
+    - -7.339
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557553
+  name: Pipe Types:Mechanical Pipe:557553
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557553
+  placement:
+    position:
+    - 4.018
+    - -7.376
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557555
+  name: Pipe Types:Mechanical Pipe:557555
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557555
+  placement:
+    position:
+    - 3.98
+    - -10.219
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557557
+  name: Pipe Types:Mechanical Pipe:557557
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557557
+  placement:
+    position:
+    - 3.338
+    - -10.256
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557563
+  name: Pipe Types:Mechanical Pipe:557563
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557563
+  placement:
+    position:
+    - 2.442
+    - -10.914
+    - 2.679
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557564
+  name: Pipe Types:Mechanical Pipe:557564
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557564
+  placement:
+    position:
+    - 2.223
+    - -10.914
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557567
+  name: Pipe Types:Mechanical Pipe:557567
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557567
+  placement:
+    position:
+    - 0.674
+    - -11.634
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557568
+  name: Pipe Types:Mechanical Pipe:557568
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557568
+  placement:
+    position:
+    - 0.453
+    - -11.716
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557569
+  name: Pipe Types:Mechanical Pipe:557569
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557569
+  placement:
+    position:
+    - 0.453
+    - -11.794
+    - 3.178
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557570
+  name: Pipe Types:Mechanical Pipe:557570
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557570
+  placement:
+    position:
+    - 0.453
+    - -11.754
+    - 2.679
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557571
+  name: Pipe Types:Mechanical Pipe:557571
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557571
+  placement:
+    position:
+    - 0.4
+    - -11.634
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557574
+  name: Pipe Types:Mechanical Pipe:557574
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557574
+  placement:
+    position:
+    - 0.496
+    - -11.634
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557576
+  name: Pipe Types:Mechanical Pipe:557576
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557576
+  placement:
+    position:
+    - 0.4
+    - -11.324
+    - 3.18
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557586
+  name: Pipe Types:Mechanical Pipe:557586
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557586
+  placement:
+    position:
+    - 0.453
+    - -0.747
+    - 3.159
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557587
+  name: Pipe Types:Mechanical Pipe:557587
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557587
+  placement:
+    position:
+    - 0.453
+    - -0.704
+    - 2.679
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557590
+  name: Pipe Types:Mechanical Pipe:557590
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557590
+  placement:
+    position:
+    - 0.879
+    - -0.396
+    - 0.116
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557596
+  name: Pipe Types:Mechanical Pipe:557596
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557596
+  placement:
+    position:
+    - 2.035
+    - -0.486
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557597
+  name: Pipe Types:Mechanical Pipe:557597
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557597
+  placement:
+    position:
+    - 2.057
+    - -0.396
+    - 0.116
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557599
+  name: Pipe Types:Mechanical Pipe:557599
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557599
+  placement:
+    position:
+    - 0.922
+    - -0.396
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557601
+  name: Pipe Types:Mechanical Pipe:557601
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557601
+  placement:
+    position:
+    - 8.398
+    - -2.973
+    - 0.116
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557603
+  name: Pipe Types:Mechanical Pipe:557603
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557603
+  placement:
+    position:
+    - 8.398
+    - -2.929
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557604
+  name: Pipe Types:Mechanical Pipe:557604
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557604
+  placement:
+    position:
+    - 8.314
+    - -5.056
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557605
+  name: Pipe Types:Mechanical Pipe:557605
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557605
+  placement:
+    position:
+    - 8.398
+    - -5.093
+    - 0.116
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557609
+  name: Pipe Types:Mechanical Pipe:557609
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557609
+  placement:
+    position:
+    - 2.61
+    - -9.776
+    - 0.116
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557611
+  name: Pipe Types:Mechanical Pipe:557611
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557611
+  placement:
+    position:
+    - 2.523
+    - -8.799
+    - 0.116
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557612
+  name: Pipe Types:Mechanical Pipe:557612
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557612
+  placement:
+    position:
+    - 2.647
+    - -9.776
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557614
+  name: Pipe Types:Mechanical Pipe:557614
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557614
+  placement:
+    position:
+    - 3.98
+    - -9.733
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557615
+  name: Pipe Types:Mechanical Pipe:557615
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557615
+  placement:
+    position:
+    - 2.56
+    - -8.799
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557617
+  name: Pipe Types:Mechanical Pipe:557617
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557617
+  placement:
+    position:
+    - 3.98
+    - -8.755
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557622
+  name: Pipe Types:Mechanical Pipe:557622
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557622
+  placement:
+    position:
+    - 0.453
+    - -10.073
+    - 3.18
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557623
+  name: Pipe Types:Mechanical Pipe:557623
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557623
+  placement:
+    position:
+    - 0.4
+    - -10.052
+    - 3.18
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557644
+  name: Pipe Types:Mechanical Pipe:557644
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557644
+  placement:
+    position:
+    - 2.579
+    - -7.54
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557646
+  name: Pipe Types:Mechanical Pipe:557646
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557646
+  placement:
+    position:
+    - 3.98
+    - -7.497
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557647
+  name: Pipe Types:Mechanical Pipe:557647
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557647
+  placement:
+    position:
+    - 2.542
+    - -7.827
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557648
+  name: Pipe Types:Mechanical Pipe:557648
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557648
+  placement:
+    position:
+    - 2.542
+    - -7.883
+    - 3.178
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557652
+  name: Pipe Types:Mechanical Pipe:557652
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557652
+  placement:
+    position:
+    - 2.579
+    - -8.737
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557654
+  name: Pipe Types:Mechanical Pipe:557654
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557654
+  placement:
+    position:
+    - 3.98
+    - -8.693
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557655
+  name: Pipe Types:Mechanical Pipe:557655
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557655
+  placement:
+    position:
+    - 2.542
+    - -8.699
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557656
+  name: Pipe Types:Mechanical Pipe:557656
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557656
+  placement:
+    position:
+    - 2.542
+    - -8.641
+    - 3.178
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557685
+  name: Pipe Types:Mechanical Pipe:557685
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557685
+  placement:
+    position:
+    - 0.453
+    - -2.695
+    - 3.159
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557689
+  name: Pipe Types:Mechanical Pipe:557689
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557689
+  placement:
+    position:
+    - 0.453
+    - -11.287
+    - 3.18
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557695
+  name: Pipe Types:Mechanical Pipe:557695
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557695
+  placement:
+    position:
+    - 0.453
+    - -13.442
+    - 3.178
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557700
+  name: Pipe Types:Mechanical Pipe:557700
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557700
+  placement:
+    position:
+    - 8.314
+    - -3.005
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:557710
+  name: Pipe Types:Mechanical Pipe:557710
+  source: ifc/segment/Pipe Types:Mechanical Pipe:557710
+  placement:
+    position:
+    - 2.61
+    - -9.739
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:577748
+  name: Pipe Types:Mechanical Pipe:577748
+  source: ifc/segment/Pipe Types:Mechanical Pipe:577748
+  placement:
+    position:
+    - 8.404
+    - -6.369
+    - 2.776
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:577808
+  name: Pipe Types:Mechanical Pipe:577808
+  source: ifc/segment/Pipe Types:Mechanical Pipe:577808
+  placement:
+    position:
+    - 8.404
+    - -15.056
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:577813
+  name: Pipe Types:Mechanical Pipe:577813
+  source: ifc/segment/Pipe Types:Mechanical Pipe:577813
+  placement:
+    position:
+    - 8.404
+    - -6.325
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:577870
+  name: Pipe Types:Mechanical Pipe:577870
+  source: ifc/segment/Pipe Types:Mechanical Pipe:577870
+  placement:
+    position:
+    - 8.404
+    - -7.642
+    - 2.776
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:577872
+  name: Pipe Types:Mechanical Pipe:577872
+  source: ifc/segment/Pipe Types:Mechanical Pipe:577872
+  placement:
+    position:
+    - 8.404
+    - -7.598
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:577911
+  name: Pipe Types:Mechanical Pipe:577911
+  source: ifc/segment/Pipe Types:Mechanical Pipe:577911
+  placement:
+    position:
+    - 6.756
+    - -17.432
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:577920
+  name: Pipe Types:Mechanical Pipe:577920
+  source: ifc/segment/Pipe Types:Mechanical Pipe:577920
+  placement:
+    position:
+    - 7.941
+    - -17.432
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:577991
+  name: Pipe Types:Mechanical Pipe:577991
+  source: ifc/segment/Pipe Types:Mechanical Pipe:577991
+  placement:
+    position:
+    - 0.369
+    - -17.394
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578143
+  name: Pipe Types:Mechanical Pipe:578143
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578143
+  placement:
+    position:
+    - 6.225
+    - -9.946
+    - 2.769
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578188
+  name: Pipe Types:Mechanical Pipe:578188
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578188
+  placement:
+    position:
+    - 6.225
+    - -9.155
+    - 2.769
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578228
+  name: Pipe Types:Mechanical Pipe:578228
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578228
+  placement:
+    position:
+    - 5.466
+    - -6.919
+    - 2.769
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578230
+  name: Pipe Types:Mechanical Pipe:578230
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578230
+  placement:
+    position:
+    - 5.51
+    - -6.919
+    - 3.172
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578268
+  name: Pipe Types:Mechanical Pipe:578268
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578268
+  placement:
+    position:
+    - 5.355
+    - -7.21
+    - 3.305
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578279
+  name: Pipe Types:Mechanical Pipe:578279
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578279
+  placement:
+    position:
+    - 5.466
+    - -7.21
+    - 2.776
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578403
+  name: Pipe Types:Mechanical Pipe:578403
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578403
+  placement:
+    position:
+    - 5.466
+    - -7.54
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578423
+  name: Pipe Types:Mechanical Pipe:578423
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578423
+  placement:
+    position:
+    - 5.466
+    - -7.166
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578435
+  name: Pipe Types:Mechanical Pipe:578435
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578435
+  placement:
+    position:
+    - 5.466
+    - -7.21
+    - 3.076
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578472
+  name: Pipe Types:Mechanical Pipe:578472
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578472
+  placement:
+    position:
+    - 5.412
+    - -7.173
+    - 3.737
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578485
+  name: Pipe Types:Mechanical Pipe:578485
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578485
+  placement:
+    position:
+    - 5.412
+    - -6.919
+    - 3.701
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578532
+  name: Pipe Types:Mechanical Pipe:578532
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578532
+  placement:
+    position:
+    - 5.341
+    - -7.218
+    - 3.73
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578609
+  name: Pipe Types:Mechanical Pipe:578609
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578609
+  placement:
+    position:
+    - 5.412
+    - -6.919
+    - 3.209
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578656
+  name: Pipe Types:Mechanical Pipe:578656
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578656
+  placement:
+    position:
+    - 3.3
+    - -10.914
+    - 2.679
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578706
+  name: Pipe Types:Mechanical Pipe:578706
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578706
+  placement:
+    position:
+    - 0.363
+    - -11.324
+    - 2.686
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578708
+  name: Pipe Types:Mechanical Pipe:578708
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578708
+  placement:
+    position:
+    - 0.363
+    - -11.597
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578742
+  name: Pipe Types:Mechanical Pipe:578742
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578742
+  placement:
+    position:
+    - 0.363
+    - -10.052
+    - 2.686
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578744
+  name: Pipe Types:Mechanical Pipe:578744
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578744
+  placement:
+    position:
+    - 0.363
+    - -11.28
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578775
+  name: Pipe Types:Mechanical Pipe:578775
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578775
+  placement:
+    position:
+    - 0.4
+    - -0.396
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578830
+  name: Pipe Types:Mechanical Pipe:578830
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578830
+  placement:
+    position:
+    - 2.542
+    - -7.865
+    - 2.679
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:578872
+  name: Pipe Types:Mechanical Pipe:578872
+  source: ifc/segment/Pipe Types:Mechanical Pipe:578872
+  placement:
+    position:
+    - 2.542
+    - -8.679
+    - 2.679
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:579139
+  name: Pipe Types:Mechanical Pipe:579139
+  source: ifc/segment/Pipe Types:Mechanical Pipe:579139
+  placement:
+    position:
+    - 3.338
+    - -10.623
+    - 3.305
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:579140
+  name: Pipe Types:Mechanical Pipe:579140
+  source: ifc/segment/Pipe Types:Mechanical Pipe:579140
+  placement:
+    position:
+    - 3.3
+    - -10.623
+    - 2.686
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:579151
+  name: Pipe Types:Mechanical Pipe:579151
+  source: ifc/segment/Pipe Types:Mechanical Pipe:579151
+  placement:
+    position:
+    - 3.3
+    - -10.877
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:579262
+  name: Pipe Types:Mechanical Pipe:579262
+  source: ifc/segment/Pipe Types:Mechanical Pipe:579262
+  placement:
+    position:
+    - 3.355
+    - -10.914
+    - 3.216
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:579977
+  name: Pipe Types:Mechanical Pipe:579977
+  source: ifc/segment/Pipe Types:Mechanical Pipe:579977
+  placement:
+    position:
+    - 3.287
+    - -10.637
+    - 2.89
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:580418
+  name: Pipe Types:Mechanical Pipe:580418
+  source: ifc/segment/Pipe Types:Mechanical Pipe:580418
+  placement:
+    position:
+    - 3.344
+    - -10.914
+    - 3.178
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:581020
+  name: Pipe Types:Mechanical Pipe:581020
+  source: ifc/segment/Pipe Types:Mechanical Pipe:581020
+  placement:
+    position:
+    - 2.479
+    - -10.914
+    - 3.178
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:581037
+  name: Pipe Types:Mechanical Pipe:581037
+  source: ifc/segment/Pipe Types:Mechanical Pipe:581037
+  placement:
+    position:
+    - 2.932
+    - -10.914
+    - 3.178
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:581158
+  name: Pipe Types:Mechanical Pipe:581158
+  source: ifc/segment/Pipe Types:Mechanical Pipe:581158
+  placement:
+    position:
+    - 3.392
+    - -10.631
+    - 3.73
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:581159
+  name: Pipe Types:Mechanical Pipe:581159
+  source: ifc/segment/Pipe Types:Mechanical Pipe:581159
+  placement:
+    position:
+    - 3.347
+    - -10.863
+    - 3.73
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:581179
+  name: Pipe Types:Mechanical Pipe:581179
+  source: ifc/segment/Pipe Types:Mechanical Pipe:581179
+  placement:
+    position:
+    - 3.3
+    - -10.58
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:583745
+  name: Pipe Types:Mechanical Pipe:583745
+  source: ifc/segment/Pipe Types:Mechanical Pipe:583745
+  placement:
+    position:
+    - 3.355
+    - -10.914
+    - 3.675
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:584238
+  name: Pipe Types:Mechanical Pipe:584238
+  source: ifc/segment/Pipe Types:Mechanical Pipe:584238
+  placement:
+    position:
+    - 3.341
+    - -10.928
+    - 3.565
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:590599
+  name: Pipe Types:Mechanical Pipe:590599
+  source: ifc/segment/Pipe Types:Mechanical Pipe:590599
+  placement:
+    position:
+    - 3.287
+    - -10.637
+    - 3.107
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:593060
+  name: Pipe Types:Mechanical Pipe:593060
+  source: ifc/segment/Pipe Types:Mechanical Pipe:593060
+  placement:
+    position:
+    - 3.3
+    - -10.58
+    - 3.215
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:593062
+  name: Pipe Types:Mechanical Pipe:593062
+  source: ifc/segment/Pipe Types:Mechanical Pipe:593062
+  placement:
+    position:
+    - 3.3
+    - -10.623
+    - 3.258
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:593065
+  name: Pipe Types:Mechanical Pipe:593065
+  source: ifc/segment/Pipe Types:Mechanical Pipe:593065
+  placement:
+    position:
+    - 3.3
+    - -10.623
+    - 3.159
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:593349
+  name: Pipe Types:Mechanical Pipe:593349
+  source: ifc/segment/Pipe Types:Mechanical Pipe:593349
+  placement:
+    position:
+    - 3.355
+    - -10.914
+    - 3.617
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:593706
+  name: Pipe Types:Mechanical Pipe:593706
+  source: ifc/segment/Pipe Types:Mechanical Pipe:593706
+  placement:
+    position:
+    - 5.412
+    - -6.919
+    - 3.574
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:593822
+  name: Pipe Types:Mechanical Pipe:593822
+  source: ifc/segment/Pipe Types:Mechanical Pipe:593822
+  placement:
+    position:
+    - 5.466
+    - -7.21
+    - 3.288
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:594583
+  name: Pipe Types:Mechanical Pipe:594583
+  source: ifc/segment/Pipe Types:Mechanical Pipe:594583
+  placement:
+    position:
+    - 3.696
+    - -10.302
+    - 3.305
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:594590
+  name: Pipe Types:Mechanical Pipe:594590
+  source: ifc/segment/Pipe Types:Mechanical Pipe:594590
+  placement:
+    position:
+    - 3.733
+    - -10.265
+    - 3.305
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:594663
+  name: Pipe Types:Mechanical Pipe:594663
+  source: ifc/segment/Pipe Types:Mechanical Pipe:594663
+  placement:
+    position:
+    - 4.031
+    - -10.265
+    - -0.637
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:594853
+  name: Pipe Types:Mechanical Pipe:594853
+  source: ifc/segment/Pipe Types:Mechanical Pipe:594853
+  placement:
+    position:
+    - -0.072
+    - -10.265
+    - -0.674
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:595074
+  name: Pipe Types:Mechanical Pipe:595074
+  source: ifc/segment/Pipe Types:Mechanical Pipe:595074
+  placement:
+    position:
+    - 5.071
+    - -7.533
+    - 3.305
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:595083
+  name: Pipe Types:Mechanical Pipe:595083
+  source: ifc/segment/Pipe Types:Mechanical Pipe:595083
+  placement:
+    position:
+    - 4.768
+    - -7.571
+    - 3.305
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:595141
+  name: Pipe Types:Mechanical Pipe:595141
+  source: ifc/segment/Pipe Types:Mechanical Pipe:595141
+  placement:
+    position:
+    - 4.008
+    - -7.571
+    - -0.691
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:595154
+  name: Pipe Types:Mechanical Pipe:595154
+  source: ifc/segment/Pipe Types:Mechanical Pipe:595154
+  placement:
+    position:
+    - 4.731
+    - -7.571
+    - -0.654
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:595210
+  name: Pipe Types:Mechanical Pipe:595210
+  source: ifc/segment/Pipe Types:Mechanical Pipe:595210
+  placement:
+    position:
+    - 3.971
+    - -9.678
+    - -0.691
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:595217
+  name: Pipe Types:Mechanical Pipe:595217
+  source: ifc/segment/Pipe Types:Mechanical Pipe:595217
+  placement:
+    position:
+    - -0.072
+    - -9.715
+    - -0.691
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:600266
+  name: Pipe Types:Mechanical Pipe:600266
+  source: ifc/segment/Pipe Types:Mechanical Pipe:600266
+  placement:
+    position:
+    - 8.404
+    - -17.394
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:600279
+  name: Pipe Types:Mechanical Pipe:600279
+  source: ifc/segment/Pipe Types:Mechanical Pipe:600279
+  placement:
+    position:
+    - 8.404
+    - -17.086
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:600381
+  name: Pipe Types:Mechanical Pipe:600381
+  source: ifc/segment/Pipe Types:Mechanical Pipe:600381
+  placement:
+    position:
+    - 7.867
+    - -17.347
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:600783
+  name: Pipe Types:Mechanical Pipe:600783
+  source: ifc/segment/Pipe Types:Mechanical Pipe:600783
+  placement:
+    position:
+    - 0.453
+    - -2.732
+    - 2.679
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:600787
+  name: Pipe Types:Mechanical Pipe:600787
+  source: ifc/segment/Pipe Types:Mechanical Pipe:600787
+  placement:
+    position:
+    - 0.363
+    - -0.66
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:600911
+  name: Pipe Types:Mechanical Pipe:600911
+  source: ifc/segment/Pipe Types:Mechanical Pipe:600911
+  placement:
+    position:
+    - 0.363
+    - -2.689
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:600925
+  name: Pipe Types:Mechanical Pipe:600925
+  source: ifc/segment/Pipe Types:Mechanical Pipe:600925
+  placement:
+    position:
+    - 0.363
+    - -10.008
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:600952
+  name: Pipe Types:Mechanical Pipe:600952
+  source: ifc/segment/Pipe Types:Mechanical Pipe:600952
+  placement:
+    position:
+    - 0.916
+    - -0.486
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:601142
+  name: Pipe Types:Mechanical Pipe:601142
+  source: ifc/segment/Pipe Types:Mechanical Pipe:601142
+  placement:
+    position:
+    - 8.351
+    - -2.973
+    - 0.079
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:601282
+  name: Pipe Types:Mechanical Pipe:601282
+  source: ifc/segment/Pipe Types:Mechanical Pipe:601282
+  placement:
+    position:
+    - 8.351
+    - -5.093
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:601286
+  name: Pipe Types:Mechanical Pipe:601286
+  source: ifc/segment/Pipe Types:Mechanical Pipe:601286
+  placement:
+    position:
+    - 8.398
+    - -5.05
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:601371
+  name: Pipe Types:Mechanical Pipe:601371
+  source: ifc/segment/Pipe Types:Mechanical Pipe:601371
+  placement:
+    position:
+    - 2.61
+    - -8.813
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:601377
+  name: Pipe Types:Mechanical Pipe:601377
+  source: ifc/segment/Pipe Types:Mechanical Pipe:601377
+  placement:
+    position:
+    - 2.56
+    - -8.799
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Round Duct:Taps:603399
+  name: Round Duct:Taps:603399
+  source: ifc/segment/Round Duct:Taps:603399
+  placement:
+    position:
+    - 4.962
+    - -7.318
+    - 4.313
+    storey: Roof
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:612977
+  name: Pipe Types:Mechanical Pipe:612977
+  source: ifc/segment/Pipe Types:Mechanical Pipe:612977
+  placement:
+    position:
+    - 0.406
+    - -11.428
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Mechanical Pipe:612986
+  name: Pipe Types:Mechanical Pipe:612986
+  source: ifc/segment/Pipe Types:Mechanical Pipe:612986
+  placement:
+    position:
+    - 0.509
+    - -11.391
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts

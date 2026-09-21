@@ -410,10 +410,13 @@ def generate_viewer_html(
     # Custom Elements
     for custom in resolved.custom_elements:
         tag_upper = custom.tag.upper()
+        tag_lower = custom.tag.lower()
+        layer_lower = (custom.layer or "").lower()
+
         if "F2" in tag_upper or "FOOTING" in tag_upper:
-            w, d, h = 0.8, 1.5, 0.8
+            w, d, h = 0.9, 0.9, 0.35
             pos = [custom.position[0], custom.position[1], custom.position[2] - h / 2.0]
-            color = "#8A8A8E"
+            color = "#64748B"
         elif "PIN" in tag_upper:
             w, d, h = 0.35, 0.35, 0.8
             pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
@@ -426,10 +429,108 @@ def generate_viewer_html(
             w, d, h = 134.0, 40.0, 0.05
             pos = [67.0, 20.0, 0.025]
             color = "#FFB703"
+        elif "furniture" in layer_lower or any(kw in tag_lower for kw in ["chair", "desk", "table", "bed", "sofa", "cabinet", "shelf", "credenza", "counter"]):
+            if "bed" in tag_lower:
+                w, d, h = 2.0, 1.6, 0.55
+                color = "#C5A880"
+            elif any(kw in tag_lower for kw in ["desk", "table"]):
+                w, d, h = 1.4, 0.75, 0.75
+                color = "#D4A373"
+            elif "chair" in tag_lower:
+                w, d, h = 0.5, 0.5, 0.85
+                color = "#8D99AE"
+            elif any(kw in tag_lower for kw in ["sofa", "couch"]):
+                w, d, h = 1.8, 0.85, 0.75
+                color = "#6C757D"
+            elif any(kw in tag_lower for kw in ["cabinet", "credenza", "shelf"]):
+                h_val = 1.9 if "tall" in tag_lower else 0.9
+                w, d, h = 0.8, 0.55, h_val
+                color = "#8C6D53"
+            elif "counter" in tag_lower:
+                w, d, h = 1.2, 0.6, 0.85
+                color = "#A3B18A"
+            else:
+                w, d, h = 0.6, 0.6, 0.75
+                color = "#B58A63"
+            pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
+        elif any(kw in tag_lower for kw in ["water closet", "wc", "lavatory", "sink", "bath tub", "bathtub", "shower"]) or "sanitary" in layer_lower:
+            if any(kw in tag_lower for kw in ["water closet", "wc"]):
+                w, d, h = 0.45, 0.70, 0.75
+                color = "#FFFFFF"
+            elif any(kw in tag_lower for kw in ["lavatory", "sink"]):
+                w, d, h = 0.60, 0.50, 0.82
+                color = "#F8FAFC"
+            elif any(kw in tag_lower for kw in ["bath tub", "bathtub"]):
+                w, d, h = 1.52, 0.76, 0.52
+                color = "#FFFFFF"
+            elif "shower" in tag_lower:
+                w, d, h = 0.90, 0.90, 2.00
+                color = "#E2E8F0"
+            else:
+                w, d, h = 0.5, 0.5, 0.6
+                color = "#FFFFFF"
+            pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
+        elif any(kw in layer_lower for kw in ["electrical", "elec"]) or any(kw in tag_lower for kw in ["light", "sconce", "pendant", "panelboard", "receptacle", "conduit", "emt"]):
+            if any(kw in tag_lower for kw in ["light", "sconce", "pendant"]):
+                w, d, h = 0.25, 0.25, 0.25
+                color = "#FDE047"
+            elif "panelboard" in tag_lower:
+                w, d, h = 0.45, 0.15, 0.65
+                color = "#475569"
+            elif any(kw in tag_lower for kw in ["receptacle", "switch"]):
+                w, d, h = 0.08, 0.05, 0.12
+                color = "#F1F5F9"
+            elif any(kw in tag_lower for kw in ["conduit", "emt"]):
+                w, d, h = 0.05, 0.05, 0.05
+                color = "#F97316"
+            else:
+                w, d, h = 0.2, 0.2, 0.2
+                color = "#F59E0B"
+            pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
+        elif any(kw in layer_lower for kw in ["duct", "hvac"]) or any(kw in tag_lower for kw in ["duct", "mechanical pipe"]):
+            if "duct" in tag_lower:
+                w, d, h = 0.35, 0.35, 0.25
+                color = "#CBD5E1"
+            elif "mechanical pipe" in tag_lower:
+                w, d, h = 0.08, 0.08, 0.08
+                color = "#10B981"
+            else:
+                w, d, h = 0.25, 0.25, 0.20
+                color = "#94A3B8"
+            pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
+        elif any(kw in layer_lower for kw in ["pipe", "plumbing"]) or any(kw in tag_lower for kw in ["cold water", "hot water", "waste", "soil", "pvc"]):
+            if "cold water" in tag_lower:
+                w, d, h = 0.06, 0.06, 0.06
+                color = "#0284C7"
+            elif "hot water" in tag_lower:
+                w, d, h = 0.06, 0.06, 0.06
+                color = "#EF4444"
+            elif any(kw in tag_lower for kw in ["waste", "soil"]):
+                w, d, h = 0.10, 0.10, 0.10
+                color = "#64748B"
+            elif "pvc" in tag_lower:
+                w, d, h = 0.08, 0.08, 0.08
+                color = "#0EA5E9"
+            else:
+                w, d, h = 0.06, 0.06, 0.06
+                color = "#38BDF8"
+            pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
+        elif "fitting" in layer_lower or any(kw in tag_lower for kw in ["elbow", "tee", "transition", "bend"]):
+            w, d, h = 0.08, 0.08, 0.08
+            pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
+            color = "#475569"
+        elif any(kw in layer_lower for kw in ["stair", "railing"]):
+            if "railing" in tag_lower or "railing" in layer_lower:
+                w, d, h = 0.08, 1.20, 0.90
+                color = "#334155"
+            else:
+                w, d, h = 1.00, 2.50, 1.50
+                color = "#A0522D"
+            pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
         else:
-            w, d, h = 0.8, 0.8, 1.5
-            pos = [custom.position[0], custom.position[1], custom.position[2] + 0.75]
-            color = "#9370DB"
+            w, d, h = 0.3, 0.3, 0.3
+            pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
+            color = "#A855F7"
 
         elements_data.append({
             "tag": custom.tag,
@@ -1080,6 +1181,11 @@ def generate_viewer_html(
         <button class="view-btn" onclick="setView('iso')">🏢 3D Isometric</button>
         <button class="view-btn" onclick="setView('front')">↔️ ด้านหน้า (Front)</button>
         <button class="view-btn" onclick="setView('side')">↕️ ด้านข้าง (Side)</button>
+        <button id="xray-btn" class="view-btn" onclick="toggleXRay()" style="background:#0284c7; color:#fff; font-weight:600; border-color:#38bdf8;">👁️ ผนังโปร่งใส (X-Ray)</button>
+        <button class="view-btn" onclick="filterDiscipline('mep')" title="แสดงเฉพาะงานระบบ">⚡ MEP</button>
+        <button class="view-btn" onclick="filterDiscipline('interior')" title="แสดงเฉพาะเฟอร์นิเจอร์">🛋️ เฟอร์นิเจอร์</button>
+        <button class="view-btn" onclick="filterDiscipline('structure')" title="แสดงเฉพาะโครงสร้าง">🏗️ โครงสร้าง</button>
+        <button class="view-btn" onclick="filterDiscipline('all')" title="แสดงทั้งหมด">🌐 ทั้งหมด</button>
     </div>
 
     <div id="layer-explorer-panel" class="ui-panel">
@@ -1178,7 +1284,7 @@ def generate_viewer_html(
             canvas.width = 128;
             canvas.height = 128;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = 'rgba(25, 30, 42, 0.88)';
+            ctx.fillStyle = 'rgba(25, 30, 42, 0.90)';
             ctx.beginPath();
             ctx.arc(64, 64, 52, 0, Math.PI * 2);
             ctx.fill();
@@ -1193,7 +1299,7 @@ def generate_viewer_html(
             const texture = new THREE.CanvasTexture(canvas);
             const spriteMat = new THREE.SpriteMaterial({{ map: texture, depthTest: false }});
             const sprite = new THREE.Sprite(spriteMat);
-            sprite.scale.set(4, 4, 1);
+            sprite.scale.set(0.8, 0.8, 1);
             return sprite;
         }}
 
@@ -1219,11 +1325,14 @@ def generate_viewer_html(
             linewidth: 1
         }});
 
+        const bubbleOffset = 1.8;
+        const lineExtend = 1.2;
+
         // X Grids
         Object.entries(sceneData.grids.axes_x).forEach(([name, xVal]) => {{
             const pts = [
-                new THREE.Vector3(xVal, minGridY - 6, 0),
-                new THREE.Vector3(xVal, maxGridY + 6, 0)
+                new THREE.Vector3(xVal, minGridY - lineExtend, 0),
+                new THREE.Vector3(xVal, maxGridY + lineExtend, 0)
             ];
             const geom = new THREE.BufferGeometry().setFromPoints(pts);
             const line = new THREE.Line(geom, gridLineMat);
@@ -1231,18 +1340,18 @@ def generate_viewer_html(
             gridGroup.add(line);
 
             const topBubble = makeGridSprite(name, '#38bdf8');
-            topBubble.position.set(xVal, maxGridY + 8, 0.1);
+            topBubble.position.set(xVal, maxGridY + bubbleOffset, 0.1);
             gridGroup.add(topBubble);
             const botBubble = makeGridSprite(name, '#38bdf8');
-            botBubble.position.set(xVal, minGridY - 8, 0.1);
+            botBubble.position.set(xVal, minGridY - bubbleOffset, 0.1);
             gridGroup.add(botBubble);
         }});
 
         // Y Grids
         Object.entries(sceneData.grids.axes_y).forEach(([name, yVal]) => {{
             const pts = [
-                new THREE.Vector3(minGridX - 6, yVal, 0),
-                new THREE.Vector3(maxGridX + 6, yVal, 0)
+                new THREE.Vector3(minGridX - lineExtend, yVal, 0),
+                new THREE.Vector3(maxGridX + lineExtend, yVal, 0)
             ];
             const geom = new THREE.BufferGeometry().setFromPoints(pts);
             const line = new THREE.Line(geom, gridLineMat);
@@ -1250,10 +1359,10 @@ def generate_viewer_html(
             gridGroup.add(line);
 
             const leftBubble = makeGridSprite(name, '#4ade80');
-            leftBubble.position.set(minGridX - 8, yVal, 0.1);
+            leftBubble.position.set(minGridX - bubbleOffset, yVal, 0.1);
             gridGroup.add(leftBubble);
             const rightBubble = makeGridSprite(name, '#4ade80');
-            rightBubble.position.set(maxGridX + 8, yVal, 0.1);
+            rightBubble.position.set(maxGridX + bubbleOffset, yVal, 0.1);
             gridGroup.add(rightBubble);
         }});
 
@@ -1408,6 +1517,58 @@ def generate_viewer_html(
                 controls.maxPolarAngle = Math.PI;
             }}
             controls.update();
+        }};
+
+        // X-Ray and Quick Discipline Filters
+        let isXRay = false;
+        window.toggleXRay = function() {{
+            isXRay = !isXRay;
+            const btn = document.getElementById('xray-btn');
+            if (btn) {{
+                btn.style.background = isXRay ? '#10b981' : '#0284c7';
+                btn.innerHTML = isXRay ? '👁️ ผนังโปร่งใส (เปิดอยู่)' : '👁️ ผนังโปร่งใส (X-Ray)';
+            }}
+            pickableObjects.forEach(obj => {{
+                if (obj.userData && (obj.userData.class === "IfcWall" || obj.userData.class === "IfcRoofCovering" || (obj.userData.layer && obj.userData.layer.includes("walls")))) {{
+                    if (obj.material) {{
+                        if (isXRay) {{
+                            obj.material.transparent = true;
+                            obj.material.opacity = 0.20;
+                            obj.material.needsUpdate = true;
+                        }} else {{
+                            obj.material.transparent = Boolean(obj.userData.transparent);
+                            obj.material.opacity = obj.userData.opacity || 1.0;
+                            obj.material.needsUpdate = true;
+                        }}
+                    }}
+                }}
+            }});
+        }};
+
+        window.filterDiscipline = function(discipline) {{
+            if (!layerTreeRoot || !layerTreeRoot.children) return;
+            if (discipline === 'all') {{
+                setAllLayers(true);
+                return;
+            }}
+            setAllLayers(false);
+            if (discipline === 'mep') {{
+                if (layerTreeRoot.children['mep']) setNodeChecked(layerTreeRoot.children['mep'], true);
+                if (layerTreeRoot.children['architecture'] && layerTreeRoot.children['architecture'].children['walls']) {{
+                    layerTreeRoot.children['architecture'].children['walls'].checked = true;
+                }}
+                if (!isXRay) toggleXRay();
+            }} else if (discipline === 'interior') {{
+                if (layerTreeRoot.children['interior']) setNodeChecked(layerTreeRoot.children['interior'], true);
+                if (layerTreeRoot.children['structure'] && layerTreeRoot.children['structure'].children['slabs']) {{
+                    layerTreeRoot.children['structure'].children['slabs'].checked = true;
+                }}
+                if (!isXRay) toggleXRay();
+            }} else if (discipline === 'structure') {{
+                if (layerTreeRoot.children['structure']) setNodeChecked(layerTreeRoot.children['structure'], true);
+            }}
+            update3DVisibility();
+            renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
         }};
 
         // Hierarchical Tree Layer Explorer Engine

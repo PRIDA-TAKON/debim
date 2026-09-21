@@ -1,0 +1,1530 @@
+elements:
+- class: IfcCustomElement
+  tag: Wall Foundation:Bearing Footing - 900 x 300:186596
+  name: Wall Foundation:Bearing Footing - 900 x 300:186596
+  source: assets/footing_f2.glb
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - -1.25
+    storey: T/FDN
+  layer: structure/footings
+- class: IfcCustomElement
+  tag: Wall Foundation:Bearing Footing - 900 x 300:186604
+  name: Wall Foundation:Bearing Footing - 900 x 300:186604
+  source: assets/footing_f2.glb
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - -1.25
+    storey: T/FDN
+  layer: structure/footings
+- class: IfcCustomElement
+  tag: Wall Foundation:Bearing Footing - 900 x 300:186612
+  name: Wall Foundation:Bearing Footing - 900 x 300:186612
+  source: assets/footing_f2.glb
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - -1.25
+    storey: T/FDN
+  layer: structure/footings
+- class: IfcCustomElement
+  tag: Wall Foundation:Bearing Footing - 900 x 300:186620
+  name: Wall Foundation:Bearing Footing - 900 x 300:186620
+  source: assets/footing_f2.glb
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - -1.25
+    storey: T/FDN
+  layer: structure/footings
+- class: IfcCustomElement
+  tag: Wall Foundation:Bearing Footing - 900 x 300:186632
+  name: Wall Foundation:Bearing Footing - 900 x 300:186632
+  source: assets/footing_f2.glb
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - -1.25
+    storey: T/FDN
+  layer: structure/footings
+- class: IfcCustomElement
+  tag: Wall Foundation:Bearing Footing - 900 x 300:186644
+  name: Wall Foundation:Bearing Footing - 900 x 300:186644
+  source: assets/footing_f2.glb
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - -1.25
+    storey: T/FDN
+  layer: structure/footings
+- class: IfcCustomElement
+  tag: Wall Foundation:Bearing Footing - 900 x 300:186656
+  name: Wall Foundation:Bearing Footing - 900 x 300:186656
+  source: assets/footing_f2.glb
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - -1.25
+    storey: T/FDN
+  layer: structure/footings
+- class: IfcCustomElement
+  tag: Stair:Residential - 200mm Max Riser 250mm Tread:151086
+  name: Stair:Residential - 200mm Max Riser 250mm Tread:151086
+  source: ifc/stair/Stair:Residential - 200mm Max Riser 250mm Tread:151086
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    storey: Level 1
+  layer: circulation/stairs
+- class: IfcCustomElement
+  tag: Stair:Residential - 200mm Max Riser 250mm Tread:198878
+  name: Stair:Residential - 200mm Max Riser 250mm Tread:198878
+  source: ifc/stair/Stair:Residential - 200mm Max Riser 250mm Tread:198878
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    storey: Level 1
+  layer: circulation/stairs
+- class: IfcCustomElement
+  tag: Stair:Residential - 200mm Max Riser 250mm Tread:151086:1
+  name: Stair:Residential - 200mm Max Riser 250mm Tread:151086:1
+  source: ifc/stairflight/Stair:Residential - 200mm Max Riser 250mm Tread:151086:1
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    storey: Level 1
+  layer: circulation/stairflights
+- class: IfcCustomElement
+  tag: Stair:Residential - 200mm Max Riser 250mm Tread:198878:1
+  name: Stair:Residential - 200mm Max Riser 250mm Tread:198878:1
+  source: ifc/stairflight/Stair:Residential - 200mm Max Riser 250mm Tread:198878:1
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    storey: Level 1
+  layer: circulation/stairflights
+- class: IfcCustomElement
+  tag: Railing:900mm Handrail Only:151162
+  name: Railing:900mm Handrail Only:151162
+  source: ifc/railing/Railing:900mm Handrail Only:151162
+  placement:
+    position:
+    - 8.336
+    - -11.825
+    - 1.042
+    storey: Level 1
+  layer: circulation/railings
+- class: IfcCustomElement
+  tag: Railing:1100mm Guard Rail:151166
+  name: Railing:1100mm Guard Rail:151166
+  source: ifc/railing/Railing:1100mm Guard Rail:151166
+  placement:
+    position:
+    - 7.322
+    - -11.825
+    - 0.247
+    storey: Level 1
+  layer: circulation/railings
+- class: IfcCustomElement
+  tag: Railing:900mm Handrail Only:198880
+  name: Railing:900mm Handrail Only:198880
+  source: ifc/railing/Railing:900mm Handrail Only:198880
+  placement:
+    position:
+    - 0.42
+    - -9.725
+    - 1.042
+    storey: Level 1
+  layer: circulation/railings
+- class: IfcCustomElement
+  tag: Railing:1100mm Guard Rail:198972
+  name: Railing:1100mm Guard Rail:198972
+  source: ifc/railing/Railing:1100mm Guard Rail:198972
+  placement:
+    position:
+    - 1.385
+    - -9.782
+    - 0.247
+    storey: Level 1
+  layer: circulation/railings
+- class: IfcCustomElement
+  tag: Stair:Residential - 200mm Max Riser 250mm Tread:151086:1
+  name: Stair:Residential - 200mm Max Riser 250mm Tread:151086:1
+  source: ifc/member/Stair:Residential - 200mm Max Riser 250mm Tread:151086:1
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    storey: Level 1
+  layer: structure/members
+- class: IfcCustomElement
+  tag: Stair:Residential - 200mm Max Riser 250mm Tread:151086:2
+  name: Stair:Residential - 200mm Max Riser 250mm Tread:151086:2
+  source: ifc/member/Stair:Residential - 200mm Max Riser 250mm Tread:151086:2
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    storey: Level 1
+  layer: structure/members
+- class: IfcCustomElement
+  tag: Stair:Residential - 200mm Max Riser 250mm Tread:198878:1
+  name: Stair:Residential - 200mm Max Riser 250mm Tread:198878:1
+  source: ifc/member/Stair:Residential - 200mm Max Riser 250mm Tread:198878:1
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    storey: Level 1
+  layer: structure/members
+- class: IfcCustomElement
+  tag: Stair:Residential - 200mm Max Riser 250mm Tread:198878:2
+  name: Stair:Residential - 200mm Max Riser 250mm Tread:198878:2
+  source: ifc/member/Stair:Residential - 200mm Max Riser 250mm Tread:198878:2
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    storey: Level 1
+  layer: structure/members
+- class: IfcCustomElement
+  tag: M_Tall Cabinet-Single Door(2):800 mm:800 mm:157200
+  name: M_Tall Cabinet-Single Door(2):800 mm:800 mm:157200
+  source: assets/furniture/tall_cabinet.glb
+  placement:
+    position:
+    - 2.514
+    - -11.679
+    - 3.1
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Tall Cabinet-Single Door(2):800 mm:800 mm:157607
+  name: M_Tall Cabinet-Single Door(2):800 mm:800 mm:157607
+  source: assets/furniture/tall_cabinet.glb
+  placement:
+    position:
+    - 4.114
+    - -11.134
+    - 3.1
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Tall Cabinet-Single Door(2):800 mm:800 mm:157950
+  name: M_Tall Cabinet-Single Door(2):800 mm:800 mm:157950
+  source: assets/furniture/tall_cabinet.glb
+  placement:
+    position:
+    - 4.683
+    - -11.679
+    - 3.1
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Tall Cabinet-Single Door(2):800 mm:800 mm:157951
+  name: M_Tall Cabinet-Single Door(2):800 mm:800 mm:157951
+  source: assets/furniture/tall_cabinet.glb
+  placement:
+    position:
+    - 6.283
+    - -11.134
+    - 3.1
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Tall Cabinet-Single Door(2):800 mm:800 mm:157983
+  name: M_Tall Cabinet-Single Door(2):800 mm:800 mm:157983
+  source: assets/furniture/tall_cabinet.glb
+  placement:
+    position:
+    - 6.286
+    - -6.121
+    - 3.1
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Tall Cabinet-Single Door(2):800 mm:800 mm:157984
+  name: M_Tall Cabinet-Single Door(2):800 mm:800 mm:157984
+  source: assets/furniture/tall_cabinet.glb
+  placement:
+    position:
+    - 4.686
+    - -6.666
+    - 3.1
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Tall Cabinet-Single Door(2):800 mm:800 mm:158080
+  name: M_Tall Cabinet-Single Door(2):800 mm:800 mm:158080
+  source: assets/furniture/tall_cabinet.glb
+  placement:
+    position:
+    - 4.117
+    - -6.121
+    - 3.1
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Tall Cabinet-Single Door(2):800 mm:800 mm:158081
+  name: M_Tall Cabinet-Single Door(2):800 mm:800 mm:158081
+  source: assets/furniture/tall_cabinet.glb
+  placement:
+    position:
+    - 2.517
+    - -6.666
+    - 3.1
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159159
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159159
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 6.334
+    - -6.805
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159262
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159262
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 6.334
+    - -7.43
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:160671
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:160671
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 5.334
+    - -6.805
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:160717
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:160717
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 3.574
+    - -6.805
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Counter Top w Sink Hole:600mm Depth:600mm Depth:161165
+  name: M_Counter Top w Sink Hole:600mm Depth:600mm Depth:161165
+  source: assets/furniture/counter_top_w_sink_hole.glb
+  placement:
+    position:
+    - 6.133
+    - -7.43
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Counter Top:600mm Depth:600mm Depth:161646
+  name: M_Counter Top:600mm Depth:600mm Depth:161646
+  source: assets/furniture/counter_top.glb
+  placement:
+    position:
+    - 2.374
+    - -7.43
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162230
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162230
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 2.574
+    - -5.825
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Counter Top:600mm Depth:600mm Depth:162231
+  name: M_Counter Top:600mm Depth:600mm Depth:162231
+  source: assets/furniture/counter_top.glb
+  placement:
+    position:
+    - 3.762
+    - -5.188
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162311
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162311
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 3.574
+    - -5.825
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162357
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162357
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 4.574
+    - -5.825
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162383
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162383
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 5.574
+    - -5.825
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162486
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162486
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 2.466
+    - -10.995
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162487
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162487
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 2.466
+    - -10.37
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162488
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162488
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 3.466
+    - -10.995
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162489
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162489
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 5.226
+    - -10.995
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Counter Top w Sink Hole:600mm Depth:600mm Depth:162490
+  name: M_Counter Top w Sink Hole:600mm Depth:600mm Depth:162490
+  source: assets/furniture/counter_top_w_sink_hole.glb
+  placement:
+    position:
+    - 2.667
+    - -10.37
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Counter Top:600mm Depth:600mm Depth:162491
+  name: M_Counter Top:600mm Depth:600mm Depth:162491
+  source: assets/furniture/counter_top.glb
+  placement:
+    position:
+    - 6.426
+    - -10.37
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162493
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162493
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 6.226
+    - -11.975
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Counter Top:600mm Depth:600mm Depth:162494
+  name: M_Counter Top:600mm Depth:600mm Depth:162494
+  source: assets/furniture/counter_top.glb
+  placement:
+    position:
+    - 5.038
+    - -12.612
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162495
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162495
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 5.226
+    - -11.975
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162496
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162496
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 4.226
+    - -11.975
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162497
+  name: M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162497
+  source: assets/furniture/base_cabinet.glb
+  placement:
+    position:
+    - 3.226
+    - -11.975
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Sofa:1830mm:1830mm:167283
+  name: M_Sofa:1830mm:1830mm:167283
+  source: assets/furniture/sofa.glb
+  placement:
+    position:
+    - 7.653
+    - -1.385
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Sofa:1830mm:1830mm:167426
+  name: M_Sofa:1830mm:1830mm:167426
+  source: assets/furniture/sofa.glb
+  placement:
+    position:
+    - 7.198
+    - -3.27
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:167584
+  name: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:167584
+  source: assets/furniture/table_coffee.glb
+  placement:
+    position:
+    - 7.665
+    - -3.695
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:167655
+  name: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:167655
+  source: assets/furniture/table_coffee.glb
+  placement:
+    position:
+    - 7.965
+    - -1.012
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Table-Coffee:0915 x 1830 x 0457mm:0915 x 1830 x 0457mm:168031
+  name: M_Table-Coffee:0915 x 1830 x 0457mm:0915 x 1830 x 0457mm:168031
+  source: assets/furniture/table_coffee.glb
+  placement:
+    position:
+    - 6.265
+    - -2.312
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Sofa:1830mm:1830mm:168377
+  name: M_Sofa:1830mm:1830mm:168377
+  source: assets/furniture/sofa.glb
+  placement:
+    position:
+    - 1.231
+    - -16.27
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Sofa:1830mm:1830mm:168378
+  name: M_Sofa:1830mm:1830mm:168378
+  source: assets/furniture/sofa.glb
+  placement:
+    position:
+    - 1.686
+    - -14.386
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:168379
+  name: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:168379
+  source: assets/furniture/table_coffee.glb
+  placement:
+    position:
+    - 1.219
+    - -13.96
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:168380
+  name: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:168380
+  source: assets/furniture/table_coffee.glb
+  placement:
+    position:
+    - 0.919
+    - -16.643
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Table-Coffee:0915 x 1830 x 0457mm:0915 x 1830 x 0457mm:168381
+  name: M_Table-Coffee:0915 x 1830 x 0457mm:0915 x 1830 x 0457mm:168381
+  source: assets/furniture/table_coffee.glb
+  placement:
+    position:
+    - 2.619
+    - -15.343
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Bed-Standard:1525 x 2007mm - Queen:1525 x 2007mm - Queen:168449
+  name: M_Bed-Standard:1525 x 2007mm - Queen:1525 x 2007mm - Queen:168449
+  source: assets/furniture/bed_standard.glb
+  placement:
+    position:
+    - 2.452
+    - -4.586
+    - 3.1
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Bed-Standard:1981 x 2032mm - King:1981 x 2032mm - King:168717
+  name: M_Bed-Standard:1981 x 2032mm - King:1981 x 2032mm - King:168717
+  source: assets/furniture/bed_standard.glb
+  placement:
+    position:
+    - 5.7
+    - -2.438
+    - 3.1
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Bed-Standard:1981 x 2032mm - King:1981 x 2032mm - King:168914
+  name: M_Bed-Standard:1981 x 2032mm - King:1981 x 2032mm - King:168914
+  source: assets/furniture/bed_standard.glb
+  placement:
+    position:
+    - 3.3
+    - -15.349
+    - 3.1
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Bed-Standard:1525 x 2007mm - Queen:1525 x 2007mm - Queen:169008
+  name: M_Bed-Standard:1525 x 2007mm - Queen:1525 x 2007mm - Queen:169008
+  source: assets/furniture/bed_standard.glb
+  placement:
+    position:
+    - 6.348
+    - -13.256
+    - 3.1
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191401
+  name: M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191401
+  source: assets/furniture/upper_cabinet.glb
+  placement:
+    position:
+    - 6.226
+    - -10.37
+    - 1.4
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191557
+  name: M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191557
+  source: assets/furniture/upper_cabinet.glb
+  placement:
+    position:
+    - 4.466
+    - -10.37
+    - 1.4
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191680
+  name: M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191680
+  source: assets/furniture/upper_cabinet.glb
+  placement:
+    position:
+    - 3.466
+    - -10.37
+    - 1.4
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:191768
+  name: M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:191768
+  source: assets/furniture/upper_cabinet.glb
+  placement:
+    position:
+    - 2.466
+    - -10.37
+    - 1.4
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192153
+  name: M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192153
+  source: assets/furniture/upper_cabinet.glb
+  placement:
+    position:
+    - 2.574
+    - -7.43
+    - 1.4
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192331
+  name: M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192331
+  source: assets/furniture/upper_cabinet.glb
+  placement:
+    position:
+    - 4.334
+    - -7.43
+    - 1.4
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192508
+  name: M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192508
+  source: assets/furniture/upper_cabinet.glb
+  placement:
+    position:
+    - 5.334
+    - -7.43
+    - 1.4
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:192610
+  name: M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:192610
+  source: assets/furniture/upper_cabinet.glb
+  placement:
+    position:
+    - 6.334
+    - -7.43
+    - 1.4
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:204934
+  name: M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:204934
+  source: assets/furniture/vanity_cabinet.glb
+  placement:
+    position:
+    - 3.555
+    - -9.32
+    - 3.113
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:205239
+  name: M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:205239
+  source: assets/furniture/vanity_cabinet.glb
+  placement:
+    position:
+    - 3.555
+    - -8.67
+    - 3.113
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:205264
+  name: M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:205264
+  source: assets/furniture/vanity_cabinet.glb
+  placement:
+    position:
+    - 4.77
+    - -8.495
+    - 3.113
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:205265
+  name: M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:205265
+  source: assets/furniture/vanity_cabinet.glb
+  placement:
+    position:
+    - 4.77
+    - -7.845
+    - 3.113
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Vanity Cabinet-Double Door Sink Unit:450 x 450 mm:450 x 450 mm:205548
+  name: M_Vanity Cabinet-Double Door Sink Unit:450 x 450 mm:450 x 450 mm:205548
+  source: assets/furniture/vanity_cabinet.glb
+  placement:
+    position:
+    - 5.245
+    - -9.383
+    - 0.0
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206283
+  name: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206283
+  source: assets/furniture/table_coffee.glb
+  placement:
+    position:
+    - 0.764
+    - -5.012
+    - 3.119
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206502
+  name: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206502
+  source: assets/furniture/table_coffee.glb
+  placement:
+    position:
+    - 5.276
+    - -0.912
+    - 3.119
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206675
+  name: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206675
+  source: assets/furniture/table_coffee.glb
+  placement:
+    position:
+    - 3.712
+    - -17.069
+    - 3.119
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206876
+  name: M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206876
+  source: assets/furniture/table_coffee.glb
+  placement:
+    position:
+    - 8.005
+    - -12.989
+    - 3.119
+    storey: Level 1
+  layer: interior/furniture
+- class: IfcCustomElement
+  tag: M_Refrigerator:850 x 760mm:850 x 760mm:575374
+  name: M_Refrigerator:850 x 760mm:850 x 760mm:575374
+  source: ifc/terminal/M_Refrigerator:850 x 760mm:850 x 760mm:575374
+  placement:
+    position:
+    - 0.588
+    - -11.174
+    - 0.0
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Refrigerator:850 x 760mm:850 x 760mm:575375
+  name: M_Refrigerator:850 x 760mm:850 x 760mm:575375
+  source: ifc/terminal/M_Refrigerator:850 x 760mm:850 x 760mm:575375
+  placement:
+    position:
+    - 8.314
+    - -6.611
+    - 0.0
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575405
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575405
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575405
+  placement:
+    position:
+    - 6.398
+    - -0.417
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575406
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575406
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575406
+  placement:
+    position:
+    - 4.675
+    - -3.153
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575407
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575407
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575407
+  placement:
+    position:
+    - 8.383
+    - -5.053
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575409
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575409
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575409
+  placement:
+    position:
+    - 7.622
+    - -6.126
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575410
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575410
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575410
+  placement:
+    position:
+    - 4.77
+    - -8.741
+    - 4.318
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575419
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575419
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575419
+  placement:
+    position:
+    - 4.03
+    - -8.805
+    - 4.318
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575422
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575422
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575422
+  placement:
+    position:
+    - 0.417
+    - -3.073
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575424
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575424
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575424
+  placement:
+    position:
+    - 4.125
+    - -3.09
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575425
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575425
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575425
+  placement:
+    position:
+    - 1.315
+    - -6.126
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575426
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575426
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575426
+  placement:
+    position:
+    - 2.382
+    - -7.892
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575428
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575428
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575428
+  placement:
+    position:
+    - 1.084
+    - -11.55
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575430
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575430
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575430
+  placement:
+    position:
+    - 6.418
+    - -9.791
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575432
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575432
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575432
+  placement:
+    position:
+    - 8.033
+    - -6.25
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575434
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575434
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575434
+  placement:
+    position:
+    - 4.675
+    - -14.353
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575435
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575435
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575435
+  placement:
+    position:
+    - 8.383
+    - -14.353
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575436
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575436
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575436
+  placement:
+    position:
+    - 2.298
+    - -17.383
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575438
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575438
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575438
+  placement:
+    position:
+    - 4.125
+    - -14.353
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575439
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575439
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575439
+  placement:
+    position:
+    - 1.187
+    - -11.674
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575440
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575440
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575440
+  placement:
+    position:
+    - 8.008
+    - -11.674
+    - 3.558
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575441
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575441
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575441
+  placement:
+    position:
+    - 7.916
+    - -7.43
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575442
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575442
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575442
+  placement:
+    position:
+    - 2.6
+    - -2.231
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575444
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575444
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575444
+  placement:
+    position:
+    - 8.383
+    - -1.284
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575445
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575445
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575445
+  placement:
+    position:
+    - 8.383
+    - -3.812
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575446
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575446
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575446
+  placement:
+    position:
+    - 2.476
+    - -2.638
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575448
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575448
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575448
+  placement:
+    position:
+    - 0.417
+    - -3.844
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575449
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575449
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575449
+  placement:
+    position:
+    - 4.03
+    - -8.669
+    - 1.22
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575451
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575451
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575451
+  placement:
+    position:
+    - 2.574
+    - -9.091
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575454
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575454
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575454
+  placement:
+    position:
+    - 4.77
+    - -8.942
+    - 1.22
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575456
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575456
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575456
+  placement:
+    position:
+    - 6.226
+    - -8.695
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575460
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575460
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575460
+  placement:
+    position:
+    - 6.88
+    - -7.43
+    - 1.068
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575462
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575462
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575462
+  placement:
+    position:
+    - 2.986
+    - -7.43
+    - 1.068
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575464
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575464
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575464
+  placement:
+    position:
+    - 1.945
+    - -10.37
+    - 1.068
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575466
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575466
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575466
+  placement:
+    position:
+    - 5.813
+    - -10.37
+    - 1.068
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575468
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575468
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575468
+  placement:
+    position:
+    - 0.907
+    - -10.37
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575469
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575469
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575469
+  placement:
+    position:
+    - 0.417
+    - -13.715
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575470
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575470
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575470
+  placement:
+    position:
+    - 0.417
+    - -16.632
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575471
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575471
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575471
+  placement:
+    position:
+    - 6.2
+    - -15.349
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575473
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575473
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575473
+  placement:
+    position:
+    - 6.324
+    - -14.843
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575475
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575475
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575475
+  placement:
+    position:
+    - 8.383
+    - -13.585
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575476
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575476
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575476
+  placement:
+    position:
+    - 6.83
+    - -8.075
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575477
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575477
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575477
+  placement:
+    position:
+    - 1.938
+    - -9.725
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Range:760 x 650mm:760 x 650mm:575492
+  name: M_Range:760 x 650mm:760 x 650mm:575492
+  source: ifc/terminal/M_Range:760 x 650mm:760 x 650mm:575492
+  placement:
+    position:
+    - 4.334
+    - -6.767
+    - 0.0
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Range:760 x 650mm:760 x 650mm:575493
+  name: M_Range:760 x 650mm:760 x 650mm:575493
+  source: ifc/terminal/M_Range:760 x 650mm:760 x 650mm:575493
+  placement:
+    position:
+    - 4.466
+    - -11.033
+    - 0.0
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575494
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575494
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575494
+  placement:
+    position:
+    - 4.01
+    - -7.43
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575495
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575495
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:575495
+  placement:
+    position:
+    - 4.861
+    - -10.37
+    - 0.458
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:606293
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:606293
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:606293
+  placement:
+    position:
+    - 4.045
+    - -10.37
+    - 1.068
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:606323
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:606323
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:606323
+  placement:
+    position:
+    - 4.78
+    - -7.43
+    - 1.068
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Telephone Outlet:Telophone Outlet:Telophone Outlet:611904
+  name: M_Telephone Outlet:Telophone Outlet:Telophone Outlet:611904
+  source: ifc/terminal/M_Telephone Outlet:Telophone Outlet:Telophone Outlet:611904
+  placement:
+    position:
+    - 6.226
+    - -10.742
+    - 1.087
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Telephone Outlet:Telophone Outlet:Telophone Outlet:611989
+  name: M_Telephone Outlet:Telophone Outlet:Telophone Outlet:611989
+  source: ifc/terminal/M_Telephone Outlet:Telophone Outlet:Telophone Outlet:611989
+  placement:
+    position:
+    - 2.574
+    - -7.103
+    - 1.136
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Telephone Outlet:Telophone Outlet:Telophone Outlet:612214
+  name: M_Telephone Outlet:Telophone Outlet:Telophone Outlet:612214
+  source: ifc/terminal/M_Telephone Outlet:Telophone Outlet:Telophone Outlet:612214
+  placement:
+    position:
+    - 5.16
+    - -0.417
+    - 3.848
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Telephone Outlet:Telophone Outlet:Telophone Outlet:612319
+  name: M_Telephone Outlet:Telophone Outlet:Telophone Outlet:612319
+  source: ifc/terminal/M_Telephone Outlet:Telophone Outlet:Telophone Outlet:612319
+  placement:
+    position:
+    - 3.831
+    - -17.383
+    - 3.842
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Microwave:760 x 400 x 450mm:760 x 400 x 450mm:615600
+  name: M_Microwave:760 x 400 x 450mm:760 x 400 x 450mm:615600
+  source: ifc/terminal/M_Microwave:760 x 400 x 450mm:760 x 400 x 450mm:615600
+  placement:
+    position:
+    - 4.334
+    - -7.028
+    - 1.55
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Microwave:760 x 400 x 450mm:760 x 400 x 450mm:615603
+  name: M_Microwave:760 x 400 x 450mm:760 x 400 x 450mm:615603
+  source: ifc/terminal/M_Microwave:760 x 400 x 450mm:760 x 400 x 450mm:615603
+  placement:
+    position:
+    - 4.466
+    - -10.772
+    - 1.55
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:615696
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:615696
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:615696
+  placement:
+    position:
+    - 4.858
+    - -10.37
+    - 1.7
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:615756
+  name: M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:615756
+  source: ifc/terminal/M_Duplex Receptacle:Duplex Receptacle:Duplex Receptacle:615756
+  placement:
+    position:
+    - 3.913
+    - -7.43
+    - 1.7
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Fire Alarm Control Panel:400x475:Fire Alarm Panel:617780
+  name: M_Fire Alarm Control Panel:400x475:Fire Alarm Panel:617780
+  source: ifc/terminal/M_Fire Alarm Control Panel:400x475:Fire Alarm Panel:617780
+  placement:
+    position:
+    - 0.0
+    - -9.154
+    - 1.2
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Telephone Terminal Board:TTB 300x300:TTB1:618690
+  name: M_Telephone Terminal Board:TTB 300x300:TTB1:618690
+  source: ifc/terminal/M_Telephone Terminal Board:TTB 300x300:TTB1:618690
+  placement:
+    position:
+    - 0.0
+    - -8.486
+    - 1.2
+    storey: Level 1
+  layer: mep/terminals

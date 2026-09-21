@@ -1,0 +1,209 @@
+elements:
+- class: IfcCustomElement
+  tag: M_Shower Stall - Rectangular:865 mmx815 mm - Private:865 mmx815 mm - Private:582914
+  name: M_Shower Stall - Rectangular:865 mmx815 mm - Private:865 mmx815 mm - Private:582914
+  source: ifc/terminal/M_Shower Stall - Rectangular:865 mmx815 mm - Private:865 mmx815
+    mm - Private:582914
+  placement:
+    position:
+    - 4.77
+    - -8.89
+    - 0.0
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Water Closet - Flush Tank:Private - 6.1 Lpf:Private - 6.1 Lpf:582915
+  name: M_Water Closet - Flush Tank:Private - 6.1 Lpf:Private - 6.1 Lpf:582915
+  source: ifc/terminal/M_Water Closet - Flush Tank:Private - 6.1 Lpf:Private - 6.1
+    Lpf:582915
+  placement:
+    position:
+    - 4.77
+    - -10.026
+    - 0.0
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lavatory - Oval:535 mmx485 mm - Private:535 mmx485 mm - Private:582916
+  name: M_Lavatory - Oval:535 mmx485 mm - Private:535 mmx485 mm - Private:582916
+  source: ifc/terminal/M_Lavatory - Oval:535 mmx485 mm - Private:535 mmx485 mm - Private:582916
+  placement:
+    position:
+    - 4.77
+    - -9.425
+    - 0.713
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Shower Stall - Rectangular:865 mmx815 mm - Private:865 mmx815 mm - Private:582917
+  name: M_Shower Stall - Rectangular:865 mmx815 mm - Private:865 mmx815 mm - Private:582917
+  source: ifc/terminal/M_Shower Stall - Rectangular:865 mmx815 mm - Private:865 mmx815
+    mm - Private:582917
+  placement:
+    position:
+    - 4.03
+    - -8.91
+    - 0.0
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Water Closet - Flush Tank:Private - 6.1 Lpf:Private - 6.1 Lpf:582918
+  name: M_Water Closet - Flush Tank:Private - 6.1 Lpf:Private - 6.1 Lpf:582918
+  source: ifc/terminal/M_Water Closet - Flush Tank:Private - 6.1 Lpf:Private - 6.1
+    Lpf:582918
+  placement:
+    position:
+    - 4.03
+    - -7.774
+    - 0.0
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lavatory - Oval:535 mmx485 mm - Private:535 mmx485 mm - Private:582919
+  name: M_Lavatory - Oval:535 mmx485 mm - Private:535 mmx485 mm - Private:582919
+  source: ifc/terminal/M_Lavatory - Oval:535 mmx485 mm - Private:535 mmx485 mm - Private:582919
+  placement:
+    position:
+    - 4.03
+    - -8.375
+    - 0.713
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Sink - Island - Single:455 mmx455 mm - Private:455 mmx455 mm - Private:582920
+  name: M_Sink - Island - Single:455 mmx455 mm - Private:455 mmx455 mm - Private:582920
+  source: ifc/terminal/M_Sink - Island - Single:455 mmx455 mm - Private:455 mmx455
+    mm - Private:582920
+  placement:
+    position:
+    - 2.738
+    - -10.886
+    - 0.687
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Sink - Island - Single:455 mmx455 mm - Private:455 mmx455 mm - Private:582922
+  name: M_Sink - Island - Single:455 mmx455 mm - Private:455 mmx455 mm - Private:582922
+  source: ifc/terminal/M_Sink - Island - Single:455 mmx455 mm - Private:455 mmx455
+    mm - Private:582922
+  placement:
+    position:
+    - 6.062
+    - -6.914
+    - 0.687
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Bath Tub:1525 mmx760 mm - Private:1525 mmx760 mm - Private:582924
+  name: M_Bath Tub:1525 mmx760 mm - Private:1525 mmx760 mm - Private:582924
+  source: ifc/terminal/M_Bath Tub:1525 mmx760 mm - Private:1525 mmx760 mm - Private:582924
+  placement:
+    position:
+    - 4.769
+    - -10.966
+    - 3.1
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Water Closet - Flush Tank:Private - 6.1 Lpf:Private - 6.1 Lpf:582925
+  name: M_Water Closet - Flush Tank:Private - 6.1 Lpf:Private - 6.1 Lpf:582925
+  source: ifc/terminal/M_Water Closet - Flush Tank:Private - 6.1 Lpf:Private - 6.1
+    Lpf:582925
+  placement:
+    position:
+    - 4.769
+    - -9.896
+    - 3.1
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lavatory - Oval:650 mmx485 mm - Private:650 mmx485 mm - Private:582926
+  name: M_Lavatory - Oval:650 mmx485 mm - Private:650 mmx485 mm - Private:582926
+  source: ifc/terminal/M_Lavatory - Oval:650 mmx485 mm - Private:650 mmx485 mm - Private:582926
+  placement:
+    position:
+    - 4.77
+    - -9.145
+    - 3.813
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lavatory - Oval:650 mmx485 mm - Private:650 mmx485 mm - Private:582927
+  name: M_Lavatory - Oval:650 mmx485 mm - Private:650 mmx485 mm - Private:582927
+  source: ifc/terminal/M_Lavatory - Oval:650 mmx485 mm - Private:650 mmx485 mm - Private:582927
+  placement:
+    position:
+    - 4.77
+    - -8.495
+    - 3.813
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lavatory - Oval:650 mmx485 mm - Private:650 mmx485 mm - Private:582928
+  name: M_Lavatory - Oval:650 mmx485 mm - Private:650 mmx485 mm - Private:582928
+  source: ifc/terminal/M_Lavatory - Oval:650 mmx485 mm - Private:650 mmx485 mm - Private:582928
+  placement:
+    position:
+    - 4.03
+    - -9.32
+    - 3.813
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lavatory - Oval:650 mmx485 mm - Private:650 mmx485 mm - Private:582929
+  name: M_Lavatory - Oval:650 mmx485 mm - Private:650 mmx485 mm - Private:582929
+  source: ifc/terminal/M_Lavatory - Oval:650 mmx485 mm - Private:650 mmx485 mm - Private:582929
+  placement:
+    position:
+    - 4.03
+    - -8.67
+    - 3.813
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Water Closet - Flush Tank:Private - 6.1 Lpf:Private - 6.1 Lpf:582930
+  name: M_Water Closet - Flush Tank:Private - 6.1 Lpf:Private - 6.1 Lpf:582930
+  source: ifc/terminal/M_Water Closet - Flush Tank:Private - 6.1 Lpf:Private - 6.1
+    Lpf:582930
+  placement:
+    position:
+    - 4.03
+    - -7.92
+    - 3.1
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Bath Tub:1525 mmx760 mm - Private:1525 mmx760 mm - Private:582931
+  name: M_Bath Tub:1525 mmx760 mm - Private:1525 mmx760 mm - Private:582931
+  source: ifc/terminal/M_Bath Tub:1525 mmx760 mm - Private:1525 mmx760 mm - Private:582931
+  placement:
+    position:
+    - 4.031
+    - -6.85
+    - 3.1
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Roof Drain:380 mm Strainer - 25 mm Drain:380 mm Strainer - 25 mm Drain:610131
+  name: M_Roof Drain:380 mm Strainer - 25 mm Drain:380 mm Strainer - 25 mm Drain:610131
+  source: ifc/fitting/M_Roof Drain:380 mm Strainer - 25 mm Drain:380 mm Strainer -
+    25 mm Drain:610131
+  placement:
+    position:
+    - 4.491
+    - -12.931
+    - 6.03
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Roof Drain:380 mm Strainer - 25 mm Drain:380 mm Strainer - 25 mm Drain:610145
+  name: M_Roof Drain:380 mm Strainer - 25 mm Drain:380 mm Strainer - 25 mm Drain:610145
+  source: ifc/fitting/M_Roof Drain:380 mm Strainer - 25 mm Drain:380 mm Strainer -
+    25 mm Drain:610145
+  placement:
+    position:
+    - 4.005
+    - -5.313
+    - 6.03
+    storey: Level 1
+  layer: mep/fittings

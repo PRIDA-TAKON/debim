@@ -90,9 +90,14 @@ bim validate -m examples/contemporary_thai_house/project.yaml
 bim qto -m examples/contemporary_thai_house/project.yaml
 ```
 
-### 3. ประเมินราคาค่าก่อสร้าง (Cost Estimation)
+### 3. ประเมินราคาค่าก่อสร้าง (Cost Estimation & BOQ)
+รองรับทั้ง `prices.yaml` (มาตรฐานใหม่ มีรหัส MasterFormat / UniFormat) และ `prices.json`:
 ```bash
-bim cost -m examples/contemporary_thai_house/project.yaml -p examples/contemporary_thai_house/prices.json
+# ประเมินราคาและส่งออก BOQ เป็นไฟล์ CSV
+bim cost -m examples/contemporary_thai_house/project.yaml -p examples/contemporary_thai_house/prices.yaml -o examples/contemporary_thai_house/boq.csv
+
+# หรือสร้าง Price Catalog Template เฉพาะรายการวัสดุที่ใช้งานจริงในโครงการ
+bim cost template -m examples/contemporary_thai_house/project.yaml -o examples/contemporary_thai_house/prices.template.yaml
 ```
 
 ### 4. แปลงเป็นไฟล์ IFC4 มาตรฐานสากล
@@ -100,8 +105,18 @@ bim cost -m examples/contemporary_thai_house/project.yaml -p examples/contempora
 bim compile -m examples/contemporary_thai_house/project.yaml -o examples/contemporary_thai_house/model.ifc
 ```
 
-### 5. เปิดดูโมเดล 3D ในเว็บเบราว์เซอร์
-เปิดไฟล์ `examples/contemporary_thai_house/viewer.html` หรือรัน:
+### 5. เปิดดูโมเดล 3D และโครงสร้างเลเยอร์ (Hierarchical Layer Explorer)
+เปิดดูโมเดล 3D แบบ interactive พร้อมแผงควบคุมเลเยอร์ต้นไม้ (เปิด-ปิดงานโครงสร้าง, งานสถาปัตย์, และงานระบบ MEP):
 ```bash
+# พรีวิวบน local server
 bim view -m examples/contemporary_thai_house/project.yaml
+
+# หรือส่งออกเป็นไฟล์ standalone HTML
+bim view -m examples/contemporary_thai_house/project.yaml -e examples/contemporary_thai_house/viewer.html
 ```
+
+### 6. รันการทดสอบอัตโนมัติ (Automated Tests)
+```bash
+pytest tests/test_contemporary_thai_house.py -v
+```
+

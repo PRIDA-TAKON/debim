@@ -1,0 +1,486 @@
+elements:
+- class: IfcBeam
+  tag: M_W-Wide Flange:W310X60:W310X60:207325
+  material: METAL___STEEL___345_MPA
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - GX_1
+    - GY_1
+    to_grid:
+    - GX_2
+    - GY_1
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcBeam
+  tag: M_W-Wide Flange:W410X60:W410X60:208949
+  material: METAL___STEEL___345_MPA
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - GX_3
+    - GY_2
+    to_grid:
+    - GX_3
+    - GY_3
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcBeam
+  tag: M_W-Wide Flange:W410X60:W410X60:209121
+  material: METAL___STEEL___345_MPA
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - GX_4
+    - GY_4
+    to_grid:
+    - GX_5
+    - GY_4
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcBeam
+  tag: M_W-Wide Flange:W410X60:W410X60:209166
+  material: METAL___STEEL___345_MPA
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - GX_1
+    - GY_2
+    to_grid:
+    - GX_1
+    - GY_5
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcBeam
+  tag: M_W-Wide Flange:W310X60:W310X60:209260
+  material: METAL___STEEL___345_MPA
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - GX_1
+    - GY_6
+    to_grid:
+    - GX_6
+    - GY_6
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcBeam
+  tag: M_W-Wide Flange:W410X60:W410X60:209261
+  material: METAL___STEEL___345_MPA
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - GX_7
+    - GY_7
+    to_grid:
+    - GX_7
+    - GY_8
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcBeam
+  tag: M_W-Wide Flange:W410X60:W410X60:209262
+  material: METAL___STEEL___345_MPA
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - GX_8
+    - GY_9
+    to_grid:
+    - GX_9
+    - GY_9
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcBeam
+  tag: M_W-Wide Flange:W410X60:W410X60:209263
+  material: METAL___STEEL___345_MPA
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - GX_1
+    - GY_7
+    to_grid:
+    - GX_1
+    - GY_10
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:127mm Slab on Grade:141232
+  material: CONCRETE
+  thickness: 0.127
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_13
+      - GY_20
+    - - GX_44
+      - GY_20
+    - - GX_44
+      - GY_42
+    - - GX_13
+      - GY_42
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:127mm Slab on Grade:143106
+  material: CONCRETE
+  thickness: 0.127
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_13
+      - GY_18
+    - - GX_44
+      - GY_18
+    - - GX_44
+      - GY_43
+    - - GX_13
+      - GY_43
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Residential - Wood Joist with Subflooring:144800
+  material: WOOD___SHEATHING___PLYWO
+  thickness: 0.305
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_13
+      - GY_18
+    - - GX_45
+      - GY_18
+    - - GX_45
+      - GY_44
+    - - GX_13
+      - GY_44
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Residential - Wood Joist with Subflooring:144872
+  material: WOOD___SHEATHING___PLYWO
+  thickness: 0.305
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_22
+      - GY_18
+    - - GX_46
+      - GY_18
+    - - GX_46
+      - GY_44
+    - - GX_22
+      - GY_44
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Wood:169093
+  material: WOOD___FLOORING
+  thickness: 0.019
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_13
+      - GY_35
+    - - GX_47
+      - GY_35
+    - - GX_47
+      - GY_45
+    - - GX_13
+      - GY_45
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Wood:169188
+  material: WOOD___FLOORING
+  thickness: 0.019
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_22
+      - GY_35
+    - - GX_48
+      - GY_35
+    - - GX_48
+      - GY_45
+    - - GX_22
+      - GY_45
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Wood:169308
+  material: WOOD___FLOORING
+  thickness: 0.019
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_22
+      - GY_18
+    - - GX_48
+      - GY_18
+    - - GX_48
+      - GY_46
+    - - GX_22
+      - GY_46
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Wood:169354
+  material: WOOD___FLOORING
+  thickness: 0.019
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_13
+      - GY_18
+    - - GX_47
+      - GY_18
+    - - GX_47
+      - GY_46
+    - - GX_13
+      - GY_46
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Wood:169395
+  material: WOOD___FLOORING
+  thickness: 0.019
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_13
+      - GY_28
+    - - GX_49
+      - GY_28
+    - - GX_49
+      - GY_47
+    - - GX_13
+      - GY_47
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Wood:169701
+  material: WOOD___FLOORING
+  thickness: 0.019
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_17
+      - GY_28
+    - - GX_50
+      - GY_28
+    - - GX_50
+      - GY_47
+    - - GX_17
+      - GY_47
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Ceramic Tile:169772
+  material: CERAMIC_TILE
+  thickness: 0.013
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_10
+      - GY_24
+    - - GX_51
+      - GY_24
+    - - GX_51
+      - GY_48
+    - - GX_10
+      - GY_48
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Ceramic Tile:169866
+  material: CERAMIC_TILE
+  thickness: 0.013
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_15
+      - GY_49
+    - - GX_37
+      - GY_49
+    - - GX_37
+      - GY_50
+    - - GX_15
+      - GY_50
+    storey: Level 2
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Wood:170352
+  material: WOOD___FLOORING
+  thickness: 0.019
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_13
+      - GY_18
+    - - GX_37
+      - GY_18
+    - - GX_37
+      - GY_51
+    - - GX_13
+      - GY_51
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Ceramic Tile:170785
+  material: CERAMIC_TILE
+  thickness: 0.013
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_13
+      - GY_52
+    - - GX_34
+      - GY_52
+    - - GX_34
+      - GY_47
+    - - GX_13
+      - GY_47
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Ceramic Tile:171230
+  material: CERAMIC_TILE
+  thickness: 0.013
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_15
+      - GY_53
+    - - GX_52
+      - GY_53
+    - - GX_52
+      - GY_48
+    - - GX_15
+      - GY_48
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Ceramic Tile:171261
+  material: CERAMIC_TILE
+  thickness: 0.013
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_10
+      - GY_20
+    - - GX_24
+      - GY_20
+    - - GX_24
+      - GY_54
+    - - GX_10
+      - GY_54
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Wood:171292
+  material: WOOD___FLOORING
+  thickness: 0.019
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_13
+      - GY_20
+    - - GX_37
+      - GY_20
+    - - GX_37
+      - GY_55
+    - - GX_13
+      - GY_55
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:Finish Floor - Ceramic Tile:171444
+  material: CERAMIC_TILE
+  thickness: 0.013
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_10
+      - GY_56
+    - - GX_27
+      - GY_56
+    - - GX_27
+      - GY_57
+    - - GX_10
+      - GY_57
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Basic Roof:Live Roof over Wood Joist Flat Roof:184483
+  material: BASIC_ROOF_LIVE_ROOF_OVE
+  thickness: 0.15
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_13
+      - GY_18
+    - - GX_1
+      - GY_18
+    - - GX_1
+      - GY_4
+    - - GX_13
+      - GY_4
+    storey: Roof
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:150mm Exterior Slab on Grade:216507
+  material: CONCRETE___CAST_IN_SITU
+  thickness: 0.15
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_26
+      - GY_19
+    - - GX_53
+      - GY_19
+    - - GX_53
+      - GY_58
+    - - GX_26
+      - GY_58
+    storey: Level 1
+    offset_z: 0.0
+- class: IfcSlab
+  tag: Floor:150mm Exterior Slab on Grade:216552
+  material: CONCRETE___CAST_IN_SITU
+  thickness: 0.15
+  slab_type: SOLID
+  placement:
+    boundary:
+    - - GX_13
+      - GY_59
+    - - GX_54
+      - GY_59
+    - - GX_54
+      - GY_60
+    - - GX_13
+      - GY_60
+    storey: Level 1
+    offset_z: 0.0

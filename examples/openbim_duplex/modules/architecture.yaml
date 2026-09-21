@@ -1,0 +1,1212 @@
+elements:
+- class: IfcWall
+  tag: Basic Wall:Party Wall - CMU Residential Unit Dimising Wall:143239
+  material: PLASTERBOARD
+  thickness: 0.55
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_1
+    - GY_11
+    to_grid:
+    - GX_1
+    - GY_12
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):138584
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.795
+  placement:
+    from_grid:
+    - GX_10
+    - GY_11
+    to_grid:
+    - GX_10
+    - GY_13
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Party Wall - CMU Residential Unit Dimising Wall:139234
+  material: PLASTERBOARD
+  thickness: 0.55
+  height: 2.795
+  placement:
+    from_grid:
+    - GX_11
+    - GY_6
+    to_grid:
+    - GX_12
+    - GY_6
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Party Wall - CMU Residential Unit Dimising Wall:139347
+  material: PLASTERBOARD
+  thickness: 0.55
+  height: 2.795
+  placement:
+    from_grid:
+    - GX_13
+    - GY_1
+    to_grid:
+    - GX_14
+    - GY_1
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Party Wall - CMU Residential Unit Dimising Wall:139374
+  material: PLASTERBOARD
+  thickness: 0.55
+  height: 2.795
+  placement:
+    from_grid:
+    - GX_1
+    - GY_1
+    to_grid:
+    - GX_1
+    - GY_6
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):139783
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.795
+  placement:
+    from_grid:
+    - GX_15
+    - GY_14
+    to_grid:
+    - GX_16
+    - GY_14
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):139939
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.795
+  placement:
+    from_grid:
+    - GX_17
+    - GY_15
+    to_grid:
+    - GX_17
+    - GY_16
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Foundation - Concrete (417mm):140479
+  material: CONCRETE___CAST_IN_SITU
+  thickness: 0.417
+  height: 1.25
+  placement:
+    from_grid:
+    - GX_18
+    - GY_17
+    to_grid:
+    - GX_11
+    - GY_17
+    storey: T/FDN
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Foundation - Concrete (417mm):140520
+  material: CONCRETE___CAST_IN_SITU
+  thickness: 0.417
+  height: 1.25
+  placement:
+    from_grid:
+    - GX_7
+    - GY_11
+    to_grid:
+    - GX_7
+    - GY_12
+    storey: T/FDN
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Foundation - Concrete (417mm):140554
+  material: CONCRETE___CAST_IN_SITU
+  thickness: 0.417
+  height: 1.25
+  placement:
+    from_grid:
+    - GX_11
+    - GY_16
+    to_grid:
+    - GX_18
+    - GY_16
+    storey: T/FDN
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Foundation - Concrete (417mm):140602
+  material: CONCRETE___CAST_IN_SITU
+  thickness: 0.417
+  height: 1.25
+  placement:
+    from_grid:
+    - GX_3
+    - GY_18
+    to_grid:
+    - GX_3
+    - GY_19
+    storey: T/FDN
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Foundation - Concrete (435mm):140913
+  material: CONCRETE___CAST_IN_SITU
+  thickness: 0.435
+  height: 1.25
+  placement:
+    from_grid:
+    - GX_11
+    - GY_6
+    to_grid:
+    - GX_12
+    - GY_6
+    storey: T/FDN
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Foundation - Concrete (435mm):140987
+  material: CONCRETE___CAST_IN_SITU
+  thickness: 0.435
+  height: 1.25
+  placement:
+    from_grid:
+    - GX_13
+    - GY_1
+    to_grid:
+    - GX_14
+    - GY_1
+    storey: T/FDN
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Foundation - Concrete (435mm):141018
+  material: CONCRETE___CAST_IN_SITU
+  thickness: 0.435
+  height: 1.123
+  placement:
+    from_grid:
+    - GX_1
+    - GY_20
+    to_grid:
+    - GX_1
+    - GY_21
+    storey: T/FDN
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Plumbing (152mm Stud):144138
+  material: PLASTERBOARD
+  thickness: 0.184
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_10
+    - GY_22
+    to_grid:
+    - GX_19
+    - GY_22
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):144301
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_20
+    - GY_23
+    to_grid:
+    - GX_21
+    - GY_23
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):144684
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_22
+    - GY_22
+    to_grid:
+    - GX_23
+    - GY_22
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Plumbing (152mm Stud):144783
+  material: PLASTERBOARD
+  thickness: 0.184
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_17
+    - GY_23
+    to_grid:
+    - GX_24
+    - GY_23
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Exterior - Brick on Block:138157
+  material: MASONRY___BRICK
+  thickness: 0.417
+  height: 3.1
+  placement:
+    from_grid:
+    - GX_7
+    - GY_11
+    to_grid:
+    - GX_7
+    - GY_12
+    storey: Level 1
+  children:
+  - class: IfcDoor
+    tag: M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146596
+    dimensions:
+      width: 1.25
+      height: 2.01
+    offset_distance: 15.14
+    sill_height: 0.0
+  - class: IfcWindow
+    tag: M_Fixed:750mm x 2200mm:750mm x 2200mm:146885
+    dimensions:
+      width: 0.75
+      height: 2.2
+    offset_distance: 4.78
+    sill_height: 0.8
+- class: IfcWall
+  tag: Basic Wall:Exterior - Brick on Block:138310
+  material: MASONRY___BRICK
+  thickness: 0.417
+  height: 3.1
+  placement:
+    from_grid:
+    - GX_3
+    - GY_18
+    to_grid:
+    - GX_3
+    - GY_19
+    storey: Level 1
+  children:
+  - class: IfcDoor
+    tag: M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146678
+    dimensions:
+      width: 1.25
+      height: 2.01
+    offset_distance: 15.14
+    sill_height: 0.0
+  - class: IfcWindow
+    tag: M_Fixed:750mm x 2200mm:750mm x 2200mm:147051
+    dimensions:
+      width: 0.75
+      height: 2.2
+    offset_distance: 4.78
+    sill_height: 0.8
+- class: IfcWall
+  tag: Basic Wall:Exterior - Brick on Block:143410
+  material: MASONRY___BRICK
+  thickness: 0.417
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_18
+    - GY_17
+    to_grid:
+    - GX_11
+    - GY_17
+    storey: Level 2
+  children:
+  - class: IfcWindow
+    tag: M_Fixed:2800mm x 2410mm:2800mm x 2410mm:147686
+    dimensions:
+      width: 2.8
+      height: 2.41
+    offset_distance: 1.32
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Fixed:819mm x 759mm:819mm x 759mm:147994
+    dimensions:
+      width: 0.819
+      height: 0.759
+    offset_distance: 0.42
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Casement:819mm x 759mm:819mm x 759mm:148607
+    dimensions:
+      width: 0.819
+      height: 0.759
+    offset_distance: 0.42
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Fixed:819mm x 759mm:819mm x 759mm:148722
+    dimensions:
+      width: 0.819
+      height: 0.759
+    offset_distance: 0.42
+    sill_height: 0.8
+- class: IfcWall
+  tag: Basic Wall:Exterior - Brick on Block:143534
+  material: MASONRY___BRICK
+  thickness: 0.417
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_25
+    - GY_16
+    to_grid:
+    - GX_13
+    - GY_16
+    storey: Level 2
+  children:
+  - class: IfcWindow
+    tag: M_Fixed:2800mm x 2410mm:2800mm x 2410mm:149278
+    dimensions:
+      width: 2.8
+      height: 2.41
+    offset_distance: 1.33
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Fixed:819mm x 759mm:819mm x 759mm:149537
+    dimensions:
+      width: 0.819
+      height: 0.759
+    offset_distance: 0.42
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Casement:819mm x 759mm:819mm x 759mm:149736
+    dimensions:
+      width: 0.819
+      height: 0.759
+    offset_distance: 0.42
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Fixed:819mm x 759mm:819mm x 759mm:149924
+    dimensions:
+      width: 0.819
+      height: 0.759
+    offset_distance: 0.42
+    sill_height: 0.8
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):139682
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.795
+  placement:
+    from_grid:
+    - GX_17
+    - GY_24
+    to_grid:
+    - GX_17
+    - GY_6
+    storey: Level 1
+  children:
+  - class: IfcDoor
+    tag: M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150173
+    dimensions:
+      width: 0.762
+      height: 2.032
+    offset_distance: 0.94
+    sill_height: 0.0
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):139143
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.795
+  placement:
+    from_grid:
+    - GX_10
+    - GY_22
+    to_grid:
+    - GX_10
+    - GY_1
+    storey: Level 1
+  children:
+  - class: IfcDoor
+    tag: M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150257
+    dimensions:
+      width: 0.762
+      height: 2.032
+    offset_distance: 0.94
+    sill_height: 0.0
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):143856
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 3.388
+  placement:
+    from_grid:
+    - GX_13
+    - GY_25
+    to_grid:
+    - GX_26
+    - GY_25
+    storey: Level 1
+  children:
+  - class: IfcDoor
+    tag: M_Single-Flush:0864 x 2032mm:0864 x 2032mm:150378
+    dimensions:
+      width: 0.864
+      height: 2.032
+    offset_distance: 1.07
+    sill_height: 0.0
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):144518
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 3.388
+  placement:
+    from_grid:
+    - GX_11
+    - GY_26
+    to_grid:
+    - GX_27
+    - GY_26
+    storey: Level 1
+  children:
+  - class: IfcDoor
+    tag: M_Single-Flush:0864 x 2032mm:0864 x 2032mm:150478
+    dimensions:
+      width: 0.864
+      height: 2.032
+    offset_distance: 1.06
+    sill_height: 0.0
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):143960
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_28
+    - GY_26
+    to_grid:
+    - GX_29
+    - GY_26
+    storey: Level 2
+  children:
+  - class: IfcDoor
+    tag: M_Single-Flush:0864 x 2032mm:0864 x 2032mm:159734
+    dimensions:
+      width: 0.864
+      height: 2.032
+    offset_distance: 0.1
+    sill_height: 0.0
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):144633
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_30
+    - GY_25
+    to_grid:
+    - GX_31
+    - GY_25
+    storey: Level 2
+  children:
+  - class: IfcDoor
+    tag: M_Single-Flush:0864 x 2032mm:0864 x 2032mm:159834
+    dimensions:
+      width: 0.864
+      height: 2.032
+    offset_distance: 0.06
+    sill_height: 0.0
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):143921
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_32
+    - GY_27
+    to_grid:
+    - GX_32
+    - GY_28
+    storey: Level 2
+  children:
+  - class: IfcDoor
+    tag: M_Single-Flush:0864 x 2032mm:0864 x 2032mm:160065
+    dimensions:
+      width: 0.864
+      height: 2.032
+    offset_distance: 2.76
+    sill_height: 0.0
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):144586
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_16
+    - GY_29
+    to_grid:
+    - GX_16
+    - GY_30
+    storey: Level 2
+  children:
+  - class: IfcDoor
+    tag: M_Single-Flush:0864 x 2032mm:0864 x 2032mm:160208
+    dimensions:
+      width: 0.864
+      height: 2.032
+    offset_distance: 2.74
+    sill_height: 0.0
+- class: IfcWall
+  tag: Basic Wall:Exterior - Brick on Block:138062
+  material: MASONRY___BRICK
+  thickness: 0.417
+  height: 3.1
+  placement:
+    from_grid:
+    - GX_18
+    - GY_17
+    to_grid:
+    - GX_11
+    - GY_17
+    storey: Level 1
+  children:
+  - class: IfcDoor
+    tag: M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171853
+    dimensions:
+      width: 0.813
+      height: 2.42
+    offset_distance: 2.63
+    sill_height: 0.0
+  - class: IfcWindow
+    tag: M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788
+    dimensions:
+      width: 4.835
+      height: 2.42
+    offset_distance: 3.55
+    sill_height: 0.8
+- class: IfcWall
+  tag: Basic Wall:Exterior - Brick on Block:138237
+  material: MASONRY___BRICK
+  thickness: 0.417
+  height: 3.1
+  placement:
+    from_grid:
+    - GX_11
+    - GY_16
+    to_grid:
+    - GX_18
+    - GY_16
+    storey: Level 1
+  children:
+  - class: IfcDoor
+    tag: M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171975
+    dimensions:
+      width: 0.813
+      height: 2.42
+    offset_distance: 2.22
+    sill_height: 0.0
+  - class: IfcWindow
+    tag: M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016
+    dimensions:
+      width: 4.835
+      height: 2.42
+    offset_distance: 3.13
+    sill_height: 0.8
+- class: IfcWall
+  tag: Basic Wall:Exterior - Brick on Block:143478
+  material: MASONRY___BRICK
+  thickness: 0.417
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_7
+    - GY_19
+    to_grid:
+    - GX_7
+    - GY_18
+    storey: Level 2
+  children:
+  - class: IfcWindow
+    tag: M_Fixed:2800mm x 2410mm:2800mm x 2410mm:181096
+    dimensions:
+      width: 2.8
+      height: 2.41
+    offset_distance: 0.42
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Fixed:819mm x 759mm:819mm x 759mm:181285
+    dimensions:
+      width: 0.819
+      height: 0.759
+    offset_distance: 3.32
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Casement:819mm x 759mm:819mm x 759mm:181548
+    dimensions:
+      width: 0.819
+      height: 0.759
+    offset_distance: 3.32
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Fixed:819mm x 759mm:819mm x 759mm:181583
+    dimensions:
+      width: 0.819
+      height: 0.759
+    offset_distance: 3.32
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Fixed:750mm x 2200mm:750mm x 2200mm:181930
+    dimensions:
+      width: 0.75
+      height: 2.2
+    offset_distance: 11.77
+    sill_height: 0.8
+- class: IfcWall
+  tag: Basic Wall:Exterior - Brick on Block:143590
+  material: MASONRY___BRICK
+  thickness: 0.417
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_3
+    - GY_12
+    to_grid:
+    - GX_3
+    - GY_11
+    storey: Level 2
+  children:
+  - class: IfcWindow
+    tag: M_Fixed:2800mm x 2410mm:2800mm x 2410mm:180318
+    dimensions:
+      width: 2.8
+      height: 2.41
+    offset_distance: 0.42
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Fixed:819mm x 759mm:819mm x 759mm:180663
+    dimensions:
+      width: 0.819
+      height: 0.759
+    offset_distance: 3.32
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Fixed:819mm x 759mm:819mm x 759mm:180864
+    dimensions:
+      width: 0.819
+      height: 0.759
+    offset_distance: 3.32
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Casement:819mm x 759mm:819mm x 759mm:180994
+    dimensions:
+      width: 0.819
+      height: 0.759
+    offset_distance: 3.32
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Fixed:750mm x 2200mm:750mm x 2200mm:182101
+    dimensions:
+      width: 0.75
+      height: 2.2
+    offset_distance: 11.77
+    sill_height: 0.8
+- class: IfcWall
+  tag: Basic Wall:Exterior - Brick on Block:184944
+  material: MASONRY___BRICK
+  thickness: 0.417
+  height: 0.609
+  placement:
+    from_grid:
+    - GX_18
+    - GY_17
+    to_grid:
+    - GX_11
+    - GY_17
+    storey: Roof
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Exterior - Brick on Block:185014
+  material: MASONRY___BRICK
+  thickness: 0.417
+  height: 0.609
+  placement:
+    from_grid:
+    - GX_7
+    - GY_11
+    to_grid:
+    - GX_7
+    - GY_12
+    storey: Roof
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Exterior - Brick on Block:185064
+  material: MASONRY___BRICK
+  thickness: 0.417
+  height: 0.609
+  placement:
+    from_grid:
+    - GX_11
+    - GY_16
+    to_grid:
+    - GX_18
+    - GY_16
+    storey: Roof
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Exterior - Brick on Block:185101
+  material: MASONRY___BRICK
+  thickness: 0.417
+  height: 0.609
+  placement:
+    from_grid:
+    - GX_3
+    - GY_18
+    to_grid:
+    - GX_3
+    - GY_19
+    storey: Roof
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (152 mm Stud):189074
+  material: METAL___STUD_LAYER
+  thickness: 0.152
+  height: 3.1
+  placement:
+    from_grid:
+    - GX_11
+    - GY_31
+    to_grid:
+    - GX_33
+    - GY_31
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (152 mm Stud):189901
+  material: METAL___STUD_LAYER
+  thickness: 0.152
+  height: 3.1
+  placement:
+    from_grid:
+    - GX_20
+    - GY_20
+    to_grid:
+    - GX_20
+    - GY_32
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):190140
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.795
+  placement:
+    from_grid:
+    - GX_34
+    - GY_31
+    to_grid:
+    - GX_32
+    - GY_31
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (152 mm Stud):190774
+  material: METAL___STUD_LAYER
+  thickness: 0.152
+  height: 2.795
+  placement:
+    from_grid:
+    - GX_22
+    - GY_33
+    to_grid:
+    - GX_22
+    - GY_34
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (152 mm Stud):190933
+  material: METAL___STUD_LAYER
+  thickness: 0.152
+  height: 2.795
+  placement:
+    from_grid:
+    - GX_13
+    - GY_14
+    to_grid:
+    - GX_35
+    - GY_14
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (152 mm Stud):193247
+  material: METAL___STUD_LAYER
+  thickness: 0.152
+  height: 2.595
+  placement:
+    from_grid:
+    - GX_22
+    - GY_22
+    to_grid:
+    - GX_22
+    - GY_23
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (152 mm Stud):194166
+  material: METAL___STUD_LAYER
+  thickness: 0.152
+  height: 2.595
+  placement:
+    from_grid:
+    - GX_20
+    - GY_24
+    to_grid:
+    - GX_20
+    - GY_35
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):203347
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_34
+    - GY_1
+    to_grid:
+    - GX_28
+    - GY_1
+    storey: Level 2
+  children:
+  - class: IfcDoor
+    tag: M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720
+    dimensions:
+      width: 0.762
+      height: 2.032
+    offset_distance: 0.74
+    sill_height: 0.0
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):203998
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 2.9
+  placement:
+    from_grid:
+    - GX_15
+    - GY_6
+    to_grid:
+    - GX_30
+    - GY_6
+    storey: Level 2
+  children:
+  - class: IfcDoor
+    tag: M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034
+    dimensions:
+      width: 0.762
+      height: 2.032
+    offset_distance: 0.76
+    sill_height: 0.0
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):204300
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 0.488
+  placement:
+    from_grid:
+    - GX_36
+    - GY_27
+    to_grid:
+    - GX_36
+    - GY_36
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Partition (92mm Stud):204493
+  material: PLASTERBOARD
+  thickness: 0.124
+  height: 0.488
+  placement:
+    from_grid:
+    - GX_37
+    - GY_29
+    to_grid:
+    - GX_37
+    - GY_37
+    storey: Level 1
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (38 mm Stud):217414
+  material: METAL___STUD_LAYER
+  thickness: 0.054
+  height: 0.288
+  placement:
+    from_grid:
+    - GX_38
+    - GY_38
+    to_grid:
+    - GX_39
+    - GY_38
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (38 mm Stud):217415
+  material: METAL___STUD_LAYER
+  thickness: 0.054
+  height: 0.288
+  placement:
+    from_grid:
+    - GX_38
+    - GY_37
+    to_grid:
+    - GX_38
+    - GY_38
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (38 mm Stud):217416
+  material: METAL___STUD_LAYER
+  thickness: 0.054
+  height: 0.288
+  placement:
+    from_grid:
+    - GX_40
+    - GY_37
+    to_grid:
+    - GX_38
+    - GY_37
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (38 mm Stud):217417
+  material: METAL___STUD_LAYER
+  thickness: 0.054
+  height: 0.288
+  placement:
+    from_grid:
+    - GX_39
+    - GY_38
+    to_grid:
+    - GX_39
+    - GY_39
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (38 mm Stud):217577
+  material: METAL___STUD_LAYER
+  thickness: 0.054
+  height: 0.288
+  placement:
+    from_grid:
+    - GX_41
+    - GY_36
+    to_grid:
+    - GX_42
+    - GY_36
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (38 mm Stud):217578
+  material: METAL___STUD_LAYER
+  thickness: 0.054
+  height: 0.288
+  placement:
+    from_grid:
+    - GX_41
+    - GY_40
+    to_grid:
+    - GX_41
+    - GY_41
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (38 mm Stud):217579
+  material: METAL___STUD_LAYER
+  thickness: 0.054
+  height: 0.288
+  placement:
+    from_grid:
+    - GX_43
+    - GY_40
+    to_grid:
+    - GX_41
+    - GY_40
+    storey: Level 2
+  children: []
+- class: IfcWall
+  tag: Basic Wall:Interior - Furring (38 mm Stud):217580
+  material: METAL___STUD_LAYER
+  thickness: 0.054
+  height: 0.288
+  placement:
+    from_grid:
+    - GX_42
+    - GY_36
+    to_grid:
+    - GX_42
+    - GY_40
+    storey: Level 2
+  children: []
+- class: IfcRoof
+  tag: Basic Roof:Live Roof over Wood Joist Flat Roof:184483
+  material: SITE___GRASS
+  roof_type: FLAT
+  placement:
+    boundary:
+    - - GX_1
+      - GY_1
+    - - GX_54
+      - GY_1
+    - - GX_54
+      - GY_60
+    - - GX_1
+      - GY_60
+    storey: Roof
+    offset_z: 0.0
+    overhang: 1.0
+    ridge_orientation: X
+  covering:
+    tile_type: CONCRETE_TILE
+    pitch: 0.0
+    insulation: true
+    fascia_board: true
+    ridge_cap: true
+  framing:
+    truss_type: STEEL_TRUSS
+    spacing: 1.0
+    purlin_spacing: 0.32
+    steel_weight_per_sqm: 18.0
+  children:
+  - class: IfcWindow
+    tag: M_Skylight:1180 x 1170mm:1180 x 1170mm:185337
+    dimensions:
+      width: 1.173
+      height: 0.635
+    offset_distance: 1.66
+    sill_height: 0.8
+  - class: IfcWindow
+    tag: M_Skylight:1180 x 1170mm:1180 x 1170mm:185718
+    dimensions:
+      width: 1.173
+      height: 0.635
+    offset_distance: 7.69
+    sill_height: 0.8
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187149
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 1
+    offset_z: 0.0
+    area: 57.034
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187462
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 1
+    offset_z: 0.0
+    area: 3.176
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187470
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 1
+    offset_z: 0.0
+    area: 3.176
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187483
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 1
+    offset_z: 0.0
+    area: 3.367
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187508
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 1
+    offset_z: 0.0
+    area: 56.458
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187639
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 2
+    offset_z: 0.0
+    area: 22.043
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187649
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 2
+    offset_z: 0.0
+    area: 22.043
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187659
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 2
+    offset_z: 0.0
+    area: 6.735
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187667
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 2
+    offset_z: 0.0
+    area: 9.302
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187675
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 2
+    offset_z: 0.0
+    area: 6.735
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187683
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 2
+    offset_z: 0.0
+    area: 9.302
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187691
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 2
+    offset_z: 0.0
+    area: 22.043
+- class: IfcCovering
+  tag: Compound Ceiling:Gypsum Board:187701
+  covering_type: CEILING
+  material: METAL___STUD_LAYER
+  thickness: 0.057
+  placement:
+    storey: Level 2
+    offset_z: 0.0
+    area: 22.043

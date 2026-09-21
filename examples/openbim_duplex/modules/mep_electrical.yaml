@@ -1,0 +1,539 @@
+elements:
+- class: IfcCustomElement
+  tag: Conduit with Fittings:Electrical Metallic Tubing (EMT):575511
+  name: Conduit with Fittings:Electrical Metallic Tubing (EMT):575511
+  source: ifc/segment/Conduit with Fittings:Electrical Metallic Tubing (EMT):575511
+  placement:
+    position:
+    - 1.523
+    - -9.597
+    - 2.774
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Conduit with Fittings:Electrical Metallic Tubing (EMT):575516
+  name: Conduit with Fittings:Electrical Metallic Tubing (EMT):575516
+  source: ifc/segment/Conduit with Fittings:Electrical Metallic Tubing (EMT):575516
+  placement:
+    position:
+    - 7.247
+    - -17.293
+    - 2.774
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Conduit with Fittings:Electrical Metallic Tubing (EMT):575519
+  name: Conduit with Fittings:Electrical Metallic Tubing (EMT):575519
+  source: ifc/segment/Conduit with Fittings:Electrical Metallic Tubing (EMT):575519
+  placement:
+    position:
+    - 0.803
+    - -13.566
+    - 2.774
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:575520
+  name: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:575520
+  source: ifc/segment/M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow
+    - Steel:575520
+  placement:
+    position:
+    - 7.278
+    - -13.792
+    - 2.772
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Conduit with Fittings:Electrical Metallic Tubing (EMT):575521
+  name: Conduit with Fittings:Electrical Metallic Tubing (EMT):575521
+  source: ifc/segment/Conduit with Fittings:Electrical Metallic Tubing (EMT):575521
+  placement:
+    position:
+    - 0.547
+    - -13.31
+    - 2.774
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:575522
+  name: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:575522
+  source: ifc/segment/M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow
+    - Steel:575522
+  placement:
+    position:
+    - 0.546
+    - -13.31
+    - 2.772
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Conduit with Fittings:Electrical Metallic Tubing (EMT):601543
+  name: Conduit with Fittings:Electrical Metallic Tubing (EMT):601543
+  source: ifc/segment/Conduit with Fittings:Electrical Metallic Tubing (EMT):601543
+  placement:
+    position:
+    - 7.247
+    - -17.47
+    - 1.835
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:601701
+  name: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:601701
+  source: ifc/segment/M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow
+    - Steel:601701
+  placement:
+    position:
+    - 7.251
+    - -17.293
+    - 2.799
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Conduit with Fittings:Electrical Metallic Tubing (EMT):601746
+  name: Conduit with Fittings:Electrical Metallic Tubing (EMT):601746
+  source: ifc/segment/Conduit with Fittings:Electrical Metallic Tubing (EMT):601746
+  placement:
+    position:
+    - 1.523
+    - -0.353
+    - 1.835
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:601849
+  name: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:601849
+  source: ifc/segment/M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow
+    - Steel:601849
+  placement:
+    position:
+    - 1.549
+    - -0.5
+    - 2.799
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Conduit with Fittings:Electrical Metallic Tubing (EMT):601926
+  name: Conduit with Fittings:Electrical Metallic Tubing (EMT):601926
+  source: ifc/segment/Conduit with Fittings:Electrical Metallic Tubing (EMT):601926
+  placement:
+    position:
+    - -0.243
+    - -10.266
+    - -0.367
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Conduit with Fittings:Electrical Metallic Tubing (EMT):601940
+  name: Conduit with Fittings:Electrical Metallic Tubing (EMT):601940
+  source: ifc/segment/Conduit with Fittings:Electrical Metallic Tubing (EMT):601940
+  placement:
+    position:
+    - 0.547
+    - -10.266
+    - -0.19
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:601941
+  name: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:601941
+  source: ifc/segment/M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow
+    - Steel:601941
+  placement:
+    position:
+    - 0.573
+    - -10.413
+    - 2.799
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:601942
+  name: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:601942
+  source: ifc/segment/M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow
+    - Steel:601942
+  placement:
+    position:
+    - 0.573
+    - -10.261
+    - -0.19
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Conduit with Fittings:Electrical Metallic Tubing (EMT):602008
+  name: Conduit with Fittings:Electrical Metallic Tubing (EMT):602008
+  source: ifc/segment/Conduit with Fittings:Electrical Metallic Tubing (EMT):602008
+  placement:
+    position:
+    - -0.227
+    - -9.773
+    - -0.367
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Conduit with Fittings:Electrical Metallic Tubing (EMT):602019
+  name: Conduit with Fittings:Electrical Metallic Tubing (EMT):602019
+  source: ifc/segment/Conduit with Fittings:Electrical Metallic Tubing (EMT):602019
+  placement:
+    position:
+    - 1.523
+    - -9.773
+    - -0.19
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:602020
+  name: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:602020
+  source: ifc/segment/M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow
+    - Steel:602020
+  placement:
+    position:
+    - 1.527
+    - -9.597
+    - 2.799
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:602021
+  name: M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow - Steel:602021
+  source: ifc/segment/M_Conduit Elbow - Steel:Conduit Elbow - Steel:Conduit Elbow
+    - Steel:602021
+  placement:
+    position:
+    - 1.549
+    - -9.769
+    - -0.19
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: M_Sconce Light - Sphere:100W - 120V:100W - 120V:575376
+  name: M_Sconce Light - Sphere:100W - 120V:100W - 120V:575376
+  source: ifc/terminal/M_Sconce Light - Sphere:100W - 120V:100W - 120V:575376
+  placement:
+    position:
+    - 8.383
+    - -13.904
+    - 1.698
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Sconce Light - Sphere:100W - 120V:100W - 120V:575378
+  name: M_Sconce Light - Sphere:100W - 120V:100W - 120V:575378
+  source: ifc/terminal/M_Sconce Light - Sphere:100W - 120V:100W - 120V:575378
+  placement:
+    position:
+    - 0.417
+    - -3.656
+    - 1.698
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575380
+  name: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575380
+  source: ifc/terminal/M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575380
+  placement:
+    position:
+    - 2.988
+    - -14.828
+    - 2.6
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575382
+  name: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575382
+  source: ifc/terminal/M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575382
+  placement:
+    position:
+    - 5.335
+    - -2.42
+    - 2.6
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575383
+  name: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575383
+  source: ifc/terminal/M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575383
+  placement:
+    position:
+    - 2.119
+    - -14.866
+    - 5.7
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575385
+  name: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575385
+  source: ifc/terminal/M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575385
+  placement:
+    position:
+    - 6.219
+    - -14.866
+    - 5.7
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575386
+  name: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575386
+  source: ifc/terminal/M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575386
+  placement:
+    position:
+    - 6.219
+    - -3.266
+    - 5.7
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575387
+  name: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575387
+  source: ifc/terminal/M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575387
+  placement:
+    position:
+    - 2.119
+    - -3.266
+    - 5.7
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Sconce Light - Sphere:100W - 120V:100W - 120V:575388
+  name: M_Sconce Light - Sphere:100W - 120V:100W - 120V:575388
+  source: ifc/terminal/M_Sconce Light - Sphere:100W - 120V:100W - 120V:575388
+  placement:
+    position:
+    - 4.77
+    - -9.365
+    - 4.798
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Sconce Light - Sphere:100W - 120V:100W - 120V:575390
+  name: M_Sconce Light - Sphere:100W - 120V:100W - 120V:575390
+  source: ifc/terminal/M_Sconce Light - Sphere:100W - 120V:100W - 120V:575390
+  placement:
+    position:
+    - 4.03
+    - -9.067
+    - 4.798
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575392
+  name: M_Lighting Switches:Single Pole:Single Pole:575392
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575392
+  placement:
+    position:
+    - 7.808
+    - -6.126
+    - 4.32
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575394
+  name: M_Lighting Switches:Single Pole:Single Pole:575394
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575394
+  placement:
+    position:
+    - 1.052
+    - -6.126
+    - 4.32
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575396
+  name: M_Lighting Switches:Single Pole:Single Pole:575396
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575396
+  placement:
+    position:
+    - 2.506
+    - -8.832
+    - 4.32
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575398
+  name: M_Lighting Switches:Single Pole:Single Pole:575398
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575398
+  placement:
+    position:
+    - 6.294
+    - -8.979
+    - 4.32
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575400
+  name: M_Lighting Switches:Single Pole:Single Pole:575400
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575400
+  placement:
+    position:
+    - 0.916
+    - -11.674
+    - 4.32
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575402
+  name: M_Lighting Switches:Single Pole:Single Pole:575402
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575402
+  placement:
+    position:
+    - 7.719
+    - -11.674
+    - 4.32
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575478
+  name: M_Lighting Switches:Single Pole:Single Pole:575478
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575478
+  placement:
+    position:
+    - 8.383
+    - -14.857
+    - 1.22
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting and Appliance Panelboard - 208V MLO:400 A:Unit A Panelboard:575479
+  name: M_Lighting and Appliance Panelboard - 208V MLO:400 A:Unit A Panelboard:575479
+  source: ifc/terminal/M_Lighting and Appliance Panelboard - 208V MLO:400 A:Unit A
+    Panelboard:575479
+  placement:
+    position:
+    - 7.387
+    - -17.383
+    - 1.619
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting and Appliance Panelboard - 208V MLO:400 A:Unit B Panelboard:575481
+  name: M_Lighting and Appliance Panelboard - 208V MLO:400 A:Unit B Panelboard:575481
+  source: ifc/terminal/M_Lighting and Appliance Panelboard - 208V MLO:400 A:Unit B
+    Panelboard:575481
+  placement:
+    position:
+    - 1.41
+    - -0.417
+    - 1.619
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575483
+  name: M_Lighting Switches:Single Pole:Single Pole:575483
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575483
+  placement:
+    position:
+    - 6.2
+    - -14.27
+    - 1.22
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575484
+  name: M_Lighting Switches:Single Pole:Single Pole:575484
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575484
+  placement:
+    position:
+    - 6.226
+    - -9.023
+    - 1.22
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575485
+  name: M_Lighting Switches:Single Pole:Single Pole:575485
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575485
+  placement:
+    position:
+    - 2.574
+    - -8.732
+    - 1.22
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575486
+  name: M_Lighting Switches:Single Pole:Single Pole:575486
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575486
+  placement:
+    position:
+    - 2.6
+    - -3.656
+    - 1.22
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575487
+  name: M_Lighting Switches:Single Pole:Single Pole:575487
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575487
+  placement:
+    position:
+    - 0.417
+    - -2.748
+    - 1.22
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Sconce Light - Sphere:100W - 120V:100W - 120V:575488
+  name: M_Sconce Light - Sphere:100W - 120V:100W - 120V:575488
+  source: ifc/terminal/M_Sconce Light - Sphere:100W - 120V:100W - 120V:575488
+  placement:
+    position:
+    - 4.77
+    - -9.22
+    - 1.698
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Sconce Light - Sphere:100W - 120V:100W - 120V:575490
+  name: M_Sconce Light - Sphere:100W - 120V:100W - 120V:575490
+  source: ifc/terminal/M_Sconce Light - Sphere:100W - 120V:100W - 120V:575490
+  placement:
+    position:
+    - 4.03
+    - -8.531
+    - 1.698
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575505
+  name: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575505
+  source: ifc/terminal/M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575505
+  placement:
+    position:
+    - 7.114
+    - -10.011
+    - 5.7
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575507
+  name: M_Lighting Switches:Single Pole:Single Pole:575507
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575507
+  placement:
+    position:
+    - 8.383
+    - -7.822
+    - 4.32
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575508
+  name: M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575508
+  source: ifc/terminal/M_Pendant Light - Hemisphere:150W - 120V:150W - 120V:575508
+  placement:
+    position:
+    - 1.127
+    - -8.581
+    - 5.7
+    storey: Level 1
+  layer: mep/terminals
+- class: IfcCustomElement
+  tag: M_Lighting Switches:Single Pole:Single Pole:575510
+  name: M_Lighting Switches:Single Pole:Single Pole:575510
+  source: ifc/terminal/M_Lighting Switches:Single Pole:Single Pole:575510
+  placement:
+    position:
+    - 0.417
+    - -9.986
+    - 4.32
+    storey: Level 1
+  layer: mep/terminals

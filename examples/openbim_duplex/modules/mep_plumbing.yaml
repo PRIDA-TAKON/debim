@@ -1,0 +1,6516 @@
+elements:
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582940
+  name: Pipe Types:Waste:582940
+  source: ifc/segment/Pipe Types:Waste:582940
+  placement:
+    position:
+    - 3.617
+    - -8.028
+    - -0.532
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582941
+  name: Pipe Types:Waste:582941
+  source: ifc/segment/Pipe Types:Waste:582941
+  placement:
+    position:
+    - 3.687
+    - -8.028
+    - -0.602
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582945
+  name: Pipe Types:Waste:582945
+  source: ifc/segment/Pipe Types:Waste:582945
+  placement:
+    position:
+    - 3.831
+    - -8.664
+    - -0.557
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582946
+  name: Pipe Types:Waste:582946
+  source: ifc/segment/Pipe Types:Waste:582946
+  placement:
+    position:
+    - 3.876
+    - -8.667
+    - -0.605
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582947
+  name: Pipe Types:Waste:582947
+  source: ifc/segment/Pipe Types:Waste:582947
+  placement:
+    position:
+    - 4.066
+    - -7.977
+    - -0.602
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582951
+  name: Pipe Types:Waste:582951
+  source: ifc/segment/Pipe Types:Waste:582951
+  placement:
+    position:
+    - 3.567
+    - -9.348
+    - -0.551
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582952
+  name: Pipe Types:Waste:582952
+  source: ifc/segment/Pipe Types:Waste:582952
+  placement:
+    position:
+    - 3.631
+    - -9.342
+    - -0.609
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582953
+  name: Pipe Types:Waste:582953
+  source: ifc/segment/Pipe Types:Waste:582953
+  placement:
+    position:
+    - 4.066
+    - -9.265
+    - -0.609
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582956
+  name: Pipe Types:Waste:582956
+  source: ifc/segment/Pipe Types:Waste:582956
+  placement:
+    position:
+    - 4.066
+    - -9.522
+    - -0.61
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582958
+  name: Pipe Types:Waste:582958
+  source: ifc/segment/Pipe Types:Waste:582958
+  placement:
+    position:
+    - 4.066
+    - -7.753
+    - -0.434
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582960
+  name: Pipe Types:Waste:582960
+  source: ifc/segment/Pipe Types:Waste:582960
+  placement:
+    position:
+    - 4.066
+    - -7.829
+    - -0.531
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582962
+  name: Pipe Types:Waste:582962
+  source: ifc/segment/Pipe Types:Waste:582962
+  placement:
+    position:
+    - 5.81
+    - -7.166
+    - -0.377
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582963
+  name: Pipe Types:Waste:582963
+  source: ifc/segment/Pipe Types:Waste:582963
+  placement:
+    position:
+    - 5.81
+    - -7.494
+    - -0.424
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582967
+  name: Pipe Types:Waste:582967
+  source: ifc/segment/Pipe Types:Waste:582967
+  placement:
+    position:
+    - 4.136
+    - -7.539
+    - -0.433
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582975
+  name: Pipe Types:Waste:582975
+  source: ifc/segment/Pipe Types:Waste:582975
+  placement:
+    position:
+    - 4.066
+    - -7.829
+    - -0.358
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582976
+  name: Pipe Types:Waste:582976
+  source: ifc/segment/Pipe Types:Waste:582976
+  placement:
+    position:
+    - 3.828
+    - -9.019
+    - 2.757
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582977
+  name: Pipe Types:Waste:582977
+  source: ifc/segment/Pipe Types:Waste:582977
+  placement:
+    position:
+    - 3.876
+    - -9.019
+    - 2.709
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582980
+  name: Pipe Types:Waste:582980
+  source: ifc/segment/Pipe Types:Waste:582980
+  placement:
+    position:
+    - 4.066
+    - -8.943
+    - 2.705
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582982
+  name: Pipe Types:Waste:582982
+  source: ifc/segment/Pipe Types:Waste:582982
+  placement:
+    position:
+    - 3.617
+    - -8.174
+    - 2.775
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582983
+  name: Pipe Types:Waste:582983
+  source: ifc/segment/Pipe Types:Waste:582983
+  placement:
+    position:
+    - 3.687
+    - -8.174
+    - 2.705
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582986
+  name: Pipe Types:Waste:582986
+  source: ifc/segment/Pipe Types:Waste:582986
+  placement:
+    position:
+    - 4.066
+    - -8.098
+    - 2.704
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582987
+  name: Pipe Types:Waste:582987
+  source: ifc/segment/Pipe Types:Waste:582987
+  placement:
+    position:
+    - 4.066
+    - -7.759
+    - 2.856
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582988
+  name: Pipe Types:Waste:582988
+  source: ifc/segment/Pipe Types:Waste:582988
+  placement:
+    position:
+    - 4.066
+    - -7.829
+    - 2.78
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582989
+  name: Pipe Types:Waste:582989
+  source: ifc/segment/Pipe Types:Waste:582989
+  placement:
+    position:
+    - 3.828
+    - -9.669
+    - 2.76
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582990
+  name: Pipe Types:Waste:582990
+  source: ifc/segment/Pipe Types:Waste:582990
+  placement:
+    position:
+    - 3.876
+    - -9.669
+    - 2.712
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582991
+  name: Pipe Types:Waste:582991
+  source: ifc/segment/Pipe Types:Waste:582991
+  placement:
+    position:
+    - 3.829
+    - -7.254
+    - 2.91
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582992
+  name: Pipe Types:Waste:582992
+  source: ifc/segment/Pipe Types:Waste:582992
+  placement:
+    position:
+    - 3.88
+    - -7.254
+    - 2.858
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:582999
+  name: Pipe Types:Waste:582999
+  source: ifc/segment/Pipe Types:Waste:582999
+  placement:
+    position:
+    - -0.126
+    - -10.292
+    - -0.628
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583001
+  name: Pipe Types:Waste:583001
+  source: ifc/segment/Pipe Types:Waste:583001
+  placement:
+    position:
+    - 4.683
+    - -9.105
+    - -0.598
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583003
+  name: Pipe Types:Waste:583003
+  source: ifc/segment/Pipe Types:Waste:583003
+  placement:
+    position:
+    - 5.178
+    - -8.507
+    - -0.537
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583004
+  name: Pipe Types:Waste:583004
+  source: ifc/segment/Pipe Types:Waste:583004
+  placement:
+    position:
+    - 4.741
+    - -8.507
+    - -0.595
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583008
+  name: Pipe Types:Waste:583008
+  source: ifc/segment/Pipe Types:Waste:583008
+  placement:
+    position:
+    - 4.924
+    - -9.182
+    - -0.55
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583009
+  name: Pipe Types:Waste:583009
+  source: ifc/segment/Pipe Types:Waste:583009
+  placement:
+    position:
+    - 4.76
+    - -9.182
+    - -0.598
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583012
+  name: Pipe Types:Waste:583012
+  source: ifc/segment/Pipe Types:Waste:583012
+  placement:
+    position:
+    - 4.683
+    - -9.744
+    - -0.601
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583014
+  name: Pipe Types:Waste:583014
+  source: ifc/segment/Pipe Types:Waste:583014
+  placement:
+    position:
+    - 5.134
+    - -9.82
+    - -0.531
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583015
+  name: Pipe Types:Waste:583015
+  source: ifc/segment/Pipe Types:Waste:583015
+  placement:
+    position:
+    - 4.76
+    - -9.82
+    - -0.601
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583018
+  name: Pipe Types:Waste:583018
+  source: ifc/segment/Pipe Types:Waste:583018
+  placement:
+    position:
+    - 4.683
+    - -10.109
+    - -0.603
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583032
+  name: Pipe Types:Waste:583032
+  source: ifc/segment/Pipe Types:Waste:583032
+  placement:
+    position:
+    - 4.683
+    - -10.247
+    - -0.604
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583033
+  name: Pipe Types:Waste:583033
+  source: ifc/segment/Pipe Types:Waste:583033
+  placement:
+    position:
+    - 4.683
+    - -8.118
+    - 2.707
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583035
+  name: Pipe Types:Waste:583035
+  source: ifc/segment/Pipe Types:Waste:583035
+  placement:
+    position:
+    - 4.683
+    - -10.185
+    - -0.527
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583036
+  name: Pipe Types:Waste:583036
+  source: ifc/segment/Pipe Types:Waste:583036
+  placement:
+    position:
+    - 4.683
+    - -10.559
+    - 2.846
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583037
+  name: Pipe Types:Waste:583037
+  source: ifc/segment/Pipe Types:Waste:583037
+  placement:
+    position:
+    - 4.683
+    - -10.185
+    - 2.773
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583038
+  name: Pipe Types:Waste:583038
+  source: ifc/segment/Pipe Types:Waste:583038
+  placement:
+    position:
+    - 4.922
+    - -10.61
+    - 2.899
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583039
+  name: Pipe Types:Waste:583039
+  source: ifc/segment/Pipe Types:Waste:583039
+  placement:
+    position:
+    - 4.734
+    - -10.61
+    - 2.848
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583041
+  name: Pipe Types:Waste:583041
+  source: ifc/segment/Pipe Types:Waste:583041
+  placement:
+    position:
+    - 5.133
+    - -9.69
+    - 2.769
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583042
+  name: Pipe Types:Waste:583042
+  source: ifc/segment/Pipe Types:Waste:583042
+  placement:
+    position:
+    - 4.76
+    - -9.69
+    - 2.699
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583045
+  name: Pipe Types:Waste:583045
+  source: ifc/segment/Pipe Types:Waste:583045
+  placement:
+    position:
+    - 4.683
+    - -10.109
+    - 2.697
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583046
+  name: Pipe Types:Waste:583046
+  source: ifc/segment/Pipe Types:Waste:583046
+  placement:
+    position:
+    - 4.924
+    - -8.845
+    - 2.751
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583047
+  name: Pipe Types:Waste:583047
+  source: ifc/segment/Pipe Types:Waste:583047
+  placement:
+    position:
+    - 4.76
+    - -8.845
+    - 2.703
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583050
+  name: Pipe Types:Waste:583050
+  source: ifc/segment/Pipe Types:Waste:583050
+  placement:
+    position:
+    - 4.683
+    - -9.614
+    - 2.699
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583052
+  name: Pipe Types:Waste:583052
+  source: ifc/segment/Pipe Types:Waste:583052
+  placement:
+    position:
+    - 4.924
+    - -8.195
+    - 2.755
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583053
+  name: Pipe Types:Waste:583053
+  source: ifc/segment/Pipe Types:Waste:583053
+  placement:
+    position:
+    - 4.76
+    - -8.195
+    - 2.707
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583054
+  name: Pipe Types:Cold Water:583054
+  source: ifc/segment/Pipe Types:Cold Water:583054
+  placement:
+    position:
+    - 1.81
+    - -10.266
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583055
+  name: Pipe Types:Cold Water:583055
+  source: ifc/segment/Pipe Types:Cold Water:583055
+  placement:
+    position:
+    - 3.986
+    - -8.7
+    - -0.446
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583056
+  name: Pipe Types:Cold Water:583056
+  source: ifc/segment/Pipe Types:Cold Water:583056
+  placement:
+    position:
+    - 4.006
+    - -8.7
+    - -0.466
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583059
+  name: Pipe Types:Cold Water:583059
+  source: ifc/segment/Pipe Types:Cold Water:583059
+  placement:
+    position:
+    - 4.139
+    - -9.319
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583061
+  name: Pipe Types:Cold Water:583061
+  source: ifc/segment/Pipe Types:Cold Water:583061
+  placement:
+    position:
+    - 4.014
+    - -8.01
+    - 0.464
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583062
+  name: Pipe Types:Cold Water:583062
+  source: ifc/segment/Pipe Types:Cold Water:583062
+  placement:
+    position:
+    - 4.146
+    - -8.01
+    - -0.426
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583065
+  name: Pipe Types:Cold Water:583065
+  source: ifc/segment/Pipe Types:Cold Water:583065
+  placement:
+    position:
+    - 4.139
+    - -8.666
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583067
+  name: Pipe Types:Cold Water:583067
+  source: ifc/segment/Pipe Types:Cold Water:583067
+  placement:
+    position:
+    - -0.389
+    - -9.179
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583068
+  name: Pipe Types:Cold Water:583068
+  source: ifc/segment/Pipe Types:Cold Water:583068
+  placement:
+    position:
+    - 4.173
+    - -7.485
+    - -0.223
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583069
+  name: Pipe Types:Cold Water:583069
+  source: ifc/segment/Pipe Types:Cold Water:583069
+  placement:
+    position:
+    - 4.139
+    - -7.885
+    - -0.223
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583070
+  name: Pipe Types:Cold Water:583070
+  source: ifc/segment/Pipe Types:Cold Water:583070
+  placement:
+    position:
+    - 4.139
+    - -7.977
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583072
+  name: Pipe Types:Cold Water:583072
+  source: ifc/segment/Pipe Types:Cold Water:583072
+  placement:
+    position:
+    - 4.139
+    - -7.925
+    - -0.183
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583075
+  name: Pipe Types:Cold Water:583075
+  source: ifc/segment/Pipe Types:Cold Water:583075
+  placement:
+    position:
+    - 4.139
+    - -7.924
+    - -0.439
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583082
+  name: Pipe Types:Cold Water:583082
+  source: ifc/segment/Pipe Types:Cold Water:583082
+  placement:
+    position:
+    - 4.139
+    - -7.885
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583083
+  name: Pipe Types:Cold Water:583083
+  source: ifc/segment/Pipe Types:Cold Water:583083
+  placement:
+    position:
+    - 4.014
+    - -8.156
+    - 3.564
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583084
+  name: Pipe Types:Cold Water:583084
+  source: ifc/segment/Pipe Types:Cold Water:583084
+  placement:
+    position:
+    - 4.146
+    - -8.156
+    - 3.034
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583087
+  name: Pipe Types:Cold Water:583087
+  source: ifc/segment/Pipe Types:Cold Water:583087
+  placement:
+    position:
+    - 4.139
+    - -8.123
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583089
+  name: Pipe Types:Cold Water:583089
+  source: ifc/segment/Pipe Types:Cold Water:583089
+  placement:
+    position:
+    - 3.986
+    - -9.052
+    - 3.014
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583090
+  name: Pipe Types:Cold Water:583090
+  source: ifc/segment/Pipe Types:Cold Water:583090
+  placement:
+    position:
+    - 4.006
+    - -9.052
+    - 2.994
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583093
+  name: Pipe Types:Cold Water:583093
+  source: ifc/segment/Pipe Types:Cold Water:583093
+  placement:
+    position:
+    - 4.139
+    - -9.019
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583095
+  name: Pipe Types:Cold Water:583095
+  source: ifc/segment/Pipe Types:Cold Water:583095
+  placement:
+    position:
+    - 3.986
+    - -9.702
+    - 3.014
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583096
+  name: Pipe Types:Cold Water:583096
+  source: ifc/segment/Pipe Types:Cold Water:583096
+  placement:
+    position:
+    - 4.006
+    - -9.702
+    - 2.994
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583099
+  name: Pipe Types:Cold Water:583099
+  source: ifc/segment/Pipe Types:Cold Water:583099
+  placement:
+    position:
+    - 4.635
+    - -9.08
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583107
+  name: Pipe Types:Cold Water:583107
+  source: ifc/segment/Pipe Types:Cold Water:583107
+  placement:
+    position:
+    - 4.662
+    - -9.803
+    - 0.464
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583108
+  name: Pipe Types:Cold Water:583108
+  source: ifc/segment/Pipe Types:Cold Water:583108
+  placement:
+    position:
+    - 4.641
+    - -9.803
+    - -0.426
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583112
+  name: Pipe Types:Cold Water:583112
+  source: ifc/segment/Pipe Types:Cold Water:583112
+  placement:
+    position:
+    - 4.802
+    - -9.113
+    - -0.446
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583113
+  name: Pipe Types:Cold Water:583113
+  source: ifc/segment/Pipe Types:Cold Water:583113
+  placement:
+    position:
+    - 4.682
+    - -9.113
+    - -0.466
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583116
+  name: Pipe Types:Cold Water:583116
+  source: ifc/segment/Pipe Types:Cold Water:583116
+  placement:
+    position:
+    - 4.635
+    - -9.769
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583118
+  name: Pipe Types:Cold Water:583118
+  source: ifc/segment/Pipe Types:Cold Water:583118
+  placement:
+    position:
+    - 4.662
+    - -8.375
+    - 0.908
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583119
+  name: Pipe Types:Cold Water:583119
+  source: ifc/segment/Pipe Types:Cold Water:583119
+  placement:
+    position:
+    - 4.641
+    - -8.425
+    - 0.908
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583120
+  name: Pipe Types:Cold Water:583120
+  source: ifc/segment/Pipe Types:Cold Water:583120
+  placement:
+    position:
+    - 4.641
+    - -8.446
+    - -0.446
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583125
+  name: Pipe Types:Cold Water:583125
+  source: ifc/segment/Pipe Types:Cold Water:583125
+  placement:
+    position:
+    - 4.635
+    - -9.867
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583126
+  name: Pipe Types:Cold Water:583126
+  source: ifc/segment/Pipe Types:Cold Water:583126
+  placement:
+    position:
+    - 4.635
+    - -9.907
+    - -0.433
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583127
+  name: Pipe Types:Cold Water:583127
+  source: ifc/segment/Pipe Types:Cold Water:583127
+  placement:
+    position:
+    - 4.635
+    - -8.093
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583129
+  name: Pipe Types:Cold Water:583129
+  source: ifc/segment/Pipe Types:Cold Water:583129
+  placement:
+    position:
+    - 4.635
+    - -10.266
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583131
+  name: Pipe Types:Cold Water:583131
+  source: ifc/segment/Pipe Types:Cold Water:583131
+  placement:
+    position:
+    - 4.635
+    - -10.377
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583132
+  name: Pipe Types:Cold Water:583132
+  source: ifc/segment/Pipe Types:Cold Water:583132
+  placement:
+    position:
+    - 4.802
+    - -8.776
+    - 3.014
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583133
+  name: Pipe Types:Cold Water:583133
+  source: ifc/segment/Pipe Types:Cold Water:583133
+  placement:
+    position:
+    - 4.682
+    - -8.776
+    - 2.994
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583136
+  name: Pipe Types:Cold Water:583136
+  source: ifc/segment/Pipe Types:Cold Water:583136
+  placement:
+    position:
+    - 4.635
+    - -9.639
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583138
+  name: Pipe Types:Cold Water:583138
+  source: ifc/segment/Pipe Types:Cold Water:583138
+  placement:
+    position:
+    - 4.802
+    - -8.126
+    - 3.014
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583139
+  name: Pipe Types:Cold Water:583139
+  source: ifc/segment/Pipe Types:Cold Water:583139
+  placement:
+    position:
+    - 4.682
+    - -8.126
+    - 2.994
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583140
+  name: Pipe Types:Cold Water:583140
+  source: ifc/segment/Pipe Types:Cold Water:583140
+  placement:
+    position:
+    - -0.389
+    - -9.259
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583142
+  name: Pipe Types:Cold Water:583142
+  source: ifc/segment/Pipe Types:Cold Water:583142
+  placement:
+    position:
+    - 4.139
+    - -10.003
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583143
+  name: Pipe Types:Cold Water:583143
+  source: ifc/segment/Pipe Types:Cold Water:583143
+  placement:
+    position:
+    - 3.338
+    - -10.036
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583147
+  name: Pipe Types:Cold Water:583147
+  source: ifc/segment/Pipe Types:Cold Water:583147
+  placement:
+    position:
+    - 4.139
+    - -9.669
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583151
+  name: Pipe Types:Hot Water:583151
+  source: ifc/segment/Pipe Types:Hot Water:583151
+  placement:
+    position:
+    - 4.078
+    - -8.454
+    - 2.871
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583152
+  name: Pipe Types:Hot Water:583152
+  source: ifc/segment/Pipe Types:Hot Water:583152
+  placement:
+    position:
+    - 3.986
+    - -8.951
+    - 3.114
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583153
+  name: Pipe Types:Hot Water:583153
+  source: ifc/segment/Pipe Types:Hot Water:583153
+  placement:
+    position:
+    - 4.006
+    - -8.951
+    - 3.094
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583154
+  name: Pipe Types:Hot Water:583154
+  source: ifc/segment/Pipe Types:Hot Water:583154
+  placement:
+    position:
+    - 4.078
+    - -8.414
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583158
+  name: Pipe Types:Hot Water:583158
+  source: ifc/segment/Pipe Types:Hot Water:583158
+  placement:
+    position:
+    - 3.986
+    - -9.601
+    - 3.114
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583159
+  name: Pipe Types:Hot Water:583159
+  source: ifc/segment/Pipe Types:Hot Water:583159
+  placement:
+    position:
+    - 4.006
+    - -9.601
+    - 3.094
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583160
+  name: Pipe Types:Hot Water:583160
+  source: ifc/segment/Pipe Types:Hot Water:583160
+  placement:
+    position:
+    - 4.078
+    - -9.567
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583163
+  name: Pipe Types:Hot Water:583163
+  source: ifc/segment/Pipe Types:Hot Water:583163
+  placement:
+    position:
+    - 4.078
+    - -10.329
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583167
+  name: Pipe Types:Cold Water:583167
+  source: ifc/segment/Pipe Types:Cold Water:583167
+  placement:
+    position:
+    - 4.635
+    - -8.743
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583169
+  name: Pipe Types:Cold Water:583169
+  source: ifc/segment/Pipe Types:Cold Water:583169
+  placement:
+    position:
+    - 4.668
+    - -7.656
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583171
+  name: Pipe Types:Hot Water:583171
+  source: ifc/segment/Pipe Types:Hot Water:583171
+  placement:
+    position:
+    - 4.728
+    - -6.817
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583173
+  name: Pipe Types:Hot Water:583173
+  source: ifc/segment/Pipe Types:Hot Water:583173
+  placement:
+    position:
+    - 4.667
+    - -9.359
+    - 2.837
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583174
+  name: Pipe Types:Hot Water:583174
+  source: ifc/segment/Pipe Types:Hot Water:583174
+  placement:
+    position:
+    - 4.695
+    - -9.359
+    - 2.871
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583175
+  name: Pipe Types:Hot Water:583175
+  source: ifc/segment/Pipe Types:Hot Water:583175
+  placement:
+    position:
+    - 4.111
+    - -8.454
+    - 2.837
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583176
+  name: Pipe Types:Hot Water:583176
+  source: ifc/segment/Pipe Types:Hot Water:583176
+  placement:
+    position:
+    - 4.802
+    - -8.228
+    - 3.114
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583177
+  name: Pipe Types:Hot Water:583177
+  source: ifc/segment/Pipe Types:Hot Water:583177
+  placement:
+    position:
+    - 4.741
+    - -8.228
+    - 3.094
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583180
+  name: Pipe Types:Hot Water:583180
+  source: ifc/segment/Pipe Types:Hot Water:583180
+  placement:
+    position:
+    - 4.695
+    - -8.194
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583182
+  name: Pipe Types:Hot Water:583182
+  source: ifc/segment/Pipe Types:Hot Water:583182
+  placement:
+    position:
+    - 4.802
+    - -8.878
+    - 3.114
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583183
+  name: Pipe Types:Hot Water:583183
+  source: ifc/segment/Pipe Types:Hot Water:583183
+  placement:
+    position:
+    - 4.741
+    - -8.878
+    - 3.094
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583184
+  name: Pipe Types:Hot Water:583184
+  source: ifc/segment/Pipe Types:Hot Water:583184
+  placement:
+    position:
+    - 4.695
+    - -9.941
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583187
+  name: Pipe Types:Hot Water:583187
+  source: ifc/segment/Pipe Types:Hot Water:583187
+  placement:
+    position:
+    - 4.695
+    - -8.844
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583189
+  name: Pipe Types:Hot Water:583189
+  source: ifc/segment/Pipe Types:Hot Water:583189
+  placement:
+    position:
+    - 4.668
+    - -9.974
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583190
+  name: Pipe Types:Hot Water:583190
+  source: ifc/segment/Pipe Types:Hot Water:583190
+  placement:
+    position:
+    - 4.635
+    - -10.671
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583192
+  name: Pipe Types:Cold Water:583192
+  source: ifc/segment/Pipe Types:Cold Water:583192
+  placement:
+    position:
+    - 4.668
+    - -10.41
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583194
+  name: Pipe Types:Cold Water:583194
+  source: ifc/segment/Pipe Types:Cold Water:583194
+  placement:
+    position:
+    - 4.695
+    - -10.468
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583196
+  name: Pipe Types:Cold Water:583196
+  source: ifc/segment/Pipe Types:Cold Water:583196
+  placement:
+    position:
+    - 4.717
+    - -10.488
+    - 3.351
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583197
+  name: Pipe Types:Cold Water:583197
+  source: ifc/segment/Pipe Types:Cold Water:583197
+  placement:
+    position:
+    - 4.704
+    - -10.488
+    - 3.01
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583201
+  name: Pipe Types:Hot Water:583201
+  source: ifc/segment/Pipe Types:Hot Water:583201
+  placement:
+    position:
+    - 4.657
+    - -10.691
+    - 3.351
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583202
+  name: Pipe Types:Hot Water:583202
+  source: ifc/segment/Pipe Types:Hot Water:583202
+  placement:
+    position:
+    - 4.644
+    - -10.691
+    - 3.11
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583206
+  name: Pipe Types:Cold Water:583206
+  source: ifc/segment/Pipe Types:Cold Water:583206
+  placement:
+    position:
+    - 4.662
+    - -9.672
+    - 3.564
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583207
+  name: Pipe Types:Cold Water:583207
+  source: ifc/segment/Pipe Types:Cold Water:583207
+  placement:
+    position:
+    - 4.641
+    - -9.672
+    - 3.034
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583210
+  name: Pipe Types:Cold Water:583210
+  source: ifc/segment/Pipe Types:Cold Water:583210
+  placement:
+    position:
+    - 4.635
+    - -9.867
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583214
+  name: Pipe Types:Hot Water:583214
+  source: ifc/segment/Pipe Types:Hot Water:583214
+  placement:
+    position:
+    - 4.078
+    - -8.917
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583215
+  name: Pipe Types:Hot Water:583215
+  source: ifc/segment/Pipe Types:Hot Water:583215
+  placement:
+    position:
+    - 4.111
+    - -7.996
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583217
+  name: Pipe Types:Hot Water:583217
+  source: ifc/segment/Pipe Types:Hot Water:583217
+  placement:
+    position:
+    - 4.138
+    - -7.962
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583219
+  name: Pipe Types:Hot Water:583219
+  source: ifc/segment/Pipe Types:Hot Water:583219
+  placement:
+    position:
+    - 4.031
+    - -7.132
+    - 3.351
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583220
+  name: Pipe Types:Hot Water:583220
+  source: ifc/segment/Pipe Types:Hot Water:583220
+  placement:
+    position:
+    - 4.147
+    - -7.132
+    - 3.11
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583224
+  name: Pipe Types:Cold Water:583224
+  source: ifc/segment/Pipe Types:Cold Water:583224
+  placement:
+    position:
+    - 4.098
+    - -7.493
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583226
+  name: Pipe Types:Cold Water:583226
+  source: ifc/segment/Pipe Types:Cold Water:583226
+  placement:
+    position:
+    - 4.064
+    - -7.46
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583228
+  name: Pipe Types:Cold Water:583228
+  source: ifc/segment/Pipe Types:Cold Water:583228
+  placement:
+    position:
+    - 4.031
+    - -7.335
+    - 3.351
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583229
+  name: Pipe Types:Cold Water:583229
+  source: ifc/segment/Pipe Types:Cold Water:583229
+  placement:
+    position:
+    - 4.074
+    - -7.335
+    - 3.01
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583235
+  name: Pipe Types:Hot Water:583235
+  source: ifc/segment/Pipe Types:Hot Water:583235
+  placement:
+    position:
+    - 4.695
+    - -9.319
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583236
+  name: Pipe Types:Hot Water:583236
+  source: ifc/segment/Pipe Types:Hot Water:583236
+  placement:
+    position:
+    - 4.14
+    - -9.089
+    - 0.787
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583237
+  name: Pipe Types:Hot Water:583237
+  source: ifc/segment/Pipe Types:Hot Water:583237
+  placement:
+    position:
+    - 4.14
+    - -8.454
+    - 0.621
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583238
+  name: Pipe Types:Hot Water:583238
+  source: ifc/segment/Pipe Types:Hot Water:583238
+  placement:
+    position:
+    - 4.633
+    - -9.181
+    - 0.787
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583239
+  name: Pipe Types:Hot Water:583239
+  source: ifc/segment/Pipe Types:Hot Water:583239
+  placement:
+    position:
+    - 4.633
+    - -9.359
+    - 0.827
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583241
+  name: Pipe Types:Cold Water:583241
+  source: ifc/segment/Pipe Types:Cold Water:583241
+  placement:
+    position:
+    - 4.139
+    - -9.139
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583242
+  name: Pipe Types:Cold Water:583242
+  source: ifc/segment/Pipe Types:Cold Water:583242
+  placement:
+    position:
+    - 4.03
+    - -9.438
+    - 0.908
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583243
+  name: Pipe Types:Cold Water:583243
+  source: ifc/segment/Pipe Types:Cold Water:583243
+  placement:
+    position:
+    - 4.146
+    - -9.418
+    - 0.908
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:583244
+  name: Pipe Types:Cold Water:583244
+  source: ifc/segment/Pipe Types:Cold Water:583244
+  placement:
+    position:
+    - 4.146
+    - -9.347
+    - -0.446
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583249
+  name: Pipe Types:Hot Water:583249
+  source: ifc/segment/Pipe Types:Hot Water:583249
+  placement:
+    position:
+    - 4.03
+    - -9.21
+    - 0.908
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583250
+  name: Pipe Types:Hot Water:583250
+  source: ifc/segment/Pipe Types:Hot Water:583250
+  placement:
+    position:
+    - 4.146
+    - -9.189
+    - 0.908
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583251
+  name: Pipe Types:Hot Water:583251
+  source: ifc/segment/Pipe Types:Hot Water:583251
+  placement:
+    position:
+    - 4.146
+    - -9.116
+    - 0.814
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583256
+  name: Pipe Types:Hot Water:583256
+  source: ifc/segment/Pipe Types:Hot Water:583256
+  placement:
+    position:
+    - 3.986
+    - -8.598
+    - 0.814
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583257
+  name: Pipe Types:Hot Water:583257
+  source: ifc/segment/Pipe Types:Hot Water:583257
+  placement:
+    position:
+    - 4.006
+    - -8.598
+    - 0.794
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583260
+  name: Pipe Types:Hot Water:583260
+  source: ifc/segment/Pipe Types:Hot Water:583260
+  placement:
+    position:
+    - 4.14
+    - -8.565
+    - 0.787
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583262
+  name: Pipe Types:Hot Water:583262
+  source: ifc/segment/Pipe Types:Hot Water:583262
+  placement:
+    position:
+    - 4.66
+    - -8.603
+    - 0.908
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583263
+  name: Pipe Types:Hot Water:583263
+  source: ifc/segment/Pipe Types:Hot Water:583263
+  placement:
+    position:
+    - 4.64
+    - -8.603
+    - 0.814
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583267
+  name: Pipe Types:Hot Water:583267
+  source: ifc/segment/Pipe Types:Hot Water:583267
+  placement:
+    position:
+    - 4.802
+    - -9.215
+    - 0.814
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583268
+  name: Pipe Types:Hot Water:583268
+  source: ifc/segment/Pipe Types:Hot Water:583268
+  placement:
+    position:
+    - 4.68
+    - -9.215
+    - 0.794
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583271
+  name: Pipe Types:Hot Water:583271
+  source: ifc/segment/Pipe Types:Hot Water:583271
+  placement:
+    position:
+    - 4.633
+    - -9.61
+    - 0.787
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583275
+  name: Pipe Types:Hot Water:583275
+  source: ifc/segment/Pipe Types:Hot Water:583275
+  placement:
+    position:
+    - 4.14
+    - -8.454
+    - 0.827
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583276
+  name: Pipe Types:Hot Water:583276
+  source: ifc/segment/Pipe Types:Hot Water:583276
+  placement:
+    position:
+    - 4.14
+    - -8.421
+    - 0.587
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583278
+  name: Pipe Types:Hot Water:583278
+  source: ifc/segment/Pipe Types:Hot Water:583278
+  placement:
+    position:
+    - 4.113
+    - -8.113
+    - 0.587
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583280
+  name: Pipe Types:Hot Water:583280
+  source: ifc/segment/Pipe Types:Hot Water:583280
+  placement:
+    position:
+    - 4.08
+    - -8.079
+    - 0.587
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583282
+  name: Pipe Types:Hot Water:583282
+  source: ifc/segment/Pipe Types:Hot Water:583282
+  placement:
+    position:
+    - 4.113
+    - -7.889
+    - 0.587
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583284
+  name: Pipe Types:Hot Water:583284
+  source: ifc/segment/Pipe Types:Hot Water:583284
+  placement:
+    position:
+    - 4.14
+    - -7.856
+    - 0.587
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583286
+  name: Pipe Types:Hot Water:583286
+  source: ifc/segment/Pipe Types:Hot Water:583286
+  placement:
+    position:
+    - 4.173
+    - -7.519
+    - 0.587
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583295
+  name: Pipe Types:Hot Water:583295
+  source: ifc/segment/Pipe Types:Hot Water:583295
+  placement:
+    position:
+    - 4.633
+    - -9.319
+    - 0.787
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583296
+  name: Pipe Types:Hot Water:583296
+  source: ifc/segment/Pipe Types:Hot Water:583296
+  placement:
+    position:
+    - 4.633
+    - -9.643
+    - 0.621
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583298
+  name: Pipe Types:Hot Water:583298
+  source: ifc/segment/Pipe Types:Hot Water:583298
+  placement:
+    position:
+    - 4.695
+    - -9.927
+    - 0.587
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583299
+  name: Pipe Types:Hot Water:583299
+  source: ifc/segment/Pipe Types:Hot Water:583299
+  placement:
+    position:
+    - 2.899
+    - -10.283
+    - 0.587
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583306
+  name: Pipe Types:Hot Water:583306
+  source: ifc/segment/Pipe Types:Hot Water:583306
+  placement:
+    position:
+    - 4.667
+    - -9.643
+    - 0.587
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583309
+  name: Pipe Types:Hot Water:583309
+  source: ifc/segment/Pipe Types:Hot Water:583309
+  placement:
+    position:
+    - 4.633
+    - -10.25
+    - 0.587
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583310
+  name: Pipe Types:Hot Water:583310
+  source: ifc/segment/Pipe Types:Hot Water:583310
+  placement:
+    position:
+    - 4.666
+    - -9.96
+    - 0.587
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583316
+  name: Pipe Types:Waste:583316
+  source: ifc/segment/Pipe Types:Waste:583316
+  placement:
+    position:
+    - 4.066
+    - -9.593
+    - 2.71
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583318
+  name: Pipe Types:Waste:583318
+  source: ifc/segment/Pipe Types:Waste:583318
+  placement:
+    position:
+    - 4.066
+    - -10.568
+    - 2.712
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583319
+  name: Pipe Types:Waste:583319
+  source: ifc/segment/Pipe Types:Waste:583319
+  placement:
+    position:
+    - 4.066
+    - -10.619
+    - 2.763
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583328
+  name: Pipe Types:Waste:583328
+  source: ifc/segment/Pipe Types:Waste:583328
+  placement:
+    position:
+    - 4.683
+    - -8.768
+    - 2.704
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:583332
+  name: Pipe Types:Waste:583332
+  source: ifc/segment/Pipe Types:Waste:583332
+  placement:
+    position:
+    - 4.683
+    - -7.305
+    - 2.756
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583544
+  name: Pipe Types:Hot Water:583544
+  source: ifc/segment/Pipe Types:Hot Water:583544
+  placement:
+    position:
+    - 4.111
+    - -10.363
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583550
+  name: Pipe Types:Hot Water:583550
+  source: ifc/segment/Pipe Types:Hot Water:583550
+  placement:
+    position:
+    - 4.139
+    - -10.953
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583557
+  name: Pipe Types:Hot Water:583557
+  source: ifc/segment/Pipe Types:Hot Water:583557
+  placement:
+    position:
+    - 3.392
+    - -10.987
+    - 3.087
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583610
+  name: Pipe Types:Hot Water:583610
+  source: ifc/segment/Pipe Types:Hot Water:583610
+  placement:
+    position:
+    - 3.359
+    - -10.953
+    - 3.636
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:583768
+  name: Pipe Types:Hot Water:583768
+  source: ifc/segment/Pipe Types:Hot Water:583768
+  placement:
+    position:
+    - 3.359
+    - -10.987
+    - 3.553
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:584025
+  name: Pipe Types:Cold Water:584025
+  source: ifc/segment/Pipe Types:Cold Water:584025
+  placement:
+    position:
+    - 3.304
+    - -10.064
+    - 2.987
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:584048
+  name: Pipe Types:Cold Water:584048
+  source: ifc/segment/Pipe Types:Cold Water:584048
+  placement:
+    position:
+    - 3.304
+    - -10.097
+    - 3.021
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:593072
+  name: Pipe Types:Cold Water:593072
+  source: ifc/segment/Pipe Types:Cold Water:593072
+  placement:
+    position:
+    - 3.304
+    - -10.168
+    - 3.219
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:593196
+  name: Pipe Types:Hot Water:593196
+  source: ifc/segment/Pipe Types:Hot Water:593196
+  placement:
+    position:
+    - 3.359
+    - -10.987
+    - 3.121
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:593581
+  name: Pipe Types:Cold Water:593581
+  source: ifc/segment/Pipe Types:Cold Water:593581
+  placement:
+    position:
+    - 5.47
+    - -7.243
+    - 3.248
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:593588
+  name: Pipe Types:Cold Water:593588
+  source: ifc/segment/Pipe Types:Cold Water:593588
+  placement:
+    position:
+    - 5.47
+    - -7.656
+    - 3.021
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:593619
+  name: Pipe Types:Hot Water:593619
+  source: ifc/segment/Pipe Types:Hot Water:593619
+  placement:
+    position:
+    - 5.416
+    - -6.875
+    - 3.661
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:593630
+  name: Pipe Types:Hot Water:593630
+  source: ifc/segment/Pipe Types:Hot Water:593630
+  placement:
+    position:
+    - 5.416
+    - -6.817
+    - 3.618
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:593893
+  name: Pipe Types:Cold Water:593893
+  source: ifc/segment/Pipe Types:Cold Water:593893
+  placement:
+    position:
+    - 5.47
+    - -7.623
+    - 3.248
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:594105
+  name: Pipe Types:Hot Water:594105
+  source: ifc/segment/Pipe Types:Hot Water:594105
+  placement:
+    position:
+    - 5.416
+    - -6.817
+    - 3.121
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:594985
+  name: Pipe Types:Waste:594985
+  source: ifc/segment/Pipe Types:Waste:594985
+  placement:
+    position:
+    - -0.39
+    - -9.592
+    - -0.632
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:599698
+  name: Pipe Types:Waste:599698
+  source: ifc/segment/Pipe Types:Waste:599698
+  placement:
+    position:
+    - 2.942
+    - -10.638
+    - -0.613
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:599705
+  name: Pipe Types:Waste:599705
+  source: ifc/segment/Pipe Types:Waste:599705
+  placement:
+    position:
+    - 2.993
+    - -10.292
+    - -0.612
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:599791
+  name: Pipe Types:Hot Water:599791
+  source: ifc/segment/Pipe Types:Hot Water:599791
+  placement:
+    position:
+    - 2.858
+    - -10.491
+    - 0.621
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:599795
+  name: Pipe Types:Hot Water:599795
+  source: ifc/segment/Pipe Types:Hot Water:599795
+  placement:
+    position:
+    - 2.858
+    - -10.464
+    - 0.594
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:600106
+  name: Pipe Types:Cold Water:600106
+  source: ifc/segment/Pipe Types:Cold Water:600106
+  placement:
+    position:
+    - 5.726
+    - -7.322
+    - -0.189
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:600107
+  name: Pipe Types:Cold Water:600107
+  source: ifc/segment/Pipe Types:Cold Water:600107
+  placement:
+    position:
+    - 5.726
+    - -7.452
+    - -0.216
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:600129
+  name: Pipe Types:Hot Water:600129
+  source: ifc/segment/Pipe Types:Hot Water:600129
+  placement:
+    position:
+    - 5.929
+    - -7.322
+    - 0.621
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Hot Water:600130
+  name: Pipe Types:Hot Water:600130
+  source: ifc/segment/Pipe Types:Hot Water:600130
+  placement:
+    position:
+    - 5.929
+    - -7.486
+    - 0.594
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:600257
+  name: Pipe Types:Waste:600257
+  source: ifc/segment/Pipe Types:Waste:600257
+  placement:
+    position:
+    - 8.351
+    - -17.129
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:600272
+  name: Pipe Types:Waste:600272
+  source: ifc/segment/Pipe Types:Waste:600272
+  placement:
+    position:
+    - 8.351
+    - -15.1
+    - 2.732
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:600449
+  name: Pipe Types:Waste:600449
+  source: ifc/segment/Pipe Types:Waste:600449
+  placement:
+    position:
+    - 7.898
+    - -17.394
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:600503
+  name: Pipe Types:Waste:600503
+  source: ifc/segment/Pipe Types:Waste:600503
+  placement:
+    position:
+    - 6.712
+    - -17.394
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:600555
+  name: Pipe Types:Waste:600555
+  source: ifc/segment/Pipe Types:Waste:600555
+  placement:
+    position:
+    - 0.406
+    - -14.841
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:600584
+  name: Pipe Types:Waste:600584
+  source: ifc/segment/Pipe Types:Waste:600584
+  placement:
+    position:
+    - 0.406
+    - -12.835
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:600695
+  name: Pipe Types:Waste:600695
+  source: ifc/segment/Pipe Types:Waste:600695
+  placement:
+    position:
+    - 6.194
+    - -9.033
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:600701
+  name: Pipe Types:Waste:600701
+  source: ifc/segment/Pipe Types:Waste:600701
+  placement:
+    position:
+    - 6.157
+    - -8.996
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:600896
+  name: Pipe Types:Waste:600896
+  source: ifc/segment/Pipe Types:Waste:600896
+  placement:
+    position:
+    - 0.406
+    - -0.704
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:600913
+  name: Pipe Types:Waste:600913
+  source: ifc/segment/Pipe Types:Waste:600913
+  placement:
+    position:
+    - 0.406
+    - -2.732
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:601015
+  name: Pipe Types:Waste:601015
+  source: ifc/segment/Pipe Types:Waste:601015
+  placement:
+    position:
+    - 0.879
+    - -0.449
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:601031
+  name: Pipe Types:Waste:601031
+  source: ifc/segment/Pipe Types:Waste:601031
+  placement:
+    position:
+    - 2.057
+    - -0.449
+    - 0.078
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:604332
+  name: Pipe Types:PVC:604332
+  source: ifc/segment/Pipe Types:PVC:604332
+  placement:
+    position:
+    - 4.14
+    - -6.544
+    - 2.642
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:604361
+  name: Pipe Types:PVC:604361
+  source: ifc/segment/Pipe Types:PVC:604361
+  placement:
+    position:
+    - 4.14
+    - -5.178
+    - 2.716
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:604556
+  name: Pipe Types:PVC:604556
+  source: ifc/segment/Pipe Types:PVC:604556
+  placement:
+    position:
+    - 4.626
+    - -12.796
+    - 2.716
+    storey: Level 2
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:604577
+  name: Pipe Types:PVC:604577
+  source: ifc/segment/Pipe Types:PVC:604577
+  placement:
+    position:
+    - 4.626
+    - -12.722
+    - 2.642
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:604652
+  name: Pipe Types:Cold Water:604652
+  source: ifc/segment/Pipe Types:Cold Water:604652
+  placement:
+    position:
+    - 3.061
+    - -10.491
+    - -0.439
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:604653
+  name: Pipe Types:Cold Water:604653
+  source: ifc/segment/Pipe Types:Cold Water:604653
+  placement:
+    position:
+    - 3.061
+    - -10.464
+    - -0.466
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:604659
+  name: Pipe Types:Cold Water:604659
+  source: ifc/segment/Pipe Types:Cold Water:604659
+  placement:
+    position:
+    - 1.843
+    - -10.299
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Cold Water:604667
+  name: Pipe Types:Cold Water:604667
+  source: ifc/segment/Pipe Types:Cold Water:604667
+  placement:
+    position:
+    - 3.095
+    - -10.299
+    - -0.473
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:604739
+  name: Pipe Types:PVC:604739
+  source: ifc/segment/Pipe Types:PVC:604739
+  placement:
+    position:
+    - -0.072
+    - -10.138
+    - -0.736
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:605354
+  name: Pipe Types:PVC:605354
+  source: ifc/segment/Pipe Types:PVC:605354
+  placement:
+    position:
+    - 3.745
+    - -6.618
+    - 2.642
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:605366
+  name: Pipe Types:PVC:605366
+  source: ifc/segment/Pipe Types:PVC:605366
+  placement:
+    position:
+    - 3.671
+    - -7.444
+    - 2.642
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:605375
+  name: Pipe Types:PVC:605375
+  source: ifc/segment/Pipe Types:PVC:605375
+  placement:
+    position:
+    - 3.346
+    - -7.518
+    - -0.736
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:605397
+  name: Pipe Types:PVC:605397
+  source: ifc/segment/Pipe Types:PVC:605397
+  placement:
+    position:
+    - 3.671
+    - -7.518
+    - -0.662
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:605401
+  name: Pipe Types:PVC:605401
+  source: ifc/segment/Pipe Types:PVC:605401
+  placement:
+    position:
+    - 3.272
+    - -10.064
+    - -0.736
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:605583
+  name: Pipe Types:PVC:605583
+  source: ifc/segment/Pipe Types:PVC:605583
+  placement:
+    position:
+    - 1.6
+    - -10.936
+    - 2.642
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:605592
+  name: Pipe Types:PVC:605592
+  source: ifc/segment/Pipe Types:PVC:605592
+  placement:
+    position:
+    - 1.526
+    - -10.862
+    - 2.642
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:605599
+  name: Pipe Types:PVC:605599
+  source: ifc/segment/Pipe Types:PVC:605599
+  placement:
+    position:
+    - -0.072
+    - -10.345
+    - -0.753
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:PVC:605615
+  name: Pipe Types:PVC:605615
+  source: ifc/segment/Pipe Types:PVC:605615
+  placement:
+    position:
+    - 1.526
+    - -10.345
+    - -0.679
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:612522
+  name: Pipe Types:Waste:612522
+  source: ifc/segment/Pipe Types:Waste:612522
+  placement:
+    position:
+    - 2.942
+    - -10.683
+    - -0.568
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: Pipe Types:Waste:612648
+  name: Pipe Types:Waste:612648
+  source: ifc/segment/Pipe Types:Waste:612648
+  placement:
+    position:
+    - 4.066
+    - -8.59
+    - -0.605
+    storey: Level 1
+  layer: mep/ducts
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:545367
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:545367
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:545367
+  placement:
+    position:
+    - 6.619
+    - -6.167
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:546380
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:546380
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:546380
+  placement:
+    position:
+    - 4.781
+    - -10.456
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:546395
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:546395
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:546395
+  placement:
+    position:
+    - 4.825
+    - -7.544
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:546904
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:546904
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:546904
+  placement:
+    position:
+    - 8.176
+    - -4.303
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:546905
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:546905
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:546905
+  placement:
+    position:
+    - 8.18
+    - -6.155
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:547147
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:547147
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:547147
+  placement:
+    position:
+    - 8.346
+    - -6.046
+    - 2.771
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:547149
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:547149
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:547149
+  placement:
+    position:
+    - 8.358
+    - -6.155
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:547619
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:547619
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:547619
+  placement:
+    position:
+    - 6.756
+    - -17.431
+    - 2.722
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:547884
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:547884
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:547884
+  placement:
+    position:
+    - 0.37
+    - -12.845
+    - 2.722
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:548088
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:548088
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:548088
+  placement:
+    position:
+    - 4.83
+    - -8.067
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:548122
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:548122
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:548122
+  placement:
+    position:
+    - 4.83
+    - -9.043
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:548141
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:548141
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:548141
+  placement:
+    position:
+    - 6.27
+    - -9.032
+    - 2.765
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:548144
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:548144
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:548144
+  placement:
+    position:
+    - 6.151
+    - -8.056
+    - 2.765
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:549664
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:549664
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:549664
+  placement:
+    position:
+    - 8.346
+    - -17.129
+    - 3.173
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:549727
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:549727
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:549727
+  placement:
+    position:
+    - 8.346
+    - -6.078
+    - 3.154
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:549943
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:549943
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:549943
+  placement:
+    position:
+    - 6.357
+    - -6.887
+    - 3.166
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:549959
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:549959
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:549959
+  placement:
+    position:
+    - 4.83
+    - -10.303
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:550034
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:550034
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:550034
+  placement:
+    position:
+    - 6.219
+    - -10.292
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:550040
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:550040
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:550040
+  placement:
+    position:
+    - 4.83
+    - -9.107
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:550083
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:550083
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:550083
+  placement:
+    position:
+    - 6.257
+    - -9.102
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:550098
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:550098
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:550098
+  placement:
+    position:
+    - 6.042
+    - -6.925
+    - 3.166
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:550223
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:550223
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:550223
+  placement:
+    position:
+    - 6.325
+    - -6.887
+    - 2.771
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:550225
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:550225
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:550225
+  placement:
+    position:
+    - 6.575
+    - -6.918
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:554027
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:554027
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:554027
+  placement:
+    position:
+    - 5.782
+    - -6.88
+    - 3.166
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557546
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557546
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557546
+  placement:
+    position:
+    - 2.181
+    - -11.633
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557547
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557547
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557547
+  placement:
+    position:
+    - 0.364
+    - -11.595
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557551
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557551
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557551
+  placement:
+    position:
+    - 8.431
+    - -0.401
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557554
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557554
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557554
+  placement:
+    position:
+    - 8.393
+    - -7.376
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557556
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557556
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557556
+  placement:
+    position:
+    - 4.019
+    - -7.344
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557558
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557558
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557558
+  placement:
+    position:
+    - 3.975
+    - -10.256
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557565
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557565
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557565
+  placement:
+    position:
+    - 0.624
+    - -13.479
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:557566
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:557566
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:557566
+  placement:
+    position:
+    - 0.62
+    - -11.645
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557572
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557572
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557572
+  placement:
+    position:
+    - 0.454
+    - -11.753
+    - 2.681
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:557573
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:557573
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:557573
+  placement:
+    position:
+    - 0.442
+    - -11.645
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:557598
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:557598
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:557598
+  placement:
+    position:
+    - 2.047
+    - -0.363
+    - 2.632
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:557602
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:557602
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:557602
+  placement:
+    position:
+    - 8.431
+    - -2.929
+    - 2.632
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:557613
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:557613
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:557613
+  placement:
+    position:
+    - 3.97
+    - -9.733
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:557616
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:557616
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:557616
+  placement:
+    position:
+    - 3.97
+    - -8.755
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557618
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557618
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557618
+  placement:
+    position:
+    - 2.562
+    - -8.767
+    - 2.675
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557619
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557619
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557619
+  placement:
+    position:
+    - 2.649
+    - -9.744
+    - 2.675
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:557645
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:557645
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:557645
+  placement:
+    position:
+    - 3.97
+    - -7.497
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557651
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557651
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557651
+  placement:
+    position:
+    - 2.581
+    - -7.508
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:557653
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:557653
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:557653
+  placement:
+    position:
+    - 3.97
+    - -8.693
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557660
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557660
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557660
+  placement:
+    position:
+    - 2.543
+    - -8.698
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557665
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557665
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:557665
+  placement:
+    position:
+    - 2.225
+    - -10.882
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577791
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577791
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577791
+  placement:
+    position:
+    - 8.436
+    - -6.205
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577810
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577810
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577810
+  placement:
+    position:
+    - 8.398
+    - -6.368
+    - 3.212
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:577812
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:577812
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:577812
+  placement:
+    position:
+    - 8.436
+    - -6.379
+    - 2.776
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:577871
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:577871
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:577871
+  placement:
+    position:
+    - 8.436
+    - -7.652
+    - 2.776
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577875
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577875
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577875
+  placement:
+    position:
+    - 8.315
+    - -7.603
+    - 3.18
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577876
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577876
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577876
+  placement:
+    position:
+    - 8.436
+    - -7.609
+    - 3.174
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:577919
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:577919
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:577919
+  placement:
+    position:
+    - 7.888
+    - -17.399
+    - 2.722
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577966
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577966
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:577966
+  placement:
+    position:
+    - 0.37
+    - -17.393
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:577990
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:577990
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:577990
+  placement:
+    position:
+    - 0.402
+    - -14.798
+    - 2.722
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578049
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578049
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578049
+  placement:
+    position:
+    - 0.492
+    - -13.479
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578144
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578144
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578144
+  placement:
+    position:
+    - 6.226
+    - -9.951
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578189
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578189
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578189
+  placement:
+    position:
+    - 6.257
+    - -9.116
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578195
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578195
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578195
+  placement:
+    position:
+    - 6.226
+    - -9.122
+    - 3.173
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:578229
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:578229
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:578229
+  placement:
+    position:
+    - 5.456
+    - -6.887
+    - 3.162
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578386
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578386
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578386
+  placement:
+    position:
+    - 5.499
+    - -6.887
+    - 2.771
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578388
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578388
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578388
+  placement:
+    position:
+    - 5.461
+    - -7.576
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:578414
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:578414
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:578414
+  placement:
+    position:
+    - 5.341
+    - -7.222
+    - 3.295
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578420
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578420
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578420
+  placement:
+    position:
+    - 5.461
+    - -7.209
+    - 3.338
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:578422
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:578422
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:578422
+  placement:
+    position:
+    - 5.499
+    - -7.22
+    - 2.776
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:578436
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:578436
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:578436
+  placement:
+    position:
+    - 5.456
+    - -7.165
+    - 3.062
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:578437
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:578437
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:578437
+  placement:
+    position:
+    - 5.456
+    - -7.222
+    - 2.884
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578486
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578486
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578486
+  placement:
+    position:
+    - 5.451
+    - -6.918
+    - 3.173
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578596
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578596
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578596
+  placement:
+    position:
+    - 5.413
+    - -6.887
+    - 3.732
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578598
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578598
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578598
+  placement:
+    position:
+    - 5.406
+    - -7.209
+    - 3.738
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:578599
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:578599
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:578599
+  placement:
+    position:
+    - 5.394
+    - -7.222
+    - 3.727
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:578610
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:578610
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:578610
+  placement:
+    position:
+    - 5.457
+    - -6.93
+    - 3.382
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:578611
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:578611
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:578611
+  placement:
+    position:
+    - 5.4
+    - -6.93
+    - 3.56
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:578707
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:578707
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:578707
+  placement:
+    position:
+    - 0.364
+    - -11.28
+    - 2.686
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578712
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578712
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578712
+  placement:
+    position:
+    - 0.364
+    - -11.323
+    - 3.174
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:578743
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:578743
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:578743
+  placement:
+    position:
+    - 0.364
+    - -10.008
+    - 2.686
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578748
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578748
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578748
+  placement:
+    position:
+    - 0.364
+    - -10.051
+    - 3.174
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:578774
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:578774
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:578774
+  placement:
+    position:
+    - 0.922
+    - -0.395
+    - 2.632
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578831
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578831
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578831
+  placement:
+    position:
+    - 2.574
+    - -7.826
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578873
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578873
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:578873
+  placement:
+    position:
+    - 2.543
+    - -8.684
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:579165
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:579165
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:579165
+  placement:
+    position:
+    - 3.459
+    - -10.578
+    - 3.295
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:579263
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:579263
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:579263
+  placement:
+    position:
+    - 3.343
+    - -10.87
+    - 3.387
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:579354
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:579354
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:579354
+  placement:
+    position:
+    - 0.454
+    - -11.721
+    - 3.173
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:579386
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:579386
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:579386
+  placement:
+    position:
+    - 0.485
+    - -10.057
+    - 3.18
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:579415
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:579415
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:579415
+  placement:
+    position:
+    - 0.453
+    - -0.671
+    - 3.154
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:579514
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:579514
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:579514
+  placement:
+    position:
+    - 2.574
+    - -8.678
+    - 3.173
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:580000
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:580000
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:580000
+  placement:
+    position:
+    - 3.339
+    - -10.224
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:580397
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:580397
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:580397
+  placement:
+    position:
+    - 3.387
+    - -10.913
+    - 3.217
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:580415
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:580415
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:580415
+  placement:
+    position:
+    - 3.333
+    - -10.875
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:580417
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:580417
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:580417
+  placement:
+    position:
+    - 3.344
+    - -10.913
+    - 3.168
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:580429
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:580429
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:580429
+  placement:
+    position:
+    - 2.437
+    - -10.882
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:581027
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:581027
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:581027
+  placement:
+    position:
+    - 2.659
+    - -10.869
+    - 3.168
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:581029
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:581029
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:581029
+  placement:
+    position:
+    - 2.443
+    - -10.913
+    - 3.173
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:581046
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:581046
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:581046
+  placement:
+    position:
+    - 2.919
+    - -10.926
+    - 3.168
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:581164
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:581164
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:581164
+  placement:
+    position:
+    - 3.394
+    - -10.591
+    - 3.738
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:581177
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:581177
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:581177
+  placement:
+    position:
+    - 3.346
+    - -10.634
+    - 2.89
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:581178
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:581178
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:581178
+  placement:
+    position:
+    - 3.301
+    - -10.58
+    - 2.686
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582938
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582938
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582938
+  placement:
+    position:
+    - 4.043
+    - -9.609
+    - -0.628
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582939
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582939
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582939
+  placement:
+    position:
+    - 4.049
+    - -7.852
+    - -0.619
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582943
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582943
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582943
+  placement:
+    position:
+    - 3.6
+    - -7.963
+    - -0.53
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582948
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582948
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582948
+  placement:
+    position:
+    - 3.833
+    - -8.623
+    - -0.556
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:582949
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:582949
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:582949
+  placement:
+    position:
+    - 4.038
+    - -8.59
+    - -0.622
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582954
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582954
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582954
+  placement:
+    position:
+    - 3.569
+    - -9.289
+    - -0.55
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:582955
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:582955
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:582955
+  placement:
+    position:
+    - 4.038
+    - -9.265
+    - -0.626
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:582959
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:582959
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:582959
+  placement:
+    position:
+    - 4.132
+    - -7.751
+    - -0.358
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582961
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582961
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582961
+  placement:
+    position:
+    - 4.138
+    - -7.473
+    - -0.45
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:582974
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:582974
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:582974
+  placement:
+    position:
+    - 4.049
+    - -7.859
+    - 2.78
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582978
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582978
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582978
+  placement:
+    position:
+    - 3.833
+    - -8.976
+    - 2.759
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:582979
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:582979
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:582979
+  placement:
+    position:
+    - 4.038
+    - -8.943
+    - 2.692
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582984
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582984
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582984
+  placement:
+    position:
+    - 3.6
+    - -8.109
+    - 2.777
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:582985
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:582985
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:582985
+  placement:
+    position:
+    - 4.038
+    - -8.098
+    - 2.688
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582993
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582993
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582993
+  placement:
+    position:
+    - 3.831
+    - -7.208
+    - 2.911
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582994
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582994
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:582994
+  placement:
+    position:
+    - 4.113
+    - -7.258
+    - 2.86
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583005
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583005
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583005
+  placement:
+    position:
+    - 5.231
+    - -8.511
+    - -0.536
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583006
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583006
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583006
+  placement:
+    position:
+    - 4.742
+    - -8.454
+    - -0.599
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583010
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583010
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583010
+  placement:
+    position:
+    - 4.967
+    - -9.177
+    - -0.548
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583011
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583011
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583011
+  placement:
+    position:
+    - 4.76
+    - -9.21
+    - -0.615
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583016
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583016
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583016
+  placement:
+    position:
+    - 5.2
+    - -9.838
+    - -0.529
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583017
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583017
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583017
+  placement:
+    position:
+    - 4.76
+    - -9.848
+    - -0.619
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583031
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583031
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583031
+  placement:
+    position:
+    - 4.666
+    - -10.109
+    - -0.525
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583034
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583034
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583034
+  placement:
+    position:
+    - 4.749
+    - -10.107
+    - 2.773
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583040
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583040
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583040
+  placement:
+    position:
+    - 4.969
+    - -10.608
+    - 2.901
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583043
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583043
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583043
+  placement:
+    position:
+    - 5.198
+    - -9.707
+    - 2.771
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583044
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583044
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583044
+  placement:
+    position:
+    - 4.76
+    - -9.718
+    - 2.682
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583048
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583048
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583048
+  placement:
+    position:
+    - 4.967
+    - -8.839
+    - 2.753
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583049
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583049
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583049
+  placement:
+    position:
+    - 4.76
+    - -8.873
+    - 2.686
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583057
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583057
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583057
+  placement:
+    position:
+    - 3.982
+    - -8.684
+    - -0.444
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583058
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583058
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583058
+  placement:
+    position:
+    - 4.125
+    - -8.666
+    - -0.476
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583060
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583060
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583060
+  placement:
+    position:
+    - 4.125
+    - -8.709
+    - -0.476
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583063
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583063
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583063
+  placement:
+    position:
+    - 4.136
+    - -8.013
+    - 0.479
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583064
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583064
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583064
+  placement:
+    position:
+    - 4.168
+    - -8.031
+    - -0.433
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583066
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583066
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583066
+  placement:
+    position:
+    - 4.136
+    - -8.02
+    - -0.433
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583071
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583071
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583071
+  placement:
+    position:
+    - 4.136
+    - -7.934
+    - -0.476
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583073
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583073
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583073
+  placement:
+    position:
+    - 4.174
+    - -7.457
+    - -0.226
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583074
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583074
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583074
+  placement:
+    position:
+    - 4.168
+    - -7.885
+    - -0.183
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583081
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583081
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583081
+  placement:
+    position:
+    - 4.168
+    - -7.885
+    - 2.973
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583085
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583085
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583085
+  placement:
+    position:
+    - 4.136
+    - -8.159
+    - 3.579
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583086
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583086
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583086
+  placement:
+    position:
+    - 4.136
+    - -8.123
+    - 3.027
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583088
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583088
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583088
+  placement:
+    position:
+    - 4.136
+    - -8.166
+    - 3.027
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583091
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583091
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583091
+  placement:
+    position:
+    - 3.982
+    - -9.036
+    - 3.016
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583092
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583092
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583092
+  placement:
+    position:
+    - 4.125
+    - -9.019
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583094
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583094
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583094
+  placement:
+    position:
+    - 4.125
+    - -9.062
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583109
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583109
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583109
+  placement:
+    position:
+    - 4.663
+    - -9.787
+    - 0.479
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583110
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583110
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583110
+  placement:
+    position:
+    - 4.663
+    - -9.823
+    - -0.433
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583111
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583111
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583111
+  placement:
+    position:
+    - 4.632
+    - -9.812
+    - -0.433
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583114
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583114
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583114
+  placement:
+    position:
+    - 4.818
+    - -9.116
+    - -0.444
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583115
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583115
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583115
+  placement:
+    position:
+    - 4.675
+    - -9.134
+    - -0.476
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583117
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583117
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583117
+  placement:
+    position:
+    - 4.675
+    - -9.091
+    - -0.476
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583121
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583121
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583121
+  placement:
+    position:
+    - 4.638
+    - -8.456
+    - -0.47
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583122
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583122
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583122
+  placement:
+    position:
+    - 4.663
+    - -8.461
+    - -0.476
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583123
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583123
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583123
+  placement:
+    position:
+    - 4.663
+    - -8.359
+    - 0.905
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583124
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583124
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583124
+  placement:
+    position:
+    - 4.657
+    - -8.449
+    - 0.899
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583128
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583128
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583128
+  placement:
+    position:
+    - 4.663
+    - -9.921
+    - -0.433
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583130
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583130
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583130
+  placement:
+    position:
+    - 4.663
+    - -9.867
+    - 2.973
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583134
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583134
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583134
+  placement:
+    position:
+    - 4.818
+    - -8.779
+    - 3.016
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583135
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583135
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583135
+  placement:
+    position:
+    - 4.675
+    - -8.797
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583137
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583137
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583137
+  placement:
+    position:
+    - 4.675
+    - -8.754
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583141
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583141
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583141
+  placement:
+    position:
+    - 1.838
+    - -9.269
+    - -0.476
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583144
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583144
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583144
+  placement:
+    position:
+    - 4.13
+    - -10.039
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583145
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583145
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583145
+  placement:
+    position:
+    - 3.982
+    - -9.686
+    - 3.016
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583146
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583146
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583146
+  placement:
+    position:
+    - 4.125
+    - -9.669
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583148
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583148
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583148
+  placement:
+    position:
+    - 4.125
+    - -9.68
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583155
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583155
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583155
+  placement:
+    position:
+    - 3.982
+    - -8.935
+    - 3.116
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583156
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583156
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583156
+  placement:
+    position:
+    - 4.063
+    - -8.917
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583157
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583157
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583157
+  placement:
+    position:
+    - 4.063
+    - -8.96
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583161
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583161
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583161
+  placement:
+    position:
+    - 3.982
+    - -9.585
+    - 3.116
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583162
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583162
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583162
+  placement:
+    position:
+    - 4.063
+    - -9.567
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583164
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583164
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583164
+  placement:
+    position:
+    - 4.063
+    - -9.61
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583165
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583165
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583165
+  placement:
+    position:
+    - 4.818
+    - -8.129
+    - 3.016
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583166
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583166
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583166
+  placement:
+    position:
+    - 4.675
+    - -8.147
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583168
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583168
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583168
+  placement:
+    position:
+    - 4.675
+    - -8.135
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583170
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583170
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583170
+  placement:
+    position:
+    - 4.67
+    - -7.627
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583172
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583172
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583172
+  placement:
+    position:
+    - 4.73
+    - -6.788
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583178
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583178
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583178
+  placement:
+    position:
+    - 4.818
+    - -8.231
+    - 3.116
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583179
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583179
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583179
+  placement:
+    position:
+    - 4.734
+    - -8.248
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583181
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583181
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583181
+  placement:
+    position:
+    - 4.734
+    - -8.205
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583185
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583185
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583185
+  placement:
+    position:
+    - 4.818
+    - -8.881
+    - 3.116
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583186
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583186
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583186
+  placement:
+    position:
+    - 4.734
+    - -8.898
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583188
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583188
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583188
+  placement:
+    position:
+    - 4.734
+    - -8.855
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583191
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583191
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583191
+  placement:
+    position:
+    - 4.67
+    - -9.945
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583193
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583193
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583193
+  placement:
+    position:
+    - 4.632
+    - -10.375
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583195
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583195
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583195
+  placement:
+    position:
+    - 4.723
+    - -10.42
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583198
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583198
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583198
+  placement:
+    position:
+    - 4.712
+    - -10.473
+    - 2.995
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583199
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583199
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583199
+  placement:
+    position:
+    - 4.692
+    - -10.468
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583200
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583200
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583200
+  placement:
+    position:
+    - 4.703
+    - -10.489
+    - 3.343
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583203
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583203
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583203
+  placement:
+    position:
+    - 4.652
+    - -10.676
+    - 3.095
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583204
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583204
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583204
+  placement:
+    position:
+    - 4.631
+    - -10.671
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583205
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583205
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583205
+  placement:
+    position:
+    - 4.643
+    - -10.692
+    - 3.343
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583208
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583208
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583208
+  placement:
+    position:
+    - 4.663
+    - -9.657
+    - 3.579
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583209
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583209
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583209
+  placement:
+    position:
+    - 4.663
+    - -9.693
+    - 3.027
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583211
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583211
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583211
+  placement:
+    position:
+    - 4.632
+    - -9.682
+    - 3.027
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583212
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583212
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583212
+  placement:
+    position:
+    - 4.113
+    - -8.457
+    - 2.834
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583213
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583213
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583213
+  placement:
+    position:
+    - 4.074
+    - -8.468
+    - 3.073
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583216
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583216
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583216
+  placement:
+    position:
+    - 4.113
+    - -7.967
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583218
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583218
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583218
+  placement:
+    position:
+    - 4.128
+    - -7.999
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583221
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583221
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583221
+  placement:
+    position:
+    - 4.146
+    - -7.14
+    - 3.095
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583222
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583222
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583222
+  placement:
+    position:
+    - 4.166
+    - -7.145
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583223
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583223
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583223
+  placement:
+    position:
+    - 4.155
+    - -7.124
+    - 3.343
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583225
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583225
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583225
+  placement:
+    position:
+    - 4.168
+    - -7.503
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583227
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583227
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583227
+  placement:
+    position:
+    - 4.061
+    - -7.458
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583230
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583230
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583230
+  placement:
+    position:
+    - 4.072
+    - -7.343
+    - 2.995
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583231
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583231
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583231
+  placement:
+    position:
+    - 4.093
+    - -7.348
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583232
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583232
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583232
+  placement:
+    position:
+    - 4.082
+    - -7.327
+    - 3.343
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583233
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583233
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583233
+  placement:
+    position:
+    - 4.685
+    - -9.33
+    - 2.834
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583234
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583234
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583234
+  placement:
+    position:
+    - 4.723
+    - -9.319
+    - 3.073
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583240
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583240
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583240
+  placement:
+    position:
+    - 4.125
+    - -9.139
+    - -0.476
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583245
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583245
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583245
+  placement:
+    position:
+    - 4.161
+    - -9.324
+    - -0.47
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583246
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583246
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583246
+  placement:
+    position:
+    - 4.136
+    - -9.319
+    - -0.476
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583247
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583247
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583247
+  placement:
+    position:
+    - 4.136
+    - -9.441
+    - 0.905
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583248
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583248
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583248
+  placement:
+    position:
+    - 4.142
+    - -9.331
+    - 0.899
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583252
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583252
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583252
+  placement:
+    position:
+    - 4.162
+    - -9.094
+    - 0.79
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583253
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583253
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583253
+  placement:
+    position:
+    - 4.137
+    - -9.089
+    - 0.784
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583254
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583254
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583254
+  placement:
+    position:
+    - 4.137
+    - -9.213
+    - 0.905
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583255
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583255
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583255
+  placement:
+    position:
+    - 4.143
+    - -9.101
+    - 0.899
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583258
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583258
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583258
+  placement:
+    position:
+    - 3.982
+    - -8.582
+    - 0.816
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583259
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583259
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583259
+  placement:
+    position:
+    - 4.126
+    - -8.565
+    - 0.784
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583261
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583261
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583261
+  placement:
+    position:
+    - 4.126
+    - -8.608
+    - 0.784
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583264
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583264
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583264
+  placement:
+    position:
+    - 4.637
+    - -8.613
+    - 0.79
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583265
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583265
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583265
+  placement:
+    position:
+    - 4.662
+    - -8.618
+    - 0.784
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583266
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583266
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583266
+  placement:
+    position:
+    - 4.637
+    - -8.606
+    - 0.899
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583269
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583269
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583269
+  placement:
+    position:
+    - 4.818
+    - -9.218
+    - 0.816
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583270
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583270
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583270
+  placement:
+    position:
+    - 4.673
+    - -9.235
+    - 0.784
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:583272
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:583272
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:583272
+  placement:
+    position:
+    - 4.673
+    - -9.192
+    - 0.784
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583273
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583273
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583273
+  placement:
+    position:
+    - 4.13
+    - -8.457
+    - 2.866
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583274
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583274
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583274
+  placement:
+    position:
+    - 4.137
+    - -8.468
+    - 0.827
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583277
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583277
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583277
+  placement:
+    position:
+    - 4.137
+    - -8.457
+    - 0.622
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583279
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583279
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583279
+  placement:
+    position:
+    - 4.168
+    - -8.122
+    - 0.584
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583281
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583281
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583281
+  placement:
+    position:
+    - 4.077
+    - -8.078
+    - 0.584
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583283
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583283
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583283
+  placement:
+    position:
+    - 4.115
+    - -7.86
+    - 0.584
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583285
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583285
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583285
+  placement:
+    position:
+    - 4.13
+    - -7.892
+    - 0.584
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583287
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583287
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583287
+  placement:
+    position:
+    - 4.175
+    - -7.49
+    - 0.584
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583293
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583293
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583293
+  placement:
+    position:
+    - 4.668
+    - -9.33
+    - 2.866
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583294
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583294
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583294
+  placement:
+    position:
+    - 4.63
+    - -9.319
+    - 0.827
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583297
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583297
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583297
+  placement:
+    position:
+    - 4.63
+    - -9.608
+    - 0.816
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583305
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583305
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583305
+  placement:
+    position:
+    - 4.685
+    - -9.977
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583307
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583307
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583307
+  placement:
+    position:
+    - 4.63
+    - -9.614
+    - 0.622
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583308
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583308
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583308
+  placement:
+    position:
+    - 4.624
+    - -10.286
+    - 0.584
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583311
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583311
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583311
+  placement:
+    position:
+    - 4.668
+    - -9.931
+    - 0.584
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583312
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583312
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583312
+  placement:
+    position:
+    - 4.723
+    - -9.653
+    - 0.584
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583313
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583313
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583313
+  placement:
+    position:
+    - 4.685
+    - -9.963
+    - 0.584
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583314
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583314
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583314
+  placement:
+    position:
+    - 3.833
+    - -9.626
+    - 2.762
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583315
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583315
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583315
+  placement:
+    position:
+    - 4.038
+    - -9.593
+    - 2.695
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583320
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583320
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583320
+  placement:
+    position:
+    - 4.666
+    - -10.12
+    - 2.823
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583321
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583321
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583321
+  placement:
+    position:
+    - 4.685
+    - -10.558
+    - 2.85
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583323
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583323
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583323
+  placement:
+    position:
+    - 4.049
+    - -7.758
+    - 2.921
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583324
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583324
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583324
+  placement:
+    position:
+    - 4.068
+    - -10.617
+    - 2.765
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583326
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583326
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583326
+  placement:
+    position:
+    - 4.967
+    - -8.189
+    - 2.756
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:583327
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:583327
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:583327
+  placement:
+    position:
+    - 4.76
+    - -8.223
+    - 2.689
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583536
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583536
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583536
+  placement:
+    position:
+    - 4.074
+    - -10.328
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583556
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583556
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583556
+  placement:
+    position:
+    - 4.168
+    - -10.372
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583561
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583561
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:583561
+  placement:
+    position:
+    - 4.13
+    - -10.99
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:584031
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:584031
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:584031
+  placement:
+    position:
+    - 3.339
+    - -10.007
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:584049
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:584049
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:584049
+  placement:
+    position:
+    - 3.333
+    - -10.062
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:584239
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:584239
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:584239
+  placement:
+    position:
+    - 3.343
+    - -10.925
+    - 3.603
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:584240
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:584240
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:584240
+  placement:
+    position:
+    - 3.356
+    - -10.875
+    - 3.77
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:584241
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:584241
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:584241
+  placement:
+    position:
+    - 3.343
+    - -10.863
+    - 3.727
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:591305
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:591305
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:591305
+  placement:
+    position:
+    - 3.289
+    - -10.634
+    - 3.146
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:591306
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:591306
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:591306
+  placement:
+    position:
+    - 3.339
+    - -10.591
+    - 3.338
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:593064
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:593064
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:593064
+  placement:
+    position:
+    - 3.333
+    - -10.58
+    - 3.258
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593076
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593076
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593076
+  placement:
+    position:
+    - 3.301
+    - -10.069
+    - 3.209
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593304
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593304
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593304
+  placement:
+    position:
+    - 3.394
+    - -10.99
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593346
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593346
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593346
+  placement:
+    position:
+    - 3.387
+    - -10.99
+    - 3.626
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:593348
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:593348
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:593348
+  placement:
+    position:
+    - 3.387
+    - -10.925
+    - 3.622
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593589
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593589
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593589
+  placement:
+    position:
+    - 5.46
+    - -7.627
+    - 2.984
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:593705
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:593705
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:593705
+  placement:
+    position:
+    - 5.413
+    - -6.875
+    - 3.647
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593819
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593819
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:593819
+  placement:
+    position:
+    - 5.498
+    - -7.659
+    - 3.239
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:593821
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:593821
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:593821
+  placement:
+    position:
+    - 5.467
+    - -7.22
+    - 3.288
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594163
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594163
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594163
+  placement:
+    position:
+    - 5.444
+    - -6.826
+    - 3.689
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594177
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594177
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594177
+  placement:
+    position:
+    - 5.406
+    - -6.788
+    - 3.084
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594598
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594598
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594598
+  placement:
+    position:
+    - 3.735
+    - -10.232
+    - 3.306
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594664
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594664
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594664
+  placement:
+    position:
+    - 4.025
+    - -10.264
+    - 3.338
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594871
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594871
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:594871
+  placement:
+    position:
+    - 4.063
+    - -10.264
+    - -0.635
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595095
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595095
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595095
+  placement:
+    position:
+    - 5.065
+    - -7.57
+    - 3.306
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595155
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595155
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595155
+  placement:
+    position:
+    - 4.77
+    - -7.538
+    - 3.338
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595157
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595157
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595157
+  placement:
+    position:
+    - 4.763
+    - -7.57
+    - -0.652
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595216
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595216
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595216
+  placement:
+    position:
+    - 4.01
+    - -7.538
+    - -0.69
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595221
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595221
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:595221
+  placement:
+    position:
+    - 3.965
+    - -9.714
+    - -0.69
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:599189
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:599189
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:599189
+  placement:
+    position:
+    - 4.685
+    - -10.284
+    - -0.596
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:599704
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:599704
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:599704
+  placement:
+    position:
+    - 2.939
+    - -10.294
+    - -0.604
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:599801
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:599801
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:599801
+  placement:
+    position:
+    - 2.849
+    - -10.5
+    - 0.622
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:599803
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:599803
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:599803
+  placement:
+    position:
+    - 2.887
+    - -10.254
+    - 0.584
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:599804
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:599804
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:599804
+  placement:
+    position:
+    - 2.899
+    - -10.242
+    - 0.573
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600013
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600013
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600013
+  placement:
+    position:
+    - 5.812
+    - -7.53
+    - -0.416
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600112
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600112
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600112
+  placement:
+    position:
+    - 5.748
+    - -7.3
+    - -0.188
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600114
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600114
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600114
+  placement:
+    position:
+    - 5.71
+    - -7.488
+    - -0.226
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:600115
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:600115
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:600115
+  placement:
+    position:
+    - 5.698
+    - -7.501
+    - -0.237
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600135
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600135
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600135
+  placement:
+    position:
+    - 5.951
+    - -7.3
+    - 0.622
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600137
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600137
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600137
+  placement:
+    position:
+    - 5.913
+    - -7.522
+    - 0.584
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:600138
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:600138
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:600138
+  placement:
+    position:
+    - 5.901
+    - -7.535
+    - 0.573
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600233
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600233
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600233
+  placement:
+    position:
+    - 8.398
+    - -17.431
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:600265
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:600265
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:600265
+  placement:
+    position:
+    - 8.394
+    - -17.086
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600269
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600269
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600269
+  placement:
+    position:
+    - 8.315
+    - -17.097
+    - 2.771
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:600278
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:600278
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:600278
+  placement:
+    position:
+    - 8.394
+    - -15.056
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600282
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600282
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600282
+  placement:
+    position:
+    - 8.315
+    - -15.067
+    - 2.771
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600493
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600493
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600493
+  placement:
+    position:
+    - 7.899
+    - -17.431
+    - 0.117
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600509
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600509
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600509
+  placement:
+    position:
+    - 6.713
+    - -17.431
+    - 0.117
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600517
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600517
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600517
+  placement:
+    position:
+    - 6.751
+    - -17.315
+    - 0.079
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600581
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600581
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600581
+  placement:
+    position:
+    - 0.37
+    - -14.809
+    - 0.117
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600590
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600590
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600590
+  placement:
+    position:
+    - 0.37
+    - -12.802
+    - 0.117
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600599
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600599
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600599
+  placement:
+    position:
+    - 0.485
+    - -12.841
+    - 0.079
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600699
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600699
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600699
+  placement:
+    position:
+    - 6.309
+    - -9.032
+    - 0.117
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600710
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600710
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600710
+  placement:
+    position:
+    - 6.158
+    - -8.994
+    - 0.079
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600862
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600862
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600862
+  placement:
+    position:
+    - 0.402
+    - -0.363
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600907
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600907
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600907
+  placement:
+    position:
+    - 0.485
+    - -0.703
+    - 2.681
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:600910
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:600910
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:600910
+  placement:
+    position:
+    - 0.406
+    - -0.714
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600922
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600922
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:600922
+  placement:
+    position:
+    - 0.485
+    - -2.732
+    - 2.681
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:600924
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:600924
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:600924
+  placement:
+    position:
+    - 0.406
+    - -2.743
+    - 2.643
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601021
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601021
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601021
+  placement:
+    position:
+    - 0.911
+    - -0.363
+    - 0.117
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601037
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601037
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601037
+  placement:
+    position:
+    - 2.09
+    - -0.363
+    - 0.117
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601051
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601051
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601051
+  placement:
+    position:
+    - 2.052
+    - -0.485
+    - 0.079
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601157
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601157
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601157
+  placement:
+    position:
+    - 8.431
+    - -2.972
+    - 0.117
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601283
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601283
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601283
+  placement:
+    position:
+    - 8.315
+    - -5.055
+    - 0.079
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:601285
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:601285
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:601285
+  placement:
+    position:
+    - 8.399
+    - -5.104
+    - 2.632
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601288
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601288
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601288
+  placement:
+    position:
+    - 8.393
+    - -5.061
+    - 0.079
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601382
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601382
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601382
+  placement:
+    position:
+    - 2.523
+    - -8.767
+    - 0.117
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601384
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601384
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:601384
+  placement:
+    position:
+    - 2.642
+    - -8.805
+    - 0.079
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Rectangular to Round Transition - Angle:45 Degree:45 Degree:602990
+  name: M_Rectangular to Round Transition - Angle:45 Degree:45 Degree:602990
+  source: ifc/fitting/M_Rectangular to Round Transition - Angle:45 Degree:45 Degree:602990
+  placement:
+    position:
+    - 3.586
+    - -10.48
+    - 6.52
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Rectangular to Round Transition - Angle:45 Degree:45 Degree:603490
+  name: M_Rectangular to Round Transition - Angle:45 Degree:45 Degree:603490
+  source: ifc/fitting/M_Rectangular to Round Transition - Angle:45 Degree:45 Degree:603490
+  placement:
+    position:
+    - 5.214
+    - -7.32
+    - 6.52
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:604456
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:604456
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:604456
+  placement:
+    position:
+    - 4.691
+    - -7.303
+    - 2.719
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:604623
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:604623
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:604623
+  placement:
+    position:
+    - 4.625
+    - -10.302
+    - -0.476
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:604624
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:604624
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:604624
+  placement:
+    position:
+    - 1.807
+    - -10.264
+    - -0.476
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:604664
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:604664
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:604664
+  placement:
+    position:
+    - 3.052
+    - -10.5
+    - -0.438
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:604666
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:604666
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:604666
+  placement:
+    position:
+    - 3.041
+    - -10.313
+    - -0.476
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Transition - Generic:Transition - Generic:Transition - Generic:604670
+  name: M_Transition - Generic:Transition - Generic:Transition - Generic:604670
+  source: ifc/fitting/M_Transition - Generic:Transition - Generic:Transition - Generic:604670
+  placement:
+    position:
+    - 3.039
+    - -10.313
+    - -0.487
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 -
+    DWV:605365
+  name: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40
+    - DWV:605365
+  source: ifc/fitting/M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend -
+    PVC - Sch 40 - DWV:605365
+  placement:
+    position:
+    - 4.1
+    - -6.628
+    - 2.632
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 -
+    DWV:605374
+  name: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40
+    - DWV:605374
+  source: ifc/fitting/M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend -
+    PVC - Sch 40 - DWV:605374
+  placement:
+    position:
+    - 3.745
+    - -6.574
+    - 2.632
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 -
+    DWV:605398
+  name: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40
+    - DWV:605398
+  source: ifc/fitting/M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend -
+    PVC - Sch 40 - DWV:605398
+  placement:
+    position:
+    - 3.661
+    - -7.444
+    - 2.686
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 -
+    DWV:605399
+  name: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40
+    - DWV:605399
+  source: ifc/fitting/M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend -
+    PVC - Sch 40 - DWV:605399
+  placement:
+    position:
+    - 3.714
+    - -7.528
+    - -0.662
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 -
+    DWV:605540
+  name: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40
+    - DWV:605540
+  source: ifc/fitting/M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend -
+    PVC - Sch 40 - DWV:605540
+  placement:
+    position:
+    - 3.231
+    - -10.148
+    - -0.746
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 -
+    DWV:605541
+  name: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40
+    - DWV:605541
+  source: ifc/fitting/M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend -
+    PVC - Sch 40 - DWV:605541
+  placement:
+    position:
+    - 3.346
+    - -7.474
+    - -0.746
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 -
+    DWV:605591
+  name: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40
+    - DWV:605591
+  source: ifc/fitting/M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend -
+    PVC - Sch 40 - DWV:605591
+  placement:
+    position:
+    - 4.67
+    - -10.977
+    - 2.632
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 -
+    DWV:605598
+  name: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40
+    - DWV:605598
+  source: ifc/fitting/M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend -
+    PVC - Sch 40 - DWV:605598
+  placement:
+    position:
+    - 1.516
+    - -10.862
+    - 2.632
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 -
+    DWV:605616
+  name: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40
+    - DWV:605616
+  source: ifc/fitting/M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend -
+    PVC - Sch 40 - DWV:605616
+  placement:
+    position:
+    - 1.57
+    - -10.386
+    - 2.686
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 -
+    DWV:605617
+  name: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40
+    - DWV:605617
+  source: ifc/fitting/M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend -
+    PVC - Sch 40 - DWV:605617
+  placement:
+    position:
+    - 1.57
+    - -10.356
+    - -0.679
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606450
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606450
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606450
+  placement:
+    position:
+    - 8.315
+    - -15.067
+    - 3.173
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606495
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606495
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606495
+  placement:
+    position:
+    - 6.189
+    - -8.025
+    - 0.117
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606523
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606523
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606523
+  placement:
+    position:
+    - 8.353
+    - -6.336
+    - 3.18
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606552
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606552
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606552
+  placement:
+    position:
+    - 8.346
+    - -4.341
+    - 3.192
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606554
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606554
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606554
+  placement:
+    position:
+    - 8.308
+    - -4.303
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606592
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606592
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606592
+  placement:
+    position:
+    - 8.353
+    - -2.941
+    - 0.079
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606628
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606628
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606628
+  placement:
+    position:
+    - 0.88
+    - -0.447
+    - 0.079
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606680
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606680
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606680
+  placement:
+    position:
+    - 0.485
+    - -2.732
+    - 3.154
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606724
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606724
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606724
+  placement:
+    position:
+    - 2.611
+    - -9.775
+    - 0.117
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606753
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606753
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606753
+  placement:
+    position:
+    - 2.543
+    - -7.832
+    - 3.173
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606790
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606790
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606790
+  placement:
+    position:
+    - 0.447
+    - -11.323
+    - 3.18
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606821
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606821
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606821
+  placement:
+    position:
+    - 0.485
+    - -13.479
+    - 3.173
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606853
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606853
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606853
+  placement:
+    position:
+    - 0.447
+    - -14.841
+    - 0.079
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606902
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606902
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606902
+  placement:
+    position:
+    - 7.93
+    - -17.353
+    - 0.079
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606964
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606964
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:606964
+  placement:
+    position:
+    - 6.257
+    - -9.945
+    - 3.173
+    storey: Level 2
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 -
+    DWV:610174
+  name: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40
+    - DWV:610174
+  source: ifc/fitting/M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend -
+    PVC - Sch 40 - DWV:610174
+  placement:
+    position:
+    - 4.13
+    - -5.218
+    - 2.632
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 -
+    DWV:610191
+  name: M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40
+    - DWV:610191
+  source: ifc/fitting/M_Bend - PVC - Sch 40 - DWV:Bend - PVC - Sch 40 - DWV:Bend -
+    PVC - Sch 40 - DWV:610191
+  placement:
+    position:
+    - 4.67
+    - -12.722
+    - 2.632
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:612458
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:612458
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:612458
+  placement:
+    position:
+    - 5.818
+    - -7.164
+    - -0.414
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:612528
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:612528
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:612528
+  placement:
+    position:
+    - 2.982
+    - -10.636
+    - -0.604
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Tee - Generic:Tee - Generic:Tee - Generic:612647
+  name: M_Tee - Generic:Tee - Generic:Tee - Generic:612647
+  source: ifc/fitting/M_Tee - Generic:Tee - Generic:Tee - Generic:612647
+  placement:
+    position:
+    - 4.063
+    - -7.977
+    - -0.594
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:612985
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:612985
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:612985
+  placement:
+    position:
+    - 0.408
+    - -11.395
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:613016
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:613016
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:613016
+  placement:
+    position:
+    - 0.548
+    - -10.424
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings
+- class: IfcCustomElement
+  tag: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:613017
+  name: M_Elbow - Generic:Elbow - Generic:Elbow - Generic:613017
+  source: ifc/fitting/M_Elbow - Generic:Elbow - Generic:Elbow - Generic:613017
+  placement:
+    position:
+    - 0.504
+    - -11.427
+    - 2.733
+    storey: Level 1
+  layer: mep/fittings

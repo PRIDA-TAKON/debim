@@ -37,10 +37,106 @@
             pointer-events: auto;
             z-index: 10;
         }
-        #info-panel {
+        #layer-explorer-panel {
             top: 16px;
             left: 16px;
-            width: 300px;
+            width: 310px;
+            max-height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+        }
+        #layer-tree-container {
+            overflow-y: auto;
+            max-height: calc(100vh - 280px);
+            margin-top: 8px;
+            padding-right: 4px;
+        }
+        .search-box {
+            width: 100%;
+            padding: 6px 10px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        .batch-controls {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .batch-btn {
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .batch-btn:hover {
+            background: #3b82f6;
+            color: #ffffff;
+        }
+        .tree-node {
+            user-select: none;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+        .tree-node-content {
+            display: flex;
+            align-items: center;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .tree-node-content:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .tree-expander {
+            cursor: pointer;
+            width: 16px;
+            text-align: center;
+            margin-right: 4px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        .tree-checkbox {
+            margin-right: 6px;
+            cursor: pointer;
+        }
+        .tree-label {
+            cursor: pointer;
+            flex-grow: 1;
+            color: #e2e8f0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .tree-count {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-left: 6px;
+        }
+        .tree-children {
+            margin-left: 16px;
+            display: block;
+        }
+        .tree-children.collapsed {
+            display: none;
+        }
+        #info-panel {
+            bottom: 16px;
+            left: 16px;
+            width: 310px;
+            max-height: 200px;
+            overflow-y: auto;
         }
         #inspector-panel {
             top: 16px;
@@ -121,41 +217,10 @@
             background: #3b82f6;
             color: #ffffff;
         }
-        #layer-toolbar {
-            position: absolute;
-            top: 64px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 8px;
-            background: rgba(20, 24, 33, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 4px 10px;
-            border-radius: 20px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-            z-index: 100;
-        }
-        .layer-btn {
-            background: #222d3d;
-            color: #94a3b8;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 4px 10px;
-            border-radius: 14px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .layer-btn.active {
-            background: #1e3a8a;
-            color: #60a5fa;
-            border-color: #3b82f6;
-        }
         #axes-legend {
             position: absolute;
             bottom: 16px;
-            left: 20px;
+            right: 16px;
             background: rgba(20, 24, 33, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 8px 12px;
@@ -189,28 +254,23 @@
         <button class="view-btn" onclick="setView('side')">↕️ ด้านข้าง (Side)</button>
     </div>
 
-    <div id="layer-toolbar">
-        <span style="font-size: 0.75rem; color: #8888aa; align-self: center; margin-right: 4px;">เลเยอร์:</span>
-        <button class="layer-btn active" id="btn-layer-footings" onclick="toggleLayer('footings')">🔲 ฐานราก/เข็ม</button>
-        <button class="layer-btn active" id="btn-layer-slabs" onclick="toggleLayer('slabs')">🟧 พื้น (Slabs)</button>
-        <button class="layer-btn active" id="btn-layer-ceilings" onclick="toggleLayer('ceilings')">⬜ ฝ้าเพดาน (Ceilings)</button>
-        <button class="layer-btn active" id="btn-layer-finishes" onclick="toggleLayer('finishes')">🎨 ผิวพื้น/บัว (Finishes)</button>
-        <button class="layer-btn active" id="btn-layer-stairs" onclick="toggleLayer('stairs')">🪜 บันได (Stairs)</button>
-        <button class="layer-btn active" id="btn-layer-structure" onclick="toggleLayer('structure')">🏛️ เสา/คาน</button>
-        <button class="layer-btn active" id="btn-layer-roof_covering" onclick="toggleLayer('roof_covering')">🏠 หลังคา</button>
-        <button class="layer-btn active" id="btn-layer-roof_framing" onclick="toggleLayer('roof_framing')">🏗️ โครงหลังคา</button>
-        <button class="layer-btn active" id="btn-layer-mep_cold_water" onclick="toggleLayer('mep_cold_water')">💧 น้ำดี</button>
-        <button class="layer-btn active" id="btn-layer-mep_drainage" onclick="toggleLayer('mep_drainage')">🚽 น้ำเสีย/น้ำทิ้ง</button>
-        <button class="layer-btn active" id="btn-layer-mep_fixtures" onclick="toggleLayer('mep_fixtures')">🛁 สุขภัณฑ์</button>
-        <button class="layer-btn active" id="btn-layer-mep_electrical" onclick="toggleLayer('mep_electrical')">⚡ ไฟฟ้า</button>
-        <button class="layer-btn active" id="btn-layer-mep_hvac" onclick="toggleLayer('mep_hvac')">❄️ แอร์/ระบายอากาศ</button>
-        <button class="layer-btn active" id="btn-layer-grids" onclick="toggleLayer('grids')">📐 กริด/ผัง</button>
+    <div id="layer-explorer-panel" class="ui-panel">
+        <h1>Hierarchical Layer Explorer</h1>
+        <div class="subtitle">Filter and toggle layers dynamically</div>
+        <input type="text" id="layer-search-input" class="search-box" placeholder="🔍 Search layers..." oninput="filterLayerTree(this.value)">
+        <div class="batch-controls">
+            <button class="batch-btn" onclick="setAllLayers(true)">Show All</button>
+            <button class="batch-btn" onclick="setAllLayers(false)">Hide All</button>
+            <button class="batch-btn" onclick="toggleExpandAll(true)">Expand All</button>
+            <button class="batch-btn" onclick="toggleExpandAll(false)">Collapse All</button>
+        </div>
+        <div id="layer-tree-container"></div>
     </div>
 
     <div id="axes-legend">
-        <div><span style="color:#ff4d4d; font-weight:bold;">🔴 แกน X:</span> กริด 1 ถึง 15 (แนวนอน)</div>
-        <div><span style="color:#4dff4d; font-weight:bold;">🟢 แกน Y:</span> กริด E ถึง A (แนวตั้ง)</div>
-        <div><span style="color:#4da6ff; font-weight:bold;">🔵 แกน Z:</span> ระดับความสูง Elevation (+0.00)</div>
+        <div><span style="color:#ff4d4d; font-weight:bold;">🔴 แกน X:</span> แนวนอน</div>
+        <div><span style="color:#4dff4d; font-weight:bold;">🟢 แกน Y:</span> แนวตั้ง</div>
+        <div><span style="color:#4da6ff; font-weight:bold;">🔵 แกน Z:</span> Elevation</div>
     </div>
 
     <div id="info-panel" class="ui-panel">
@@ -319,7 +379,8 @@
         "depth": 0.8,
         "height": 0.25
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-A1-P1",
@@ -340,7 +401,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-A1-P2",
@@ -361,7 +423,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-A2",
@@ -382,7 +445,8 @@
         "depth": 0.8,
         "height": 0.25
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-A2-P1",
@@ -403,7 +467,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-A2-P2",
@@ -424,7 +489,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-B4",
@@ -445,7 +511,8 @@
         "depth": 1.0,
         "height": 0.3
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-B4-P1",
@@ -466,7 +533,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-B4-P2",
@@ -487,7 +555,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-B4-P3",
@@ -508,7 +577,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-F2",
@@ -529,7 +599,8 @@
         "depth": 1.0,
         "height": 0.3
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-F2-P1",
@@ -550,7 +621,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-F2-P2",
@@ -571,7 +643,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-F2-P3",
@@ -592,7 +665,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-F4",
@@ -613,7 +687,8 @@
         "depth": 1.0,
         "height": 0.3
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-F4-P1",
@@ -634,7 +709,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-F4-P2",
@@ -655,7 +731,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-F4-P3",
@@ -676,7 +753,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-B1",
@@ -697,7 +775,8 @@
         "depth": 1.3,
         "height": 0.35
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-B1-P1",
@@ -718,7 +797,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-B1-P2",
@@ -739,7 +819,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-B1-P3",
@@ -760,7 +841,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-B1-P4",
@@ -781,7 +863,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-D4",
@@ -802,7 +885,8 @@
         "depth": 1.3,
         "height": 0.35
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-D4-P1",
@@ -823,7 +907,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-D4-P2",
@@ -844,7 +929,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-D4-P3",
@@ -865,7 +951,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-D4-P4",
@@ -886,7 +973,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E1",
@@ -907,7 +995,8 @@
         "depth": 1.3,
         "height": 0.35
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-E1-P1",
@@ -928,7 +1017,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E1-P2",
@@ -949,7 +1039,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E1-P3",
@@ -970,7 +1061,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E1-P4",
@@ -991,7 +1083,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E4",
@@ -1012,7 +1105,8 @@
         "depth": 1.3,
         "height": 0.35
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-E4-P1",
@@ -1033,7 +1127,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E4-P2",
@@ -1054,7 +1149,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E4-P3",
@@ -1075,7 +1171,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E4-P4",
@@ -1096,7 +1193,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-B2",
@@ -1117,7 +1215,8 @@
         "depth": 1.5,
         "height": 0.4
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-B2-P1",
@@ -1138,7 +1237,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-B2-P2",
@@ -1159,7 +1259,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-B2-P3",
@@ -1180,7 +1281,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-B2-P4",
@@ -1201,7 +1303,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C1",
@@ -1222,7 +1325,8 @@
         "depth": 1.5,
         "height": 0.4
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-C1-P1",
@@ -1243,7 +1347,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C1-P2",
@@ -1264,7 +1369,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C1-P3",
@@ -1285,7 +1391,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C1-P4",
@@ -1306,7 +1413,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C4",
@@ -1327,7 +1435,8 @@
         "depth": 1.5,
         "height": 0.4
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-C4-P1",
@@ -1348,7 +1457,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C4-P2",
@@ -1369,7 +1479,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C4-P3",
@@ -1390,7 +1501,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C4-P4",
@@ -1411,7 +1523,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-D1",
@@ -1432,7 +1545,8 @@
         "depth": 1.5,
         "height": 0.4
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-D1-P1",
@@ -1453,7 +1567,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-D1-P2",
@@ -1474,7 +1589,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-D1-P3",
@@ -1495,7 +1611,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-D1-P4",
@@ -1516,7 +1633,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-D3",
@@ -1537,7 +1655,8 @@
         "depth": 1.5,
         "height": 0.4
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-D3-P1",
@@ -1558,7 +1677,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-D3-P2",
@@ -1579,7 +1699,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-D3-P3",
@@ -1600,7 +1721,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-D3-P4",
@@ -1621,7 +1743,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E3",
@@ -1642,7 +1765,8 @@
         "depth": 1.5,
         "height": 0.4
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-E3-P1",
@@ -1663,7 +1787,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E3-P2",
@@ -1684,7 +1809,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E3-P3",
@@ -1705,7 +1831,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E3-P4",
@@ -1726,7 +1853,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C2",
@@ -1747,7 +1875,8 @@
         "depth": 1.8,
         "height": 0.45
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-C2-P1",
@@ -1768,7 +1897,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C2-P2",
@@ -1789,7 +1919,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C2-P3",
@@ -1810,7 +1941,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C2-P4",
@@ -1831,7 +1963,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-C2-P5",
@@ -1852,7 +1985,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E2",
@@ -1873,7 +2007,8 @@
         "depth": 1.8,
         "height": 0.45
       },
-      "color": "#6A6A6A"
+      "color": "#6A6A6A",
+      "layer": "structure/substructure/footings"
     },
     {
       "tag": "F-E2-P1",
@@ -1894,7 +2029,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E2-P2",
@@ -1915,7 +2051,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E2-P3",
@@ -1936,7 +2073,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E2-P4",
@@ -1957,7 +2095,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "F-E2-P5",
@@ -1978,7 +2117,8 @@
         "depth": 0.15,
         "height": 6.0
       },
-      "color": "#4F4F4F"
+      "color": "#4F4F4F",
+      "layer": "structure/substructure/piles"
     },
     {
       "tag": "C0-A1",
@@ -1999,7 +2139,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-A2",
@@ -2020,7 +2161,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-B1",
@@ -2041,7 +2183,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-B2",
@@ -2062,7 +2205,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-B4",
@@ -2083,7 +2227,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-C1",
@@ -2104,7 +2249,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-C2",
@@ -2125,7 +2271,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-C4",
@@ -2146,7 +2293,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-D1",
@@ -2167,7 +2315,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-D3",
@@ -2188,7 +2337,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-D4",
@@ -2209,7 +2359,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-E1",
@@ -2230,7 +2381,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-E2",
@@ -2251,7 +2403,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-E3",
@@ -2272,7 +2425,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-E4",
@@ -2293,7 +2447,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-F2",
@@ -2314,7 +2469,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C0-F4",
@@ -2335,7 +2491,8 @@
         "depth": 0.2,
         "height": 1.5
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-A1",
@@ -2356,7 +2513,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-A2",
@@ -2377,7 +2535,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-B1",
@@ -2398,7 +2557,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-B2",
@@ -2419,7 +2579,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-B4",
@@ -2440,7 +2601,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-C1",
@@ -2461,7 +2623,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-C2",
@@ -2482,7 +2645,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-C4",
@@ -2503,7 +2667,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-D1",
@@ -2524,7 +2689,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-D3",
@@ -2545,7 +2711,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-D4",
@@ -2566,7 +2733,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-E1",
@@ -2587,7 +2755,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-E2",
@@ -2608,7 +2777,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-E3",
@@ -2629,7 +2799,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C1-E4",
@@ -2650,7 +2821,8 @@
         "depth": 0.15,
         "height": 3.75
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-B1",
@@ -2671,7 +2843,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-B2",
@@ -2692,7 +2865,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-B4",
@@ -2713,7 +2887,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-C1",
@@ -2734,7 +2909,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-C2",
@@ -2755,7 +2931,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-C4",
@@ -2776,7 +2953,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-D1",
@@ -2797,7 +2975,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-D3",
@@ -2818,7 +2997,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-D4",
@@ -2839,7 +3019,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-E1",
@@ -2860,7 +3041,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-E2",
@@ -2881,7 +3063,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-E3",
@@ -2902,7 +3085,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "C2-E4",
@@ -2923,7 +3107,8 @@
         "depth": 0.15,
         "height": 2.9000000000000004
       },
-      "color": "#808080"
+      "color": "#808080",
+      "layer": "structure/framing/columns"
     },
     {
       "tag": "GB-A_1-2",
@@ -2944,7 +3129,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-B_1-2",
@@ -2965,7 +3151,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-B_2-4",
@@ -2986,7 +3173,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-C_1-2",
@@ -3007,7 +3195,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-C_2-4",
@@ -3028,7 +3217,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-D_1-2",
@@ -3049,7 +3239,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-D_2-3",
@@ -3070,7 +3261,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-D_3-4",
@@ -3091,7 +3283,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-E_1-2",
@@ -3112,7 +3305,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-E_2-3",
@@ -3133,7 +3327,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-E_3-4",
@@ -3154,7 +3349,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-F_2-4",
@@ -3175,7 +3371,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-1_A-B",
@@ -3196,7 +3393,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-1_B-C",
@@ -3217,7 +3415,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-1_C-D",
@@ -3238,7 +3437,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-1_D-E",
@@ -3259,7 +3459,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-2_A-B",
@@ -3280,7 +3481,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-2_B-C",
@@ -3301,7 +3503,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-2_C-D",
@@ -3322,7 +3525,8 @@
         "width": 0.25,
         "depth": 0.5
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-2_D-E",
@@ -3343,7 +3547,8 @@
         "width": 0.25,
         "depth": 0.5
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-2_E-F",
@@ -3364,7 +3569,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-3_C-D",
@@ -3385,7 +3591,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-3_D-E",
@@ -3406,7 +3613,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-4_B-C",
@@ -3427,7 +3635,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-4_C-D",
@@ -3448,7 +3657,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-4_D-E",
@@ -3469,7 +3679,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "GB-4_E-F",
@@ -3490,7 +3701,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-A_1-2",
@@ -3511,7 +3723,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-B_1-2",
@@ -3532,7 +3745,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-B_2-4",
@@ -3553,7 +3767,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-C_1-2",
@@ -3574,7 +3789,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-C_2-4",
@@ -3595,7 +3811,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-D_1-2",
@@ -3616,7 +3833,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-D_2-3",
@@ -3637,7 +3855,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-D_3-4",
@@ -3658,7 +3877,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-E_1-2",
@@ -3679,7 +3899,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-E_2-3",
@@ -3700,7 +3921,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-E_3-4",
@@ -3721,7 +3943,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-F_2-4",
@@ -3742,7 +3965,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-1_A-B",
@@ -3763,7 +3987,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-1_B-C",
@@ -3784,7 +4009,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-1_C-D",
@@ -3805,7 +4031,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-1_D-E",
@@ -3826,7 +4053,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-2_A-B",
@@ -3847,7 +4075,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-2_B-C",
@@ -3868,7 +4097,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-2_C-D",
@@ -3889,7 +4119,8 @@
         "width": 0.25,
         "depth": 0.5
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-2_D-E",
@@ -3910,7 +4141,8 @@
         "width": 0.25,
         "depth": 0.5
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-2_E-F",
@@ -3931,7 +4163,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-3_C-D",
@@ -3952,7 +4185,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-3_D-E",
@@ -3973,7 +4207,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-4_B-C",
@@ -3994,7 +4229,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-4_C-D",
@@ -4015,7 +4251,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-4_D-E",
@@ -4036,7 +4273,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "2B-4_E-F",
@@ -4057,7 +4295,8 @@
         "width": 0.2,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-B_1-2",
@@ -4078,7 +4317,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-B_2-4",
@@ -4099,7 +4339,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-C_1-2",
@@ -4120,7 +4361,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-C_2-4",
@@ -4141,7 +4383,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-D_1-2",
@@ -4162,7 +4405,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-D_2-3",
@@ -4183,7 +4427,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-D_3-4",
@@ -4204,7 +4449,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-E_1-2",
@@ -4225,7 +4471,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-E_2-3",
@@ -4246,7 +4493,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-E_3-4",
@@ -4267,7 +4515,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-1_B-C",
@@ -4288,7 +4537,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-1_C-D",
@@ -4309,7 +4559,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-1_D-E",
@@ -4330,7 +4581,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-2_B-C",
@@ -4351,7 +4603,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-2_C-D",
@@ -4372,7 +4625,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-2_D-E",
@@ -4393,7 +4647,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-4_B-C",
@@ -4414,7 +4669,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-4_C-D",
@@ -4435,7 +4691,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "RB-4_D-E",
@@ -4456,7 +4713,8 @@
         "width": 0.15,
         "depth": 0.4
       },
-      "color": "#9A9A9A"
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
     },
     {
       "tag": "SLAB-L1-A1_B2",
@@ -4479,7 +4737,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L1-B1_C2",
@@ -4502,7 +4761,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L1-B2_C4",
@@ -4525,7 +4785,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L1-C1_D2",
@@ -4548,7 +4809,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L1-C2_D3",
@@ -4571,7 +4833,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L1-C3_D4",
@@ -4594,7 +4857,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L1-D1_E2",
@@ -4617,7 +4881,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L1-D2_E3",
@@ -4640,7 +4905,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L1-D3_E4",
@@ -4663,7 +4929,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L1-E2_F4",
@@ -4686,7 +4953,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L2-B1_C2",
@@ -4709,7 +4977,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L2-B2_C4",
@@ -4732,7 +5001,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L2-C1_D2",
@@ -4755,7 +5025,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L2-C2_D3",
@@ -4778,7 +5049,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L2-C3_D4",
@@ -4801,7 +5073,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L2-D1_E2",
@@ -4824,7 +5097,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L2-D2_E3",
@@ -4847,7 +5121,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L2-D3_E4",
@@ -4870,7 +5145,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "SLAB-L2-E2_F4",
@@ -4893,7 +5169,8 @@
       },
       "color": "#A8B2C1",
       "transparent": true,
-      "opacity": 0.85
+      "opacity": 0.85,
+      "layer": "structure/slabs"
     },
     {
       "tag": "ST-01-Step-1",
@@ -4914,7 +5191,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-2",
@@ -4935,7 +5213,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-3",
@@ -4956,7 +5235,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-4",
@@ -4977,7 +5257,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-5",
@@ -4998,7 +5279,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-6",
@@ -5019,7 +5301,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-7",
@@ -5040,7 +5323,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-8",
@@ -5061,7 +5345,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-9",
@@ -5082,7 +5367,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-10",
@@ -5103,7 +5389,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-11",
@@ -5124,7 +5411,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-12",
@@ -5145,7 +5433,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-13",
@@ -5166,7 +5455,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-14",
@@ -5187,7 +5477,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-15",
@@ -5208,7 +5499,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-16",
@@ -5229,7 +5521,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-17",
@@ -5250,7 +5543,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-18",
@@ -5271,7 +5565,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-19",
@@ -5292,7 +5587,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Step-20",
@@ -5313,7 +5609,8 @@
         "depth": 0.25,
         "height": 0.1875
       },
-      "color": "#D4A373"
+      "color": "#D4A373",
+      "layer": "architecture/stairs/steps"
     },
     {
       "tag": "ST-01-Stringer-F1-Centerline",
@@ -5332,7 +5629,8 @@
         ]
       ],
       "color": "#3B82F6",
-      "linewidth": 3
+      "linewidth": 3,
+      "layer": "architecture/stairs/stringers"
     },
     {
       "tag": "ST-01-Stringer-F1-ProfileStart",
@@ -5366,7 +5664,8 @@
         ]
       ],
       "color": "#2563EB",
-      "linewidth": 2
+      "linewidth": 2,
+      "layer": "architecture/stairs/stringers"
     },
     {
       "tag": "ST-01-Stringer-F1-ProfileEnd",
@@ -5400,7 +5699,8 @@
         ]
       ],
       "color": "#2563EB",
-      "linewidth": 2
+      "linewidth": 2,
+      "layer": "architecture/stairs/stringers"
     },
     {
       "tag": "ST-01-Stringer-F2-Centerline",
@@ -5419,7 +5719,8 @@
         ]
       ],
       "color": "#3B82F6",
-      "linewidth": 3
+      "linewidth": 3,
+      "layer": "architecture/stairs/stringers"
     },
     {
       "tag": "ST-01-Stringer-F2-ProfileStart",
@@ -5453,7 +5754,8 @@
         ]
       ],
       "color": "#2563EB",
-      "linewidth": 2
+      "linewidth": 2,
+      "layer": "architecture/stairs/stringers"
     },
     {
       "tag": "ST-01-Stringer-F2-ProfileEnd",
@@ -5487,7 +5789,8 @@
         ]
       ],
       "color": "#2563EB",
-      "linewidth": 2
+      "linewidth": 2,
+      "layer": "architecture/stairs/stringers"
     },
     {
       "tag": "ST-01-Landing",
@@ -5508,7 +5811,8 @@
         "depth": 1.0,
         "height": 0.12
       },
-      "color": "#BC6C25"
+      "color": "#BC6C25",
+      "layer": "architecture/stairs/landing"
     },
     {
       "tag": "ST-01-LandingBeam-Edge-1-Centerline",
@@ -5527,7 +5831,8 @@
         ]
       ],
       "color": "#1D4ED8",
-      "linewidth": 3
+      "linewidth": 3,
+      "layer": "architecture/stairs/landing"
     },
     {
       "tag": "ST-01-LandingBeam-Edge-1-ProfileStart",
@@ -5561,7 +5866,8 @@
         ]
       ],
       "color": "#1E40AF",
-      "linewidth": 2
+      "linewidth": 2,
+      "layer": "architecture/stairs/landing"
     },
     {
       "tag": "ST-01-LandingBeam-Edge-1-ProfileEnd",
@@ -5595,7 +5901,8 @@
         ]
       ],
       "color": "#1E40AF",
-      "linewidth": 2
+      "linewidth": 2,
+      "layer": "architecture/stairs/landing"
     },
     {
       "tag": "ST-01-LandingBeam-Edge-3-Centerline",
@@ -5614,7 +5921,8 @@
         ]
       ],
       "color": "#1D4ED8",
-      "linewidth": 3
+      "linewidth": 3,
+      "layer": "architecture/stairs/landing"
     },
     {
       "tag": "ST-01-LandingBeam-Edge-3-ProfileStart",
@@ -5648,7 +5956,8 @@
         ]
       ],
       "color": "#1E40AF",
-      "linewidth": 2
+      "linewidth": 2,
+      "layer": "architecture/stairs/landing"
     },
     {
       "tag": "ST-01-LandingBeam-Edge-3-ProfileEnd",
@@ -5682,7 +5991,8 @@
         ]
       ],
       "color": "#1E40AF",
-      "linewidth": 2
+      "linewidth": 2,
+      "layer": "architecture/stairs/landing"
     },
     {
       "tag": "ST-01-Railing-Post-1",
@@ -5701,7 +6011,8 @@
         ]
       ],
       "color": "#0F172A",
-      "linewidth": 3
+      "linewidth": 3,
+      "layer": "architecture/stairs/railing"
     },
     {
       "tag": "ST-01-Railing-Post-2",
@@ -5720,7 +6031,8 @@
         ]
       ],
       "color": "#0F172A",
-      "linewidth": 3
+      "linewidth": 3,
+      "layer": "architecture/stairs/railing"
     },
     {
       "tag": "ST-01-Railing-Post-3",
@@ -5739,7 +6051,8 @@
         ]
       ],
       "color": "#0F172A",
-      "linewidth": 3
+      "linewidth": 3,
+      "layer": "architecture/stairs/railing"
     },
     {
       "tag": "ST-01-Railing-Post-4",
@@ -5758,7 +6071,8 @@
         ]
       ],
       "color": "#0F172A",
-      "linewidth": 3
+      "linewidth": 3,
+      "layer": "architecture/stairs/railing"
     },
     {
       "tag": "ST-01-Railing-Post-5",
@@ -5777,7 +6091,8 @@
         ]
       ],
       "color": "#0F172A",
-      "linewidth": 3
+      "linewidth": 3,
+      "layer": "architecture/stairs/railing"
     },
     {
       "tag": "ST-01-Railing-Post-6",
@@ -5796,7 +6111,8 @@
         ]
       ],
       "color": "#0F172A",
-      "linewidth": 3
+      "linewidth": 3,
+      "layer": "architecture/stairs/railing"
     },
     {
       "tag": "ST-01-Railing-Post-7",
@@ -5815,7 +6131,8 @@
         ]
       ],
       "color": "#0F172A",
-      "linewidth": 3
+      "linewidth": 3,
+      "layer": "architecture/stairs/railing"
     },
     {
       "tag": "ST-01-Railing-Post-8",
@@ -5834,7 +6151,8 @@
         ]
       ],
       "color": "#0F172A",
-      "linewidth": 3
+      "linewidth": 3,
+      "layer": "architecture/stairs/railing"
     },
     {
       "tag": "ST-01-Railing-Rail-1",
@@ -5853,7 +6171,8 @@
         ]
       ],
       "color": "#E11D48",
-      "linewidth": 4
+      "linewidth": 4,
+      "layer": "architecture/stairs/railing"
     },
     {
       "tag": "ST-01-Railing-Rail-2",
@@ -5872,7 +6191,8 @@
         ]
       ],
       "color": "#E11D48",
-      "linewidth": 4
+      "linewidth": 4,
+      "layer": "architecture/stairs/railing"
     },
     {
       "tag": "ST-01-Railing-Rail-3",
@@ -5891,7 +6211,8 @@
         ]
       ],
       "color": "#E11D48",
-      "linewidth": 4
+      "linewidth": 4,
+      "layer": "architecture/stairs/railing"
     },
     {
       "tag": "ST-01-Railing-Rail-4",
@@ -5910,7 +6231,8 @@
         ]
       ],
       "color": "#E11D48",
-      "linewidth": 4
+      "linewidth": 4,
+      "layer": "architecture/stairs/railing"
     },
     {
       "tag": "WALL-L1-B_1-2",
@@ -5931,7 +6253,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "D-L1-01",
@@ -5952,7 +6275,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.05
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "WALL-L1-1_B-C",
@@ -5973,7 +6297,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L1-01",
@@ -5996,7 +6321,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L1-2_B-C",
@@ -6017,7 +6343,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "D-L1-02",
@@ -6038,7 +6365,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.0
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "WALL-L1-C_2-4",
@@ -6059,7 +6387,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L1-02",
@@ -6082,7 +6411,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "D-L1-03",
@@ -6103,7 +6433,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.0
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "WALL-L1-1_C-D",
@@ -6124,7 +6455,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L1-03",
@@ -6147,7 +6479,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L1-4_C-D",
@@ -6168,7 +6501,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L1-04",
@@ -6191,7 +6525,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L1-D_1-2",
@@ -6212,7 +6547,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "D-L1-04",
@@ -6233,7 +6569,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.0
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "WALL-L1-D_2-3",
@@ -6254,7 +6591,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "D-L1-05",
@@ -6275,7 +6613,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.0
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "WALL-L1-D_3-4",
@@ -6296,7 +6635,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "D-L1-06",
@@ -6317,7 +6657,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.0
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "WALL-L1-1_D-E",
@@ -6338,7 +6679,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L1-05",
@@ -6361,7 +6703,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L1-E_1-2",
@@ -6382,7 +6725,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "D-L1-07",
@@ -6403,7 +6747,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.0
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "W-L1-06",
@@ -6426,7 +6771,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L1-3_D-E",
@@ -6447,7 +6793,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "WALL-L1-E_2-3",
@@ -6468,7 +6815,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L1-07",
@@ -6491,7 +6839,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L1-4_D-E",
@@ -6512,7 +6861,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L1-08",
@@ -6535,7 +6885,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L1-E_3-4",
@@ -6556,7 +6907,8 @@
         "thickness": 0.1,
         "height": 3.0
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L1-09",
@@ -6579,7 +6931,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L2-B_1-2",
@@ -6600,7 +6953,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L2-01",
@@ -6623,7 +6977,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L2-1_B-C",
@@ -6644,7 +6999,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L2-02",
@@ -6667,7 +7023,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L2-2_B-C",
@@ -6688,7 +7045,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "D-L2-01",
@@ -6709,7 +7067,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.05
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "WALL-L2-C_1-2",
@@ -6730,7 +7089,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "D-L2-02",
@@ -6751,7 +7111,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.0
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "WALL-L2-1_C-D",
@@ -6772,7 +7133,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L2-03",
@@ -6795,7 +7157,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L2-C_3-4",
@@ -6816,7 +7179,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "D-L2-03",
@@ -6837,7 +7201,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.0
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "WALL-L2-4_C-D",
@@ -6858,7 +7223,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L2-04",
@@ -6881,7 +7247,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L2-D_1-2",
@@ -6902,7 +7269,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "D-L2-04",
@@ -6923,7 +7291,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.0
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "WALL-L2-D_2-3",
@@ -6944,7 +7313,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "D-L2-05",
@@ -6965,7 +7335,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.0
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "WALL-L2-D_3-4",
@@ -6986,7 +7357,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "D-L2-06",
@@ -7007,7 +7379,8 @@
         "thickness": 0.10800000000000001,
         "height": 2.0
       },
-      "color": "#8B4513"
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
     },
     {
       "tag": "WALL-L2-1_D-E",
@@ -7028,7 +7401,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L2-05",
@@ -7051,7 +7425,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L2-E_1-2",
@@ -7072,7 +7447,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L2-06",
@@ -7095,7 +7471,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L2-3_D-E",
@@ -7116,7 +7493,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "WALL-L2-E_2-3",
@@ -7137,7 +7515,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L2-07",
@@ -7160,7 +7539,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L2-4_D-E",
@@ -7181,7 +7561,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L2-08",
@@ -7204,7 +7585,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "WALL-L2-E_3-4",
@@ -7225,7 +7607,8 @@
         "thickness": 0.1,
         "height": 2.6
       },
-      "color": "#D3D3D3"
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
     },
     {
       "tag": "W-L2-09",
@@ -7248,7 +7631,8 @@
       },
       "color": "#00FFFF",
       "transparent": true,
-      "opacity": 0.6
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
     },
     {
       "tag": "ROOF-MAIN-SouthHip",
@@ -7273,7 +7657,7 @@
       ],
       "material": "CONCRETE_TILE",
       "color": "#9E4734",
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
       "dimensions": {
         "area": 34.92969128597235,
@@ -7303,7 +7687,7 @@
       ],
       "material": "CONCRETE_TILE",
       "color": "#9E4734",
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
       "dimensions": {
         "area": 34.92969128597236,
@@ -7338,7 +7722,7 @@
       ],
       "material": "CONCRETE_TILE",
       "color": "#9E4734",
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
       "dimensions": {
         "area": 38.74020306262388,
@@ -7373,7 +7757,7 @@
       ],
       "material": "CONCRETE_TILE",
       "color": "#9E4734",
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
       "dimensions": {
         "area": 38.740203062623884,
@@ -7398,7 +7782,7 @@
       ],
       "color": "#3B82F6",
       "linewidth": 3,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "WALL_PLATE",
       "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
       "material": "STEEL_SS400",
@@ -7425,7 +7809,7 @@
       ],
       "color": "#3B82F6",
       "linewidth": 3,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "WALL_PLATE",
       "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
       "material": "STEEL_SS400",
@@ -7452,7 +7836,7 @@
       ],
       "color": "#3B82F6",
       "linewidth": 3,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "WALL_PLATE",
       "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
       "material": "STEEL_SS400",
@@ -7479,7 +7863,7 @@
       ],
       "color": "#3B82F6",
       "linewidth": 3,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "WALL_PLATE",
       "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
       "material": "STEEL_SS400",
@@ -7506,7 +7890,7 @@
       ],
       "color": "#EF4444",
       "linewidth": 3,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "RIDGE_BEAM",
       "member_name": "\u0e2d\u0e01\u0e44\u0e01\u0e48 (Ridge Beam)",
       "material": "STEEL_SS400",
@@ -7533,7 +7917,7 @@
       ],
       "color": "#A855F7",
       "linewidth": 3,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "KING_POST",
       "member_name": "\u0e40\u0e2a\u0e32\u0e14\u0e31\u0e49\u0e07 (King Post)",
       "material": "STEEL_SS400",
@@ -7560,7 +7944,7 @@
       ],
       "color": "#A855F7",
       "linewidth": 3,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "KING_POST",
       "member_name": "\u0e40\u0e2a\u0e32\u0e14\u0e31\u0e49\u0e07 (King Post)",
       "material": "STEEL_SS400",
@@ -7587,7 +7971,7 @@
       ],
       "color": "#6366F1",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "TIE_BEAM",
       "member_name": "\u0e02\u0e37\u0e48\u0e2d (Tie Beam)",
       "material": "STEEL_SS400",
@@ -7614,7 +7998,7 @@
       ],
       "color": "#F59E0B",
       "linewidth": 3,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "HIP_RAFTER",
       "member_name": "\u0e15\u0e30\u0e40\u0e02\u0e49\u0e2a\u0e31\u0e19 (Hip Rafter)",
       "material": "STEEL_SS400",
@@ -7641,7 +8025,7 @@
       ],
       "color": "#F59E0B",
       "linewidth": 3,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "HIP_RAFTER",
       "member_name": "\u0e15\u0e30\u0e40\u0e02\u0e49\u0e2a\u0e31\u0e19 (Hip Rafter)",
       "material": "STEEL_SS400",
@@ -7668,7 +8052,7 @@
       ],
       "color": "#F59E0B",
       "linewidth": 3,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "HIP_RAFTER",
       "member_name": "\u0e15\u0e30\u0e40\u0e02\u0e49\u0e2a\u0e31\u0e19 (Hip Rafter)",
       "material": "STEEL_SS400",
@@ -7695,7 +8079,7 @@
       ],
       "color": "#F59E0B",
       "linewidth": 3,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "HIP_RAFTER",
       "member_name": "\u0e15\u0e30\u0e40\u0e02\u0e49\u0e2a\u0e31\u0e19 (Hip Rafter)",
       "material": "STEEL_SS400",
@@ -7722,7 +8106,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -7749,7 +8133,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -7776,7 +8160,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -7803,7 +8187,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -7830,7 +8214,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -7857,7 +8241,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -7884,7 +8268,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -7911,7 +8295,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -7938,7 +8322,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -7965,7 +8349,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -7992,7 +8376,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8019,7 +8403,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8046,7 +8430,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8073,7 +8457,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8100,7 +8484,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8127,7 +8511,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8154,7 +8538,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8181,7 +8565,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8208,7 +8592,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8235,7 +8619,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8262,7 +8646,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8289,7 +8673,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8316,7 +8700,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8343,7 +8727,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8370,7 +8754,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8397,7 +8781,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "COMMON_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8424,7 +8808,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8451,7 +8835,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8478,7 +8862,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8505,7 +8889,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8532,7 +8916,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8559,7 +8943,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8586,7 +8970,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8613,7 +8997,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8640,7 +9024,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8667,7 +9051,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8694,7 +9078,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "COMMON_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8721,7 +9105,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8748,7 +9132,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8775,7 +9159,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8802,7 +9186,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8829,7 +9213,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
       "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
       "material": "STEEL_SS400",
@@ -8856,7 +9240,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -8883,7 +9267,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -8910,7 +9294,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -8937,7 +9321,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -8964,7 +9348,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -8991,7 +9375,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9018,7 +9402,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9045,7 +9429,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9072,7 +9456,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9099,7 +9483,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9126,7 +9510,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9153,7 +9537,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9180,7 +9564,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9207,7 +9591,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9234,7 +9618,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9261,7 +9645,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9288,7 +9672,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9315,7 +9699,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9342,7 +9726,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9369,7 +9753,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9396,7 +9780,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9423,7 +9807,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9450,7 +9834,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9477,7 +9861,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9504,7 +9888,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9531,7 +9915,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9558,7 +9942,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9585,7 +9969,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9612,7 +9996,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9639,7 +10023,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9666,7 +10050,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9693,7 +10077,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9720,7 +10104,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9747,7 +10131,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9774,7 +10158,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9801,7 +10185,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9828,7 +10212,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9855,7 +10239,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9882,7 +10266,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9909,7 +10293,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9936,7 +10320,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9963,7 +10347,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -9990,7 +10374,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10017,7 +10401,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10044,7 +10428,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10071,7 +10455,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10098,7 +10482,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10125,7 +10509,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10152,7 +10536,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10179,7 +10563,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10206,7 +10590,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10233,7 +10617,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10260,7 +10644,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10287,7 +10671,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10314,7 +10698,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10341,7 +10725,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10368,7 +10752,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10395,7 +10779,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10422,7 +10806,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10449,7 +10833,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10476,7 +10860,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10503,7 +10887,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10530,7 +10914,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10557,7 +10941,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10584,7 +10968,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10611,7 +10995,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10638,7 +11022,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10665,7 +11049,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10692,7 +11076,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10719,7 +11103,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10746,7 +11130,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10773,7 +11157,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10800,7 +11184,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10827,7 +11211,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10854,7 +11238,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10881,7 +11265,7 @@
       ],
       "color": "#10B981",
       "linewidth": 2,
-      "layer": "roof_framing",
+      "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
       "member_name": "\u0e41\u0e1b (Purlin)",
       "material": "STEEL_SS400",
@@ -10908,7 +11292,7 @@
       ],
       "color": "#DC2626",
       "linewidth": 3,
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (RIDGE)",
       "dimensions": {
         "length": 0.6000000000000005
@@ -10932,7 +11316,7 @@
       ],
       "color": "#F59E0B",
       "linewidth": 3,
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (HIP)",
       "dimensions": {
         "length": 8.401388774085707
@@ -10956,7 +11340,7 @@
       ],
       "color": "#F59E0B",
       "linewidth": 3,
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (HIP)",
       "dimensions": {
         "length": 8.401388774085707
@@ -10980,7 +11364,7 @@
       ],
       "color": "#F59E0B",
       "linewidth": 3,
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (HIP)",
       "dimensions": {
         "length": 8.401388774085707
@@ -11004,7 +11388,7 @@
       ],
       "color": "#F59E0B",
       "linewidth": 3,
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (HIP)",
       "dimensions": {
         "length": 8.401388774085707
@@ -11028,7 +11412,7 @@
       ],
       "color": "#64748B",
       "linewidth": 2,
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
       "dimensions": {
         "length": 11.0
@@ -11052,7 +11436,7 @@
       ],
       "color": "#64748B",
       "linewidth": 2,
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
       "dimensions": {
         "length": 11.6
@@ -11076,7 +11460,7 @@
       ],
       "color": "#64748B",
       "linewidth": 2,
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
       "dimensions": {
         "length": 11.0
@@ -11100,7 +11484,7 @@
       ],
       "color": "#64748B",
       "linewidth": 2,
-      "layer": "roof_covering",
+      "layer": "architecture/roofs/covering",
       "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
       "dimensions": {
         "length": 11.6
@@ -11134,7 +11518,7 @@
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
@@ -11172,7 +11556,7 @@
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
@@ -11210,7 +11594,7 @@
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
@@ -11248,7 +11632,7 @@
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
@@ -11286,7 +11670,7 @@
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
@@ -11324,7 +11708,7 @@
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
@@ -11362,7 +11746,7 @@
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
@@ -11400,7 +11784,7 @@
         ]
       ],
       "color": "#E2E8F0",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_TBAR",
       "dimensions": {
@@ -11438,7 +11822,7 @@
         ]
       ],
       "color": "#E2E8F0",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_TBAR",
       "dimensions": {
@@ -11476,7 +11860,7 @@
         ]
       ],
       "color": "#E2E8F0",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_TBAR",
       "dimensions": {
@@ -11514,7 +11898,7 @@
         ]
       ],
       "color": "#D1D5DB",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_EAVES",
       "dimensions": {
@@ -11552,7 +11936,7 @@
         ]
       ],
       "color": "#D1D5DB",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_EAVES",
       "dimensions": {
@@ -11590,7 +11974,7 @@
         ]
       ],
       "color": "#D1D5DB",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_EAVES",
       "dimensions": {
@@ -11628,7 +12012,7 @@
         ]
       ],
       "color": "#D1D5DB",
-      "layer": "ceilings",
+      "layer": "architecture/coverings/ceiling",
       "covering_type": "CEILING",
       "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_EAVES",
       "dimensions": {
@@ -11666,7 +12050,7 @@
         ]
       ],
       "color": "#CBD5E1",
-      "layer": "finishes",
+      "layer": "architecture/coverings/flooring",
       "covering_type": "FLOORING",
       "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_CONC_POLISH",
       "dimensions": {
@@ -11704,7 +12088,7 @@
         ]
       ],
       "color": "#CBD5E1",
-      "layer": "finishes",
+      "layer": "architecture/coverings/flooring",
       "covering_type": "FLOORING",
       "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_CONC_POLISH",
       "dimensions": {
@@ -11742,7 +12126,7 @@
         ]
       ],
       "color": "#CBD5E1",
-      "layer": "finishes",
+      "layer": "architecture/coverings/flooring",
       "covering_type": "FLOORING",
       "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_CONC_POLISH",
       "dimensions": {
@@ -11780,7 +12164,7 @@
         ]
       ],
       "color": "#CBD5E1",
-      "layer": "finishes",
+      "layer": "architecture/coverings/flooring",
       "covering_type": "FLOORING",
       "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_CONC_POLISH",
       "dimensions": {
@@ -11818,7 +12202,7 @@
         ]
       ],
       "color": "#CBD5E1",
-      "layer": "finishes",
+      "layer": "architecture/coverings/flooring",
       "covering_type": "FLOORING",
       "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_TILE_FLOOR",
       "dimensions": {
@@ -11856,7 +12240,7 @@
         ]
       ],
       "color": "#CBD5E1",
-      "layer": "finishes",
+      "layer": "architecture/coverings/flooring",
       "covering_type": "FLOORING",
       "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_TILE_FLOOR",
       "dimensions": {
@@ -11895,7 +12279,7 @@
       ],
       "color": "#B45309",
       "linewidth": 3,
-      "layer": "finishes",
+      "layer": "architecture/coverings/skirting",
       "covering_type": "SKIRTING",
       "member_name": "\u0e1a\u0e31\u0e27\u0e40\u0e0a\u0e34\u0e07\u0e1c\u0e19\u0e31\u0e07 (Skirting) - FIN_SKIRTING",
       "dimensions": {
@@ -11931,7 +12315,7 @@
       ],
       "color": "#B45309",
       "linewidth": 3,
-      "layer": "finishes",
+      "layer": "architecture/coverings/skirting",
       "covering_type": "SKIRTING",
       "member_name": "\u0e1a\u0e31\u0e27\u0e40\u0e0a\u0e34\u0e07\u0e1c\u0e19\u0e31\u0e07 (Skirting) - FIN_SKIRTING",
       "dimensions": {
@@ -11966,7 +12350,7 @@
       ],
       "color": "#0284C7",
       "linewidth": 4,
-      "layer": "mep_cold_water",
+      "layer": "mep/plumbing/cold_water",
       "system_type": "COLD_WATER",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
       "material": "PIPE_PPR",
@@ -11995,7 +12379,7 @@
       ],
       "color": "#0284C7",
       "linewidth": 4,
-      "layer": "mep_cold_water",
+      "layer": "mep/plumbing/cold_water",
       "system_type": "COLD_WATER",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
       "material": "PIPE_PPR",
@@ -12044,12 +12428,12 @@
       ],
       "color": "#0284C7",
       "linewidth": 4,
-      "layer": "mep_cold_water",
+      "layer": "mep/plumbing/cold_water",
       "system_type": "COLD_WATER",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
       "material": "PIPE_PVC_BLUE",
       "dimensions": {
-        "length": 6.441975905133013,
+        "length": 6.441975905133014,
         "diameter": 0.02,
         "slope": 0.0
       },
@@ -12088,7 +12472,7 @@
       ],
       "color": "#0284C7",
       "linewidth": 4,
-      "layer": "mep_cold_water",
+      "layer": "mep/plumbing/cold_water",
       "system_type": "COLD_WATER",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
       "material": "PIPE_PVC_BLUE",
@@ -12117,7 +12501,7 @@
       ],
       "color": "#78350F",
       "linewidth": 4,
-      "layer": "mep_drainage",
+      "layer": "mep/plumbing/soil",
       "system_type": "SOIL",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e42\u0e2a\u0e42\u0e04\u0e23\u0e01/\u0e2a\u0e49\u0e27\u0e21 (Soil Pipe)",
       "material": "PIPE_PVC_GREY",
@@ -12151,7 +12535,7 @@
       ],
       "color": "#78350F",
       "linewidth": 4,
-      "layer": "mep_drainage",
+      "layer": "mep/plumbing/soil",
       "system_type": "SOIL",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e42\u0e2a\u0e42\u0e04\u0e23\u0e01/\u0e2a\u0e49\u0e27\u0e21 (Soil Pipe)",
       "material": "PIPE_PVC_GREY",
@@ -12190,7 +12574,7 @@
       ],
       "color": "#78350F",
       "linewidth": 4,
-      "layer": "mep_drainage",
+      "layer": "mep/plumbing/soil",
       "system_type": "SOIL",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e42\u0e2a\u0e42\u0e04\u0e23\u0e01/\u0e2a\u0e49\u0e27\u0e21 (Soil Pipe)",
       "material": "PIPE_PVC_GREY",
@@ -12229,7 +12613,7 @@
       ],
       "color": "#475569",
       "linewidth": 4,
-      "layer": "mep_drainage",
+      "layer": "mep/plumbing/waste",
       "system_type": "WASTE",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e17\u0e34\u0e49\u0e07 (Waste Pipe)",
       "material": "PIPE_PVC_GREY",
@@ -12263,7 +12647,7 @@
       ],
       "color": "#475569",
       "linewidth": 4,
-      "layer": "mep_drainage",
+      "layer": "mep/plumbing/waste",
       "system_type": "WASTE",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e17\u0e34\u0e49\u0e07 (Waste Pipe)",
       "material": "PIPE_PVC_GREY",
@@ -12292,7 +12676,7 @@
       ],
       "color": "#65A30D",
       "linewidth": 4,
-      "layer": "mep_drainage",
+      "layer": "mep/plumbing/vent",
       "system_type": "VENT",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e30\u0e1a\u0e32\u0e22\u0e2d\u0e32\u0e01\u0e32\u0e28 (Vent Pipe)",
       "material": "PIPE_PVC_GREY",
@@ -12341,7 +12725,7 @@
       ],
       "color": "#06B6D4",
       "linewidth": 4,
-      "layer": "mep_hvac",
+      "layer": "mep/plumbing/refrigerant",
       "system_type": "REFRIGERANT",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e22\u0e32\u0e41\u0e2d\u0e23\u0e4c (Refrigerant Pipe)",
       "material": "PIPE_PPR",
@@ -12385,7 +12769,7 @@
       ],
       "color": "#38BDF8",
       "linewidth": 4,
-      "layer": "mep_hvac",
+      "layer": "mep/plumbing/condensate",
       "system_type": "CONDENSATE",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e17\u0e34\u0e49\u0e07\u0e41\u0e2d\u0e23\u0e4c (AC Condensate Drain)",
       "material": "PIPE_PVC_BLUE",
@@ -12424,7 +12808,7 @@
       ],
       "color": "#DC2626",
       "linewidth": 3,
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/main_feeder",
       "system_type": "MAIN_FEEDER",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e49\u0e2d\u0e22\u0e2a\u0e32\u0e22\u0e40\u0e21\u0e19 (Main Feeder)",
       "material": "CONDUIT_EMT",
@@ -12472,7 +12856,7 @@
       ],
       "color": "#EAB308",
       "linewidth": 3,
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/lighting",
       "system_type": "LIGHTING",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e49\u0e2d\u0e22\u0e2a\u0e32\u0e22\u0e44\u0e1f\u0e41\u0e2a\u0e07\u0e2a\u0e27\u0e48\u0e32\u0e07 (Lighting Conduit)",
       "material": "CONDUIT_EMT",
@@ -12510,7 +12894,7 @@
       ],
       "color": "#F97316",
       "linewidth": 3,
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/power",
       "system_type": "POWER",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e49\u0e2d\u0e22\u0e2a\u0e32\u0e22\u0e44\u0e1f\u0e01\u0e33\u0e25\u0e31\u0e07 (Power Conduit)",
       "material": "CONDUIT_EMT",
@@ -12540,7 +12924,7 @@
         "height": 1.6
       },
       "color": "#1E293B",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "SEPTIC_TANK",
       "fixture_name_th": "\u0e16\u0e31\u0e07\u0e1a\u0e33\u0e1a\u0e31\u0e14\u0e19\u0e49\u0e33\u0e40\u0e2a\u0e35\u0e22 (Septic Tank)"
     },
@@ -12564,7 +12948,7 @@
         "height": 0.4
       },
       "color": "#0D9488",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "GREASE_TRAP",
       "fixture_name_th": "\u0e1a\u0e48\u0e2d\u0e14\u0e31\u0e01\u0e44\u0e02\u0e21\u0e31\u0e19 (Grease Trap)"
     },
@@ -12588,7 +12972,7 @@
         "height": 1.8
       },
       "color": "#0284C7",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "WATER_TANK",
       "fixture_name_th": "\u0e16\u0e31\u0e07\u0e40\u0e01\u0e47\u0e1a\u0e19\u0e49\u0e33\u0e1a\u0e19\u0e14\u0e34\u0e19 (Water Tank)"
     },
@@ -12612,7 +12996,7 @@
         "height": 0.35
       },
       "color": "#2563EB",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "WATER_PUMP",
       "fixture_name_th": "\u0e1b\u0e31\u0e4a\u0e21\u0e19\u0e49\u0e33\u0e2d\u0e31\u0e15\u0e42\u0e19\u0e21\u0e31\u0e15\u0e34 (Water Pump)"
     },
@@ -12636,7 +13020,7 @@
         "height": 0.78
       },
       "color": "#F8FAFC",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "WATER_CLOSET",
       "fixture_name_th": "\u0e42\u0e16\u0e2a\u0e49\u0e27\u0e21 / \u0e2a\u0e38\u0e02\u0e20\u0e31\u0e13\u0e11\u0e4c (WC)"
     },
@@ -12660,7 +13044,7 @@
         "height": 0.82
       },
       "color": "#F1F5F9",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "LAVATORY",
       "fixture_name_th": "\u0e2d\u0e48\u0e32\u0e07\u0e25\u0e49\u0e32\u0e07\u0e2b\u0e19\u0e49\u0e32 (Lavatory)"
     },
@@ -12684,7 +13068,7 @@
         "height": 1.0
       },
       "color": "#CBD5E1",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "SHOWER",
       "fixture_name_th": "\u0e1d\u0e31\u0e01\u0e1a\u0e31\u0e27\u0e2d\u0e32\u0e1a\u0e19\u0e49\u0e33 (Shower)"
     },
@@ -12708,7 +13092,7 @@
         "height": 0.05
       },
       "color": "#64748B",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "FLOOR_DRAIN",
       "fixture_name_th": "\u0e15\u0e30\u0e41\u0e01\u0e23\u0e07\u0e14\u0e31\u0e01\u0e01\u0e25\u0e34\u0e48\u0e19\u0e17\u0e35\u0e48\u0e1e\u0e37\u0e49\u0e19 (Floor Drain)"
     },
@@ -12732,7 +13116,7 @@
         "height": 0.85
       },
       "color": "#94A3B8",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "KITCHEN_SINK",
       "fixture_name_th": "\u0e2d\u0e48\u0e32\u0e07\u0e25\u0e49\u0e32\u0e07\u0e08\u0e32\u0e19 (Kitchen Sink)"
     },
@@ -12756,7 +13140,7 @@
         "height": 0.78
       },
       "color": "#F8FAFC",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "WATER_CLOSET",
       "fixture_name_th": "\u0e42\u0e16\u0e2a\u0e49\u0e27\u0e21 / \u0e2a\u0e38\u0e02\u0e20\u0e31\u0e13\u0e11\u0e4c (WC)"
     },
@@ -12780,7 +13164,7 @@
         "height": 0.82
       },
       "color": "#F1F5F9",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "LAVATORY",
       "fixture_name_th": "\u0e2d\u0e48\u0e32\u0e07\u0e25\u0e49\u0e32\u0e07\u0e2b\u0e19\u0e49\u0e32 (Lavatory)"
     },
@@ -12804,7 +13188,7 @@
         "height": 1.0
       },
       "color": "#CBD5E1",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "SHOWER",
       "fixture_name_th": "\u0e1d\u0e31\u0e01\u0e1a\u0e31\u0e27\u0e2d\u0e32\u0e1a\u0e19\u0e49\u0e33 (Shower)"
     },
@@ -12828,7 +13212,7 @@
         "height": 0.05
       },
       "color": "#64748B",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "FLOOR_DRAIN",
       "fixture_name_th": "\u0e15\u0e30\u0e41\u0e01\u0e23\u0e07\u0e14\u0e31\u0e01\u0e01\u0e25\u0e34\u0e48\u0e19\u0e17\u0e35\u0e48\u0e1e\u0e37\u0e49\u0e19 (Floor Drain)"
     },
@@ -12852,7 +13236,7 @@
         "height": 0.78
       },
       "color": "#F8FAFC",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "WATER_CLOSET",
       "fixture_name_th": "\u0e42\u0e16\u0e2a\u0e49\u0e27\u0e21 / \u0e2a\u0e38\u0e02\u0e20\u0e31\u0e13\u0e11\u0e4c (WC)"
     },
@@ -12876,7 +13260,7 @@
         "height": 0.82
       },
       "color": "#F1F5F9",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "LAVATORY",
       "fixture_name_th": "\u0e2d\u0e48\u0e32\u0e07\u0e25\u0e49\u0e32\u0e07\u0e2b\u0e19\u0e49\u0e32 (Lavatory)"
     },
@@ -12900,7 +13284,7 @@
         "height": 1.0
       },
       "color": "#CBD5E1",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "SHOWER",
       "fixture_name_th": "\u0e1d\u0e31\u0e01\u0e1a\u0e31\u0e27\u0e2d\u0e32\u0e1a\u0e19\u0e49\u0e33 (Shower)"
     },
@@ -12924,7 +13308,7 @@
         "height": 0.05
       },
       "color": "#64748B",
-      "layer": "mep_fixtures",
+      "layer": "mep/plumbing/fixtures",
       "fixture_type": "FLOOR_DRAIN",
       "fixture_name_th": "\u0e15\u0e30\u0e41\u0e01\u0e23\u0e07\u0e14\u0e31\u0e01\u0e01\u0e25\u0e34\u0e48\u0e19\u0e17\u0e35\u0e48\u0e1e\u0e37\u0e49\u0e19 (Floor Drain)"
     },
@@ -12948,7 +13332,7 @@
         "height": 0.5
       },
       "color": "#334155",
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/distribution",
       "board_type": "CONSUMER_UNIT",
       "circuits_count": 12,
       "fixture_name_th": "\u0e15\u0e39\u0e49\u0e04\u0e27\u0e1a\u0e04\u0e38\u0e21\u0e44\u0e1f\u0e1f\u0e49\u0e32\u0e2b\u0e25\u0e31\u0e01 (Consumer Unit / MDB)"
@@ -12973,7 +13357,7 @@
         "height": 0.06
       },
       "color": "#FEF08A",
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/lighting",
       "fixture_type": "DOWNLIGHT",
       "wattage": 12.0,
       "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
@@ -12998,7 +13382,7 @@
         "height": 0.06
       },
       "color": "#FEF08A",
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/lighting",
       "fixture_type": "DOWNLIGHT",
       "wattage": 12.0,
       "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
@@ -13023,7 +13407,7 @@
         "height": 0.06
       },
       "color": "#FEF08A",
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/lighting",
       "fixture_type": "DOWNLIGHT",
       "wattage": 9.0,
       "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
@@ -13048,7 +13432,7 @@
         "height": 0.06
       },
       "color": "#FEF08A",
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/lighting",
       "fixture_type": "DOWNLIGHT",
       "wattage": 12.0,
       "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
@@ -13073,7 +13457,7 @@
         "height": 0.06
       },
       "color": "#FEF08A",
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/lighting",
       "fixture_type": "DOWNLIGHT",
       "wattage": 9.0,
       "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
@@ -13098,7 +13482,7 @@
         "height": 0.12
       },
       "color": "#E2E8F0",
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/switches",
       "switch_type": "ONE_WAY",
       "gangs": 2,
       "fixture_name_th": "\u0e2a\u0e27\u0e34\u0e15\u0e0a\u0e4c\u0e44\u0e1f 2 \u0e0a\u0e48\u0e2d\u0e07 (ONE_WAY)"
@@ -13123,7 +13507,7 @@
         "height": 0.12
       },
       "color": "#E2E8F0",
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/switches",
       "switch_type": "ONE_WAY",
       "gangs": 1,
       "fixture_name_th": "\u0e2a\u0e27\u0e34\u0e15\u0e0a\u0e4c\u0e44\u0e1f 1 \u0e0a\u0e48\u0e2d\u0e07 (ONE_WAY)"
@@ -13148,7 +13532,7 @@
         "height": 0.12
       },
       "color": "#E2E8F0",
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/outlets",
       "outlet_type": "DUPLEX_GROUNDED",
       "fixture_name_th": "\u0e40\u0e15\u0e49\u0e32\u0e23\u0e31\u0e1a\u0e44\u0e1f\u0e1f\u0e49\u0e32 (DUPLEX_GROUNDED)"
     },
@@ -13172,7 +13556,7 @@
         "height": 0.12
       },
       "color": "#E2E8F0",
-      "layer": "mep_electrical",
+      "layer": "mep/electrical/outlets",
       "outlet_type": "DUPLEX_GROUNDED",
       "fixture_name_th": "\u0e40\u0e15\u0e49\u0e32\u0e23\u0e31\u0e1a\u0e44\u0e1f\u0e1f\u0e49\u0e32 (DUPLEX_GROUNDED)"
     },
@@ -13199,7 +13583,7 @@
       ],
       "color": "#64748B",
       "linewidth": 4,
-      "layer": "mep_hvac",
+      "layer": "mep/hvac/exhaust_air",
       "system_type": "EXHAUST_AIR",
       "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e30\u0e1a\u0e32\u0e22\u0e2d\u0e32\u0e01\u0e32\u0e28/\u0e14\u0e39\u0e14\u0e04\u0e27\u0e31\u0e19 (Exhaust Air Duct)",
       "material": "HVAC_SYSTEM",
@@ -13230,7 +13614,7 @@
         "height": 0.5
       },
       "color": "#94A3B8",
-      "layer": "mep_hvac",
+      "layer": "mep/hvac/terminals",
       "terminal_type": "KITCHEN_HOOD",
       "flow_rate_cfm": 650.0,
       "fixture_name_th": "\u0e2e\u0e39\u0e14\u0e14\u0e39\u0e14\u0e04\u0e27\u0e31\u0e19\u0e2b\u0e49\u0e2d\u0e07\u0e04\u0e23\u0e31\u0e27 (Kitchen Range Hood)"
@@ -13255,7 +13639,7 @@
         "height": 0.2
       },
       "color": "#F1F5F9",
-      "layer": "mep_hvac",
+      "layer": "mep/hvac/terminals",
       "terminal_type": "EXHAUST_FAN_CEILING",
       "flow_rate_cfm": 120.0,
       "fixture_name_th": "\u0e1e\u0e31\u0e14\u0e25\u0e21\u0e14\u0e39\u0e14\u0e2d\u0e32\u0e01\u0e32\u0e28\u0e15\u0e34\u0e14\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling Exhaust Fan)"
@@ -13280,7 +13664,7 @@
         "height": 0.2
       },
       "color": "#F1F5F9",
-      "layer": "mep_hvac",
+      "layer": "mep/hvac/terminals",
       "terminal_type": "EXHAUST_FAN_CEILING",
       "flow_rate_cfm": 120.0,
       "fixture_name_th": "\u0e1e\u0e31\u0e14\u0e25\u0e21\u0e14\u0e39\u0e14\u0e2d\u0e32\u0e01\u0e32\u0e28\u0e15\u0e34\u0e14\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling Exhaust Fan)"
@@ -13305,7 +13689,7 @@
         "height": 0.3
       },
       "color": "#FFFFFF",
-      "layer": "mep_hvac",
+      "layer": "mep/hvac/equipment",
       "equipment_type": "AC_INDOOR_WALL",
       "cooling_capacity_btu": 18000.0,
       "fixture_name_th": "\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e1b\u0e23\u0e31\u0e1a\u0e2d\u0e32\u0e01\u0e32\u0e28\u0e41\u0e1a\u0e1a\u0e15\u0e34\u0e14\u0e1c\u0e19\u0e31\u0e07 (Wall Mounted AC)"
@@ -13330,7 +13714,7 @@
         "height": 0.65
       },
       "color": "#CBD5E1",
-      "layer": "mep_hvac",
+      "layer": "mep/hvac/equipment",
       "equipment_type": "AC_OUTDOOR_CONDENSER",
       "cooling_capacity_btu": 18000.0,
       "fixture_name_th": "\u0e04\u0e2d\u0e19\u0e40\u0e14\u0e19\u0e0b\u0e34\u0e48\u0e07\u0e22\u0e39\u0e19\u0e34\u0e15\u0e20\u0e32\u0e22\u0e19\u0e2d\u0e01 (Outdoor Condensing Unit)"
@@ -13355,7 +13739,7 @@
         "height": 0.3
       },
       "color": "#FFFFFF",
-      "layer": "mep_hvac",
+      "layer": "mep/hvac/equipment",
       "equipment_type": "AC_INDOOR_WALL",
       "cooling_capacity_btu": 12000.0,
       "fixture_name_th": "\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e1b\u0e23\u0e31\u0e1a\u0e2d\u0e32\u0e01\u0e32\u0e28\u0e41\u0e1a\u0e1a\u0e15\u0e34\u0e14\u0e1c\u0e19\u0e31\u0e07 (Wall Mounted AC)"
@@ -13380,7 +13764,7 @@
         "height": 0.65
       },
       "color": "#CBD5E1",
-      "layer": "mep_hvac",
+      "layer": "mep/hvac/equipment",
       "equipment_type": "AC_OUTDOOR_CONDENSER",
       "cooling_capacity_btu": 12000.0,
       "fixture_name_th": "\u0e04\u0e2d\u0e19\u0e40\u0e14\u0e19\u0e0b\u0e34\u0e48\u0e07\u0e22\u0e39\u0e19\u0e34\u0e15\u0e20\u0e32\u0e22\u0e19\u0e2d\u0e01 (Outdoor Condensing Unit)"
@@ -13482,7 +13866,7 @@
             linewidth: 1
         });
 
-        // X Grids (Vertical lines running along Y)
+        // X Grids
         Object.entries(sceneData.grids.axes_x).forEach(([name, xVal]) => {
             const pts = [
                 new THREE.Vector3(xVal, minGridY - 6, 0),
@@ -13493,7 +13877,6 @@
             line.computeLineDistances();
             gridGroup.add(line);
 
-            // Bubble at top and bottom
             const topBubble = makeGridSprite(name, '#38bdf8');
             topBubble.position.set(xVal, maxGridY + 8, 0.1);
             gridGroup.add(topBubble);
@@ -13502,7 +13885,7 @@
             gridGroup.add(botBubble);
         });
 
-        // Y Grids (Horizontal lines running along X)
+        // Y Grids
         Object.entries(sceneData.grids.axes_y).forEach(([name, yVal]) => {
             const pts = [
                 new THREE.Vector3(minGridX - 6, yVal, 0),
@@ -13513,7 +13896,6 @@
             line.computeLineDistances();
             gridGroup.add(line);
 
-            // Bubble at left and right
             const leftBubble = makeGridSprite(name, '#4ade80');
             leftBubble.position.set(minGridX - 8, yVal, 0.1);
             gridGroup.add(leftBubble);
@@ -13522,7 +13904,6 @@
             gridGroup.add(rightBubble);
         });
 
-        // Visible Coordinate Axes (Red = X, Green = Y, Blue = Z)
         const axesHelper = new THREE.AxesHelper(15);
         axesHelper.position.set(0, 0, 0.05);
         gridGroup.add(axesHelper);
@@ -13532,7 +13913,6 @@
         gridHelper.position.set(centerX, centerY, -0.05);
         gridGroup.add(gridHelper);
 
-        // Storey elevation guide planes / lines
         sceneData.storeys.forEach(s => {
             if (s.elevation > 0) {
                 const storeyGrid = new THREE.GridHelper(gridSize, 10, 0x334466, 0x112233);
@@ -13619,7 +13999,6 @@
                 mesh.position.set(...data.position);
                 mesh.rotation.set(...data.rotation);
 
-                // Wireframe / Edges for visual clarity
                 const edges = new THREE.EdgesGeometry(geometry);
                 const line = new THREE.LineSegments(
                     edges,
@@ -13631,38 +14010,22 @@
 
             object3D.userData = data;
 
-            // Layer assignment for filtering
-            const tagUpper = (data.tag || "").toUpperCase();
-            if (data.layer) {
-                object3D.userData.layer = data.layer;
-            } else if (tagUpper.includes("F2") || tagUpper.includes("FOOTING") || data.class === "IfcFooting" || data.class === "IfcPile") {
-                object3D.userData.layer = "footings";
-            } else if (data.class === "IfcRoofCovering" || data.class === "IfcRoofRidge") {
-                object3D.userData.layer = "roof_covering";
-            } else if (data.class === "IfcRoofFraming") {
-                object3D.userData.layer = "roof_framing";
-            } else if (data.class === "IfcRoof" || tagUpper.includes("ROOF") || tagUpper.includes("RIDGE") || tagUpper.includes("HIP") || tagUpper.includes("EAVE") || tagUpper.includes("SLOPE")) {
-                object3D.userData.layer = "roof_covering";
-            } else if (data.class === "IfcSlab" || tagUpper.includes("SLAB") || tagUpper.startsWith("S-") || tagUpper.startsWith("GS-")) {
-                object3D.userData.layer = "slabs";
-            } else if (data.class.startsWith("IfcStair") || data.class === "IfcRailing" || tagUpper.startsWith("ST-")) {
-                object3D.userData.layer = "stairs";
-            } else if (tagUpper.includes("PIN") || tagUpper.includes("BOUNDARY") || tagUpper.includes("LINE")) {
-                object3D.userData.layer = "grids";
-            } else {
-                object3D.userData.layer = "structure";
+            let layerPath = data.layer || "general/other";
+            if (!layerPath.includes("/")) {
+                layerPath = "general/" + layerPath;
             }
+            object3D.userData.layer = layerPath;
 
             scene.add(object3D);
             pickableObjects.push(object3D);
         });
 
-        // Camera position setup - Start with Top View (locked to 2D Plan View)
+        // Camera position setup
         camera.position.set(centerX, centerY, 160);
         camera.up.set(0, 1, 0);
         controls.target.set(centerX, centerY, 0);
         controls.minPolarAngle = 0;
-        controls.maxPolarAngle = 0; // 🔒 2D Plan view lock
+        controls.maxPolarAngle = 0;
         controls.update();
 
         window.setView = function(mode) {
@@ -13671,13 +14034,13 @@
                 camera.up.set(0, 1, 0);
                 controls.target.set(centerX, centerY, 0);
                 controls.minPolarAngle = 0;
-                controls.maxPolarAngle = 0; // 🔒 Lock to true 2D Plan View
+                controls.maxPolarAngle = 0;
             } else if (mode === 'iso') {
                 camera.position.set(centerX + 60, centerY - 80, 60);
                 camera.up.set(0, 0, 1);
                 controls.target.set(centerX, centerY, 0);
                 controls.minPolarAngle = 0;
-                controls.maxPolarAngle = Math.PI; // 🔓 Unlock 3D rotation
+                controls.maxPolarAngle = Math.PI;
             } else if (mode === 'front') {
                 camera.position.set(centerX, minGridY - 90, 15);
                 camera.up.set(0, 0, 1);
@@ -13694,30 +14057,195 @@
             controls.update();
         };
 
-        window.toggleLayer = function(layerName) {
-            const btn = document.getElementById('btn-layer-' + layerName);
-            if (!btn) return;
-            const isActive = btn.classList.toggle('active');
-            if (layerName === 'grids') {
-                gridGroup.visible = isActive;
-                pickableObjects.forEach(mesh => {
-                    if (mesh.userData.layer === 'grids') mesh.visible = isActive;
-                });
-            } else {
-                pickableObjects.forEach(mesh => {
-                    if (mesh.userData.layer === layerName) {
-                        mesh.visible = isActive;
+        // Hierarchical Tree Layer Explorer Engine
+        const layerTreeRoot = { children: {}, count: 0, path: "" };
+
+        function buildLayerTree() {
+            pickableObjects.forEach(obj => {
+                let layerPath = obj.userData.layer || "general/other";
+                if (!layerPath.includes("/")) {
+                    layerPath = "general/" + layerPath;
+                }
+                const parts = layerPath.split("/");
+                let curr = layerTreeRoot;
+                curr.count++;
+                let pathSoFar = "";
+
+                parts.forEach((part, idx) => {
+                    pathSoFar = pathSoFar ? (pathSoFar + "/" + part) : part;
+                    if (!curr.children[part]) {
+                        curr.children[part] = {
+                            name: part,
+                            path: pathSoFar,
+                            children: {},
+                            count: 0,
+                            checked: true,
+                            expanded: true,
+                            objects: []
+                        };
+                    }
+                    curr = curr.children[part];
+                    curr.count++;
+                    if (idx === parts.length - 1) {
+                        curr.objects.push(obj);
                     }
                 });
+            });
+
+            layerTreeRoot.children["general"] = layerTreeRoot.children["general"] || {
+                name: "general",
+                path: "general",
+                children: {},
+                count: 0,
+                checked: true,
+                expanded: true,
+                objects: []
+            };
+            layerTreeRoot.children["general"].children["grids"] = {
+                name: "grids",
+                path: "general/grids",
+                children: {},
+                count: 1,
+                checked: true,
+                expanded: true,
+                objects: []
+            };
+            layerTreeRoot.children["general"].count++;
+        }
+
+        function renderLayerTree(node, containerEl) {
+            containerEl.innerHTML = "";
+            const keys = Object.keys(node.children).sort();
+
+            keys.forEach(key => {
+                const childNode = node.children[key];
+                const nodeEl = document.createElement("div");
+                nodeEl.className = "tree-node";
+                nodeEl.dataset.path = childNode.path;
+
+                const hasChildren = Object.keys(childNode.children).length > 0;
+                const folderIcon = hasChildren ? (childNode.expanded ? "📂" : "📁") : "📄";
+                const expanderSymbol = hasChildren ? (childNode.expanded ? "▼" : "▶") : "";
+
+                const contentEl = document.createElement("div");
+                contentEl.className = "tree-node-content";
+
+                const expanderEl = document.createElement("span");
+                expanderEl.className = "tree-expander";
+                expanderEl.textContent = expanderSymbol;
+                expanderEl.onclick = (e) => {
+                    e.stopPropagation();
+                    childNode.expanded = !childNode.expanded;
+                    renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+                };
+
+                const checkboxEl = document.createElement("input");
+                checkboxEl.type = "checkbox";
+                checkboxEl.className = "tree-checkbox";
+                checkboxEl.checked = childNode.checked;
+                checkboxEl.onclick = (e) => {
+                    e.stopPropagation();
+                    setNodeChecked(childNode, checkboxEl.checked);
+                    update3DVisibility();
+                    renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+                };
+
+                const labelEl = document.createElement("span");
+                labelEl.className = "tree-label";
+                labelEl.innerHTML = `${folderIcon} ${childNode.name}`;
+                labelEl.onclick = () => {
+                    if (hasChildren) {
+                        childNode.expanded = !childNode.expanded;
+                        renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+                    }
+                };
+
+                const countEl = document.createElement("span");
+                countEl.className = "tree-count";
+                countEl.textContent = `(${childNode.count})`;
+
+                contentEl.appendChild(expanderEl);
+                contentEl.appendChild(checkboxEl);
+                contentEl.appendChild(labelEl);
+                contentEl.appendChild(countEl);
+                nodeEl.appendChild(contentEl);
+
+                if (hasChildren) {
+                    const childrenContainer = document.createElement("div");
+                    childrenContainer.className = "tree-children" + (childNode.expanded ? "" : " collapsed");
+                    renderLayerTree(childNode, childrenContainer);
+                    nodeEl.appendChild(childrenContainer);
+                }
+
+                containerEl.appendChild(nodeEl);
+            });
+        }
+
+        function setNodeChecked(node, isChecked) {
+            node.checked = isChecked;
+            Object.values(node.children).forEach(child => setNodeChecked(child, isChecked));
+        }
+
+        function update3DVisibility() {
+            function checkObjectVisible(obj) {
+                let layerPath = obj.userData.layer || "general/other";
+                if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
+                const parts = layerPath.split("/");
+                let curr = layerTreeRoot;
+                for (let part of parts) {
+                    if (!curr.children[part]) return true;
+                    curr = curr.children[part];
+                    if (!curr.checked) return false;
+                }
+                return true;
             }
+
+            pickableObjects.forEach(obj => {
+                obj.visible = checkObjectVisible(obj);
+            });
+
+            if (layerTreeRoot.children["general"] && layerTreeRoot.children["general"].children["grids"]) {
+                gridGroup.visible = layerTreeRoot.children["general"].children["grids"].checked && layerTreeRoot.children["general"].checked;
+            }
+        }
+
+        window.setAllLayers = function(visible) {
+            setNodeChecked(layerTreeRoot, visible);
+            update3DVisibility();
+            renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
         };
+
+        window.toggleExpandAll = function(expanded) {
+            function setExpanded(node) {
+                node.expanded = expanded;
+                Object.values(node.children).forEach(child => setExpanded(child));
+            }
+            setExpanded(layerTreeRoot);
+            renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+        };
+
+        window.filterLayerTree = function(keyword) {
+            const query = keyword.trim().toLowerCase();
+            const nodes = document.querySelectorAll("#layer-tree-container .tree-node");
+            nodes.forEach(n => {
+                const path = (n.dataset.path || "").toLowerCase();
+                if (!query || path.includes(query)) {
+                    n.style.display = "";
+                } else {
+                    n.style.display = "none";
+                }
+            });
+        };
+
+        buildLayerTree();
+        renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
 
         // Select first element by default if available
         if (sceneData.elements.length > 0) {
             showInspector(sceneData.elements[0]);
         }
 
-        // Element Selection / Raycasting (with line threshold for easy wire picking)
+        // Element Selection / Raycasting
         const raycaster = new THREE.Raycaster();
         raycaster.params.Line = { threshold: 0.35 };
         const mouse = new THREE.Vector2();
@@ -13725,7 +14253,6 @@
         let originalColor = null;
 
         window.addEventListener('click', (event) => {
-            // Ignore click if clicking on UI panels
             if (event.target.closest('.ui-panel')) return;
 
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -13823,6 +14350,7 @@
             contentEl.innerHTML = `
                 <div style="margin-bottom: 8px;"><span class="badge">${data.class}</span></div>
                 <div class="data-row"><span class="data-label">Tag</span><span class="data-value">${data.tag}</span></div>
+                <div class="data-row"><span class="data-label">Layer</span><span class="data-value">${data.layer || 'general/other'}</span></div>
                 ${memberRow}
                 ${profileRow}
                 ${mepRow}
