@@ -206,6 +206,8 @@ No, it complements them. debim handles the early-stage upstream workload: rapid 
 
 ---
 
-## 📄 License
+## 📄 License & Attribution
 
-This project is licensed under the terms of the [MIT License](LICENSE).
+- **Software Code:** Licensed under the [MIT License](LICENSE) — Copyright (c) 2026 Prida Takon.
+- **Research & Technical Reports:** Licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
+- **Benchmark Datasets & Sample Models:** Test fixtures in `tests/fixtures/` originate from [buildingSMART International](https://github.com/buildingSMART) and the Open IFC Model Repository under CC BY 4.0 / CC-BY-3.0.

@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this software or empirical benchmark in your research, please cite it as below."
+authors:
+  - family-names: "Takon"
+    given-names: "Prida"
+    website: "https://github.com/PRIDA-TAKON"
+title: "debim: A Minimal, Git-Native Declarative BIM Engine (Building-as-Code)"
+version: 0.1.0
+date-released: 2026-09-21
+url: "https://github.com/PRIDA-TAKON/debim"
+repository-code: "https://github.com/PRIDA-TAKON/debim"
+license: MIT
+keywords:
+  - "BIM"
+  - "OpenBIM"
+  - "IFC"
+  - "Declarative BIM"
+  - "Building-as-Code"
+  - "AI Agents"
+  - "Computational Architecture"
+preferred-citation:
+  type: report
+  authors:
+    - family-names: "Takon"
+      given-names: "Prida"
+  title: "debim: An Empirical Study of Declarative Building-as-Code on 407 Heterogeneous Real-World OpenBIM Models"
+  institution: "debim Project"
+  year: 2026
+  month: 9
+  url: "https://github.com/PRIDA-TAKON/debim/blob/main/docs/research/2026_empirical_study_407_ifc_models.md"
