@@ -41,6 +41,53 @@ from debim.schema import (
 )
 
 
+import math
+
+
+def _extract_euler_angles(mat: Any) -> Optional[Tuple[float, float, float]]:
+    """Extract Euler angles (rx, ry, rz) in radians from a 3x3 or 4x4 transformation matrix."""
+    try:
+        R = mat[:3, :3]
+        sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
+        singular = sy < 1e-6
+        if not singular:
+            rx = math.atan2(R[2, 1], R[2, 2])
+            ry = math.atan2(-R[2, 0], sy)
+            rz = math.atan2(R[1, 0], R[0, 0])
+        else:
+            rx = math.atan2(-R[1, 2], R[1, 1])
+            ry = math.atan2(-R[2, 0], sy)
+            rz = 0.0
+        return (round(rx, 4), round(ry, 4), round(rz, 4))
+    except Exception:
+        return None
+
+
+def _extract_bounding_box(elem: Any, settings: Any = None) -> Optional[Dimensions]:
+    """Extract exact 3D bounding box (width, depth, height) using ifcopenshell.geom.create_shape."""
+    if settings is None:
+        try:
+            import ifcopenshell.geom
+            settings = ifcopenshell.geom.settings()
+        except Exception:
+            return None
+    try:
+        import ifcopenshell.geom
+        shape = ifcopenshell.geom.create_shape(settings, elem)
+        verts = shape.geometry.verts
+        xs = verts[0::3]
+        ys = verts[1::3]
+        zs = verts[2::3]
+        w = round(float(max(xs) - min(xs)), 3)
+        d = round(float(max(ys) - min(ys)), 3)
+        h = round(float(max(zs) - min(zs)), 3)
+        if w > 0 and d > 0 and h > 0:
+            return Dimensions(width=w, depth=d, height=h)
+    except Exception:
+        pass
+    return None
+
+
 def _derive_furniture_slug(name: Optional[str]) -> str:
     """Derive clean slug from element family name."""
     if not name:
@@ -111,10 +158,18 @@ def import_ifc_to_manifest(
     p_name = project_name or (proj_entities[0].Name if proj_entities else "Imported IFC Project")
     p_id = proj_entities[0].GlobalId if proj_entities else "PRJ-IMPORTED"
 
+    # Geometry settings initialization
+    try:
+        import ifcopenshell.geom
+        geom_settings = ifcopenshell.geom.settings()
+    except Exception:
+        geom_settings = None
+
     # 2. Storeys
     storey_entities = ifc_file.by_type("IfcBuildingStorey")
     storeys: List[Storey] = []
     storey_id_by_name: Dict[str, str] = {}
+    storey_elevation_by_id: Dict[str, float] = {}
     if storey_entities:
         for idx, s in enumerate(storey_entities):
             s_name = s.Name or f"Storey_{idx + 1}"
@@ -122,18 +177,21 @@ def import_ifc_to_manifest(
             elev = float(s.Elevation) if s.Elevation is not None else 0.0
             if elev > 500:  # mm to m
                 elev /= 1000.0
+            round_elev = round(elev, 3)
             storeys.append(
                 Storey(
                     id=s_id,
                     name=s_name,
-                    elevation=round(elev, 3),
+                    elevation=round_elev,
                     height=3.5,
                 )
             )
             storey_id_by_name[s_name] = s_id
+            storey_elevation_by_id[s_id] = round_elev
     else:
         storeys.append(Storey(id="GL", name="Ground Floor", elevation=0.0, height=3.5))
         storey_id_by_name["Ground Floor"] = "GL"
+        storey_elevation_by_id["GL"] = 0.0
 
     def get_elem_storey(elem) -> str:
         try:
@@ -143,6 +201,32 @@ def import_ifc_to_manifest(
         except Exception:
             pass
         return storeys[0].id
+
+    def extract_custom_placement_and_dims(
+        elem: Any,
+        st_id: str,
+    ) -> Tuple[CustomElementPlacement, Optional[Dimensions]]:
+        st_elev = storey_elevation_by_id.get(st_id, 0.0)
+        pos = (0.0, 0.0, 0.0)
+        rot = None
+        try:
+            mat = ifcopenshell.util.placement.get_local_placement(elem.ObjectPlacement)
+            pos = (
+                round(float(mat[0, 3]), 3),
+                round(float(mat[1, 3]), 3),
+                round(float(mat[2, 3]) - st_elev, 3),
+            )
+            rot = _extract_euler_angles(mat)
+        except Exception:
+            pass
+
+        dims = _extract_bounding_box(elem, geom_settings)
+        placement = CustomElementPlacement(
+            position=pos,
+            storey=st_id,
+            rotation=rot,
+        )
+        return placement, dims
 
     # 3. Grids mapping & clustering
     grid_x_vals: Dict[str, float] = {}
@@ -616,14 +700,8 @@ def import_ifc_to_manifest(
     # 5.5 Extract Footings
     for idx, footing in enumerate(ifc_file.by_type("IfcFooting")):
         tag = footing.Name or f"F2-{idx + 1:02d}"
-        pos = (idx * 4.8, 0.0, 0.0)
-        try:
-            mat = ifcopenshell.util.placement.get_local_placement(footing.ObjectPlacement)
-            pos = (float(mat[0, 3]), float(mat[1, 3]), float(mat[2, 3]))
-        except Exception:
-            pass
-
         st_id = get_elem_storey(footing)
+        placement, dims = extract_custom_placement_and_dims(footing, st_id)
         elements.append(
             IfcCustomElement(
                 **{
@@ -631,10 +709,8 @@ def import_ifc_to_manifest(
                     "tag": tag,
                     "name": tag,
                     "source": "assets/footing_f2.glb",
-                    "placement": CustomElementPlacement(
-                        position=pos,
-                        storey=st_id,
-                    ),
+                    "placement": placement,
+                    "dimensions": dims,
                     "layer": "structure/footings",
                 }
             )
@@ -724,13 +800,8 @@ def import_ifc_to_manifest(
     # 5.8 Extract Stairs
     for stair in ifc_file.by_type("IfcStair"):
         tag = stair.Name or f"STAIR-{stair.GlobalId[:8]}"
-        pos = (0.0, 0.0, 0.0)
-        try:
-            mat = ifcopenshell.util.placement.get_local_placement(stair.ObjectPlacement)
-            pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
-        except Exception:
-            pass
         st_id = get_elem_storey(stair)
+        placement, dims = extract_custom_placement_and_dims(stair, st_id)
         elements.append(
             IfcCustomElement(
                 **{
@@ -738,10 +809,8 @@ def import_ifc_to_manifest(
                     "tag": tag,
                     "name": tag,
                     "source": f"ifc/stair/{tag}",
-                    "placement": CustomElementPlacement(
-                        position=pos,
-                        storey=st_id,
-                    ),
+                    "placement": placement,
+                    "dimensions": dims,
                     "layer": "circulation/stairs",
                 }
             )
@@ -750,13 +819,8 @@ def import_ifc_to_manifest(
     # 5.9 Extract Stair Flights
     for flight in ifc_file.by_type("IfcStairFlight"):
         tag = flight.Name or f"FLIGHT-{flight.GlobalId[:8]}"
-        pos = (0.0, 0.0, 0.0)
-        try:
-            mat = ifcopenshell.util.placement.get_local_placement(flight.ObjectPlacement)
-            pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
-        except Exception:
-            pass
         st_id = get_elem_storey(flight)
+        placement, dims = extract_custom_placement_and_dims(flight, st_id)
         elements.append(
             IfcCustomElement(
                 **{
@@ -764,10 +828,8 @@ def import_ifc_to_manifest(
                     "tag": tag,
                     "name": tag,
                     "source": f"ifc/stairflight/{tag}",
-                    "placement": CustomElementPlacement(
-                        position=pos,
-                        storey=st_id,
-                    ),
+                    "placement": placement,
+                    "dimensions": dims,
                     "layer": "circulation/stairflights",
                 }
             )
@@ -776,13 +838,8 @@ def import_ifc_to_manifest(
     # 5.10 Extract Railings
     for railing in ifc_file.by_type("IfcRailing"):
         tag = railing.Name or f"RAILING-{railing.GlobalId[:8]}"
-        pos = (0.0, 0.0, 0.0)
-        try:
-            mat = ifcopenshell.util.placement.get_local_placement(railing.ObjectPlacement)
-            pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
-        except Exception:
-            pass
         st_id = get_elem_storey(railing)
+        placement, dims = extract_custom_placement_and_dims(railing, st_id)
         elements.append(
             IfcCustomElement(
                 **{
@@ -790,10 +847,8 @@ def import_ifc_to_manifest(
                     "tag": tag,
                     "name": tag,
                     "source": f"ifc/railing/{tag}",
-                    "placement": CustomElementPlacement(
-                        position=pos,
-                        storey=st_id,
-                    ),
+                    "placement": placement,
+                    "dimensions": dims,
                     "layer": "circulation/railings",
                 }
             )
@@ -802,13 +857,8 @@ def import_ifc_to_manifest(
     # 5.11 Extract Members
     for member in ifc_file.by_type("IfcMember"):
         tag = member.Name or f"MEMBER-{member.GlobalId[:8]}"
-        pos = (0.0, 0.0, 0.0)
-        try:
-            mat = ifcopenshell.util.placement.get_local_placement(member.ObjectPlacement)
-            pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
-        except Exception:
-            pass
         st_id = get_elem_storey(member)
+        placement, dims = extract_custom_placement_and_dims(member, st_id)
         elements.append(
             IfcCustomElement(
                 **{
@@ -816,10 +866,8 @@ def import_ifc_to_manifest(
                     "tag": tag,
                     "name": tag,
                     "source": f"ifc/member/{tag}",
-                    "placement": CustomElementPlacement(
-                        position=pos,
-                        storey=st_id,
-                    ),
+                    "placement": placement,
+                    "dimensions": dims,
                     "layer": "structure/members",
                 }
             )
@@ -841,15 +889,8 @@ def import_ifc_to_manifest(
         tag = furn.Name or f"FURN-{furn.GlobalId[:8]}"
         name = furn.Name or tag
         slug = _derive_furniture_slug(furn.Name)
-
-        pos = (0.0, 0.0, 0.0)
-        try:
-            mat = ifcopenshell.util.placement.get_local_placement(furn.ObjectPlacement)
-            pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
-        except Exception:
-            pass
-
         st_id = get_elem_storey(furn)
+        placement, dims = extract_custom_placement_and_dims(furn, st_id)
         elements.append(
             IfcCustomElement(
                 **{
@@ -857,10 +898,8 @@ def import_ifc_to_manifest(
                     "tag": tag,
                     "name": name,
                     "source": f"assets/furniture/{slug}.glb",
-                    "placement": CustomElementPlacement(
-                        position=pos,
-                        storey=st_id,
-                    ),
+                    "placement": placement,
+                    "dimensions": dims,
                     "layer": "interior/furniture",
                 }
             )
@@ -873,14 +912,9 @@ def import_ifc_to_manifest(
                 continue
             extracted_custom_ids.add(seg.GlobalId)
             tag = seg.Name or f"SEG-{seg.GlobalId[:8]}"
-            pos = (0.0, 0.0, 0.0)
-            try:
-                mat = ifcopenshell.util.placement.get_local_placement(seg.ObjectPlacement)
-                pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
-            except Exception:
-                pass
             st_id = get_elem_storey(seg)
             layer = "mep/pipes" if seg.is_a("IfcPipeSegment") else "mep/ducts"
+            placement, dims = extract_custom_placement_and_dims(seg, st_id)
             elements.append(
                 IfcCustomElement(
                     **{
@@ -888,10 +922,8 @@ def import_ifc_to_manifest(
                         "tag": tag,
                         "name": tag,
                         "source": f"ifc/segment/{tag}",
-                        "placement": CustomElementPlacement(
-                            position=pos,
-                            storey=st_id,
-                        ),
+                        "placement": placement,
+                        "dimensions": dims,
                         "layer": layer,
                     }
                 )
@@ -904,13 +936,8 @@ def import_ifc_to_manifest(
                 continue
             extracted_custom_ids.add(term.GlobalId)
             tag = term.Name or f"TERM-{term.GlobalId[:8]}"
-            pos = (0.0, 0.0, 0.0)
-            try:
-                mat = ifcopenshell.util.placement.get_local_placement(term.ObjectPlacement)
-                pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
-            except Exception:
-                pass
             st_id = get_elem_storey(term)
+            placement, dims = extract_custom_placement_and_dims(term, st_id)
             elements.append(
                 IfcCustomElement(
                     **{
@@ -918,10 +945,8 @@ def import_ifc_to_manifest(
                         "tag": tag,
                         "name": tag,
                         "source": f"ifc/terminal/{tag}",
-                        "placement": CustomElementPlacement(
-                            position=pos,
-                            storey=st_id,
-                        ),
+                        "placement": placement,
+                        "dimensions": dims,
                         "layer": "mep/terminals",
                     }
                 )
@@ -934,13 +959,8 @@ def import_ifc_to_manifest(
                 continue
             extracted_custom_ids.add(fit.GlobalId)
             tag = fit.Name or f"FIT-{fit.GlobalId[:8]}"
-            pos = (0.0, 0.0, 0.0)
-            try:
-                mat = ifcopenshell.util.placement.get_local_placement(fit.ObjectPlacement)
-                pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
-            except Exception:
-                pass
             st_id = get_elem_storey(fit)
+            placement, dims = extract_custom_placement_and_dims(fit, st_id)
             elements.append(
                 IfcCustomElement(
                     **{
@@ -948,10 +968,8 @@ def import_ifc_to_manifest(
                         "tag": tag,
                         "name": tag,
                         "source": f"ifc/fitting/{tag}",
-                        "placement": CustomElementPlacement(
-                            position=pos,
-                            storey=st_id,
-                        ),
+                        "placement": placement,
+                        "dimensions": dims,
                         "layer": "mep/fittings",
                     }
                 )
@@ -969,13 +987,8 @@ def import_ifc_to_manifest(
                 continue
             extracted_custom_ids.add(proxy.GlobalId)
             tag = proxy.Name or f"{p_prefix}-{proxy.GlobalId[:8]}"
-            pos = (0.0, 0.0, 0.0)
-            try:
-                mat = ifcopenshell.util.placement.get_local_placement(proxy.ObjectPlacement)
-                pos = (round(float(mat[0, 3]), 3), round(float(mat[1, 3]), 3), round(float(mat[2, 3]), 3))
-            except Exception:
-                pass
             st_id = get_elem_storey(proxy)
+            placement, dims = extract_custom_placement_and_dims(proxy, st_id)
             elements.append(
                 IfcCustomElement(
                     **{
@@ -983,10 +996,8 @@ def import_ifc_to_manifest(
                         "tag": tag,
                         "name": tag,
                         "source": f"ifc/proxy/{tag}",
-                        "placement": CustomElementPlacement(
-                            position=pos,
-                            storey=st_id,
-                        ),
+                        "placement": placement,
+                        "dimensions": dims,
                         "layer": p_layer,
                     }
                 )

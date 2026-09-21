@@ -1,0 +1,6249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>debim 3D Viewer - OpenBIM Duplex A</title>
+    <!-- CDN-hosted Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1a1a1e;
+            color: #e0e0e0;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .ui-panel {
+            position: absolute;
+            background: rgba(25, 27, 31, 0.88);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            pointer-events: auto;
+            z-index: 10;
+        }
+        #layer-explorer-panel {
+            top: 16px;
+            left: 16px;
+            width: 310px;
+            max-height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+        }
+        #layer-tree-container {
+            overflow-y: auto;
+            max-height: calc(100vh - 280px);
+            margin-top: 8px;
+            padding-right: 4px;
+        }
+        .search-box {
+            width: 100%;
+            padding: 6px 10px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        .batch-controls {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .batch-btn {
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .batch-btn:hover {
+            background: #3b82f6;
+            color: #ffffff;
+        }
+        .tree-node {
+            user-select: none;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+        .tree-node-content {
+            display: flex;
+            align-items: center;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .tree-node-content:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .tree-expander {
+            cursor: pointer;
+            width: 16px;
+            text-align: center;
+            margin-right: 4px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        .tree-checkbox {
+            margin-right: 6px;
+            cursor: pointer;
+        }
+        .tree-label {
+            cursor: pointer;
+            flex-grow: 1;
+            color: #e2e8f0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .tree-count {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-left: 6px;
+        }
+        .tree-children {
+            margin-left: 16px;
+            display: block;
+        }
+        .tree-children.collapsed {
+            display: none;
+        }
+        #info-panel {
+            bottom: 16px;
+            left: 16px;
+            width: 310px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        #inspector-panel {
+            top: 16px;
+            right: 16px;
+            width: 320px;
+        }
+        h1 {
+            font-size: 1.1rem;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        .subtitle {
+            font-size: 0.8rem;
+            color: #8888aa;
+            margin-bottom: 12px;
+        }
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4da6ff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 12px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 4px;
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            margin-bottom: 4px;
+        }
+        .data-label {
+            color: #aaaaaa;
+        }
+        .data-value {
+            font-weight: 500;
+            color: #ffffff;
+            text-align: right;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #2a3a4e;
+            color: #66b2ff;
+        }
+        #view-toolbar {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            background: rgba(20, 24, 33, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 6px 12px;
+            border-radius: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+        .view-btn {
+            background: #2a3a4e;
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .view-btn:hover {
+            background: #3b82f6;
+            color: #ffffff;
+        }
+        #axes-legend {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(20, 24, 33, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: #ddd;
+            z-index: 10;
+            pointer-events: none;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #cccccc;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="view-toolbar">
+        <button class="view-btn" onclick="setView('top')">📐 ผังพื้น (Top View)</button>
+        <button class="view-btn" onclick="setView('iso')">🏢 3D Isometric</button>
+        <button class="view-btn" onclick="setView('front')">↔️ ด้านหน้า (Front)</button>
+        <button class="view-btn" onclick="setView('side')">↕️ ด้านข้าง (Side)</button>
+    </div>
+
+    <div id="layer-explorer-panel" class="ui-panel">
+        <h1>Hierarchical Layer Explorer</h1>
+        <div class="subtitle">Filter and toggle layers dynamically</div>
+        <input type="text" id="layer-search-input" class="search-box" placeholder="🔍 Search layers..." oninput="filterLayerTree(this.value)">
+        <div class="batch-controls">
+            <button class="batch-btn" onclick="setAllLayers(true)">Show All</button>
+            <button class="batch-btn" onclick="setAllLayers(false)">Hide All</button>
+            <button class="batch-btn" onclick="toggleExpandAll(true)">Expand All</button>
+            <button class="batch-btn" onclick="toggleExpandAll(false)">Collapse All</button>
+        </div>
+        <div id="layer-tree-container"></div>
+    </div>
+
+    <div id="axes-legend">
+        <div><span style="color:#ff4d4d; font-weight:bold;">🔴 แกน X:</span> แนวนอน</div>
+        <div><span style="color:#4dff4d; font-weight:bold;">🟢 แกน Y:</span> แนวตั้ง</div>
+        <div><span style="color:#4da6ff; font-weight:bold;">🔵 แกน Z:</span> Elevation</div>
+    </div>
+
+    <div id="info-panel" class="ui-panel">
+        <h1>OpenBIM Duplex A</h1>
+        <div class="subtitle">Project ID: <span id="project-id">1xS3BCk291UvhgP2a6eflL</span></div>
+
+        <div class="section-title">Storeys</div>
+        <div id="storeys-list"></div>
+    </div>
+
+    <div id="inspector-panel" class="ui-panel">
+        <h1>Element Inspector</h1>
+        <div class="subtitle">Click on any 3D element to inspect</div>
+
+        <div id="inspector-content">
+            <p style="color: #888; font-size: 0.85rem; font-style: italic;">No element selected</p>
+        </div>
+    </div>
+
+    <div id="instructions">
+        Rotate: Left Click + Drag | Pan: Right Click + Drag | Zoom: Scroll
+    </div>
+
+    <script>
+        const sceneData = {
+  "project": {
+    "id": "1xS3BCk291UvhgP2a6eflL",
+    "name": "OpenBIM Duplex A",
+    "units": {
+      "length": "METER",
+      "area": "SQUARE_METER",
+      "volume": "CUBIC_METER"
+    }
+  },
+  "storeys": [
+    {
+      "id": "Level 1",
+      "name": "Level 1",
+      "elevation": 0.0,
+      "height": 3.5
+    },
+    {
+      "id": "Level 2",
+      "name": "Level 2",
+      "elevation": 3.1,
+      "height": 3.5
+    },
+    {
+      "id": "T/FDN",
+      "name": "T/FDN",
+      "elevation": -1.25,
+      "height": 3.5
+    },
+    {
+      "id": "Roof",
+      "name": "Roof",
+      "elevation": 6.0,
+      "height": 3.5
+    }
+  ],
+  "grids": {
+    "axes_x": {
+      "GX_1": 4.4,
+      "GX_2": -3.12,
+      "GX_3": 0.21,
+      "GX_4": 0.27,
+      "GX_5": -3.85,
+      "GX_6": 11.92,
+      "GX_7": 8.59,
+      "GX_8": 8.53,
+      "GX_9": 12.65,
+      "GX_10": 2.54,
+      "GX_11": 8.38,
+      "GX_12": 4.19,
+      "GX_13": 0.42,
+      "GX_14": 4.61,
+      "GX_15": 4.77,
+      "GX_16": 6.36,
+      "GX_17": 6.26,
+      "GX_18": 0.0,
+      "GX_19": 4.46,
+      "GX_20": 4.12,
+      "GX_21": 2.17,
+      "GX_22": 4.67,
+      "GX_23": 6.63,
+      "GX_24": 4.34,
+      "GX_25": 8.8,
+      "GX_26": 2.65,
+      "GX_27": 6.15,
+      "GX_28": 2.38,
+      "GX_29": 0.15,
+      "GX_30": 6.42,
+      "GX_31": 8.65,
+      "GX_32": 2.44,
+      "GX_33": 3.9,
+      "GX_34": 4.03,
+      "GX_35": 4.9,
+      "GX_36": 1.49,
+      "GX_37": 7.31,
+      "GX_38": 6.84,
+      "GX_39": 7.92,
+      "GX_40": 7.98,
+      "GX_41": 0.81,
+      "GX_42": 1.89,
+      "GX_43": 1.94,
+      "GX_44": 8.47,
+      "GX_45": 8.11,
+      "GX_46": 12.38,
+      "GX_47": 5.11,
+      "GX_48": 9.37,
+      "GX_49": 3.1,
+      "GX_50": 8.98,
+      "GX_51": 5.02,
+      "GX_52": 6.55,
+      "GX_53": 7.64,
+      "GX_54": 5.44
+    },
+    "axes_y": {
+      "GY_1": -10.0,
+      "GY_2": -17.52,
+      "GY_3": -23.7,
+      "GY_4": -13.4,
+      "GY_5": -21.63,
+      "GY_6": -7.8,
+      "GY_7": -0.28,
+      "GY_8": 5.9,
+      "GY_9": -4.4,
+      "GY_10": 3.83,
+      "GY_11": -0.42,
+      "GY_12": -17.8,
+      "GY_13": -4.21,
+      "GY_14": -10.31,
+      "GY_15": -13.8,
+      "GY_16": -17.59,
+      "GY_17": -0.21,
+      "GY_18": -17.38,
+      "GY_19": 0.0,
+      "GY_20": -9.78,
+      "GY_21": -7.58,
+      "GY_22": -6.76,
+      "GY_23": -11.07,
+      "GY_24": -11.0,
+      "GY_25": -6.19,
+      "GY_26": -11.61,
+      "GY_27": -6.25,
+      "GY_28": -11.67,
+      "GY_29": -11.55,
+      "GY_30": -6.13,
+      "GY_31": -7.51,
+      "GY_32": -7.22,
+      "GY_33": -8.07,
+      "GY_34": -10.58,
+      "GY_35": -6.7,
+      "GY_36": -10.06,
+      "GY_37": -7.74,
+      "GY_38": -6.57,
+      "GY_39": -7.68,
+      "GY_40": -11.26,
+      "GY_41": -10.12,
+      "GY_42": -1.68,
+      "GY_43": -9.33,
+      "GY_44": -9.69,
+      "GY_45": -1.97,
+      "GY_46": -12.69,
+      "GY_47": -8.99,
+      "GY_48": -8.49,
+      "GY_49": -10.95,
+      "GY_50": -8.43,
+      "GY_51": -10.52,
+      "GY_52": -12.6,
+      "GY_53": -10.25,
+      "GY_54": -7.95,
+      "GY_55": -2.86,
+      "GY_56": -7.43,
+      "GY_57": -3.83,
+      "GY_58": 5.04,
+      "GY_59": -22.18,
+      "GY_60": -17.14
+    }
+  },
+  "elements": [
+    {
+      "tag": "M_W-Wide Flange:W310X60:W310X60:207325",
+      "class": "IfcBeam",
+      "material": "METAL___STEEL___345_MPA",
+      "position": [
+        0.6400000000000001,
+        -10.0,
+        -0.2
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 7.5200000000000005,
+        "width": 0.2,
+        "depth": 0.4
+      },
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
+    },
+    {
+      "tag": "M_W-Wide Flange:W410X60:W410X60:208949",
+      "class": "IfcBeam",
+      "material": "METAL___STEEL___345_MPA",
+      "position": [
+        0.21,
+        -20.61,
+        -0.2
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 6.18,
+        "width": 0.2,
+        "depth": 0.4
+      },
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
+    },
+    {
+      "tag": "M_W-Wide Flange:W410X60:W410X60:209121",
+      "class": "IfcBeam",
+      "material": "METAL___STEEL___345_MPA",
+      "position": [
+        -1.79,
+        -13.4,
+        2.9
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 4.12,
+        "width": 0.2,
+        "depth": 0.4
+      },
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
+    },
+    {
+      "tag": "M_W-Wide Flange:W410X60:W410X60:209166",
+      "class": "IfcBeam",
+      "material": "METAL___STEEL___345_MPA",
+      "position": [
+        4.4,
+        -19.575,
+        2.9
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 4.109999999999999,
+        "width": 0.2,
+        "depth": 0.4
+      },
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
+    },
+    {
+      "tag": "M_W-Wide Flange:W310X60:W310X60:209260",
+      "class": "IfcBeam",
+      "material": "METAL___STEEL___345_MPA",
+      "position": [
+        8.16,
+        -7.8,
+        -0.2
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 7.52,
+        "width": 0.2,
+        "depth": 0.4
+      },
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
+    },
+    {
+      "tag": "M_W-Wide Flange:W410X60:W410X60:209261",
+      "class": "IfcBeam",
+      "material": "METAL___STEEL___345_MPA",
+      "position": [
+        8.59,
+        2.81,
+        -0.2
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 6.180000000000001,
+        "width": 0.2,
+        "depth": 0.4
+      },
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
+    },
+    {
+      "tag": "M_W-Wide Flange:W410X60:W410X60:209262",
+      "class": "IfcBeam",
+      "material": "METAL___STEEL___345_MPA",
+      "position": [
+        10.59,
+        -4.4,
+        2.9
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 4.120000000000001,
+        "width": 0.2,
+        "depth": 0.4
+      },
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
+    },
+    {
+      "tag": "M_W-Wide Flange:W410X60:W410X60:209263",
+      "class": "IfcBeam",
+      "material": "METAL___STEEL___345_MPA",
+      "position": [
+        4.4,
+        1.775,
+        2.9
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 4.11,
+        "width": 0.2,
+        "depth": 0.4
+      },
+      "color": "#9A9A9A",
+      "layer": "structure/framing/beams"
+    },
+    {
+      "tag": "Floor:127mm Slab on Grade:141232",
+      "class": "IfcSlab",
+      "material": "CONCRETE",
+      "position": [
+        4.445,
+        -5.7299999999999995,
+        -0.0635
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 8.05,
+        "depth": 8.1,
+        "height": 0.127
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:127mm Slab on Grade:143106",
+      "class": "IfcSlab",
+      "material": "CONCRETE",
+      "position": [
+        4.445,
+        -13.355,
+        -0.0635
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 8.05,
+        "depth": 8.049999999999999,
+        "height": 0.127
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Residential - Wood Joist with Subflooring:144800",
+      "class": "IfcSlab",
+      "material": "WOOD___SHEATHING___PLYWO",
+      "position": [
+        4.265,
+        -13.535,
+        2.9475000000000002
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 7.6899999999999995,
+        "depth": 7.6899999999999995,
+        "height": 0.305
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Residential - Wood Joist with Subflooring:144872",
+      "class": "IfcSlab",
+      "material": "WOOD___SHEATHING___PLYWO",
+      "position": [
+        8.525,
+        -13.535,
+        2.9475000000000002
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 7.710000000000001,
+        "depth": 7.6899999999999995,
+        "height": 0.305
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Wood:169093",
+      "class": "IfcSlab",
+      "material": "WOOD___FLOORING",
+      "position": [
+        2.765,
+        -4.335,
+        3.0905
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.69,
+        "depth": 4.73,
+        "height": 0.019
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Wood:169188",
+      "class": "IfcSlab",
+      "material": "WOOD___FLOORING",
+      "position": [
+        7.02,
+        -4.335,
+        3.0905
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.699999999999999,
+        "depth": 4.73,
+        "height": 0.019
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Wood:169308",
+      "class": "IfcSlab",
+      "material": "WOOD___FLOORING",
+      "position": [
+        7.02,
+        -15.035,
+        3.0905
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.699999999999999,
+        "depth": 4.6899999999999995,
+        "height": 0.019
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Wood:169354",
+      "class": "IfcSlab",
+      "material": "WOOD___FLOORING",
+      "position": [
+        2.765,
+        -15.035,
+        3.0905
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.69,
+        "depth": 4.6899999999999995,
+        "height": 0.019
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Wood:169395",
+      "class": "IfcSlab",
+      "material": "WOOD___FLOORING",
+      "position": [
+        1.76,
+        -10.33,
+        3.0905
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 2.68,
+        "depth": 2.6799999999999997,
+        "height": 0.019
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Wood:169701",
+      "class": "IfcSlab",
+      "material": "WOOD___FLOORING",
+      "position": [
+        7.62,
+        -10.33,
+        3.0905
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 2.7200000000000006,
+        "depth": 2.6799999999999997,
+        "height": 0.019
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Ceramic Tile:169772",
+      "class": "IfcSlab",
+      "material": "CERAMIC_TILE",
+      "position": [
+        3.78,
+        -9.745000000000001,
+        3.0935
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 2.4799999999999995,
+        "depth": 2.51,
+        "height": 0.013
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Ceramic Tile:169866",
+      "class": "IfcSlab",
+      "material": "CERAMIC_TILE",
+      "position": [
+        6.039999999999999,
+        -9.69,
+        3.0935
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 2.54,
+        "depth": 2.5199999999999996,
+        "height": 0.013
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Wood:170352",
+      "class": "IfcSlab",
+      "material": "WOOD___FLOORING",
+      "position": [
+        3.8649999999999998,
+        -13.95,
+        -0.0095
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 6.89,
+        "depth": 6.859999999999999,
+        "height": 0.019
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Ceramic Tile:170785",
+      "class": "IfcSlab",
+      "material": "CERAMIC_TILE",
+      "position": [
+        2.225,
+        -10.795,
+        -0.0065
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 3.6100000000000003,
+        "depth": 3.6099999999999994,
+        "height": 0.013
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Ceramic Tile:171230",
+      "class": "IfcSlab",
+      "material": "CERAMIC_TILE",
+      "position": [
+        5.66,
+        -9.370000000000001,
+        -0.0065
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.7800000000000002,
+        "depth": 1.7599999999999998,
+        "height": 0.013
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Ceramic Tile:171261",
+      "class": "IfcSlab",
+      "material": "CERAMIC_TILE",
+      "position": [
+        3.44,
+        -8.865,
+        -0.0065
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.7999999999999998,
+        "depth": 1.8299999999999992,
+        "height": 0.013
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Wood:171292",
+      "class": "IfcSlab",
+      "material": "WOOD___FLOORING",
+      "position": [
+        3.8649999999999998,
+        -6.319999999999999,
+        -0.0095
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 6.89,
+        "depth": 6.92,
+        "height": 0.019
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:Finish Floor - Ceramic Tile:171444",
+      "class": "IfcSlab",
+      "material": "CERAMIC_TILE",
+      "position": [
+        4.345000000000001,
+        -5.63,
+        -0.0065
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 3.6100000000000003,
+        "depth": 3.5999999999999996,
+        "height": 0.013
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Basic Roof:Live Roof over Wood Joist Flat Roof:184483",
+      "class": "IfcSlab",
+      "material": "BASIC_ROOF_LIVE_ROOF_OVE",
+      "position": [
+        2.41,
+        -15.39,
+        5.925
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 3.9800000000000004,
+        "depth": 3.9799999999999986,
+        "height": 0.15
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:150mm Exterior Slab on Grade:216507",
+      "class": "IfcSlab",
+      "material": "CONCRETE___CAST_IN_SITU",
+      "position": [
+        5.145,
+        2.52,
+        -0.075
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.99,
+        "depth": 5.04,
+        "height": 0.15
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Floor:150mm Exterior Slab on Grade:216552",
+      "class": "IfcSlab",
+      "material": "CONCRETE___CAST_IN_SITU",
+      "position": [
+        2.93,
+        -19.66,
+        -0.075
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 5.0200000000000005,
+        "depth": 5.039999999999999,
+        "height": 0.15
+      },
+      "color": "#A8B2C1",
+      "transparent": true,
+      "opacity": 0.85,
+      "layer": "structure/slabs"
+    },
+    {
+      "tag": "Basic Wall:Party Wall - CMU Residential Unit Dimising Wall:143239",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        4.4,
+        -9.110000000000001,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 17.38,
+        "thickness": 0.55,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):138584",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        2.54,
+        -2.315,
+        1.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.79,
+        "thickness": 0.124,
+        "height": 2.795
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Party Wall - CMU Residential Unit Dimising Wall:139234",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        6.285,
+        -7.8,
+        1.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 4.19,
+        "thickness": 0.55,
+        "height": 2.795
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Party Wall - CMU Residential Unit Dimising Wall:139347",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        2.515,
+        -10.0,
+        1.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 4.19,
+        "thickness": 0.55,
+        "height": 2.795
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Party Wall - CMU Residential Unit Dimising Wall:139374",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        4.4,
+        -8.9,
+        1.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 2.2,
+        "thickness": 0.55,
+        "height": 2.795
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):139783",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        5.5649999999999995,
+        -10.31,
+        1.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 1.5900000000000007,
+        "thickness": 0.124,
+        "height": 2.795
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):139939",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        6.26,
+        -15.695,
+        1.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.789999999999999,
+        "thickness": 0.124,
+        "height": 2.795
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Foundation - Concrete (417mm):140479",
+      "class": "IfcWall",
+      "material": "CONCRETE___CAST_IN_SITU",
+      "position": [
+        4.19,
+        -0.21,
+        -0.625
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 8.38,
+        "thickness": 0.417,
+        "height": 1.25
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Foundation - Concrete (417mm):140520",
+      "class": "IfcWall",
+      "material": "CONCRETE___CAST_IN_SITU",
+      "position": [
+        8.59,
+        -9.110000000000001,
+        -0.625
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 17.38,
+        "thickness": 0.417,
+        "height": 1.25
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Foundation - Concrete (417mm):140554",
+      "class": "IfcWall",
+      "material": "CONCRETE___CAST_IN_SITU",
+      "position": [
+        4.19,
+        -17.59,
+        -0.625
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 8.38,
+        "thickness": 0.417,
+        "height": 1.25
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Foundation - Concrete (417mm):140602",
+      "class": "IfcWall",
+      "material": "CONCRETE___CAST_IN_SITU",
+      "position": [
+        0.21,
+        -8.69,
+        -0.625
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 17.38,
+        "thickness": 0.417,
+        "height": 1.25
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Foundation - Concrete (435mm):140913",
+      "class": "IfcWall",
+      "material": "CONCRETE___CAST_IN_SITU",
+      "position": [
+        6.285,
+        -7.8,
+        -0.625
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 4.19,
+        "thickness": 0.435,
+        "height": 1.25
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Foundation - Concrete (435mm):140987",
+      "class": "IfcWall",
+      "material": "CONCRETE___CAST_IN_SITU",
+      "position": [
+        2.515,
+        -10.0,
+        -0.625
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 4.19,
+        "thickness": 0.435,
+        "height": 1.25
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Foundation - Concrete (435mm):141018",
+      "class": "IfcWall",
+      "material": "CONCRETE___CAST_IN_SITU",
+      "position": [
+        4.4,
+        -8.68,
+        -0.6885
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 2.1999999999999993,
+        "thickness": 0.435,
+        "height": 1.123
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Plumbing (152mm Stud):144138",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        3.5,
+        -6.76,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 1.92,
+        "thickness": 0.184,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):144301",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        3.145,
+        -11.07,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 1.9500000000000002,
+        "thickness": 0.124,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):144684",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        5.65,
+        -6.76,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 1.96,
+        "thickness": 0.124,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Plumbing (152mm Stud):144783",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        5.3,
+        -11.07,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 1.92,
+        "thickness": 0.184,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Exterior - Brick on Block:138157",
+      "class": "IfcWall",
+      "material": "MASONRY___BRICK",
+      "position": [
+        8.59,
+        -9.110000000000001,
+        1.55
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 17.38,
+        "thickness": 0.417,
+        "height": 3.1
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146596",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        8.59,
+        -15.56,
+        1.005
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.25,
+        "thickness": 0.45036,
+        "height": 2.01
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "M_Fixed:750mm x 2200mm:750mm x 2200mm:146885",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        8.59,
+        -5.2,
+        1.9000000000000001
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.75,
+        "thickness": 0.45036,
+        "height": 2.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "Basic Wall:Exterior - Brick on Block:138310",
+      "class": "IfcWall",
+      "material": "MASONRY___BRICK",
+      "position": [
+        0.21,
+        -8.69,
+        1.55
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 17.38,
+        "thickness": 0.417,
+        "height": 3.1
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146678",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        0.21,
+        -2.2399999999999984,
+        1.005
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 1.25,
+        "thickness": 0.45036,
+        "height": 2.01
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "M_Fixed:750mm x 2200mm:750mm x 2200mm:147051",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.21,
+        -12.599999999999998,
+        1.9000000000000001
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.75,
+        "thickness": 0.45036,
+        "height": 2.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "Basic Wall:Exterior - Brick on Block:143410",
+      "class": "IfcWall",
+      "material": "MASONRY___BRICK",
+      "position": [
+        4.19,
+        -0.21,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 8.38,
+        "thickness": 0.417,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Fixed:2800mm x 2410mm:2800mm x 2410mm:147686",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        1.32,
+        -0.21,
+        5.105
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 2.8,
+        "thickness": 0.45036,
+        "height": 2.41
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Fixed:819mm x 759mm:819mm x 759mm:147994",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.42,
+        -0.21,
+        4.2795000000000005
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.819,
+        "thickness": 0.45036,
+        "height": 0.759
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Casement:819mm x 759mm:819mm x 759mm:148607",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.42,
+        -0.21,
+        4.2795000000000005
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.819,
+        "thickness": 0.45036,
+        "height": 0.759
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Fixed:819mm x 759mm:819mm x 759mm:148722",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.42,
+        -0.21,
+        4.2795000000000005
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.819,
+        "thickness": 0.45036,
+        "height": 0.759
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "Basic Wall:Exterior - Brick on Block:143534",
+      "class": "IfcWall",
+      "material": "MASONRY___BRICK",
+      "position": [
+        4.61,
+        -17.59,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 8.38,
+        "thickness": 0.417,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Fixed:2800mm x 2410mm:2800mm x 2410mm:149278",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        7.470000000000001,
+        -17.59,
+        5.105
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "width": 2.8,
+        "thickness": 0.45036,
+        "height": 2.41
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Fixed:819mm x 759mm:819mm x 759mm:149537",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        8.38,
+        -17.59,
+        4.2795000000000005
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "width": 0.819,
+        "thickness": 0.45036,
+        "height": 0.759
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Casement:819mm x 759mm:819mm x 759mm:149736",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        8.38,
+        -17.59,
+        4.2795000000000005
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "width": 0.819,
+        "thickness": 0.45036,
+        "height": 0.759
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Fixed:819mm x 759mm:819mm x 759mm:149924",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        8.38,
+        -17.59,
+        4.2795000000000005
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "width": 0.819,
+        "thickness": 0.45036,
+        "height": 0.759
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):139682",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        6.26,
+        -9.4,
+        1.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.2,
+        "thickness": 0.124,
+        "height": 2.795
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150173",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        6.26,
+        -10.06,
+        1.016
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.762,
+        "thickness": 0.13392,
+        "height": 2.032
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):139143",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        2.54,
+        -8.379999999999999,
+        1.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.24,
+        "thickness": 0.124,
+        "height": 2.795
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150257",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        2.54,
+        -7.699999999999999,
+        1.016
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.762,
+        "thickness": 0.13392,
+        "height": 2.032
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):143856",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        1.535,
+        -6.19,
+        1.694
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 2.23,
+        "thickness": 0.124,
+        "height": 3.388
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:150378",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        1.49,
+        -6.19,
+        1.016
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.864,
+        "thickness": 0.13392,
+        "height": 2.032
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):144518",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        7.265000000000001,
+        -11.61,
+        1.694
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 2.2300000000000004,
+        "thickness": 0.124,
+        "height": 3.388
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:150478",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        7.32,
+        -11.61,
+        1.016
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "width": 0.864,
+        "thickness": 0.13392,
+        "height": 2.032
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):143960",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        1.265,
+        -11.61,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 2.23,
+        "thickness": 0.124,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:159734",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        2.28,
+        -11.61,
+        4.116
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "width": 0.864,
+        "thickness": 0.13392,
+        "height": 2.032
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):144633",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        7.535,
+        -6.19,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 2.2300000000000004,
+        "thickness": 0.124,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:159834",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        6.4799999999999995,
+        -6.19,
+        4.116
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.864,
+        "thickness": 0.13392,
+        "height": 2.032
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):143921",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        2.44,
+        -8.96,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 5.42,
+        "thickness": 0.124,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:160065",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        2.44,
+        -9.01,
+        4.116
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.864,
+        "thickness": 0.13392,
+        "height": 2.032
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):144586",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        6.36,
+        -8.84,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 5.420000000000001,
+        "thickness": 0.124,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:160208",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        6.36,
+        -8.81,
+        4.116
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.864,
+        "thickness": 0.13392,
+        "height": 2.032
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "Basic Wall:Exterior - Brick on Block:138062",
+      "class": "IfcWall",
+      "material": "MASONRY___BRICK",
+      "position": [
+        4.19,
+        -0.21,
+        1.55
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 8.38,
+        "thickness": 0.417,
+        "height": 3.1
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171853",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        2.63,
+        -0.21,
+        1.21
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.813,
+        "thickness": 0.45036,
+        "height": 2.42
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        3.55,
+        -0.21,
+        2.01
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 4.835,
+        "thickness": 0.45036,
+        "height": 2.42
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "Basic Wall:Exterior - Brick on Block:138237",
+      "class": "IfcWall",
+      "material": "MASONRY___BRICK",
+      "position": [
+        4.19,
+        -17.59,
+        1.55
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 8.38,
+        "thickness": 0.417,
+        "height": 3.1
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171975",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        6.16,
+        -17.59,
+        1.21
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "width": 0.813,
+        "thickness": 0.45036,
+        "height": 2.42
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        5.250000000000001,
+        -17.59,
+        2.01
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "width": 4.835,
+        "thickness": 0.45036,
+        "height": 2.42
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "Basic Wall:Exterior - Brick on Block:143478",
+      "class": "IfcWall",
+      "material": "MASONRY___BRICK",
+      "position": [
+        8.59,
+        -8.69,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 17.38,
+        "thickness": 0.417,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Fixed:2800mm x 2410mm:2800mm x 2410mm:181096",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        8.59,
+        -0.42,
+        5.105
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 2.8,
+        "thickness": 0.45036,
+        "height": 2.41
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Fixed:819mm x 759mm:819mm x 759mm:181285",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        8.59,
+        -3.32,
+        4.2795000000000005
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.819,
+        "thickness": 0.45036,
+        "height": 0.759
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Casement:819mm x 759mm:819mm x 759mm:181548",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        8.59,
+        -3.32,
+        4.2795000000000005
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.819,
+        "thickness": 0.45036,
+        "height": 0.759
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Fixed:819mm x 759mm:819mm x 759mm:181583",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        8.59,
+        -3.32,
+        4.2795000000000005
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.819,
+        "thickness": 0.45036,
+        "height": 0.759
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Fixed:750mm x 2200mm:750mm x 2200mm:181930",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        8.59,
+        -11.77,
+        5.0
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.75,
+        "thickness": 0.45036,
+        "height": 2.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "Basic Wall:Exterior - Brick on Block:143590",
+      "class": "IfcWall",
+      "material": "MASONRY___BRICK",
+      "position": [
+        0.21,
+        -9.110000000000001,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 17.38,
+        "thickness": 0.417,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Fixed:2800mm x 2410mm:2800mm x 2410mm:180318",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.21,
+        -17.38,
+        5.105
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 2.8,
+        "thickness": 0.45036,
+        "height": 2.41
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Fixed:819mm x 759mm:819mm x 759mm:180663",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.21,
+        -14.48,
+        4.2795000000000005
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.819,
+        "thickness": 0.45036,
+        "height": 0.759
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Fixed:819mm x 759mm:819mm x 759mm:180864",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.21,
+        -14.48,
+        4.2795000000000005
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.819,
+        "thickness": 0.45036,
+        "height": 0.759
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Casement:819mm x 759mm:819mm x 759mm:180994",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.21,
+        -14.48,
+        4.2795000000000005
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.819,
+        "thickness": 0.45036,
+        "height": 0.759
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "M_Fixed:750mm x 2200mm:750mm x 2200mm:182101",
+      "class": "IfcWindow",
+      "material": "Glass",
+      "position": [
+        0.21,
+        -6.030000000000001,
+        5.0
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "width": 0.75,
+        "thickness": 0.45036,
+        "height": 2.2
+      },
+      "color": "#00FFFF",
+      "transparent": true,
+      "opacity": 0.6,
+      "layer": "architecture/openings/windows"
+    },
+    {
+      "tag": "Basic Wall:Exterior - Brick on Block:184944",
+      "class": "IfcWall",
+      "material": "MASONRY___BRICK",
+      "position": [
+        4.19,
+        -0.21,
+        6.3045
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 8.38,
+        "thickness": 0.417,
+        "height": 0.609
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Exterior - Brick on Block:185014",
+      "class": "IfcWall",
+      "material": "MASONRY___BRICK",
+      "position": [
+        8.59,
+        -9.110000000000001,
+        6.3045
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 17.38,
+        "thickness": 0.417,
+        "height": 0.609
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Exterior - Brick on Block:185064",
+      "class": "IfcWall",
+      "material": "MASONRY___BRICK",
+      "position": [
+        4.19,
+        -17.59,
+        6.3045
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 8.38,
+        "thickness": 0.417,
+        "height": 0.609
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Exterior - Brick on Block:185101",
+      "class": "IfcWall",
+      "material": "MASONRY___BRICK",
+      "position": [
+        0.21,
+        -8.69,
+        6.3045
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 17.38,
+        "thickness": 0.417,
+        "height": 0.609
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (152 mm Stud):189074",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        6.140000000000001,
+        -7.51,
+        1.55
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 4.48,
+        "thickness": 0.152,
+        "height": 3.1
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (152 mm Stud):189901",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.12,
+        -8.5,
+        1.55
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 2.5599999999999996,
+        "thickness": 0.152,
+        "height": 3.1
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):190140",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        3.2350000000000003,
+        -7.51,
+        1.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 1.5900000000000003,
+        "thickness": 0.124,
+        "height": 2.795
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (152 mm Stud):190774",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.67,
+        -9.325,
+        1.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 2.51,
+        "thickness": 0.152,
+        "height": 2.795
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (152 mm Stud):190933",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        2.66,
+        -10.31,
+        1.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 4.48,
+        "thickness": 0.152,
+        "height": 2.795
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (152 mm Stud):193247",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.67,
+        -8.915,
+        4.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 4.3100000000000005,
+        "thickness": 0.152,
+        "height": 2.595
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (152 mm Stud):194166",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.12,
+        -8.85,
+        4.3975
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 4.3,
+        "thickness": 0.152,
+        "height": 2.595
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):203347",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        3.205,
+        -10.0,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 1.6500000000000004,
+        "thickness": 0.124,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        3.29,
+        -10.0,
+        4.116
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "width": 0.762,
+        "thickness": 0.13392,
+        "height": 2.032
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):203998",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        5.595,
+        -7.8,
+        4.55
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 1.6500000000000004,
+        "thickness": 0.124,
+        "height": 2.9
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034",
+      "class": "IfcDoor",
+      "material": "Wood",
+      "position": [
+        5.529999999999999,
+        -7.8,
+        4.116
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.762,
+        "thickness": 0.13392,
+        "height": 2.032
+      },
+      "color": "#8B4513",
+      "layer": "architecture/openings/doors"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):204300",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        1.49,
+        -8.155000000000001,
+        0.244
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.8100000000000005,
+        "thickness": 0.124,
+        "height": 0.488
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Partition (92mm Stud):204493",
+      "class": "IfcWall",
+      "material": "PLASTERBOARD",
+      "position": [
+        7.31,
+        -9.645,
+        0.244
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 3.8100000000000005,
+        "thickness": 0.124,
+        "height": 0.488
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (38 mm Stud):217414",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        7.38,
+        -6.57,
+        3.244
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 1.08,
+        "thickness": 0.054,
+        "height": 0.288
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (38 mm Stud):217415",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        6.84,
+        -7.155,
+        3.244
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 1.17,
+        "thickness": 0.054,
+        "height": 0.288
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (38 mm Stud):217416",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        7.41,
+        -7.74,
+        3.244
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 1.1400000000000006,
+        "thickness": 0.054,
+        "height": 0.288
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (38 mm Stud):217417",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        7.92,
+        -7.125,
+        3.244
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 1.1099999999999994,
+        "thickness": 0.054,
+        "height": 0.288
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (38 mm Stud):217577",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        1.35,
+        -10.06,
+        3.244
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 1.0799999999999998,
+        "thickness": 0.054,
+        "height": 0.288
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (38 mm Stud):217578",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        0.81,
+        -10.69,
+        3.244
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 1.1400000000000006,
+        "thickness": 0.054,
+        "height": 0.288
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (38 mm Stud):217579",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        1.375,
+        -11.26,
+        3.244
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 1.13,
+        "thickness": 0.054,
+        "height": 0.288
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Wall:Interior - Furring (38 mm Stud):217580",
+      "class": "IfcWall",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        1.89,
+        -10.66,
+        3.244
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 1.1999999999999993,
+        "thickness": 0.054,
+        "height": 0.288
+      },
+      "color": "#D3D3D3",
+      "layer": "architecture/walls"
+    },
+    {
+      "tag": "Basic Roof:Live Roof over Wood Joist Flat Roof:184483-FlatSurface",
+      "class": "IfcRoofCovering",
+      "geometry_type": "polygon",
+      "points": [
+        [
+          3.4000000000000004,
+          -18.14,
+          6.0
+        ],
+        [
+          6.44,
+          -18.14,
+          6.0
+        ],
+        [
+          6.44,
+          -9.0,
+          6.0
+        ],
+        [
+          3.4000000000000004,
+          -9.0,
+          6.0
+        ]
+      ],
+      "material": "CONCRETE_TILE",
+      "color": "#9E4734",
+      "layer": "architecture/roofs/covering",
+      "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
+      "dimensions": {
+        "area": 27.785599999999995,
+        "slope_degrees": 0.0
+      }
+    },
+    {
+      "tag": "Basic Roof:Live Roof over Wood Joist Flat Roof:184483-WP-South",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.4000000000000004,
+          -18.14,
+          6.0
+        ],
+        [
+          6.44,
+          -18.14,
+          6.0
+        ]
+      ],
+      "color": "#3B82F6",
+      "linewidth": 3,
+      "layer": "architecture/roofs/framing",
+      "member_type": "WALL_PLATE",
+      "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
+      "material": "STEEL_SS400",
+      "profile": "C150x50x20x3.2",
+      "dimensions": {
+        "length": 3.04
+      }
+    },
+    {
+      "tag": "Basic Roof:Live Roof over Wood Joist Flat Roof:184483-WP-East",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.44,
+          -18.14,
+          6.0
+        ],
+        [
+          6.44,
+          -9.0,
+          6.0
+        ]
+      ],
+      "color": "#3B82F6",
+      "linewidth": 3,
+      "layer": "architecture/roofs/framing",
+      "member_type": "WALL_PLATE",
+      "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
+      "material": "STEEL_SS400",
+      "profile": "C150x50x20x3.2",
+      "dimensions": {
+        "length": 9.14
+      }
+    },
+    {
+      "tag": "Basic Roof:Live Roof over Wood Joist Flat Roof:184483-WP-North",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.44,
+          -9.0,
+          6.0
+        ],
+        [
+          3.4000000000000004,
+          -9.0,
+          6.0
+        ]
+      ],
+      "color": "#3B82F6",
+      "linewidth": 3,
+      "layer": "architecture/roofs/framing",
+      "member_type": "WALL_PLATE",
+      "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
+      "material": "STEEL_SS400",
+      "profile": "C150x50x20x3.2",
+      "dimensions": {
+        "length": 3.04
+      }
+    },
+    {
+      "tag": "Basic Roof:Live Roof over Wood Joist Flat Roof:184483-WP-West",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.4000000000000004,
+          -9.0,
+          6.0
+        ],
+        [
+          3.4000000000000004,
+          -18.14,
+          6.0
+        ]
+      ],
+      "color": "#3B82F6",
+      "linewidth": 3,
+      "layer": "architecture/roofs/framing",
+      "member_type": "WALL_PLATE",
+      "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
+      "material": "STEEL_SS400",
+      "profile": "C150x50x20x3.2",
+      "dimensions": {
+        "length": 9.14
+      }
+    },
+    {
+      "tag": "Basic Roof:Live Roof over Wood Joist Flat Roof:184483-Rafter-1",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          4.4,
+          -18.14,
+          6.0
+        ],
+        [
+          4.4,
+          -9.0,
+          6.0
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "architecture/roofs/framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 9.14
+      }
+    },
+    {
+      "tag": "Basic Roof:Live Roof over Wood Joist Flat Roof:184483-Rafter-2",
+      "class": "IfcRoofFraming",
+      "geometry_type": "line",
+      "points": [
+        [
+          5.4,
+          -18.14,
+          6.0
+        ],
+        [
+          5.4,
+          -9.0,
+          6.0
+        ]
+      ],
+      "color": "#06B6D4",
+      "linewidth": 2,
+      "layer": "architecture/roofs/framing",
+      "member_type": "JACK_RAFTER",
+      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "material": "STEEL_SS400",
+      "profile": "C100x50x20x3.2",
+      "dimensions": {
+        "length": 9.14
+      }
+    },
+    {
+      "tag": "Basic Roof:Live Roof over Wood Joist Flat Roof:184483-Eave-1",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.4000000000000004,
+          -18.14,
+          6.0
+        ],
+        [
+          6.44,
+          -18.14,
+          6.0
+        ]
+      ],
+      "color": "#64748B",
+      "linewidth": 2,
+      "layer": "architecture/roofs/covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
+      "dimensions": {
+        "length": 3.04
+      }
+    },
+    {
+      "tag": "Basic Roof:Live Roof over Wood Joist Flat Roof:184483-Eave-2",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.44,
+          -18.14,
+          6.0
+        ],
+        [
+          6.44,
+          -9.0,
+          6.0
+        ]
+      ],
+      "color": "#64748B",
+      "linewidth": 2,
+      "layer": "architecture/roofs/covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
+      "dimensions": {
+        "length": 9.14
+      }
+    },
+    {
+      "tag": "Basic Roof:Live Roof over Wood Joist Flat Roof:184483-Eave-3",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          6.44,
+          -9.0,
+          6.0
+        ],
+        [
+          3.4000000000000004,
+          -9.0,
+          6.0
+        ]
+      ],
+      "color": "#64748B",
+      "linewidth": 2,
+      "layer": "architecture/roofs/covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
+      "dimensions": {
+        "length": 3.04
+      }
+    },
+    {
+      "tag": "Basic Roof:Live Roof over Wood Joist Flat Roof:184483-Eave-4",
+      "class": "IfcRoofRidge",
+      "geometry_type": "line",
+      "points": [
+        [
+          3.4000000000000004,
+          -9.0,
+          6.0
+        ],
+        [
+          3.4000000000000004,
+          -18.14,
+          6.0
+        ]
+      ],
+      "color": "#64748B",
+      "linewidth": 2,
+      "layer": "architecture/roofs/covering",
+      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
+      "dimensions": {
+        "length": 9.14
+      }
+    },
+    {
+      "tag": "Wall Foundation:Bearing Footing - 900 x 300:186596",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        -1.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.9,
+        "depth": 18.283,
+        "height": 0.3
+      },
+      "color": "#808080",
+      "layer": "structure/footings"
+    },
+    {
+      "tag": "Wall Foundation:Bearing Footing - 900 x 300:186604",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        -1.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 8.383,
+        "depth": 0.9,
+        "height": 0.3
+      },
+      "color": "#808080",
+      "layer": "structure/footings"
+    },
+    {
+      "tag": "Wall Foundation:Bearing Footing - 900 x 300:186612",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        -1.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.9,
+        "depth": 17.383,
+        "height": 0.3
+      },
+      "color": "#808080",
+      "layer": "structure/footings"
+    },
+    {
+      "tag": "Wall Foundation:Bearing Footing - 900 x 300:186620",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        -1.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 7.483,
+        "depth": 0.9,
+        "height": 0.3
+      },
+      "color": "#808080",
+      "layer": "structure/footings"
+    },
+    {
+      "tag": "Wall Foundation:Bearing Footing - 900 x 300:186632",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        -1.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 4.192,
+        "depth": 0.9,
+        "height": 0.3
+      },
+      "color": "#808080",
+      "layer": "structure/footings"
+    },
+    {
+      "tag": "Wall Foundation:Bearing Footing - 900 x 300:186644",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        -1.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.9,
+        "depth": 2.2,
+        "height": 0.3
+      },
+      "color": "#808080",
+      "layer": "structure/footings"
+    },
+    {
+      "tag": "Wall Foundation:Bearing Footing - 900 x 300:186656",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        -1.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 3.291,
+        "depth": 0.9,
+        "height": 0.3
+      },
+      "color": "#808080",
+      "layer": "structure/footings"
+    },
+    {
+      "tag": "Stair:Residential - 200mm Max Riser 250mm Tread:151086",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        0.75
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "depth": 0.8,
+        "height": 1.5
+      },
+      "color": "#9370DB",
+      "layer": "circulation/stairs"
+    },
+    {
+      "tag": "Stair:Residential - 200mm Max Riser 250mm Tread:198878",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        0.75
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "depth": 0.8,
+        "height": 1.5
+      },
+      "color": "#9370DB",
+      "layer": "circulation/stairs"
+    },
+    {
+      "tag": "Stair:Residential - 200mm Max Riser 250mm Tread:151086:1",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        1.525
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.914,
+        "depth": 3.772,
+        "height": 3.05
+      },
+      "color": "#808080",
+      "layer": "circulation/stairflights"
+    },
+    {
+      "tag": "Stair:Residential - 200mm Max Riser 250mm Tread:198878:1",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        1.525
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.914,
+        "depth": 3.772,
+        "height": 3.05
+      },
+      "color": "#808080",
+      "layer": "circulation/stairflights"
+    },
+    {
+      "tag": "Railing:900mm Handrail Only:151162",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        8.336,
+        -11.825,
+        2.5205
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.04,
+        "depth": 3.75,
+        "height": 2.957
+      },
+      "color": "#808080",
+      "layer": "circulation/railings"
+    },
+    {
+      "tag": "Railing:1100mm Guard Rail:151166",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        7.322,
+        -11.825,
+        2.223
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.09,
+        "depth": 3.805,
+        "height": 3.952
+      },
+      "color": "#808080",
+      "layer": "circulation/railings"
+    },
+    {
+      "tag": "Railing:900mm Handrail Only:198880",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.42,
+        -9.725,
+        2.5205
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.04,
+        "depth": 3.75,
+        "height": 2.957
+      },
+      "color": "#808080",
+      "layer": "circulation/railings"
+    },
+    {
+      "tag": "Railing:1100mm Guard Rail:198972",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        1.385,
+        -9.782,
+        2.223
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.09,
+        "depth": 3.805,
+        "height": 3.952
+      },
+      "color": "#808080",
+      "layer": "circulation/railings"
+    },
+    {
+      "tag": "Stair:Residential - 200mm Max Riser 250mm Tread:151086:1",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        1.55
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.05,
+        "depth": 3.75,
+        "height": 3.1
+      },
+      "color": "#808080",
+      "layer": "structure/members"
+    },
+    {
+      "tag": "Stair:Residential - 200mm Max Riser 250mm Tread:151086:2",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        1.55
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.05,
+        "depth": 3.75,
+        "height": 3.1
+      },
+      "color": "#808080",
+      "layer": "structure/members"
+    },
+    {
+      "tag": "Stair:Residential - 200mm Max Riser 250mm Tread:198878:1",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        1.55
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.05,
+        "depth": 3.75,
+        "height": 3.1
+      },
+      "color": "#808080",
+      "layer": "structure/members"
+    },
+    {
+      "tag": "Stair:Residential - 200mm Max Riser 250mm Tread:198878:2",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.0,
+        0.0,
+        1.55
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.05,
+        "depth": 3.75,
+        "height": 3.1
+      },
+      "color": "#808080",
+      "layer": "structure/members"
+    },
+    {
+      "tag": "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157200",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        2.514,
+        -11.679,
+        4.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "depth": 0.545,
+        "height": 2.0
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157607",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        4.114,
+        -11.134,
+        4.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "depth": 0.545,
+        "height": 2.0
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157950",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        4.683,
+        -11.679,
+        4.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "depth": 0.545,
+        "height": 2.0
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157951",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        6.283,
+        -11.134,
+        4.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "depth": 0.545,
+        "height": 2.0
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157983",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        6.286,
+        -6.121,
+        4.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "depth": 0.545,
+        "height": 2.0
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157984",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        4.686,
+        -6.666,
+        4.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "depth": 0.545,
+        "height": 2.0
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Tall Cabinet-Single Door(2):800 mm:800 mm:158080",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        4.117,
+        -6.121,
+        4.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "depth": 0.545,
+        "height": 2.0
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Tall Cabinet-Single Door(2):800 mm:800 mm:158081",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        2.517,
+        -6.666,
+        4.1
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.8,
+        "depth": 0.545,
+        "height": 2.0
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159159",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        6.334,
+        -6.805,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159262",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        6.334,
+        -7.43,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:160671",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        5.334,
+        -6.805,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:160717",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        3.574,
+        -6.805,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Counter Top w Sink Hole:600mm Depth:600mm Depth:161165",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        6.133,
+        -7.43,
+        0.071
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 3.0,
+        "depth": 0.625,
+        "height": 0.142
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Counter Top:600mm Depth:600mm Depth:161646",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        2.374,
+        -7.43,
+        0.071
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.142
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162230",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        2.574,
+        -5.825,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Counter Top:600mm Depth:600mm Depth:162231",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        3.762,
+        -5.188,
+        0.071
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 4.024,
+        "depth": 0.625,
+        "height": 0.142
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162311",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        3.574,
+        -5.825,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162357",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        4.574,
+        -5.825,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162383",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        5.574,
+        -5.825,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162486",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        2.466,
+        -10.995,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162487",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        2.466,
+        -10.37,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162488",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        3.466,
+        -10.995,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162489",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        5.226,
+        -10.995,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Counter Top w Sink Hole:600mm Depth:600mm Depth:162490",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        2.667,
+        -10.37,
+        0.071
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 3.0,
+        "depth": 0.625,
+        "height": 0.142
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Counter Top:600mm Depth:600mm Depth:162491",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        6.426,
+        -10.37,
+        0.071
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.142
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162493",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        6.226,
+        -11.975,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Counter Top:600mm Depth:600mm Depth:162494",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        5.038,
+        -12.612,
+        0.071
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 4.024,
+        "depth": 0.625,
+        "height": 0.142
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162495",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        5.226,
+        -11.975,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162496",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        4.226,
+        -11.975,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162497",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        3.226,
+        -11.975,
+        0.43
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.625,
+        "height": 0.86
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Sofa:1830mm:1830mm:167283",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        7.653,
+        -1.385,
+        0.4065
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        -1.5708
+      ],
+      "dimensions": {
+        "width": 1.83,
+        "depth": 0.66,
+        "height": 0.813
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Sofa:1830mm:1830mm:167426",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        7.198,
+        -3.27,
+        0.4065
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.83,
+        "depth": 0.66,
+        "height": 0.813
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:167584",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        7.665,
+        -3.695,
+        0.305
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.61,
+        "depth": 0.61,
+        "height": 0.61
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:167655",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        7.965,
+        -1.012,
+        0.305
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.61,
+        "depth": 0.61,
+        "height": 0.61
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Table-Coffee:0915 x 1830 x 0457mm:0915 x 1830 x 0457mm:168031",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        6.265,
+        -2.312,
+        0.2285
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.83,
+        "depth": 0.915,
+        "height": 0.457
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Sofa:1830mm:1830mm:168377",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        1.231,
+        -16.27,
+        0.4065
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        1.5708
+      ],
+      "dimensions": {
+        "width": 1.83,
+        "depth": 0.66,
+        "height": 0.813
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Sofa:1830mm:1830mm:168378",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        1.686,
+        -14.386,
+        0.4065
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.83,
+        "depth": 0.66,
+        "height": 0.813
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:168379",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        1.219,
+        -13.96,
+        0.305
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 0.61,
+        "depth": 0.61,
+        "height": 0.61
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:168380",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.919,
+        -16.643,
+        0.305
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 0.61,
+        "depth": 0.61,
+        "height": 0.61
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Table-Coffee:0915 x 1830 x 0457mm:0915 x 1830 x 0457mm:168381",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        2.619,
+        -15.343,
+        0.2285
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.83,
+        "depth": 0.915,
+        "height": 0.457
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Bed-Standard:1525 x 2007mm - Queen:1525 x 2007mm - Queen:168449",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        2.452,
+        -4.586,
+        3.4175
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        1.5708
+      ],
+      "dimensions": {
+        "width": 1.525,
+        "depth": 2.007,
+        "height": 0.635
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Bed-Standard:1981 x 2032mm - King:1981 x 2032mm - King:168717",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        5.7,
+        -2.438,
+        3.4175
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.981,
+        "depth": 2.032,
+        "height": 0.635
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Bed-Standard:1981 x 2032mm - King:1981 x 2032mm - King:168914",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        3.3,
+        -15.349,
+        3.4175
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.981,
+        "depth": 2.032,
+        "height": 0.635
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Bed-Standard:1525 x 2007mm - Queen:1525 x 2007mm - Queen:169008",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        6.348,
+        -13.256,
+        3.4175
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        -1.5708
+      ],
+      "dimensions": {
+        "width": 1.525,
+        "depth": 2.007,
+        "height": 0.635
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191401",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        6.226,
+        -10.37,
+        1.7
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.344,
+        "height": 0.6
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191557",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        4.466,
+        -10.37,
+        1.7
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.344,
+        "height": 0.6
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191680",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        3.466,
+        -10.37,
+        1.7
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.344,
+        "height": 0.6
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:191768",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        2.466,
+        -10.37,
+        1.7
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        3.1416
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.344,
+        "height": 0.6
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192153",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        2.574,
+        -7.43,
+        1.7
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.344,
+        "height": 0.6
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192331",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        4.334,
+        -7.43,
+        1.7
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.344,
+        "height": 0.6
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192508",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        5.334,
+        -7.43,
+        1.7
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.344,
+        "height": 0.6
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:192610",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        6.334,
+        -7.43,
+        1.7
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 1.0,
+        "depth": 0.344,
+        "height": 0.6
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:204934",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        3.555,
+        -9.32,
+        3.523
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        -1.5708
+      ],
+      "dimensions": {
+        "width": 0.65,
+        "depth": 0.475,
+        "height": 0.82
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:205239",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        3.555,
+        -8.67,
+        3.523
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        -1.5708
+      ],
+      "dimensions": {
+        "width": 0.65,
+        "depth": 0.475,
+        "height": 0.82
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:205264",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        4.77,
+        -8.495,
+        3.523
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        -1.5708
+      ],
+      "dimensions": {
+        "width": 0.65,
+        "depth": 0.475,
+        "height": 0.82
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:205265",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        4.77,
+        -7.845,
+        3.523
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        -1.5708
+      ],
+      "dimensions": {
+        "width": 0.65,
+        "depth": 0.475,
+        "height": 0.82
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Vanity Cabinet-Double Door Sink Unit:450 x 450 mm:450 x 450 mm:205548",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        5.245,
+        -9.383,
+        0.41
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        1.5708
+      ],
+      "dimensions": {
+        "width": 0.45,
+        "depth": 0.475,
+        "height": 0.82
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206283",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        0.764,
+        -5.012,
+        3.4240000000000004
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.61,
+        "depth": 0.61,
+        "height": 0.61
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206502",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        5.276,
+        -0.912,
+        3.4240000000000004
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.61,
+        "depth": 0.61,
+        "height": 0.61
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206675",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        3.712,
+        -17.069,
+        3.4240000000000004
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.61,
+        "depth": 0.61,
+        "height": 0.61
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206876",
+      "class": "IfcCustomElement",
+      "material": "Custom Asset",
+      "position": [
+        8.005,
+        -12.989,
+        3.4240000000000004
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "dimensions": {
+        "width": 0.61,
+        "depth": 0.61,
+        "height": 0.61
+      },
+      "color": "#9370DB",
+      "layer": "interior/furniture"
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187149",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 7.552085804597297,
+        "depth": 7.552085804597297,
+        "height": 0.057,
+        "area": 57.034,
+        "length": 30.20834321838919
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187462",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.7821335527956372,
+        "depth": 1.7821335527956372,
+        "height": 0.057,
+        "area": 3.176,
+        "length": 7.128534211182549
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187470",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.7821335527956372,
+        "depth": 1.7821335527956372,
+        "height": 0.057,
+        "area": 3.176,
+        "length": 7.128534211182549
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187483",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 1.8349386910739007,
+        "depth": 1.8349386910739007,
+        "height": 0.057,
+        "area": 3.367,
+        "length": 7.339754764295603
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187508",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 7.513853871349908,
+        "depth": 7.513853871349908,
+        "height": 0.057,
+        "area": 56.458,
+        "length": 30.05541548539963
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187639",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        3.1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.694997337592429,
+        "depth": 4.694997337592429,
+        "height": 0.057,
+        "area": 22.043,
+        "length": 18.779989350369718
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187649",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        3.1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.694997337592429,
+        "depth": 4.694997337592429,
+        "height": 0.057,
+        "area": 22.043,
+        "length": 18.779989350369718
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187659",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        3.1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 2.5951878544721962,
+        "depth": 2.5951878544721962,
+        "height": 0.057,
+        "area": 6.735,
+        "length": 10.380751417888785
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187667",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        3.1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 3.0499180316854417,
+        "depth": 3.0499180316854417,
+        "height": 0.057,
+        "area": 9.302,
+        "length": 12.199672126741767
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187675",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        3.1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 2.5951878544721962,
+        "depth": 2.5951878544721962,
+        "height": 0.057,
+        "area": 6.735,
+        "length": 10.380751417888785
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187683",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        3.1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 3.0499180316854417,
+        "depth": 3.0499180316854417,
+        "height": 0.057,
+        "area": 9.302,
+        "length": 12.199672126741767
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187691",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        3.1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.694997337592429,
+        "depth": 4.694997337592429,
+        "height": 0.057,
+        "area": 22.043,
+        "length": 18.779989350369718
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    },
+    {
+      "tag": "Compound Ceiling:Gypsum Board:187701",
+      "class": "IfcCovering",
+      "material": "METAL___STUD_LAYER",
+      "position": [
+        4.4,
+        -8.899999999999999,
+        3.1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "dimensions": {
+        "width": 4.694997337592429,
+        "depth": 4.694997337592429,
+        "height": 0.057,
+        "area": 22.043,
+        "length": 18.779989350369718
+      },
+      "color": "#D1D5DB",
+      "layer": "architecture/coverings/ceiling",
+      "covering_type": "CEILING",
+      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - METAL___STUD_LAYER",
+      "transparent": true,
+      "opacity": 0.5
+    }
+  ]
+};
+
+        // Initialize Three.js Scene
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a1e);
+
+        if (THREE.Object3D.DefaultUp) {
+            THREE.Object3D.DefaultUp.set(0, 0, 1);
+        }
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.up.set(0, 0, 1);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444455, 0.6);
+        hemiLight.position.set(0, 0, 50);
+        scene.add(hemiLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight1.position.set(70, -20, 100);
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0xaaccff, 0.4);
+        dirLight2.position.set(70, 60, 80);
+        scene.add(dirLight2);
+
+        // Build UI - Storeys list
+        const storeysListEl = document.getElementById('storeys-list');
+        sceneData.storeys.forEach(s => {
+            const row = document.createElement('div');
+            row.className = 'data-row';
+            row.innerHTML = `<span class="data-label">${s.name} (${s.id})</span><span class="data-value">+${s.elevation.toFixed(2)}m (h: ${s.height.toFixed(2)}m)</span>`;
+            storeysListEl.appendChild(row);
+        });
+
+        // Helper to create circular grid bubble sprites
+        function makeGridSprite(name, color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(25, 30, 42, 0.88)';
+            ctx.beginPath();
+            ctx.arc(64, 64, 52, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = color || '#38bdf8';
+            ctx.lineWidth = 6;
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 44px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(name, 64, 64);
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(0.8, 0.8, 1);
+            return sprite;
+        }
+
+        // Render Grid Lines & Ground
+        const allX = Object.values(sceneData.grids.axes_x);
+        const allY = Object.values(sceneData.grids.axes_y);
+        const minGridX = Math.min(...allX);
+        const maxGridX = Math.max(...allX);
+        const minGridY = Math.min(...allY);
+        const maxGridY = Math.max(...allY);
+        const centerX = (minGridX + maxGridX) / 2;
+        const centerY = (minGridY + maxGridY) / 2;
+        const gridSize = Math.max(maxGridX - minGridX, maxGridY - minGridY) * 1.4;
+
+        // Actual Project Grid Lines & Grids Group
+        const gridGroup = new THREE.Group();
+        scene.add(gridGroup);
+
+        const gridLineMat = new THREE.LineDashedMaterial({
+            color: 0x475569,
+            dashSize: 1,
+            gapSize: 0.5,
+            linewidth: 1
+        });
+
+        // X Grids
+        Object.entries(sceneData.grids.axes_x).forEach(([name, xVal]) => {
+            const pts = [
+                new THREE.Vector3(xVal, minGridY - 6, 0),
+                new THREE.Vector3(xVal, maxGridY + 6, 0)
+            ];
+            const geom = new THREE.BufferGeometry().setFromPoints(pts);
+            const line = new THREE.Line(geom, gridLineMat);
+            line.computeLineDistances();
+            gridGroup.add(line);
+
+            const topBubble = makeGridSprite(name, '#38bdf8');
+            topBubble.position.set(xVal, maxGridY + 8, 0.1);
+            gridGroup.add(topBubble);
+            const botBubble = makeGridSprite(name, '#38bdf8');
+            botBubble.position.set(xVal, minGridY - 8, 0.1);
+            gridGroup.add(botBubble);
+        });
+
+        // Y Grids
+        Object.entries(sceneData.grids.axes_y).forEach(([name, yVal]) => {
+            const pts = [
+                new THREE.Vector3(minGridX - 6, yVal, 0),
+                new THREE.Vector3(maxGridX + 6, yVal, 0)
+            ];
+            const geom = new THREE.BufferGeometry().setFromPoints(pts);
+            const line = new THREE.Line(geom, gridLineMat);
+            line.computeLineDistances();
+            gridGroup.add(line);
+
+            const leftBubble = makeGridSprite(name, '#4ade80');
+            leftBubble.position.set(minGridX - 8, yVal, 0.1);
+            gridGroup.add(leftBubble);
+            const rightBubble = makeGridSprite(name, '#4ade80');
+            rightBubble.position.set(maxGridX + 8, yVal, 0.1);
+            gridGroup.add(rightBubble);
+        });
+
+        const axesHelper = new THREE.AxesHelper(15);
+        axesHelper.position.set(0, 0, 0.05);
+        gridGroup.add(axesHelper);
+
+        const gridHelper = new THREE.GridHelper(gridSize, 20, 0x223046, 0x15202e);
+        gridHelper.rotation.x = Math.PI / 2;
+        gridHelper.position.set(centerX, centerY, -0.05);
+        gridGroup.add(gridHelper);
+
+        sceneData.storeys.forEach(s => {
+            if (s.elevation > 0) {
+                const storeyGrid = new THREE.GridHelper(gridSize, 10, 0x334466, 0x112233);
+                storeyGrid.rotation.x = Math.PI / 2;
+                storeyGrid.position.set(centerX, centerY, s.elevation);
+                gridGroup.add(storeyGrid);
+            }
+        });
+
+        // Render Elements
+        const pickableObjects = [];
+
+        sceneData.elements.forEach(data => {
+            let object3D;
+            const dim = data.dimensions;
+
+            if (data.geometry_type === "line" || data.geometry_type === "line_loop") {
+                const points = data.points.map(p => new THREE.Vector3(...p));
+                const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
+                const lineMat = new THREE.LineBasicMaterial({
+                    color: new THREE.Color(data.color),
+                    linewidth: data.linewidth || 2,
+                });
+                object3D = (data.geometry_type === "line_loop")
+                    ? new THREE.LineLoop(lineGeom, lineMat)
+                    : new THREE.Line(lineGeom, lineMat);
+            } else if (data.geometry_type === "polygon") {
+                const geom = new THREE.BufferGeometry();
+                const vertices = [];
+                const pts = data.points;
+                if (pts.length === 3) {
+                    vertices.push(...pts[0], ...pts[1], ...pts[2]);
+                } else if (pts.length >= 4) {
+                    for (let i = 1; i < pts.length - 1; i++) {
+                        vertices.push(...pts[0], ...pts[i], ...pts[i + 1]);
+                    }
+                }
+                geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                geom.computeVertexNormals();
+
+                const matOptions = {
+                    color: new THREE.Color(data.color),
+                    roughness: 0.6,
+                    metalness: 0.1,
+                    side: THREE.DoubleSide,
+                };
+                const mat = new THREE.MeshStandardMaterial(matOptions);
+                const mesh = new THREE.Mesh(geom, mat);
+
+                const edges = new THREE.EdgesGeometry(geom);
+                const line = new THREE.LineSegments(
+                    edges,
+                    new THREE.LineBasicMaterial({ color: 0x111111, linewidth: 1 })
+                );
+                mesh.add(line);
+                object3D = mesh;
+            } else {
+                let geometry;
+                if (data.class === "IfcColumn") {
+                    geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
+                } else if (data.class === "IfcBeam") {
+                    geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
+                } else if (data.class === "IfcWall") {
+                    geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
+                } else if (data.class === "IfcDoor" || data.class === "IfcWindow") {
+                    geometry = new THREE.BoxGeometry(dim.width, dim.thickness, dim.height);
+                } else {
+                    geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
+                }
+
+                const matOptions = {
+                    color: new THREE.Color(data.color),
+                    roughness: 0.5,
+                    metalness: 0.1
+                };
+                if (data.transparent) {
+                    matOptions.transparent = true;
+                    matOptions.opacity = data.opacity || 0.6;
+                }
+
+                const material = new THREE.MeshStandardMaterial(matOptions);
+                const mesh = new THREE.Mesh(geometry, material);
+
+                mesh.position.set(...data.position);
+                mesh.rotation.set(...data.rotation);
+
+                const edges = new THREE.EdgesGeometry(geometry);
+                const line = new THREE.LineSegments(
+                    edges,
+                    new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 1 })
+                );
+                mesh.add(line);
+                object3D = mesh;
+            }
+
+            object3D.userData = data;
+
+            let layerPath = data.layer || "general/other";
+            if (!layerPath.includes("/")) {
+                layerPath = "general/" + layerPath;
+            }
+            object3D.userData.layer = layerPath;
+
+            scene.add(object3D);
+            pickableObjects.push(object3D);
+        });
+
+        // Camera position setup
+        camera.position.set(centerX, centerY, 160);
+        camera.up.set(0, 1, 0);
+        controls.target.set(centerX, centerY, 0);
+        controls.minPolarAngle = 0;
+        controls.maxPolarAngle = 0;
+        controls.update();
+
+        window.setView = function(mode) {
+            if (mode === 'top') {
+                camera.position.set(centerX, centerY, 160);
+                camera.up.set(0, 1, 0);
+                controls.target.set(centerX, centerY, 0);
+                controls.minPolarAngle = 0;
+                controls.maxPolarAngle = 0;
+            } else if (mode === 'iso') {
+                camera.position.set(centerX + 60, centerY - 80, 60);
+                camera.up.set(0, 0, 1);
+                controls.target.set(centerX, centerY, 0);
+                controls.minPolarAngle = 0;
+                controls.maxPolarAngle = Math.PI;
+            } else if (mode === 'front') {
+                camera.position.set(centerX, minGridY - 90, 15);
+                camera.up.set(0, 0, 1);
+                controls.target.set(centerX, centerY, 0);
+                controls.minPolarAngle = 0;
+                controls.maxPolarAngle = Math.PI;
+            } else if (mode === 'side') {
+                camera.position.set(maxGridX + 70, centerY, 15);
+                camera.up.set(0, 0, 1);
+                controls.target.set(centerX, centerY, 0);
+                controls.minPolarAngle = 0;
+                controls.maxPolarAngle = Math.PI;
+            }
+            controls.update();
+        };
+
+        // Hierarchical Tree Layer Explorer Engine
+        const layerTreeRoot = { children: {}, count: 0, path: "" };
+
+        function buildLayerTree() {
+            pickableObjects.forEach(obj => {
+                let layerPath = obj.userData.layer || "general/other";
+                if (!layerPath.includes("/")) {
+                    layerPath = "general/" + layerPath;
+                }
+                const parts = layerPath.split("/");
+                let curr = layerTreeRoot;
+                curr.count++;
+                let pathSoFar = "";
+
+                parts.forEach((part, idx) => {
+                    pathSoFar = pathSoFar ? (pathSoFar + "/" + part) : part;
+                    if (!curr.children[part]) {
+                        curr.children[part] = {
+                            name: part,
+                            path: pathSoFar,
+                            children: {},
+                            count: 0,
+                            checked: true,
+                            expanded: true,
+                            objects: []
+                        };
+                    }
+                    curr = curr.children[part];
+                    curr.count++;
+                    if (idx === parts.length - 1) {
+                        curr.objects.push(obj);
+                    }
+                });
+            });
+
+            layerTreeRoot.children["general"] = layerTreeRoot.children["general"] || {
+                name: "general",
+                path: "general",
+                children: {},
+                count: 0,
+                checked: true,
+                expanded: true,
+                objects: []
+            };
+            layerTreeRoot.children["general"].children["grids"] = {
+                name: "grids",
+                path: "general/grids",
+                children: {},
+                count: 1,
+                checked: true,
+                expanded: true,
+                objects: []
+            };
+            layerTreeRoot.children["general"].count++;
+        }
+
+        function renderLayerTree(node, containerEl) {
+            containerEl.innerHTML = "";
+            const keys = Object.keys(node.children).sort();
+
+            keys.forEach(key => {
+                const childNode = node.children[key];
+                const nodeEl = document.createElement("div");
+                nodeEl.className = "tree-node";
+                nodeEl.dataset.path = childNode.path;
+
+                const hasChildren = Object.keys(childNode.children).length > 0;
+                const folderIcon = hasChildren ? (childNode.expanded ? "📂" : "📁") : "📄";
+                const expanderSymbol = hasChildren ? (childNode.expanded ? "▼" : "▶") : "";
+
+                const contentEl = document.createElement("div");
+                contentEl.className = "tree-node-content";
+
+                const expanderEl = document.createElement("span");
+                expanderEl.className = "tree-expander";
+                expanderEl.textContent = expanderSymbol;
+                expanderEl.onclick = (e) => {
+                    e.stopPropagation();
+                    childNode.expanded = !childNode.expanded;
+                    renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+                };
+
+                const checkboxEl = document.createElement("input");
+                checkboxEl.type = "checkbox";
+                checkboxEl.className = "tree-checkbox";
+                checkboxEl.checked = childNode.checked;
+                checkboxEl.onclick = (e) => {
+                    e.stopPropagation();
+                    setNodeChecked(childNode, checkboxEl.checked);
+                    update3DVisibility();
+                    renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+                };
+
+                const labelEl = document.createElement("span");
+                labelEl.className = "tree-label";
+                labelEl.innerHTML = `${folderIcon} ${childNode.name}`;
+                labelEl.onclick = () => {
+                    if (hasChildren) {
+                        childNode.expanded = !childNode.expanded;
+                        renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+                    }
+                };
+
+                const countEl = document.createElement("span");
+                countEl.className = "tree-count";
+                countEl.textContent = `(${childNode.count})`;
+
+                contentEl.appendChild(expanderEl);
+                contentEl.appendChild(checkboxEl);
+                contentEl.appendChild(labelEl);
+                contentEl.appendChild(countEl);
+                nodeEl.appendChild(contentEl);
+
+                if (hasChildren) {
+                    const childrenContainer = document.createElement("div");
+                    childrenContainer.className = "tree-children" + (childNode.expanded ? "" : " collapsed");
+                    renderLayerTree(childNode, childrenContainer);
+                    nodeEl.appendChild(childrenContainer);
+                }
+
+                containerEl.appendChild(nodeEl);
+            });
+        }
+
+        function setNodeChecked(node, isChecked) {
+            node.checked = isChecked;
+            Object.values(node.children).forEach(child => setNodeChecked(child, isChecked));
+        }
+
+        function update3DVisibility() {
+            function checkObjectVisible(obj) {
+                let layerPath = obj.userData.layer || "general/other";
+                if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
+                const parts = layerPath.split("/");
+                let curr = layerTreeRoot;
+                for (let part of parts) {
+                    if (!curr.children[part]) return true;
+                    curr = curr.children[part];
+                    if (!curr.checked) return false;
+                }
+                return true;
+            }
+
+            pickableObjects.forEach(obj => {
+                obj.visible = checkObjectVisible(obj);
+            });
+
+            if (layerTreeRoot.children["general"] && layerTreeRoot.children["general"].children["grids"]) {
+                gridGroup.visible = layerTreeRoot.children["general"].children["grids"].checked && layerTreeRoot.children["general"].checked;
+            }
+        }
+
+        window.setAllLayers = function(visible) {
+            setNodeChecked(layerTreeRoot, visible);
+            update3DVisibility();
+            renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+        };
+
+        window.toggleExpandAll = function(expanded) {
+            function setExpanded(node) {
+                node.expanded = expanded;
+                Object.values(node.children).forEach(child => setExpanded(child));
+            }
+            setExpanded(layerTreeRoot);
+            renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+        };
+
+        window.filterLayerTree = function(keyword) {
+            const query = keyword.trim().toLowerCase();
+            const nodes = document.querySelectorAll("#layer-tree-container .tree-node");
+            nodes.forEach(n => {
+                const path = (n.dataset.path || "").toLowerCase();
+                if (!query || path.includes(query)) {
+                    n.style.display = "";
+                } else {
+                    n.style.display = "none";
+                }
+            });
+        };
+
+        buildLayerTree();
+        renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
+
+        // Select first element by default if available
+        if (sceneData.elements.length > 0) {
+            showInspector(sceneData.elements[0]);
+        }
+
+        // Element Selection / Raycasting
+        const raycaster = new THREE.Raycaster();
+        raycaster.params.Line = { threshold: 0.35 };
+        const mouse = new THREE.Vector2();
+        let selectedMesh = null;
+        let originalColor = null;
+
+        window.addEventListener('click', (event) => {
+            if (event.target.closest('.ui-panel')) return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(pickableObjects);
+
+            if (selectedMesh && originalColor) {
+                selectedMesh.material.color.copy(originalColor);
+                selectedMesh = null;
+            }
+
+            if (intersects.length > 0) {
+                selectedMesh = intersects[0].object;
+                originalColor = selectedMesh.material.color.clone();
+                selectedMesh.material.color.setHex(0xffaa00);
+
+                showInspector(selectedMesh.userData);
+            } else {
+                showInspector(null);
+            }
+        });
+
+        function showInspector(data) {
+            const contentEl = document.getElementById('inspector-content');
+            if (!data) {
+                contentEl.innerHTML = '<p style="color: #888; font-size: 0.85rem; font-style: italic;">No element selected</p>';
+                return;
+            }
+
+            let dimText = '-';
+            if (data.dimensions) {
+                if (data.dimensions.area !== undefined) {
+                    dimText = `${data.dimensions.area.toFixed(2)} m² (Slope: ${data.dimensions.slope_degrees || 0}°)`;
+                } else if (data.dimensions.length !== undefined) {
+                    dimText = `${data.dimensions.length.toFixed(2)}m (L)`;
+                    if (data.dimensions.width !== undefined) dimText += ` × ${data.dimensions.width.toFixed(2)}m (W)`;
+                    if (data.dimensions.thickness !== undefined) dimText += ` × ${data.dimensions.thickness.toFixed(2)}m (Thk)`;
+                    if (data.dimensions.height !== undefined) dimText += ` × ${data.dimensions.height.toFixed(2)}m (H)`;
+                    if (data.dimensions.depth !== undefined) dimText += ` × ${data.dimensions.depth.toFixed(2)}m (D)`;
+                } else if (data.dimensions.width !== undefined) {
+                    dimText = `${data.dimensions.width.toFixed(2)}m (W) × ${data.dimensions.depth.toFixed(2)}m (D) × ${data.dimensions.height.toFixed(2)}m (H)`;
+                }
+            }
+
+            const posText = data.position ? `(${data.position[0].toFixed(2)}, ${data.position[1].toFixed(2)}, ${data.position[2].toFixed(2)})` : '-';
+
+            let memberRow = '';
+            if (data.member_name) {
+                const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${data.color};margin-right:6px;"></span>` : '';
+                memberRow = `<div class="data-row"><span class="data-label">ชิ้นส่วน (Member)</span><span class="data-value">${colorDot}${data.member_name}</span></div>`;
+            }
+
+            let profileRow = '';
+            if (data.profile) {
+                profileRow = `<div class="data-row"><span class="data-label">หน้าตัด (Profile)</span><span class="data-value">${data.profile}</span></div>`;
+            }
+
+            let mepRow = '';
+            if (data.system_name_th) {
+                const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${data.color};margin-right:6px;"></span>` : '';
+                mepRow += `<div class="data-row"><span class="data-label">ระบบ (System)</span><span class="data-value">${colorDot}${data.system_name_th}</span></div>`;
+            }
+            if (data.fixture_name_th) {
+                const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${data.color};margin-right:6px;"></span>` : '';
+                mepRow += `<div class="data-row"><span class="data-label">อุปกรณ์ (Fixture)</span><span class="data-value">${colorDot}${data.fixture_name_th}</span></div>`;
+            }
+            if (data.dimensions && data.dimensions.diameter !== undefined) {
+                const dia_mm = (data.dimensions.diameter * 1000).toFixed(0);
+                mepRow += `<div class="data-row"><span class="data-label">ขนาดท่อ (Dia)</span><span class="data-value">Ø ${dia_mm} mm (${data.dimensions.diameter}m)</span></div>`;
+            }
+            if (data.dimensions && data.dimensions.slope) {
+                const slope_pct = (data.dimensions.slope * 100).toFixed(1);
+                mepRow += `<div class="data-row"><span class="data-label">ความลาดชัน (Slope)</span><span class="data-value">${slope_pct}% (1:${Math.round(1/data.dimensions.slope)})</span></div>`;
+            }
+            if (data.wattage) {
+                mepRow += `<div class="data-row"><span class="data-label">กำลังไฟฟ้า (Power)</span><span class="data-value">${data.wattage} W</span></div>`;
+            }
+            if (data.circuits_count) {
+                mepRow += `<div class="data-row"><span class="data-label">จำนวนวงจร (Circuits)</span><span class="data-value">${data.circuits_count} วงจรย่อย</span></div>`;
+            }
+            if (data.cooling_capacity_btu) {
+                mepRow += `<div class="data-row"><span class="data-label">ขนาดทำความเย็น (Cooling)</span><span class="data-value">${data.cooling_capacity_btu.toLocaleString()} BTU/hr</span></div>`;
+            }
+            if (data.flow_rate_cfm) {
+                mepRow += `<div class="data-row"><span class="data-label">อัตราลมระบาย (Air Flow)</span><span class="data-value">${data.flow_rate_cfm} CFM</span></div>`;
+            }
+            if (data.covering_type) {
+                const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${data.color};margin-right:6px;"></span>` : '';
+                mepRow += `<div class="data-row"><span class="data-label">ประเภทงานตกแต่ง</span><span class="data-value">${colorDot}${data.covering_type}</span></div>`;
+            }
+
+
+            contentEl.innerHTML = `
+                <div style="margin-bottom: 8px;"><span class="badge">${data.class}</span></div>
+                <div class="data-row"><span class="data-label">Tag</span><span class="data-value">${data.tag}</span></div>
+                <div class="data-row"><span class="data-label">Layer</span><span class="data-value">${data.layer || 'general/other'}</span></div>
+                ${memberRow}
+                ${profileRow}
+                ${mepRow}
+                <div class="data-row"><span class="data-label">Material</span><span class="data-value">${data.material || '-'}</span></div>
+                <div class="data-row"><span class="data-label">Dimensions</span><span class="data-value">${dimText}</span></div>
+                <div class="data-row"><span class="data-label">Position</span><span class="data-value">${posText}</span></div>
+            `;
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Responsive resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

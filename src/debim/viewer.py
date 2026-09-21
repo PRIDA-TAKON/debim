@@ -410,7 +410,15 @@ def generate_viewer_html(
     # Custom Elements
     for custom in resolved.custom_elements:
         tag_upper = custom.tag.upper()
-        if "F2" in tag_upper or "FOOTING" in tag_upper:
+        rot = list(custom.rotation) if custom.rotation else [0.0, 0.0, 0.0]
+
+        if custom.dimensions:
+            w = custom.dimensions.width
+            d = custom.dimensions.depth if custom.dimensions.depth is not None else 0.8
+            h = custom.dimensions.height
+            pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
+            color = "#9370DB" if "furniture" in custom.layer else "#808080"
+        elif "F2" in tag_upper or "FOOTING" in tag_upper:
             w, d, h = 0.8, 1.5, 0.8
             pos = [custom.position[0], custom.position[1], custom.position[2] - h / 2.0]
             color = "#8A8A8E"
@@ -436,7 +444,7 @@ def generate_viewer_html(
             "class": "IfcCustomElement",
             "material": "Custom Asset",
             "position": pos,
-            "rotation": [0, 0, 0],
+            "rotation": rot,
             "dimensions": {
                 "width": w,
                 "depth": d,
@@ -1193,7 +1201,7 @@ def generate_viewer_html(
             const texture = new THREE.CanvasTexture(canvas);
             const spriteMat = new THREE.SpriteMaterial({{ map: texture, depthTest: false }});
             const sprite = new THREE.Sprite(spriteMat);
-            sprite.scale.set(4, 4, 1);
+            sprite.scale.set(0.8, 0.8, 1);
             return sprite;
         }}
 
