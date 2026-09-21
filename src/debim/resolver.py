@@ -9,6 +9,7 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 from pydantic import BaseModel, ConfigDict
 
 from debim.schema import (
+    Dimensions,
     IfcAirTerminal,
     IfcBeam,
     IfcCableCarrierSegment,
@@ -191,6 +192,8 @@ class ResolvedCustomElement(BaseModel):
     tag: str
     element: IfcCustomElement
     position: Tuple[float, float, float]
+    rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    dimensions: Optional[Dimensions] = None
     layer: str = "general/custom"
 
 
@@ -884,11 +887,14 @@ class SpatialResolver:
         storey = self.get_storey(custom.placement.storey)
         pos_x, pos_y, pos_z = custom.placement.position
         world_pos = (pos_x, pos_y, storey.elevation + pos_z)
+        rot = custom.placement.rotation if custom.placement.rotation is not None else (0.0, 0.0, 0.0)
 
         return ResolvedCustomElement(
             tag=custom.tag,
             element=custom,
             position=world_pos,
+            rotation=rot,
+            dimensions=custom.dimensions,
             layer=derive_default_layer(custom),
         )
 

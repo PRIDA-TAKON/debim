@@ -412,8 +412,26 @@ def generate_viewer_html(
         tag_upper = custom.tag.upper()
         tag_lower = custom.tag.lower()
         layer_lower = (custom.layer or "").lower()
+        rot = list(custom.rotation) if custom.rotation else [0.0, 0.0, 0.0]
 
-        if "F2" in tag_upper or "FOOTING" in tag_upper:
+        if custom.dimensions:
+            w = custom.dimensions.width
+            d = custom.dimensions.depth if custom.dimensions.depth is not None else 0.8
+            h = custom.dimensions.height
+            pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
+            if "furniture" in layer_lower or any(kw in tag_lower for kw in ["chair", "desk", "table", "bed", "sofa", "cabinet"]):
+                color = "#D4A373" if any(kw in tag_lower for kw in ["desk", "table"]) else ("#C5A880" if "bed" in tag_lower else "#B58A63")
+            elif any(kw in tag_lower for kw in ["water closet", "wc", "lavatory", "sink", "bath tub", "bathtub", "shower"]) or "sanitary" in layer_lower:
+                color = "#FFFFFF"
+            elif any(kw in layer_lower for kw in ["duct", "hvac"]):
+                color = "#CBD5E1"
+            elif any(kw in layer_lower for kw in ["electrical", "elec"]):
+                color = "#FDE047" if "light" in tag_lower else "#F97316"
+            elif any(kw in layer_lower for kw in ["pipe", "plumbing"]):
+                color = "#0284C7" if "cold" in tag_lower else ("#EF4444" if "hot" in tag_lower else "#64748B")
+            else:
+                color = "#9370DB" if "furniture" in layer_lower else "#808080"
+        elif "F2" in tag_upper or "FOOTING" in tag_upper:
             w, d, h = 0.9, 0.9, 0.35
             pos = [custom.position[0], custom.position[1], custom.position[2] - h / 2.0]
             color = "#64748B"
@@ -537,7 +555,7 @@ def generate_viewer_html(
             "class": "IfcCustomElement",
             "material": "Custom Asset",
             "position": pos,
-            "rotation": [0, 0, 0],
+            "rotation": rot,
             "dimensions": {
                 "width": w,
                 "depth": d,

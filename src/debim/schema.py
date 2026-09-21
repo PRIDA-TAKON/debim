@@ -172,6 +172,7 @@ class IfcBeam(BaseModel):
 # Wall children (Doors / Windows)
 class Dimensions(BaseModel):
     width: float
+    depth: Optional[float] = None
     height: float
 
 
@@ -366,6 +367,7 @@ class IfcStair(BaseModel):
 class CustomElementPlacement(BaseModel):
     position: Tuple[float, float, float]
     storey: str
+    rotation: Optional[Tuple[float, float, float]] = None
 
 
 class IfcCustomElement(BaseModel):
@@ -374,6 +376,7 @@ class IfcCustomElement(BaseModel):
     name: str
     source: str
     placement: CustomElementPlacement
+    dimensions: Optional[Dimensions] = None
     layer: Optional[str] = None
 
 
