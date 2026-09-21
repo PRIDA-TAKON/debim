@@ -569,6 +569,11 @@ def import_ifc(
     output: Path = typer.Option(
         Path("project.yaml"), "--output", "-o", help="Output project manifest path"
     ),
+    bake_assets: bool = typer.Option(
+        False,
+        "--bake-assets/--no-bake-assets",
+        help="Automated GLB asset baker using IfcOpenShell and trimesh to export complex 3D geometry into lightweight .glb assets",
+    ),
 ):
     """Import an IFC4/IFC2X3 file and convert to declarative project.yaml for QTO & Cost estimation"""
     if not ifc_path.exists():
@@ -578,7 +583,8 @@ def import_ifc(
     console.print(f"[bold green]Importing IFC:[/bold green] {ifc_path} -> [cyan]{output}[/cyan]")
     try:
         from debim.importer import import_ifc_to_manifest
-        manifest = import_ifc_to_manifest(ifc_path)
+        assets_dir = output.parent / "assets" if output.parent != Path(".") else Path("assets")
+        manifest = import_ifc_to_manifest(ifc_path, bake_assets=bake_assets, assets_dir=assets_dir)
 
         import json
         data = json.loads(manifest.model_dump_json(by_alias=True, exclude_none=True))
@@ -590,6 +596,7 @@ def import_ifc(
                 f"[bold green]IFC Successfully Imported to Declarative BIM![/bold green]\n"
                 f"[cyan]Output YAML:[/cyan] {output}\n"
                 f"[yellow]Elements Extracted:[/yellow] {len(manifest.elements)} elements\n"
+                f"[magenta]Asset Baking Enabled:[/magenta] {bake_assets}\n"
                 f"[dim]Run 'bim qto -m {output}' to calculate quantities & cost.[/dim]",
                 title="[bold green]debim IFC Importer[/bold green]",
             )

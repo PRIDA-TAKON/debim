@@ -553,6 +553,7 @@ def generate_viewer_html(
         elements_data.append({
             "tag": custom.tag,
             "class": "IfcCustomElement",
+            "source": custom.element.source if custom.element and hasattr(custom.element, "source") else None,
             "material": "Custom Asset",
             "position": pos,
             "rotation": rot,
@@ -954,6 +955,7 @@ def generate_viewer_html(
     <!-- CDN-hosted Three.js and OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         * {{
             box-sizing: border-box;
@@ -1200,10 +1202,35 @@ def generate_viewer_html(
         <button class="view-btn" onclick="setView('front')">↔️ ด้านหน้า (Front)</button>
         <button class="view-btn" onclick="setView('side')">↕️ ด้านข้าง (Side)</button>
         <button id="xray-btn" class="view-btn" onclick="toggleXRay()" style="background:#0284c7; color:#fff; font-weight:600; border-color:#38bdf8;">👁️ ผนังโปร่งใส (X-Ray)</button>
+        <button id="section-btn" class="view-btn" onclick="toggleSectionPlaneUI()" style="background:#8b5cf6; color:#fff; font-weight:600; border-color:#a78bfa;">✂️ ตัดระนาบ (Section Plane)</button>
         <button class="view-btn" onclick="filterDiscipline('mep')" title="แสดงเฉพาะงานระบบ">⚡ MEP</button>
         <button class="view-btn" onclick="filterDiscipline('interior')" title="แสดงเฉพาะเฟอร์นิเจอร์">🛋️ เฟอร์นิเจอร์</button>
         <button class="view-btn" onclick="filterDiscipline('structure')" title="แสดงเฉพาะโครงสร้าง">🏗️ โครงสร้าง</button>
         <button class="view-btn" onclick="filterDiscipline('all')" title="แสดงทั้งหมด">🌐 ทั้งหมด</button>
+    </div>
+
+    <div id="section-plane-panel" class="ui-panel" style="display: none; top: 60px; left: 50%; transform: translateX(-50%); width: 380px; z-index: 1000;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h1 style="font-size: 0.95rem; color: #a78bfa;">✂️ 3D Section Plane / Floor Slicer</h1>
+            <button class="batch-btn" onclick="toggleSectionPlaneUI()">✕</button>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span class="data-label">Enable Section Cut:</span>
+            <input type="checkbox" id="section-enable-toggle" onchange="setSectionCutEnabled(this.checked)">
+        </div>
+        <div id="section-controls" style="opacity: 0.5; pointer-events: none; transition: opacity 0.2s;">
+            <div class="data-row" style="margin-bottom: 4px;">
+                <span class="data-label">Cut Elevation (Z):</span>
+                <span class="data-value" id="cut-z-display">0.00 m</span>
+            </div>
+            <input type="range" id="cut-height-slider" min="0" max="10" step="0.1" value="10" style="width: 100%; margin-bottom: 8px;" oninput="onSectionSliderChange(this.value)">
+            <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                <button class="batch-btn" style="flex: 1;" onclick="flipSectionDirection()">🔄 Flip Cut Dir (<span id="dir-label">Clip Above</span>)</button>
+                <button class="batch-btn" style="flex: 1;" onclick="resetSectionPlane()">↺ Reset View</button>
+            </div>
+            <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Quick Storey Slices:</div>
+            <div id="storey-quick-btns" style="display: flex; gap: 4px; flex-wrap: wrap;"></div>
+        </div>
     </div>
 
     <div id="layer-explorer-panel" class="ui-panel">
@@ -1265,7 +1292,93 @@ def generate_viewer_html(
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.shadowMap.enabled = true;
+        renderer.localClippingEnabled = true;
         container.appendChild(renderer.domElement);
+
+        const gltfLoader = new THREE.GLTFLoader();
+
+        // Section Plane Slicer Engine
+        let isSectionCutEnabled = false;
+        let sectionCutDir = -1; // -1: clip above, +1: clip below
+        let currentCutZ = 10.0;
+        let clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), currentCutZ);
+
+        window.toggleSectionPlaneUI = function() {{
+            const panel = document.getElementById('section-plane-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }};
+
+        window.setSectionCutEnabled = function(enabled) {{
+            isSectionCutEnabled = enabled;
+            const controls = document.getElementById('section-controls');
+            controls.style.opacity = enabled ? '1' : '0.5';
+            controls.style.pointerEvents = enabled ? 'auto' : 'none';
+            updateSectionPlane();
+        }};
+
+        window.onSectionSliderChange = function(val) {{
+            currentCutZ = parseFloat(val);
+            document.getElementById('cut-z-display').textContent = currentCutZ.toFixed(2) + ' m';
+            updateSectionPlane();
+        }};
+
+        window.flipSectionDirection = function() {{
+            sectionCutDir *= -1;
+            document.getElementById('dir-label').textContent = sectionCutDir === -1 ? 'Clip Above' : 'Clip Below';
+            updateSectionPlane();
+        }};
+
+        const storeyElevations = sceneData.storeys.map(s => s.elevation);
+        const minCutZ = storeyElevations.length > 0 ? Math.min(...storeyElevations) - 1.0 : -2.0;
+        const maxCutZ = storeyElevations.length > 0 ? Math.max(...storeyElevations) + 4.0 : 15.0;
+
+        window.resetSectionPlane = function() {{
+            const toggle = document.getElementById('section-enable-toggle');
+            toggle.checked = false;
+            setSectionCutEnabled(false);
+            currentCutZ = maxCutZ;
+            document.getElementById('cut-height-slider').value = currentCutZ;
+            document.getElementById('cut-z-display').textContent = currentCutZ.toFixed(2) + ' m';
+        }};
+
+        function updateSectionPlane() {{
+            if (isSectionCutEnabled) {{
+                const nz = sectionCutDir;
+                clipPlane.normal.set(0, 0, nz);
+                clipPlane.constant = sectionCutDir === -1 ? currentCutZ : -currentCutZ;
+                renderer.clippingPlanes = [clipPlane];
+            }} else {{
+                renderer.clippingPlanes = [];
+            }}
+        }}
+
+        // Setup Section Plane slider & quick buttons
+        setTimeout(() => {{
+            const slider = document.getElementById('cut-height-slider');
+            if (slider) {{
+                slider.min = minCutZ.toFixed(2);
+                slider.max = maxCutZ.toFixed(2);
+                slider.value = maxCutZ.toFixed(2);
+                currentCutZ = maxCutZ;
+                document.getElementById('cut-z-display').textContent = currentCutZ.toFixed(2) + ' m';
+            }}
+            const quickBtnsContainer = document.getElementById('storey-quick-btns');
+            if (quickBtnsContainer) {{
+                sceneData.storeys.forEach(s => {{
+                    const btn = document.createElement('button');
+                    btn.className = 'batch-btn';
+                    btn.textContent = `${{s.name}} (+${{s.elevation.toFixed(1)}}m)`;
+                    btn.onclick = () => {{
+                        document.getElementById('section-enable-toggle').checked = true;
+                        setSectionCutEnabled(true);
+                        const targetZ = s.elevation + 1.2;
+                        slider.value = targetZ.toFixed(2);
+                        onSectionSliderChange(targetZ);
+                    }};
+                    quickBtnsContainer.appendChild(btn);
+                }});
+            }}
+        }}, 100);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -1405,9 +1518,87 @@ def generate_viewer_html(
         // Render Elements
         const pickableObjects = [];
 
+        function renderProceduralBox(data) {{
+            let geometry;
+            const dim = data.dimensions || {{ width: 1, depth: 1, height: 1 }};
+            if (data.class === "IfcColumn") {{
+                geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
+            }} else if (data.class === "IfcBeam") {{
+                geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
+            }} else if (data.class === "IfcWall") {{
+                geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
+            }} else if (data.class === "IfcDoor" || data.class === "IfcWindow") {{
+                geometry = new THREE.BoxGeometry(dim.width, dim.thickness, dim.height);
+            }} else {{
+                geometry = new THREE.BoxGeometry(dim.width || 1, dim.depth || 1, dim.height || 1);
+            }}
+
+            const matOptions = {{
+                color: new THREE.Color(data.color || "#808080"),
+                roughness: 0.5,
+                metalness: 0.1
+            }};
+            if (data.transparent) {{
+                matOptions.transparent = true;
+                matOptions.opacity = data.opacity || 0.6;
+            }}
+
+            const material = new THREE.MeshStandardMaterial(matOptions);
+            const mesh = new THREE.Mesh(geometry, material);
+
+            if (data.position) mesh.position.set(...data.position);
+            if (data.rotation) mesh.rotation.set(...data.rotation);
+
+            const edges = new THREE.EdgesGeometry(geometry);
+            const line = new THREE.LineSegments(
+                edges,
+                new THREE.LineBasicMaterial({{ color: 0x000000, linewidth: 1 }})
+            );
+            mesh.add(line);
+            mesh.userData = data;
+
+            let layerPath = data.layer || "general/other";
+            if (!layerPath.includes("/")) {{
+                layerPath = "general/" + layerPath;
+            }}
+            mesh.userData.layer = layerPath;
+
+            scene.add(mesh);
+            pickableObjects.push(mesh);
+        }}
+
         sceneData.elements.forEach(data => {{
             let object3D;
-            const dim = data.dimensions;
+
+            if (data.source && (data.source.endsWith(".glb") || data.source.endsWith(".gltf"))) {{
+                gltfLoader.load(
+                    data.source,
+                    function (gltf) {{
+                        const model = gltf.scene;
+                        if (data.position) model.position.set(...data.position);
+                        if (data.rotation) model.rotation.set(...data.rotation);
+                        model.userData = data;
+                        let layerPath = data.layer || "general/other";
+                        if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
+                        model.userData.layer = layerPath;
+
+                        model.traverse((child) => {{
+                            if (child.isMesh) {{
+                                child.userData = data;
+                                child.userData.layer = layerPath;
+                            }}
+                        }});
+
+                        scene.add(model);
+                        pickableObjects.push(model);
+                    }},
+                    undefined,
+                    function (error) {{
+                        renderProceduralBox(data);
+                    }}
+                );
+                return;
+            }}
 
             if (data.geometry_type === "line" || data.geometry_type === "line_loop") {{
                 const points = data.points.map(p => new THREE.Vector3(...p));
@@ -1450,42 +1641,8 @@ def generate_viewer_html(
                 mesh.add(line);
                 object3D = mesh;
             }} else {{
-                let geometry;
-                if (data.class === "IfcColumn") {{
-                    geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
-                }} else if (data.class === "IfcBeam") {{
-                    geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
-                }} else if (data.class === "IfcWall") {{
-                    geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
-                }} else if (data.class === "IfcDoor" || data.class === "IfcWindow") {{
-                    geometry = new THREE.BoxGeometry(dim.width, dim.thickness, dim.height);
-                }} else {{
-                    geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
-                }}
-
-                const matOptions = {{
-                    color: new THREE.Color(data.color),
-                    roughness: 0.5,
-                    metalness: 0.1
-                }};
-                if (data.transparent) {{
-                    matOptions.transparent = true;
-                    matOptions.opacity = data.opacity || 0.6;
-                }}
-
-                const material = new THREE.MeshStandardMaterial(matOptions);
-                const mesh = new THREE.Mesh(geometry, material);
-
-                mesh.position.set(...data.position);
-                mesh.rotation.set(...data.rotation);
-
-                const edges = new THREE.EdgesGeometry(geometry);
-                const line = new THREE.LineSegments(
-                    edges,
-                    new THREE.LineBasicMaterial({{ color: 0x000000, linewidth: 1 }})
-                );
-                mesh.add(line);
-                object3D = mesh;
+                renderProceduralBox(data);
+                return;
             }}
 
             object3D.userData = data;
@@ -1791,7 +1948,11 @@ def generate_viewer_html(
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(pickableObjects);
+            let intersects = raycaster.intersectObjects(pickableObjects);
+
+            if (isSectionCutEnabled) {{
+                intersects = intersects.filter(hit => clipPlane.distanceToPoint(hit.point) >= 0);
+            }}
 
             if (selectedMesh && originalColor) {{
                 selectedMesh.material.color.copy(originalColor);

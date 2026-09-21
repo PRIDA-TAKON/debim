@@ -108,9 +108,67 @@ def _derive_furniture_slug(name: Optional[str]) -> str:
     return slug or "furniture"
 
 
+def _bake_element_to_glb(
+    elem: Any,
+    slug: str,
+    assets_dir: Path,
+    geom_settings: Any,
+) -> Optional[str]:
+    """
+    Bake complex 3D element geometry from IFC into a compact binary .glb asset using trimesh.
+    Centers the mesh origin at its local coordinate base (X/Y center, min Z).
+    Re-uses existing .glb file if present.
+    """
+    glb_dir = assets_dir / "furniture"
+    glb_path = glb_dir / f"{slug}.glb"
+    rel_path = f"assets/furniture/{slug}.glb"
+
+    if glb_path.exists():
+        return rel_path
+
+    if geom_settings is None:
+        return None
+
+    try:
+        import ifcopenshell.geom
+        import trimesh
+        import numpy as np
+
+        shape = ifcopenshell.geom.create_shape(geom_settings, elem)
+        verts_flat = shape.geometry.verts
+        faces_flat = shape.geometry.faces
+
+        if not verts_flat or not faces_flat:
+            return None
+
+        verts = np.array(verts_flat, dtype=np.float64).reshape(-1, 3)
+        faces = np.array(faces_flat, dtype=np.int32).reshape(-1, 3)
+
+        mesh = trimesh.Trimesh(vertices=verts, faces=faces, process=False)
+        if len(mesh.vertices) == 0:
+            return None
+
+        min_bounds, max_bounds = mesh.bounds
+        center_x = (min_bounds[0] + max_bounds[0]) / 2.0
+        center_y = (min_bounds[1] + max_bounds[1]) / 2.0
+        min_z = min_bounds[2]
+
+        mesh.vertices -= [center_x, center_y, min_z]
+
+        glb_dir.mkdir(parents=True, exist_ok=True)
+        glb_data = trimesh.exchange.gltf.export_glb(mesh)
+        glb_path.write_bytes(glb_data)
+
+        return rel_path
+    except Exception:
+        return None
+
+
 def import_ifc_to_manifest(
     ifc_path: Union[str, Path],
     project_name: Optional[str] = None,
+    bake_assets: bool = False,
+    assets_dir: Union[str, Path] = "assets",
 ) -> ProjectManifest:
     """
     Import an IFC file and convert it into a declarative ProjectManifest object.
@@ -879,6 +937,8 @@ def import_ifc_to_manifest(
         except Exception:
             return []
 
+    assets_dir_path = Path(assets_dir)
+
     # 5.12 Extract Furnishing Elements & Furniture
     extracted_custom_ids = set()
 
@@ -891,13 +951,20 @@ def import_ifc_to_manifest(
         slug = _derive_furniture_slug(furn.Name)
         st_id = get_elem_storey(furn)
         placement, dims = extract_custom_placement_and_dims(furn, st_id)
+
+        source_path = f"assets/furniture/{slug}.glb"
+        if bake_assets:
+            baked = _bake_element_to_glb(furn, slug, assets_dir_path, geom_settings)
+            if baked:
+                source_path = baked
+
         elements.append(
             IfcCustomElement(
                 **{
                     "class": "IfcCustomElement",
                     "tag": tag,
                     "name": name,
-                    "source": f"assets/furniture/{slug}.glb",
+                    "source": source_path,
                     "placement": placement,
                     "dimensions": dims,
                     "layer": "interior/furniture",
@@ -938,13 +1005,23 @@ def import_ifc_to_manifest(
             tag = term.Name or f"TERM-{term.GlobalId[:8]}"
             st_id = get_elem_storey(term)
             placement, dims = extract_custom_placement_and_dims(term, st_id)
+
+            source_path = f"ifc/terminal/{tag}"
+            if term.is_a("IfcSanitaryTerminal"):
+                slug = _derive_furniture_slug(term.Name or tag)
+                source_path = f"assets/furniture/{slug}.glb"
+                if bake_assets:
+                    baked = _bake_element_to_glb(term, slug, assets_dir_path, geom_settings)
+                    if baked:
+                        source_path = baked
+
             elements.append(
                 IfcCustomElement(
                     **{
                         "class": "IfcCustomElement",
                         "tag": tag,
                         "name": tag,
-                        "source": f"ifc/terminal/{tag}",
+                        "source": source_path,
                         "placement": placement,
                         "dimensions": dims,
                         "layer": "mep/terminals",
