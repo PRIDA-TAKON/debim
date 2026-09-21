@@ -5,7 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![BIM: IFC4](https://img.shields.io/badge/IFC-IFC4--Minimal-brightgreen.svg)](https://technical.buildingsmart.org/)
-[![Tests: 82 Passed](https://img.shields.io/badge/tests-82%20passed-success.svg)](tests/)
+[![Tests: 98 Passed](https://img.shields.io/badge/tests-98%20passed-success.svg)](tests/)
+[![Benchmark: 407 Models (100% Median)](https://img.shields.io/badge/benchmark-407%20models%20(100%25%20median)-blue.svg)](docs/research/2026_empirical_study_407_ifc_models.md)
 
 ---
 
@@ -165,6 +166,21 @@ elements:
         dimensions: { width: 0.90, height: 2.00 }
         offset_distance: 1.20
 ```
+
+---
+
+## 🔬 Empirical Research & Benchmark (การทดสอบระดับอุตสาหกรรม)
+
+debim ได้รับการทดสอบอย่างเข้มงวดกับโมเดลอาคารจริงในระดับอุตสาหกรรมกว่า **407 โครงการ** (ทั้งสถาปัตยกรรม โครงสร้าง และงานระบบโรงพยาบาล/คลินิก MEP) บน **Kaggle Cloud Multi-Core Benchmark Suite**:
+
+- **100.0% Median Retention Rate:** โมเดลส่วนใหญ่สามารถสกัดและ Re-compile กลับสู่มาตรฐาน IFC4 ได้ครบถ้วนทุกชิ้นงาน
+- **91.6% Average Storage Reduction:** ลดขนาดไฟล์จาก IFC ดิบลงเฉลี่ย 91%
+- **558M+ LLM Tokens Saved:** ประหยัดบริบทของโมเดลภาษาไปได้มากกว่า **558,629,804 โทเคน**
+- **100.0% Modern Schema Crash-Resilience:** ไม่พบ Fatal Crash หรือ Unhandled Exception เลยแม้แต่ไฟล์เดียวบนมาตรฐาน IFC2X3 และ IFC4
+
+📖 **อ่านรายงานวิจัยฉบับเต็ม:** [debim: An Empirical Study of Declarative Building-as-Code on 407 Heterogeneous Real-World OpenBIM Models](docs/research/2026_empirical_study_407_ifc_models.md) (Author: Prida Takon)  
+📦 **Kaggle Public Benchmark Dataset:** [debim-5000-ifc-benchmark](https://www.kaggle.com/datasets/pridatakon/debim-5000-ifc-benchmark)  
+⚡ **Kaggle Automated Runner:** [debim-ifc-stress-test](https://www.kaggle.com/code/pridatakon/debim-ifc-stress-test)
 
 ---
 
