@@ -343,5 +343,160 @@ def test_wall_finishes_qto():
     assert eqto.wall_finishes.paint_interior_area == pytest.approx(10.0 * (1.0 / 3.0))
 
 
+def test_resolved_door_and_window_qto():
+    from debim.resolver import ResolvedDoor, ResolvedWindow
+    from debim.schema import IfcDoor, IfcWindow, Dimensions
+    from debim.qto import calculate_element_qto
+
+    door_elem = IfcDoor(
+        class_="IfcDoor",
+        tag="D-01",
+        material="DOOR_MAT",
+        dimensions=Dimensions(width=0.90, height=2.00),
+        offset_distance=1.0,
+        sill_height=0.0,
+    )
+    r_door = ResolvedDoor(
+        tag="D-01",
+        element=door_elem,
+        position=(1.0, 0.0, 0.0),
+        width=0.90,
+        height=2.00,
+        offset_distance=1.0,
+        sill_height=0.0,
+    )
+    door_qto = calculate_element_qto(r_door)
+    assert door_qto.tag == "D-01"
+    assert door_qto.element_class == "IfcDoor"
+    assert door_qto.material == "DOOR_MAT"
+    assert door_qto.mep is not None
+    assert door_qto.mep.count == 1
+    assert door_qto.mep.width == pytest.approx(0.90)
+    assert door_qto.mep.height == pytest.approx(2.00)
+
+    win_elem = IfcWindow(
+        class_="IfcWindow",
+        tag="W-01",
+        material="WIN_MAT",
+        dimensions=Dimensions(width=1.20, height=1.50),
+        offset_distance=2.0,
+        sill_height=0.80,
+    )
+    r_win = ResolvedWindow(
+        tag="W-01",
+        element=win_elem,
+        position=(2.0, 0.0, 0.80),
+        width=1.20,
+        height=1.50,
+        offset_distance=2.0,
+        sill_height=0.80,
+    )
+    win_qto = calculate_element_qto(r_win)
+    assert win_qto.tag == "W-01"
+    assert win_qto.element_class == "IfcWindow"
+    assert win_qto.material == "WIN_MAT"
+    assert win_qto.mep is not None
+    assert win_qto.mep.count == 1
+    assert win_qto.mep.width == pytest.approx(1.20)
+    assert win_qto.mep.height == pytest.approx(1.50)
+
+
+def test_project_qto_opening_counts_and_wall_deductions():
+    from debim.schema import (
+        ProjectManifest,
+        ProjectInfo,
+        Grids,
+        SpatialStructure,
+        Storey,
+        IfcWall,
+        IfcDoor,
+        IfcWindow,
+        Dimensions,
+        WallPlacement,
+        WallFinishesConfig,
+        Material,
+    )
+    from debim.cost import PriceCatalog, PriceItem, estimate_cost
+
+    door = IfcDoor(
+        class_="IfcDoor",
+        tag="D-MAIN",
+        material="MAT_WOOD_DOOR",
+        dimensions=Dimensions(width=1.00, height=2.00),  # Area = 2.0 m²
+        offset_distance=1.0,
+        sill_height=0.0,
+    )
+    window = IfcWindow(
+        class_="IfcWindow",
+        tag="W-FRONT",
+        material="MAT_ALUM_WIN",
+        dimensions=Dimensions(width=1.50, height=1.20),  # Area = 1.8 m²
+        offset_distance=3.0,
+        sill_height=0.90,
+    )
+
+    wall = IfcWall(
+        class_="IfcWall",
+        tag="W-01",
+        material="BRICK_MON",
+        thickness=0.10,
+        height=3.00,
+        placement=WallPlacement(from_grid=("1", "A"), to_grid=("2", "A"), storey="L1"),
+        children=[door, window],
+        finishes=WallFinishesConfig(
+            plaster="BOTH",
+            interior_finish="PAINT",
+            exterior_finish="PAINT",
+        ),
+    )
+
+    manifest = ProjectManifest(
+        project=ProjectInfo(id="PROJ-01", name="Test Opening Deductions"),
+        grids=Grids(axes_x={"1": 0.0, "2": 6.0}, axes_y={"A": 0.0}),
+        spatial_structure=SpatialStructure(
+            storeys=[Storey(id="L1", name="Level 1", elevation=0.0, height=3.00)]
+        ),
+        materials=[
+            Material(id="BRICK_MON", name="Mon Brick", category="masonry", unit_cost_ref="MAT-BRICK"),
+            Material(id="MAT_WOOD_DOOR", name="Timber Door", category="architecture", unit_cost_ref="MAT-DOOR"),
+            Material(id="MAT_ALUM_WIN", name="Aluminum Window", category="architecture", unit_cost_ref="MAT-WIN"),
+        ],
+        elements=[wall],
+    )
+
+    qto = calculate_qto(manifest)
+
+    # Gross wall area = 6.0m * 3.0m = 18.0 m²
+    # Opening area = (1.00 * 2.00) + (1.50 * 1.20) = 2.00 + 1.80 = 3.80 m²
+    # Net wall area = 18.0 - 3.80 = 14.20 m²
+    assert qto.total_doors_count == 1
+    assert qto.total_windows_count == 1
+    assert qto.total_openings_area == pytest.approx(3.80)
+
+    # Wall masonry area (volume / thickness) = 14.20 m²
+    assert qto.total_wall_masonry_area == pytest.approx(14.20)
+    # Both sides plaster = 2 * 14.20 = 28.40 m²
+    assert qto.total_wall_plaster_area == pytest.approx(28.40)
+
+    # Check unit cost mapping for doors and windows
+    catalog = PriceCatalog(
+        currency="THB",
+        items={
+            "MAT-DOOR": PriceItem(name="Timber Door", unit="set", material_cost=4000.0, labor_cost=500.0),
+            "MAT-WIN": PriceItem(name="Aluminum Window", unit="m2", material_cost=1500.0, labor_cost=300.0),
+        },
+    )
+
+    cost_est = estimate_cost(qto, catalog, manifest)
+    item_map = {item.code: item for item in cost_est.line_items}
+
+    assert "MAT-DOOR" in item_map
+    assert item_map["MAT-DOOR"].quantity == pytest.approx(1.0)
+    assert item_map["MAT-DOOR"].total_amount == pytest.approx(4500.0)
+
+    assert "MAT-WIN" in item_map
+    # Window priced per m² -> quantity should be opening area 1.80 m²
+    assert item_map["MAT-WIN"].quantity == pytest.approx(1.80)
+    assert item_map["MAT-WIN"].total_amount == pytest.approx(1.80 * 1800.0)
 
 

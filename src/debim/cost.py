@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 
 from debim.qto import ProjectQTO, calculate_qto
-from debim.resolver import resolve_manifest
+from debim.resolver import ResolvedDoor, ResolvedWindow, resolve_manifest
 from debim.schema import ProjectManifest, load_manifest
 
 
@@ -600,6 +600,10 @@ def estimate_cost(
                     qty = eqto.roof.sloped_area
                 elif eqto.covering:
                     qty = eqto.covering.area
+                elif isinstance(resolved_elem, (ResolvedDoor, ResolvedWindow)):
+                    qty = resolved_elem.width * resolved_elem.height
+                elif eqto.mep and eqto.mep.width > 0 and eqto.mep.height > 0 and eqto.mep.system_type in ("DOOR", "WINDOW"):
+                    qty = eqto.mep.width * eqto.mep.height
                 # For wall, net surface area = volume / thickness if thickness > 0
                 elif hasattr(resolved_elem, "thickness") and resolved_elem.thickness > 0:
                     qty = eqto.concrete_volume / resolved_elem.thickness

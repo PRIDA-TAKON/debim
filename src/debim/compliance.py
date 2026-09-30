@@ -10,9 +10,11 @@ from debim.resolver import (
     ResolvedBeam,
     ResolvedColumn,
     ResolvedCustomElement,
+    ResolvedDoor,
     ResolvedElement,
     ResolvedManifest,
     ResolvedWall,
+    ResolvedWindow,
     resolve_manifest,
 )
 from debim.schema import IfcBeam, IfcWall, ProjectManifest, load_manifest
@@ -86,6 +88,12 @@ def get_element_aabb(elem: ResolvedElement) -> Tuple[float, float, float, float,
         x, y, z = elem.position
         return (x - 0.5, y - 0.5, z, x + 0.5, y + 0.5, z + 2.0)
 
+    elif isinstance(elem, (ResolvedDoor, ResolvedWindow)):
+        x, y, z = elem.position
+        w = elem.width
+        h = elem.height
+        return (x - w / 2, y - w / 2, z, x + w / 2, y + w / 2, z + h)
+
     raise TypeError(f"Unsupported resolved element type: {type(elem)}")
 
 
@@ -104,6 +112,8 @@ def aabb_overlap(
 
 def is_valid_connection(elem1: ResolvedElement, elem2: ResolvedElement) -> bool:
     """Determine if overlap between two elements is an expected structural joint connection."""
+    if isinstance(elem1, (ResolvedDoor, ResolvedWindow)) or isinstance(elem2, (ResolvedDoor, ResolvedWindow)):
+        return True
     # Column and Beam/Wall joint connection
     if isinstance(elem1, ResolvedColumn) and isinstance(elem2, (ResolvedBeam, ResolvedWall)):
         col_x, col_y = elem1.start_point[0], elem1.start_point[1]
