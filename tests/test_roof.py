@@ -24,7 +24,7 @@ from debim.schema import (
 )
 from debim.resolver import resolve_manifest
 from debim.qto import calculate_qto
-from debim.cost import PriceCatalog, PriceItem, estimate_cost
+from debim.cost import PriceCatalog, PriceItem, estimate_cost, generate_cost_template
 from debim.compiler import compile_to_ifc
 from debim.viewer import generate_viewer_html
 
@@ -304,3 +304,74 @@ def test_roof_viewer_generation(sample_roof_manifest):
     assert "polygon" in html
     assert "architecture/roofs/covering" in html
     assert "architecture/roofs/framing" in html
+
+
+def test_roof_framing_takeoff_hip_and_gable(sample_roof_manifest, tmp_path):
+    """Test structural framing take-off calculations for Hip and Gable roofs."""
+    resolved = resolve_manifest(sample_roof_manifest)
+    qto = calculate_qto(resolved)
+    roof_elem = qto.get_element("ROOF-01")
+
+    assert roof_elem is not None
+    assert roof_elem.roof is not None
+    assert roof_elem.roof.purlin_length > 0.0
+    assert roof_elem.roof.rafter_length > 0.0
+    assert roof_elem.roof.purlin_weight > 0.0
+    assert roof_elem.roof.rafter_weight > 0.0
+    assert qto.total_roof_purlin_length == roof_elem.roof.purlin_length
+    assert qto.total_roof_rafter_length == roof_elem.roof.rafter_length
+
+    # Verify generate_cost_template outputs standard price items MAT-STEEL-ROOF-PURLIN and MAT-STEEL-ROOF-RAFTER
+    tpl_path = tmp_path / "prices.template.yaml"
+    generate_cost_template(sample_roof_manifest, output_path=tpl_path, format="yaml")
+    tpl_content = tpl_path.read_text(encoding="utf-8")
+    assert "MAT-STEEL-ROOF-PURLIN" in tpl_content
+    assert "MAT-STEEL-ROOF-RAFTER" in tpl_content
+
+
+def test_timber_roof_framing_takeoff():
+    """Test structural timber framing take-off for timber roofs."""
+    manifest = ProjectManifest(
+        project=ProjectInfo(id="PRJ-TIMBER-ROOF", name="Timber Roof Pavilion"),
+        spatial_structure=SpatialStructure(
+            storeys=[Storey(id="L1", name="Ground", elevation=0.0, height=3.0)]
+        ),
+        grids=Grids(axes_x={"1": 0.0, "2": 6.0}, axes_y={"A": 0.0, "B": 4.0}),
+        materials=[
+            Material(
+                id="WOOD_TEAK",
+                name="Teak Wood",
+                category="timber",
+                unit_cost_ref="MAT-WOOD-TEAK",
+            )
+        ],
+        elements=[
+            IfcRoof(
+                tag="ROOF-TIMBER",
+                material="WOOD_TEAK",
+                roof_type="GABLE",
+                placement=RoofPlacement(
+                    boundary=[("1", "A"), ("2", "A"), ("2", "B"), ("1", "B")],
+                    storey="L1",
+                    overhang=0.5,
+                ),
+                framing=RoofFramingConfig(
+                    truss_type="TIMBER_TRUSS",
+                    material="WOOD_TEAK",
+                    spacing=1.0,
+                    purlin_spacing=0.32,
+                ),
+            )
+        ],
+    )
+    resolved = resolve_manifest(manifest)
+    qto = calculate_qto(resolved)
+    roof_elem = qto.get_element("ROOF-TIMBER")
+
+    assert roof_elem is not None
+    assert roof_elem.roof is not None
+    assert roof_elem.roof.purlin_length > 0.0
+    assert roof_elem.roof.rafter_length > 0.0
+    assert roof_elem.roof.timber_volume > 0.0
+    assert roof_elem.roof.structural_steel_weight == 0.0
+    assert roof_elem.timber_volume == roof_elem.roof.timber_volume

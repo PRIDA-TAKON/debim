@@ -185,6 +185,11 @@ STEEL_PROFILE_MASSES: Dict[str, float] = {
     "C200X90X8X13.5": 30.3,
     "C250X90X9X13": 34.6,
     "C300X90X9X13": 38.1,
+    # Light-Gauge C-Lip Channel (TIS 1228 / JIS G3350)
+    "C75X45X15X2.3": 3.25,
+    "C100X50X20X3.2": 5.50,
+    "C125X50X20X3.2": 6.13,
+    "C150X50X20X3.2": 6.76,
     # Angle L (Equal Angle TIS 1227 / JIS G3192)
     "L65X65X5": 4.91,
     "L65X65X6": 5.86,
@@ -226,9 +231,16 @@ def parse_steel_linear_mass(text: str) -> Optional[float]:
 
     # 2. Lookup standard profile (normalize: map '[' to 'C', uppercase, strip -, spaces)
     normalized = re.sub(r"[\s\-\[\],]", "", raw.upper().replace("[", "C"))
+    multiplier = 1.0
+    if normalized.startswith("2C"):
+        multiplier = 2.0
+        normalized_lookup = normalized[1:]
+    else:
+        normalized_lookup = normalized
+
     for prof, mass in STEEL_PROFILE_MASSES.items():
-        if prof in normalized:
-            return mass
+        if prof in normalized_lookup:
+            return mass * multiplier
 
     # 3. American single-X designation (e.g., 'W310X60' -> 60.0)
     # Ensure there is only 1 'X' so multi-dimensional specs (e.g. 500x300x11x18) don't match erroneously
@@ -344,7 +356,12 @@ class RoofQTO(BaseModel):
     ridge_cap_length: float = 0.0        # Ridge cap length (m)
     hip_cap_length: float = 0.0          # Hip cap length (m)
     eaves_length: float = 0.0            # Eaves/fascia board length (m)
+    purlin_length: float = 0.0           # Purlin/batten linear meters (m)
+    rafter_length: float = 0.0           # Rafter/truss linear meters (m)
+    purlin_weight: float = 0.0           # Steel purlin weight (kg)
+    rafter_weight: float = 0.0           # Steel rafter/truss weight (kg)
     structural_steel_weight: float = 0.0 # SS400 structural steel weight (kg)
+    timber_volume: float = 0.0           # Timber framing volume (m³)
     insulation_area: float = 0.0         # Under-tile insulation area (m²)
 
 
@@ -408,6 +425,8 @@ class ProjectQTO(BaseModel):
     total_wall_tile_area: float = 0.0
     total_roof_covering_area: float = 0.0
     total_roof_steel_weight: float = 0.0
+    total_roof_purlin_length: float = 0.0
+    total_roof_rafter_length: float = 0.0
     total_roof_ridge_length: float = 0.0
     total_roof_hip_length: float = 0.0
     total_roof_eaves_length: float = 0.0
@@ -980,15 +999,59 @@ def calculate_element_qto(
 
     elif isinstance(resolved, ResolvedRoof):
         elem = resolved.element
-        steel_wt = resolved.total_steel_weight
         has_insul = bool(elem.covering and elem.covering.insulation)
+
+        is_timber = (
+            (elem.framing and "TIMBER" in (elem.framing.truss_type or "").upper())
+            or is_timber_element(
+                elem.class_,
+                tag,
+                elem.framing.material if elem.framing else None,
+                mat_cat,
+                mat_name,
+            )
+        )
+
+        purlin_len = 0.0
+        rafter_len = 0.0
+        purlin_wt = 0.0
+        rafter_wt = 0.0
+
+        for member in resolved.framing_members:
+            m_len = member.length
+            m_type = member.member_type
+            if m_type == "PURLIN":
+                purlin_len += m_len
+                if not is_timber:
+                    mass = parse_steel_linear_mass(member.profile or "") or parse_steel_linear_mass(member.tag) or 3.25
+                    purlin_wt += m_len * mass
+            else:
+                rafter_len += m_len
+                if not is_timber:
+                    mass = parse_steel_linear_mass(member.profile or "") or parse_steel_linear_mass(member.tag) or 6.76
+                    rafter_wt += m_len * mass
+
+        if is_timber:
+            purlin_timber_vol = purlin_len * 0.001444
+            rafter_timber_vol = rafter_len * 0.005
+            timber_vol = purlin_timber_vol + rafter_timber_vol
+            steel_wt = 0.0
+        else:
+            timber_vol = 0.0
+            steel_wt = resolved.total_steel_weight if resolved.total_steel_weight > 0 else (purlin_wt + rafter_wt)
+
         roof_qto = RoofQTO(
             footprint_area=resolved.total_footprint_area,
             sloped_area=resolved.total_sloped_area,
             ridge_cap_length=resolved.total_ridge_length,
             hip_cap_length=resolved.total_hip_length,
             eaves_length=resolved.total_eaves_length,
+            purlin_length=purlin_len,
+            rafter_length=rafter_len,
+            purlin_weight=purlin_wt,
+            rafter_weight=rafter_wt,
             structural_steel_weight=steel_wt,
+            timber_volume=timber_vol,
             insulation_area=resolved.total_sloped_area if has_insul else 0.0,
         )
 
@@ -1000,6 +1063,8 @@ def calculate_element_qto(
             formwork_area=0.0,
             rebar_weights={},
             total_rebar_weight=0.0,
+            structural_steel_weight=steel_wt,
+            timber_volume=timber_vol,
             roof=roof_qto,
         )
 
@@ -1246,6 +1311,8 @@ def calculate_qto(
     total_wall_tile = 0.0
     total_roof_covering = 0.0
     total_roof_steel = 0.0
+    total_roof_purlin_len = 0.0
+    total_roof_rafter_len = 0.0
     total_roof_ridge = 0.0
     total_roof_hip = 0.0
     total_roof_eaves = 0.0
@@ -1348,6 +1415,8 @@ def calculate_qto(
         if eqto.roof:
             total_roof_covering += eqto.roof.sloped_area
             total_roof_steel += eqto.roof.structural_steel_weight
+            total_roof_purlin_len += eqto.roof.purlin_length
+            total_roof_rafter_len += eqto.roof.rafter_length
             total_roof_ridge += eqto.roof.ridge_cap_length
             total_roof_hip += eqto.roof.hip_cap_length
             total_roof_eaves += eqto.roof.eaves_length
@@ -1426,6 +1495,8 @@ def calculate_qto(
         total_wall_tile_area=total_wall_tile,
         total_roof_covering_area=total_roof_covering,
         total_roof_steel_weight=total_roof_steel,
+        total_roof_purlin_length=total_roof_purlin_len,
+        total_roof_rafter_length=total_roof_rafter_len,
         total_roof_ridge_length=total_roof_ridge,
         total_roof_hip_length=total_roof_hip,
         total_roof_eaves_length=total_roof_eaves,
