@@ -206,3 +206,16 @@ def test_project_qto_steel_and_timber_aggregation():
     assert pytest.approx(qto.total_painting_area) == 9.0
     # Weld touchup area: 10% of steel painting area = 0.60 m2
     assert pytest.approx(qto.total_weld_touchup_area) == 0.60
+
+
+def test_thai_steel_profile_lookup():
+    from debim.qto import parse_steel_linear_mass
+
+    assert parse_steel_linear_mass("H-500x300x11x18") == 128.0
+    assert parse_steel_linear_mass("H500X200X10X16") == 89.6
+    assert parse_steel_linear_mass("[-150x75x9x12.5") == 24.0
+    assert parse_steel_linear_mass("C-150x75x9x12.5") == 24.0
+    assert parse_steel_linear_mass("L-65x65x5") == 4.91
+    assert parse_steel_linear_mass("CUSTOM-BEAM @128") == 128.0
+    assert parse_steel_linear_mass("BEAM @ 89.6 kg/m") == 89.6
+    assert parse_steel_linear_mass("W310X60") == 60.0

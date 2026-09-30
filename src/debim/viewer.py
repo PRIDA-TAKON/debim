@@ -159,27 +159,39 @@ def generate_viewer_html(
     # Stairs Assembly
     for stair in resolved.stairs:
         for step in stair.steps:
-            elements_data.append({
-                "tag": f"{stair.tag}-Step-{step.step_index}",
-                "class": "IfcStairStep",
-                "material": stair.element.finishes.tread_finish if (stair.element.finishes and stair.element.finishes.tread_finish) else stair.element.material,
-                "position": [step.position[0], step.position[1], step.position[2]],
-                "rotation": [0, 0, 0],
-                "dimensions": {
-                    "width": step.width,
-                    "depth": step.tread,
-                    "height": step.riser,
-                },
-                "color": "#D4A373",
-                "layer": f"{stair.layer}/steps",
-            })
+            if getattr(step, "polygon", None) and len(step.polygon) >= 3:
+                elements_data.append({
+                    "tag": f"{stair.tag}-Step-{step.step_index}",
+                    "class": "IfcStairStep",
+                    "material": stair.element.finishes.tread_finish if (stair.element.finishes and stair.element.finishes.tread_finish) else stair.element.material,
+                    "geometry_type": "polygon",
+                    "points": step.polygon,
+                    "color": "#D4A373",
+                    "layer": f"{stair.layer}/steps",
+                })
+            else:
+                elements_data.append({
+                    "tag": f"{stair.tag}-Step-{step.step_index}",
+                    "class": "IfcStairStep",
+                    "material": stair.element.finishes.tread_finish if (stair.element.finishes and stair.element.finishes.tread_finish) else stair.element.material,
+                    "position": [step.position[0], step.position[1], step.position[2]],
+                    "rotation": [0, 0, getattr(step, "rotation", 0.0)],
+                    "dimensions": {
+                        "width": step.width,
+                        "depth": step.tread,
+                        "height": step.riser,
+                    },
+                    "color": "#D4A373",
+                    "layer": f"{stair.layer}/steps",
+                })
 
         for stringer in stair.stringers:
+            st_points = stringer.curve_points if (getattr(stringer, "curve_points", None) and len(stringer.curve_points) >= 2) else [stringer.start_point, stringer.end_point]
             elements_data.append({
                 "tag": f"{stringer.tag}-Centerline",
                 "class": "IfcStairStringer",
                 "geometry_type": "line",
-                "points": [stringer.start_point, stringer.end_point],
+                "points": st_points,
                 "color": "#3B82F6",
                 "linewidth": 3,
                 "layer": f"{stair.layer}/stringers",
@@ -1203,10 +1215,8 @@ def generate_viewer_html(
         <button class="view-btn" onclick="setView('side')">↕️ ด้านข้าง (Side)</button>
         <button id="xray-btn" class="view-btn" onclick="toggleXRay()" style="background:#0284c7; color:#fff; font-weight:600; border-color:#38bdf8;">👁️ ผนังโปร่งใส (X-Ray)</button>
         <button id="section-btn" class="view-btn" onclick="toggleSectionPlaneUI()" style="background:#8b5cf6; color:#fff; font-weight:600; border-color:#a78bfa;">✂️ ตัดระนาบ (Section Plane)</button>
-        <button class="view-btn" onclick="filterDiscipline('mep')" title="แสดงเฉพาะงานระบบ">⚡ MEP</button>
-        <button class="view-btn" onclick="filterDiscipline('interior')" title="แสดงเฉพาะเฟอร์นิเจอร์">🛋️ เฟอร์นิเจอร์</button>
-        <button class="view-btn" onclick="filterDiscipline('structure')" title="แสดงเฉพาะโครงสร้าง">🏗️ โครงสร้าง</button>
-        <button class="view-btn" onclick="filterDiscipline('all')" title="แสดงทั้งหมด">🌐 ทั้งหมด</button>
+        <button id="measure-btn" class="view-btn" onclick="toggleMeasureTool()" style="background:#0d9488; color:#fff; font-weight:600; border-color:#2dd4bf;">📏 วัดระยะ (Measure)</button>
+        <button id="clear-measure-btn" class="view-btn" onclick="clearMeasurements()" style="display:none; background:#e11d48; color:#fff; font-weight:500;">✕ ลบเส้นวัด</button>
     </div>
 
     <div id="section-plane-panel" class="ui-panel" style="display: none; top: 60px; left: 50%; transform: translateX(-50%); width: 380px; z-index: 1000;">
@@ -1435,8 +1445,10 @@ def generate_viewer_html(
         }}
 
         // Render Grid Lines & Ground
-        const allX = Object.values(sceneData.grids.axes_x);
-        const allY = Object.values(sceneData.grids.axes_y);
+        const mainX = Object.entries(sceneData.grids.axes_x).filter(([n]) => !n.includes('-')).map(([_, v]) => v);
+        const mainY = Object.entries(sceneData.grids.axes_y).filter(([n]) => !n.includes('-')).map(([_, v]) => v);
+        const allX = mainX.length > 0 ? mainX : Object.values(sceneData.grids.axes_x);
+        const allY = mainY.length > 0 ? mainY : Object.values(sceneData.grids.axes_y);
         const minGridX = Math.min(...allX);
         const maxGridX = Math.max(...allX);
         const minGridY = Math.min(...allY);
@@ -1459,8 +1471,9 @@ def generate_viewer_html(
         const bubbleOffset = 1.8;
         const lineExtend = 1.2;
 
-        // X Grids
+        // X Grids (แสดงเฉพาะกริตหลัก ข้ามกริตย่อยที่มี '-')
         Object.entries(sceneData.grids.axes_x).forEach(([name, xVal]) => {{
+            if (name.includes('-')) return;
             const pts = [
                 new THREE.Vector3(xVal, minGridY - lineExtend, 0),
                 new THREE.Vector3(xVal, maxGridY + lineExtend, 0)
@@ -1478,8 +1491,9 @@ def generate_viewer_html(
             gridGroup.add(botBubble);
         }});
 
-        // Y Grids
+        // Y Grids (แสดงเฉพาะกริตหลัก ข้ามกริตย่อยที่มี '-')
         Object.entries(sceneData.grids.axes_y).forEach(([name, yVal]) => {{
+            if (name.includes('-')) return;
             const pts = [
                 new THREE.Vector3(minGridX - lineExtend, yVal, 0),
                 new THREE.Vector3(maxGridX + lineExtend, yVal, 0)
@@ -1657,12 +1671,12 @@ def generate_viewer_html(
             pickableObjects.push(object3D);
         }});
 
-        // Camera position setup
-        camera.position.set(centerX, centerY, 160);
-        camera.up.set(0, 1, 0);
+        // Camera position setup (Default: ISO View)
+        camera.position.set(centerX + 60, centerY - 80, 60);
+        camera.up.set(0, 0, 1);
         controls.target.set(centerX, centerY, 0);
         controls.minPolarAngle = 0;
-        controls.maxPolarAngle = 0;
+        controls.maxPolarAngle = Math.PI;
         controls.update();
 
         window.setView = function(mode) {{
@@ -1934,6 +1948,173 @@ def generate_viewer_html(
             showInspector(sceneData.elements[0]);
         }}
 
+        // 3D Measurement Tool Engine
+        let isMeasureActive = false;
+        let measurePointA = null;
+        const measureGroup = new THREE.Group();
+        scene.add(measureGroup);
+        const measureHistory = [];
+
+        const previewSphereGeom = new THREE.SphereGeometry(0.12, 16, 16);
+        const snapMarker = new THREE.Mesh(
+            previewSphereGeom,
+            new THREE.MeshBasicMaterial({{ color: 0xf59e0b, depthTest: false, transparent: true, opacity: 0.85 }})
+        );
+        snapMarker.visible = false;
+        measureGroup.add(snapMarker);
+
+        let livePreviewLine = null;
+        let startMarkerA = null;
+
+        function getSnappedPoint(hit) {{
+            let pt = hit.point.clone();
+            const obj = hit.object;
+            if (obj && obj.geometry && obj.geometry.attributes && obj.geometry.attributes.position) {{
+                const posAttr = obj.geometry.attributes.position;
+                const localHit = obj.worldToLocal(pt.clone());
+                let closestDistSq = Infinity;
+                let closestVertex = null;
+                const v = new THREE.Vector3();
+                const count = Math.min(posAttr.count, 200);
+                for (let i = 0; i < count; i++) {{
+                    v.fromBufferAttribute(posAttr, i);
+                    const dSq = v.distanceToSquared(localHit);
+                    if (dSq < closestDistSq) {{
+                        closestDistSq = dSq;
+                        closestVertex = v.clone();
+                    }}
+                }}
+                if (closestVertex) {{
+                    const worldV = obj.localToWorld(closestVertex);
+                    if (worldV.distanceTo(hit.point) <= 0.40) {{
+                        return {{ point: worldV, snapped: true }};
+                    }}
+                }}
+            }}
+            return {{ point: pt, snapped: false }};
+        }}
+
+        function makeDimensionSprite(dist, dx, dy, dz) {{
+            const canvas = document.createElement('canvas');
+            canvas.width = 380;
+            canvas.height = 140;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+            ctx.strokeStyle = '#2dd4bf';
+            ctx.lineWidth = 4;
+            const r = 16;
+            ctx.beginPath();
+            if (ctx.roundRect) {{
+                ctx.roundRect(8, 8, 364, 124, r);
+            }} else {{
+                ctx.rect(8, 8, 364, 124);
+            }}
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = 'bold 44px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(dist.toFixed(2) + ' m', 190, 48);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillText('ΔX: ' + dx.toFixed(2) + '  ΔY: ' + dy.toFixed(2) + '  ΔZ: ' + dz.toFixed(2), 190, 94);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({{ map: texture, depthTest: false }});
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(2.4, 0.88, 1);
+            return sprite;
+        }}
+
+        window.toggleMeasureTool = function() {{
+            isMeasureActive = !isMeasureActive;
+            const btn = document.getElementById('measure-btn');
+            const clearBtn = document.getElementById('clear-measure-btn');
+            const container = document.getElementById('canvas-container');
+
+            if (isMeasureActive) {{
+                btn.style.background = '#0f766e';
+                btn.innerHTML = '📏 โหมดวัดระยะ (เปิดอยู่)';
+                container.style.cursor = 'crosshair';
+                document.getElementById('instructions').textContent = '📏 โหมดวัดระยะ: คลิกชิ้นงานเพื่อกำหนดจุดเริ่มต้น (A) | Esc เพื่อปิด';
+                if (measureHistory.length > 0) clearBtn.style.display = 'inline-block';
+            }} else {{
+                btn.style.background = '#0d9488';
+                btn.innerHTML = '📏 วัดระยะ (Measure)';
+                container.style.cursor = 'default';
+                document.getElementById('instructions').textContent = 'Rotate: Left Click + Drag | Pan: Right Click + Drag | Zoom: Scroll';
+                resetCurrentMeasure();
+            }}
+        }};
+
+        function resetCurrentMeasure() {{
+            measurePointA = null;
+            snapMarker.visible = false;
+            if (livePreviewLine) {{
+                measureGroup.remove(livePreviewLine);
+                livePreviewLine = null;
+            }}
+            if (startMarkerA) {{
+                measureGroup.remove(startMarkerA);
+                startMarkerA = null;
+            }}
+        }}
+
+        window.clearMeasurements = function() {{
+            measureHistory.forEach(obj => measureGroup.remove(obj));
+            measureHistory.length = 0;
+            resetCurrentMeasure();
+            document.getElementById('clear-measure-btn').style.display = 'none';
+        }};
+
+        window.addEventListener('keydown', (e) => {{
+            if (e.key === 'Escape' && isMeasureActive) {{
+                toggleMeasureTool();
+            }}
+        }});
+
+        window.addEventListener('mousemove', (event) => {{
+            if (!isMeasureActive) return;
+            if (event.target.closest('.ui-panel')) {{
+                snapMarker.visible = false;
+                return;
+            }}
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            let intersects = raycaster.intersectObjects(pickableObjects);
+            if (isSectionCutEnabled) {{
+                intersects = intersects.filter(hit => clipPlane.distanceToPoint(hit.point) >= 0);
+            }}
+
+            if (intersects.length > 0) {{
+                const snap = getSnappedPoint(intersects[0]);
+                snapMarker.position.copy(snap.point);
+                snapMarker.material.color.setHex(snap.snapped ? 0x22c55e : 0xf59e0b);
+                snapMarker.visible = true;
+
+                if (measurePointA) {{
+                    if (livePreviewLine) measureGroup.remove(livePreviewLine);
+                    const pts = [measurePointA, snap.point];
+                    const geom = new THREE.BufferGeometry().setFromPoints(pts);
+                    const mat = new THREE.LineDashedMaterial({{ color: 0x2dd4bf, dashSize: 0.3, gapSize: 0.15, linewidth: 2 }});
+                    livePreviewLine = new THREE.Line(geom, mat);
+                    livePreviewLine.computeLineDistances();
+                    measureGroup.add(livePreviewLine);
+
+                    const curDist = measurePointA.distanceTo(snap.point);
+                    document.getElementById('instructions').textContent = '📏 ระยะชั่วคราว: ' + curDist.toFixed(2) + ' m | คลิกจุดที่ 2 เพื่อยืนยัน';
+                }}
+            }} else {{
+                snapMarker.visible = false;
+            }}
+        }});
+
         // Element Selection / Raycasting
         const raycaster = new THREE.Raycaster();
         raycaster.params.Line = {{ threshold: 0.35 }};
@@ -1952,6 +2133,67 @@ def generate_viewer_html(
 
             if (isSectionCutEnabled) {{
                 intersects = intersects.filter(hit => clipPlane.distanceToPoint(hit.point) >= 0);
+            }}
+
+            // Measurement Mode Click Handler
+            if (isMeasureActive) {{
+                if (intersects.length === 0) return;
+                const snap = getSnappedPoint(intersects[0]);
+
+                if (!measurePointA) {{
+                    measurePointA = snap.point.clone();
+                    startMarkerA = new THREE.Mesh(
+                        previewSphereGeom,
+                        new THREE.MeshBasicMaterial({{ color: 0x38bdf8, depthTest: false }})
+                    );
+                    startMarkerA.position.copy(measurePointA);
+                    measureGroup.add(startMarkerA);
+                    document.getElementById('instructions').textContent = '📏 จุดที่ 1 บันทึกแล้ว! คลิกจุดที่ 2 เพื่อวัดระยะ';
+                }} else {{
+                    const measurePointB = snap.point.clone();
+                    const dist = measurePointA.distanceTo(measurePointB);
+                    const dx = Math.abs(measurePointB.x - measurePointA.x);
+                    const dy = Math.abs(measurePointB.y - measurePointA.y);
+                    const dz = Math.abs(measurePointB.z - measurePointA.z);
+
+                    // Create permanent dimension line
+                    const lineGeom = new THREE.BufferGeometry().setFromPoints([measurePointA, measurePointB]);
+                    const lineMat = new THREE.LineBasicMaterial({{ color: 0x2dd4bf, linewidth: 3, depthTest: false }});
+                    const dimLine = new THREE.Line(lineGeom, lineMat);
+
+                    // Markers
+                    const endMarker = new THREE.Mesh(
+                        previewSphereGeom,
+                        new THREE.MeshBasicMaterial({{ color: 0x2dd4bf, depthTest: false }})
+                    );
+                    endMarker.position.copy(measurePointB);
+
+                    const persistentStart = new THREE.Mesh(
+                        previewSphereGeom,
+                        new THREE.MeshBasicMaterial({{ color: 0x38bdf8, depthTest: false }})
+                    );
+                    persistentStart.position.copy(measurePointA);
+
+                    // Midpoint label
+                    const midPt = new THREE.Vector3().addVectors(measurePointA, measurePointB).multiplyScalar(0.5);
+                    midPt.z += 0.20;
+                    const labelSprite = makeDimensionSprite(dist, dx, dy, dz);
+                    labelSprite.position.copy(midPt);
+
+                    const record = new THREE.Group();
+                    record.add(dimLine);
+                    record.add(persistentStart);
+                    record.add(endMarker);
+                    record.add(labelSprite);
+                    measureGroup.add(record);
+                    measureHistory.push(record);
+
+                    document.getElementById('clear-measure-btn').style.display = 'inline-block';
+                    document.getElementById('instructions').textContent = '✅ วัดระยะเสร็จ: ' + dist.toFixed(2) + ' m (ΔX: ' + dx.toFixed(2) + ', ΔY: ' + dy.toFixed(2) + ', ΔZ: ' + dz.toFixed(2) + ') | คลิกชิ้นงานเพื่อวัดเส้นใหม่';
+
+                    resetCurrentMeasure();
+                }}
+                return;
             }}
 
             if (selectedMesh && originalColor) {{

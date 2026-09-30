@@ -122,18 +122,93 @@ def parse_stirrups(
     return {bar_type: weight}, weight
 
 
+# Standard linear masses (kg/m) for common structural steel profiles (TIS / JIS / ISO)
+STEEL_PROFILE_MASSES: Dict[str, float] = {
+    # H-Beam (TIS 1227 / JIS G3192)
+    "H500X300X11X18": 128.0,
+    "H500X200X10X16": 89.6,
+    "H450X200X9X14": 76.0,
+    "H400X200X8X13": 66.0,
+    "H350X175X7X11": 49.6,
+    "H300X150X6.5X9": 36.7,
+    "H250X125X6X9": 29.6,
+    "H200X100X5.5X8": 21.3,
+    "H150X75X5X7": 14.0,
+    "H175X90X5X8": 18.1,
+    "H100X100X6X8": 17.2,
+    "H125X125X6.5X9": 23.8,
+    "H150X150X7X10": 31.5,
+    "H175X175X7.5X11": 40.2,
+    "H200X200X8X12": 49.9,
+    "H250X250X9X14": 72.4,
+    "H300X300X10X15": 94.0,
+    "H350X350X12X19": 137.0,
+    "H400X400X13X21": 172.0,
+    # Channel C (TIS 1227 / JIS G3192)
+    "C150X75X9X12.5": 24.0,
+    "C150X75X6.5X10": 18.6,
+    "C75X40X5X7": 6.92,
+    "C100X50X5X7.5": 9.36,
+    "C125X65X6X8": 13.4,
+    "C180X75X7X10.5": 21.4,
+    "C200X80X7.5X11": 24.6,
+    "C200X90X8X13.5": 30.3,
+    "C250X90X9X13": 34.6,
+    "C300X90X9X13": 38.1,
+    # Angle L (Equal Angle TIS 1227 / JIS G3192)
+    "L65X65X5": 4.91,
+    "L65X65X6": 5.86,
+    "L65X65X8": 7.66,
+    "L50X50X4": 3.06,
+    "L50X50X5": 3.77,
+    "L50X50X6": 4.43,
+    "L40X40X3": 1.83,
+    "L40X40X4": 2.39,
+    "L40X40X5": 2.95,
+    "L75X75X6": 6.85,
+    "L75X75X9": 9.96,
+    "L90X90X7": 9.63,
+    "L100X100X7": 10.7,
+    "L100X100X10": 14.9,
+}
+
+
 def parse_steel_linear_mass(text: str) -> Optional[float]:
     """
-    Parse linear mass (kg/m) from steel section designation (e.g., 'W310X60' -> 60.0 kg/m).
+    Parse linear mass (kg/m) from steel section designation.
+    Supports:
+    1. Explicit weight annotation: e.g. '@128', '@ 89.6 kg/m', '128 kg/m'
+    2. Standard lookup table: e.g. 'H-500x300x11x18' -> 128.0 kg/m, 'C-150x75x9x12.5' -> 24.0 kg/m
+    3. American single-X designation: e.g. 'W310X60' -> 60.0 kg/m, 'UB203X30' -> 30.0 kg/m
     """
     if not text:
         return None
-    match = re.search(r"[A-Za-z0-9]+\s*[Xx]\s*([0-9]+(?:\.[0-9]+)?)$", text.strip())
-    if match:
+    raw = text.strip()
+
+    # 1. Explicit @weight or weight kg/m
+    m_weight = re.search(r"@\s*([0-9]+(?:\.[0-9]+)?)|([0-9]+(?:\.[0-9]+)?)\s*kg/m", raw, re.IGNORECASE)
+    if m_weight:
+        val = m_weight.group(1) or m_weight.group(2)
         try:
-            return float(match.group(1))
+            return float(val)
         except ValueError:
             pass
+
+    # 2. Lookup standard profile (normalize: map '[' to 'C', uppercase, strip -, spaces)
+    normalized = re.sub(r"[\s\-\[\],]", "", raw.upper().replace("[", "C"))
+    for prof, mass in STEEL_PROFILE_MASSES.items():
+        if prof in normalized:
+            return mass
+
+    # 3. American single-X designation (e.g., 'W310X60' -> 60.0)
+    # Ensure there is only 1 'X' so multi-dimensional specs (e.g. 500x300x11x18) don't match erroneously
+    if raw.upper().count("X") == 1:
+        match = re.search(r"[A-Za-z0-9]+\s*[Xx]\s*([0-9]+(?:\.[0-9]+)?)$", raw)
+        if match:
+            try:
+                return float(match.group(1))
+            except ValueError:
+                pass
     return None
 
 
@@ -145,6 +220,9 @@ def is_steel_element(
     material_name: Optional[str],
 ) -> bool:
     """Check if element is structural steel/metal based on category, material, or section tag."""
+    if material_category in ("concrete", "masonry", "timber", "wood"):
+        return False
+
     if material_category in ("steel", "metal"):
         return True
 
@@ -156,8 +234,8 @@ def is_steel_element(
     if any(k in combined for k in keywords):
         return True
 
-    # Search for standard steel profile designations like W310X60, H200, UB200, UC200, 2L50x5
-    if re.search(r"\b(W|H|2L|UB|UC)\d", combined):
+    # Search for standard steel profile designations like W310X60, H200, UB200, UC200, 2L50x5, C-150, L-65, [-150
+    if re.search(r"\b(W|H|2L|UB|UC)\d", combined) or re.search(r"\b(C|L)\s*[-xX]\s*\d+", combined) or "[-" in combined:
         return True
 
     return False
@@ -213,6 +291,12 @@ class StairQTO(BaseModel):
     nosing_length: float = 0.0         # m
     railing_length: float = 0.0        # m
     railing_type: Optional[str] = None
+    inner_helical_length: float = 0.0  # m
+    outer_helical_length: float = 0.0  # m
+    steel_weight: float = 0.0          # kg
+    stringers_steel_weight: float = 0.0
+    treads_steel_weight: float = 0.0
+    base_plates_steel_weight: float = 0.0
 
 
 class WallFinishesQTO(BaseModel):
@@ -772,6 +856,13 @@ def calculate_element_qto(
                     rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
                 total_rebar += t_wt
 
+        steel_paint_area = 0.0
+        if resolved.total_steel_weight > 0:
+            st_d = elem.stringer.depth if elem.stringer else 1.40
+            stringers_surface = (resolved.inner_helical_length + resolved.outer_helical_length) * st_d * 2.0
+            treads_surface = resolved.total_tread_finish_area * 2.0
+            steel_paint_area = stringers_surface + treads_surface
+
         stair_qto = StairQTO(
             total_steps=len(resolved.steps),
             tread_finish_area=resolved.total_tread_finish_area,
@@ -779,6 +870,12 @@ def calculate_element_qto(
             nosing_length=resolved.nosing_length,
             railing_length=resolved.railing.total_length if resolved.railing else 0.0,
             railing_type=resolved.railing.railing_type if resolved.railing else None,
+            inner_helical_length=resolved.inner_helical_length,
+            outer_helical_length=resolved.outer_helical_length,
+            steel_weight=resolved.total_steel_weight,
+            stringers_steel_weight=resolved.stringers_steel_weight,
+            treads_steel_weight=resolved.treads_steel_weight,
+            base_plates_steel_weight=resolved.base_plates_steel_weight,
         )
 
         return ElementQTO(
@@ -789,6 +886,8 @@ def calculate_element_qto(
             formwork_area=formwork,
             rebar_weights=rebar_dict,
             total_rebar_weight=total_rebar,
+            structural_steel_weight=resolved.total_steel_weight,
+            painting_area=steel_paint_area,
             stair_assembly=stair_qto,
         )
 

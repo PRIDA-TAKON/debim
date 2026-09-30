@@ -29,6 +29,12 @@ def test_generate_viewer_html_from_path(sample_project_path: Path):
     assert "buildLayerTree" in html
     assert "renderLayerTree" in html
 
+    # Check 3D Measurement Tool & ISO Camera default
+    assert "toggleMeasureTool" in html
+    assert "clearMeasurements" in html
+    assert "measure-btn" in html
+    assert "Default: ISO View" in html
+
     # Check project metadata
     assert "Townhouse-Feasibility" in html
     assert "PRJ-2026-001" in html

@@ -268,6 +268,8 @@ class ResolvedStairStep(BaseModel):
     width: float   # Width across flight
     tread: float   # Length along run (ลูกนอน)
     riser: float   # Height (ลูกตั้ง)
+    rotation: float = 0.0  # Rotation around Z (radians)
+    polygon: Optional[List[Tuple[float, float, float]]] = None
 
 
 class ResolvedStairStringer(BaseModel):
@@ -282,6 +284,7 @@ class ResolvedStairStringer(BaseModel):
     material: Optional[str] = None
     start_profile_corners: List[Tuple[float, float, float]] = []  # 4 vertices of rectangular cross-section at start
     end_profile_corners: List[Tuple[float, float, float]] = []    # 4 vertices of rectangular cross-section at end
+    curve_points: List[Tuple[float, float, float]] = []           # Discretized 3D points along helical curve
 
 
 class ResolvedStairRailing(BaseModel):
@@ -348,6 +351,12 @@ class ResolvedStair(BaseModel):
     total_riser_finish_area: float = 0.0
     total_concrete_volume: float = 0.0
     total_formwork_area: float = 0.0
+    total_steel_weight: float = 0.0
+    inner_helical_length: float = 0.0
+    outer_helical_length: float = 0.0
+    treads_steel_weight: float = 0.0
+    stringers_steel_weight: float = 0.0
+    base_plates_steel_weight: float = 0.0
     layer: str = "architecture/stairs"
 
 
@@ -1462,6 +1471,220 @@ class SpatialResolver:
             eb_total_formwork = sum(b.formwork_area for b in landing_edge_beams)
             tot_formwork = form_f1 + form_f2 + landing_area + eb_total_formwork
 
+        elif stair.stair_type == "SPIRAL":
+            landing_edge_beams = []
+            landing_poly = None
+            landing_area = 0.0
+            landing_t = 0.0
+
+            r_in = stair.inner_radius if stair.inner_radius is not None else 0.50
+            r_out = r_in + w
+            r_mid = (r_in + r_out) / 2.0
+
+            n_risers = (
+                stair.steps.n_risers
+                if (stair.steps and stair.steps.n_risers)
+                else max(1, int(round(total_height / riser)))
+            )
+            actual_riser = total_height / n_risers
+
+            # Calculate angular span
+            if stair.total_angle is not None:
+                tot_angle_deg = stair.total_angle
+            else:
+                # Based on standard tread at centerline
+                tot_angle_deg = math.degrees((n_risers * tread) / r_mid)
+
+            tot_angle_rad = math.radians(tot_angle_deg)
+            d_theta = tot_angle_rad / n_risers
+            is_ccw = (stair.direction != "CW")
+            dir_sign = 1.0 if is_ccw else -1.0
+
+            # Initial angle from orientation
+            orientation_map = {
+                "+X": 0.0,
+                "+Y": math.pi / 2.0,
+                "-X": math.pi,
+                "-Y": 3.0 * math.pi / 2.0,
+            }
+            theta_0 = orientation_map.get(stair.placement.orientation, 0.0)
+
+            f1_steps = []
+            for i in range(n_risers):
+                th_start = theta_0 + dir_sign * i * d_theta
+                th_end = th_start + dir_sign * d_theta
+                th_mid = (th_start + th_end) / 2.0
+                step_z = z_bottom + i * actual_riser
+
+                scx = base_x + r_mid * math.cos(th_mid)
+                scy = base_y + r_mid * math.sin(th_mid)
+                scz = step_z + actual_riser / 2.0
+
+                # 4 boundary corners of wedge tread at upper surface
+                p1 = (base_x + r_in * math.cos(th_start), base_y + r_in * math.sin(th_start), step_z + actual_riser)
+                p2 = (base_x + r_out * math.cos(th_start), base_y + r_out * math.sin(th_start), step_z + actual_riser)
+                p3 = (base_x + r_out * math.cos(th_end), base_y + r_out * math.sin(th_end), step_z + actual_riser)
+                p4 = (base_x + r_in * math.cos(th_end), base_y + r_in * math.sin(th_end), step_z + actual_riser)
+
+                # Tread at center line
+                step_tread = r_mid * d_theta
+                # Radial orientation pointing outward from spiral center
+                step_rot = th_mid
+
+                step = ResolvedStairStep(
+                    step_index=i + 1,
+                    flight_tag=f"{stair.tag}-F1",
+                    position=(scx, scy, scz),
+                    width=w,
+                    tread=step_tread,
+                    riser=actual_riser,
+                    rotation=step_rot,
+                    polygon=[p1, p2, p3, p4],
+                )
+                f1_steps.append(step)
+                all_steps.append(step)
+
+            # Helical stringers calculations
+            arc_in_horiz = r_in * tot_angle_rad
+            arc_out_horiz = r_out * tot_angle_rad
+            len_in_true = math.hypot(arc_in_horiz, total_height)
+            len_out_true = math.hypot(arc_out_horiz, total_height)
+
+            p_start = (base_x + r_mid * math.cos(theta_0), base_y + r_mid * math.sin(theta_0), z_bottom)
+            th_final = theta_0 + dir_sign * tot_angle_rad
+            p_end = (base_x + r_mid * math.cos(th_final), base_y + r_mid * math.sin(th_final), z_top)
+
+            f = ResolvedStairFlight(
+                tag=f"{stair.tag}-F1",
+                start_point=p_start,
+                end_point=p_end,
+                width=w,
+                waist_thickness=waist_t,
+                run_length=r_mid * tot_angle_rad,
+                rise_height=total_height,
+                slope_length=math.hypot(r_mid * tot_angle_rad, total_height),
+                n_risers=n_risers,
+                tread=r_mid * d_theta,
+                riser=actual_riser,
+                steps=f1_steps,
+            )
+            flights.append(f)
+
+            # Stringers definition
+            st_mat = (stair.stringer.material if stair.stringer else None) or stair.material
+            st_w = stair.stringer.width if stair.stringer else 0.016
+            st_d = stair.stringer.depth if stair.stringer else (waist_t if waist_t > 0.3 else 1.40)
+            st_thick = stair.stringer.thickness if (stair.stringer and stair.stringer.thickness) else st_w
+
+            # Sample 3D helical curve points for visualization & true path
+            s_in_curve = []
+            s_out_curve = []
+            n_samples = max(20, n_risers * 2)
+            for k in range(n_samples + 1):
+                tk = k / float(n_samples)
+                th_k = theta_0 + dir_sign * tk * tot_angle_rad
+                zk = z_bottom + tk * total_height
+                s_in_curve.append((base_x + r_in * math.cos(th_k), base_y + r_in * math.sin(th_k), zk))
+                s_out_curve.append((base_x + r_out * math.cos(th_k), base_y + r_out * math.sin(th_k), zk))
+
+            # Inner stringer
+            s_in_start = s_in_curve[0]
+            s_in_end = s_in_curve[-1]
+            stringers.append(ResolvedStairStringer(
+                tag=f"{stair.tag}-Stringer-Inner",
+                start_point=s_in_start,
+                end_point=s_in_end,
+                width=st_thick,
+                depth=st_d,
+                length=len_in_true,
+                material=st_mat,
+                curve_points=s_in_curve,
+            ))
+
+            # Outer stringer
+            s_out_start = s_out_curve[0]
+            s_out_end = s_out_curve[-1]
+            stringers.append(ResolvedStairStringer(
+                tag=f"{stair.tag}-Stringer-Outer",
+                start_point=s_out_start,
+                end_point=s_out_end,
+                width=st_thick,
+                depth=st_d,
+                length=len_out_true,
+                material=st_mat,
+                curve_points=s_out_curve,
+            ))
+
+            # Railing for spiral
+            if stair.railing:
+                rh = stair.railing.height
+                r_rad = r_out - 0.05 if stair.railing.side in ("OUTER", "BOTH") else r_in + 0.05
+                r_posts = []
+                r_rails = []
+                post_indices = [0] + list(range(3, n_risers - 1, 3)) + [n_risers - 1]
+                prev_top = None
+                for idx in post_indices:
+                    th_p = theta_0 + dir_sign * (idx + 0.5) * d_theta
+                    pz = z_bottom + idx * actual_riser + actual_riser
+                    p_base = (base_x + r_rad * math.cos(th_p), base_y + r_rad * math.sin(th_p), pz)
+                    p_top = (p_base[0], p_base[1], pz + rh)
+                    r_posts.append((p_base, p_top))
+                    if prev_top:
+                        r_rails.append((prev_top, p_top))
+                    prev_top = p_top
+                r_segs = r_posts + r_rails
+                r_len = sum(math.dist(s[0], s[1]) for s in r_segs)
+                resolved_railing = ResolvedStairRailing(
+                    tag=f"{stair.tag}-Railing",
+                    posts=r_posts,
+                    rails=r_rails,
+                    segments=r_segs,
+                    total_length=r_len,
+                    height=rh,
+                    railing_type=stair.railing.type,
+                    layout=stair.railing.layout,
+                )
+
+            # Material & QTO calculations
+            is_steel = any(kw in (st_mat or "").upper() for kw in ["STEEL", "SS400", "SM400", "A36", "METAL"]) or any(kw in stair.material.upper() for kw in ["STEEL", "SS400", "SM400", "A36", "METAL"])
+
+            total_tread_area_val = n_risers * 0.5 * d_theta * (r_out**2 - r_in**2)
+            tot_stringer_wt = 0.0
+            tot_treads_wt = 0.0
+            tot_base_plates_wt = 0.0
+            tot_steel_wt = 0.0
+
+            if is_steel:
+                # Stringer steel plates (Inner + Outer)
+                vol_stringers = (len_in_true * st_d * st_thick) + (len_out_true * st_d * st_thick)
+                tot_stringer_wt = vol_stringers * 7850.0
+
+                # Treads steel (checkered plate)
+                tread_plate_t = (
+                    stair.steps.plate_thickness
+                    if (stair.steps and stair.steps.plate_thickness)
+                    else 0.0032
+                )
+                tot_treads_wt = total_tread_area_val * tread_plate_t * 7850.0
+
+                # Base plates
+                if stair.stringer and stair.stringer.base_plate_thickness:
+                    bp_t = stair.stringer.base_plate_thickness
+                    bp_w = stair.stringer.base_plate_width or 0.30
+                    bp_l = stair.stringer.base_plate_length or 2.50
+                    bp_cnt = stair.stringer.base_plate_count or 2
+                    tot_base_plates_wt = bp_l * bp_w * bp_t * 7850.0 * bp_cnt
+
+                tot_steel_wt = tot_stringer_wt + tot_treads_wt + tot_base_plates_wt
+                tot_conc_vol = 0.0
+                tot_formwork = 0.0
+            else:
+                # Reinforced concrete spiral stair
+                vol_waist = total_tread_area_val * waist_t
+                vol_steps = n_risers * 0.5 * (d_theta * r_mid * w) * actual_riser
+                tot_conc_vol = vol_waist + vol_steps
+                tot_formwork = total_tread_area_val + (n_risers * actual_riser * w) + (len_in_true + len_out_true) * waist_t
+
         else:
             landing_edge_beams = []
 
@@ -1553,7 +1776,7 @@ class SpatialResolver:
         nosing_len = len(all_steps) * w if (stair.finishes and stair.finishes.nosing) else 0.0
 
         resolved_railing = None
-        if stair.railing:
+        if stair.railing and stair.stair_type != "SPIRAL":
             rh = stair.railing.height
             rlayout = stair.railing.layout  # "SINGLE" or "DOUBLE"
             railing_posts: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []
@@ -1614,12 +1837,17 @@ class SpatialResolver:
             landing_area=landing_area,
             landing_edge_beams=landing_edge_beams,
             railing=resolved_railing,
-
             nosing_length=nosing_len,
-            total_tread_finish_area=tot_tread_area,
+            total_tread_finish_area=total_tread_area_val if stair.stair_type == "SPIRAL" else tot_tread_area,
             total_riser_finish_area=tot_riser_area,
             total_concrete_volume=tot_conc_vol,
             total_formwork_area=tot_formwork,
+            total_steel_weight=tot_steel_wt if stair.stair_type == "SPIRAL" else 0.0,
+            inner_helical_length=len_in_true if stair.stair_type == "SPIRAL" else 0.0,
+            outer_helical_length=len_out_true if stair.stair_type == "SPIRAL" else 0.0,
+            treads_steel_weight=tot_treads_wt if stair.stair_type == "SPIRAL" else 0.0,
+            stringers_steel_weight=tot_stringer_wt if stair.stair_type == "SPIRAL" else 0.0,
+            base_plates_steel_weight=tot_base_plates_wt if stair.stair_type == "SPIRAL" else 0.0,
             layer=derive_default_layer(stair),
         )
 

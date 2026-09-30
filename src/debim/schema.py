@@ -316,13 +316,19 @@ class StairStepConfig(BaseModel):
     tread: float = 0.25  # ลูกนอน (m)
     riser: float = 0.1875  # ลูกตั้ง (m)
     n_risers: Optional[int] = None  # Auto-calculated from floor-to-floor height if omitted
+    plate_thickness: Optional[float] = None  # ความหนาแผ่นเหล็กลูกนอน (m) เช่น 0.0032 (Checkered Plate 3.2mm)
 
 
 class StairStringerConfig(BaseModel):
     material: Optional[str] = None
     width: float = 0.20
     depth: float = 0.30
-    stringer_type: Literal["WAIST_SLAB", "SIDE_BEAMS", "CENTRAL_BEAM"] = "WAIST_SLAB"
+    stringer_type: Literal["WAIST_SLAB", "SIDE_BEAMS", "CENTRAL_BEAM", "DOUBLE_CURVED"] = "WAIST_SLAB"
+    thickness: Optional[float] = None  # ความหนาแผ่นเหล็กแม่บันได (m) เช่น 0.016 (16 mm)
+    base_plate_thickness: Optional[float] = None  # ความหนาแผ่นเหล็กฐาน (m) เช่น 0.020 (20 mm)
+    base_plate_width: Optional[float] = None  # ความกว้างแผ่นฐาน (m)
+    base_plate_length: Optional[float] = None  # ความยาวแผ่นฐาน (m)
+    base_plate_count: Optional[int] = None  # จำนวนแผ่นฐาน (ชิ้น)
 
 
 class StairFinishesConfig(BaseModel):
@@ -359,6 +365,11 @@ class IfcStair(BaseModel):
     finishes: Optional[StairFinishesConfig] = None
     railing: Optional[StairRailingConfig] = None
     reinforcement: Optional[StairReinforcement] = None
+    inner_radius: Optional[float] = None  # รัศมีวงในบันไดเวียน (m)
+    total_angle: Optional[float] = None  # องศาการเวียนรวม (degrees)
+    direction: Optional[Literal["CW", "CCW"]] = "CCW"  # ทิศทางการเวียน (CW = ตามเข็ม, CCW = ทวนเข็ม)
+    central_column: Optional[bool] = False  # มีเสากลางหรือไม่
+    central_column_radius: Optional[float] = None  # รัศมีเสากลาง (m)
     layer: Optional[str] = None
 
 
