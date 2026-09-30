@@ -48,6 +48,71 @@ def test_generate_viewer_html_from_manifest_object(sample_project_path: Path):
     assert "B-A1_B1" in html
 
 
+def test_skirting_and_cladding_rendering(tmp_path: Path):
+    manifest_yaml = tmp_path / "project.yaml"
+    manifest_yaml.write_text(
+        """
+schema: IFC4-Minimal
+project:
+  id: PRJ-TEST-COVERING
+  name: Covering Test Project
+  units:
+    length: METER
+spatial_structure:
+  storeys:
+    - id: L1
+      name: "Level 1"
+      elevation: 0.0
+      height: 3.5
+grids:
+  axes_x:
+    "1": 0.0
+    "2": 4.0
+  axes_y:
+    "A": 0.0
+    "B": 5.0
+materials:
+  - id: MAT_WOOD
+    name: Wood Finish
+    category: FINISH
+    unit_cost_ref: REF_WOOD
+elements:
+  - class: IfcCovering
+    tag: SKIRT-1
+    covering_type: SKIRTING
+    material: MAT_WOOD
+    thickness: 0.015
+    placement:
+      storey: L1
+      boundary:
+        - ["1", "A"]
+        - ["2", "A"]
+        - ["2", "B"]
+        - ["1", "B"]
+  - class: IfcCovering
+    tag: CLAD-1
+    covering_type: CLADDING
+    material: MAT_WOOD
+    thickness: 0.02
+    placement:
+      storey: L1
+      boundary:
+        - ["1", "A"]
+        - ["2", "A"]
+"""
+    )
+
+    manifest = load_manifest(manifest_yaml)
+    html = generate_viewer_html(manifest)
+
+    assert "SKIRT-1" in html
+    assert "CLAD-1" in html
+    assert "architecture/finishes/skirting" in html
+    assert "architecture/finishes/cladding" in html
+    assert "บัวเชิงผนัง (Skirting)" in html
+    assert "ผนังตกแต่ง (Cladding)" in html
+
+
 def test_cli_view_help():
     result = runner.invoke(app, ["view", "--help"])
     assert result.exit_code == 0

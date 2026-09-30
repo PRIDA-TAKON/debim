@@ -581,6 +581,12 @@ def generate_viewer_html(
     # Coverings
     for cov in resolved.coverings:
         c_type = cov.covering_type
+        cov_layer = cov.layer or ""
+        if cov_layer.startswith("architecture/coverings/"):
+            cov_layer = cov_layer.replace("architecture/coverings/", "architecture/finishes/")
+        elif not cov_layer or cov_layer in ("architecture/coverings", "architecture/finishes"):
+            cov_layer = f"architecture/finishes/{c_type.lower()}"
+
         if c_type == "CEILING":
             c_th = "ฝ้าเพดาน (Ceiling)"
             color = "#EDE8F5" if "GYPSUM" in (cov.element.material or "") else ("#E2E8F0" if "TBAR" in (cov.element.material or "") else "#D1D5DB")
@@ -593,67 +599,197 @@ def generate_viewer_html(
             c_th = "บัวเชิงผนัง (Skirting)"
             color = "#B45309"
             opacity = 1.0
+        elif c_type == "CLADDING":
+            c_th = "ผนังตกแต่ง (Cladding)"
+            color = "#D97706"
+            opacity = 1.0
         else:
             c_th = f"วัสดุตกแต่งผิว ({c_type})"
             color = "#E5E7EB"
             opacity = 0.70
 
-        if c_type == "SKIRTING" and cov.polygon and len(cov.polygon) >= 3:
-            elements_data.append({
-                "tag": cov.tag,
-                "class": "IfcCovering",
-                "material": cov.element.material,
-                "geometry_type": "line_loop",
-                "points": cov.polygon,
-                "color": color,
-                "linewidth": 3,
-                "layer": cov.layer,
-                "covering_type": c_type,
-                "member_name": f"{c_th} - {cov.element.material}",
-                "dimensions": {
-                    "length": cov.perimeter or cov.area,
-                },
-            })
-        elif cov.polygon and len(cov.polygon) >= 3:
-            elements_data.append({
-                "tag": cov.tag,
-                "class": "IfcCovering",
-                "material": cov.element.material,
-                "geometry_type": "polygon",
-                "points": cov.polygon,
-                "color": color,
-                "layer": cov.layer,
-                "covering_type": c_type,
-                "member_name": f"{c_th} - {cov.element.material}",
-                "dimensions": {
-                    "area": cov.area,
-                    "thickness": cov.thickness,
-                },
-                "transparent": True,
-                "opacity": opacity,
-            })
+        if c_type == "SKIRTING":
+            sk_height = 0.10
+            sk_depth = cov.thickness if cov.thickness > 0 else 0.015
+            pts = cov.polygon or []
+            n_pts = len(pts)
+            if n_pts >= 2:
+                n_segs = n_pts if n_pts >= 3 else 1
+                for i in range(n_segs):
+                    p1 = pts[i]
+                    p2 = pts[(i + 1) % n_pts] if n_pts >= 3 else pts[1]
+                    dx = p2[0] - p1[0]
+                    dy = p2[1] - p1[1]
+                    seg_len = math.hypot(dx, dy)
+                    if seg_len <= 1e-4:
+                        continue
+                    angle = math.atan2(dy, dx)
+                    cx = (p1[0] + p2[0]) / 2.0
+                    cy = (p1[1] + p2[1]) / 2.0
+                    cz = (p1[2] + p2[2]) / 2.0 + sk_height / 2.0
+
+                    tag_val = f"{cov.tag}-Seg-{i+1}" if n_segs > 1 else cov.tag
+                    elements_data.append({
+                        "tag": tag_val,
+                        "class": "IfcCovering",
+                        "material": cov.element.material,
+                        "position": [cx, cy, cz],
+                        "rotation": [0, 0, angle],
+                        "dimensions": {
+                            "length": seg_len,
+                            "thickness": sk_depth,
+                            "height": sk_height,
+                        },
+                        "color": color,
+                        "layer": cov_layer,
+                        "covering_type": c_type,
+                        "member_name": f"{c_th} - {cov.element.material}",
+                    })
+            else:
+                w = math.sqrt(cov.area) if cov.area > 0 else (cov.perimeter or 2.0)
+                elements_data.append({
+                    "tag": cov.tag,
+                    "class": "IfcCovering",
+                    "material": cov.element.material,
+                    "position": [cov.center[0], cov.center[1], cov.center[2] + sk_height / 2.0],
+                    "rotation": [0, 0, 0],
+                    "dimensions": {
+                        "length": w,
+                        "thickness": sk_depth,
+                        "height": sk_height,
+                        "area": cov.area,
+                        "length_total": cov.perimeter if cov.perimeter > 0 else None,
+                    },
+                    "color": color,
+                    "layer": cov_layer,
+                    "covering_type": c_type,
+                    "member_name": f"{c_th} - {cov.element.material}",
+                })
+
+        elif c_type == "CLADDING":
+            cl_depth = cov.thickness if cov.thickness > 0 else 0.015
+            pts = cov.polygon or []
+            n_pts = len(pts)
+
+            z_vals = [p[2] for p in pts] if pts else []
+            is_vertical_poly = bool(z_vals and (max(z_vals) - min(z_vals) > 0.1))
+
+            if n_pts >= 3 and is_vertical_poly:
+                elements_data.append({
+                    "tag": cov.tag,
+                    "class": "IfcCovering",
+                    "material": cov.element.material,
+                    "geometry_type": "polygon",
+                    "points": cov.polygon,
+                    "color": color,
+                    "layer": cov_layer,
+                    "covering_type": c_type,
+                    "member_name": f"{c_th} - {cov.element.material}",
+                    "dimensions": {
+                        "area": cov.area,
+                        "thickness": cov.thickness,
+                    },
+                })
+            elif n_pts >= 2:
+                cl_height = 2.70
+                if cov.area > 0 and cov.perimeter > 0:
+                    calc_h = cov.area / cov.perimeter
+                    if 0.5 <= calc_h <= 6.0:
+                        cl_height = calc_h
+
+                n_segs = n_pts if n_pts >= 3 else 1
+                for i in range(n_segs):
+                    p1 = pts[i]
+                    p2 = pts[(i + 1) % n_pts] if n_pts >= 3 else pts[1]
+                    dx = p2[0] - p1[0]
+                    dy = p2[1] - p1[1]
+                    seg_len = math.hypot(dx, dy)
+                    if seg_len <= 1e-4:
+                        continue
+                    angle = math.atan2(dy, dx)
+                    cx = (p1[0] + p2[0]) / 2.0
+                    cy = (p1[1] + p2[1]) / 2.0
+                    cz = (p1[2] + p2[2]) / 2.0 + cl_height / 2.0
+
+                    tag_val = f"{cov.tag}-Seg-{i+1}" if n_segs > 1 else cov.tag
+                    elements_data.append({
+                        "tag": tag_val,
+                        "class": "IfcCovering",
+                        "material": cov.element.material,
+                        "position": [cx, cy, cz],
+                        "rotation": [0, 0, angle],
+                        "dimensions": {
+                            "length": seg_len,
+                            "thickness": cl_depth,
+                            "height": cl_height,
+                        },
+                        "color": color,
+                        "layer": cov_layer,
+                        "covering_type": c_type,
+                        "member_name": f"{c_th} - {cov.element.material}",
+                    })
+            else:
+                w = math.sqrt(cov.area) if cov.area > 0 else 2.0
+                cl_height = 2.70
+                elements_data.append({
+                    "tag": cov.tag,
+                    "class": "IfcCovering",
+                    "material": cov.element.material,
+                    "position": [cov.center[0], cov.center[1], cov.center[2] + cl_height / 2.0],
+                    "rotation": [0, 0, 0],
+                    "dimensions": {
+                        "width": w,
+                        "depth": w,
+                        "height": cl_height,
+                        "area": cov.area,
+                    },
+                    "color": color,
+                    "layer": cov_layer,
+                    "covering_type": c_type,
+                    "member_name": f"{c_th} - {cov.element.material}",
+                })
+
         else:
-            w = math.sqrt(cov.area) if cov.area > 0 else 2.0
-            elements_data.append({
-                "tag": cov.tag,
-                "class": "IfcCovering",
-                "material": cov.element.material,
-                "position": [cov.center[0], cov.center[1], cov.center[2]],
-                "rotation": [0, 0, 0],
-                "dimensions": {
-                    "width": w,
-                    "depth": w,
-                    "height": cov.thickness,
-                    "area": cov.area,
-                    "length": cov.perimeter if cov.perimeter > 0 else None,
-                },
-                "color": color,
-                "layer": cov.layer,
-                "covering_type": c_type,
-                "member_name": f"{c_th} - {cov.element.material}",
-                "transparent": True,
-                "opacity": opacity,
-            })
+            if cov.polygon and len(cov.polygon) >= 3:
+                elements_data.append({
+                    "tag": cov.tag,
+                    "class": "IfcCovering",
+                    "material": cov.element.material,
+                    "geometry_type": "polygon",
+                    "points": cov.polygon,
+                    "color": color,
+                    "layer": cov_layer,
+                    "covering_type": c_type,
+                    "member_name": f"{c_th} - {cov.element.material}",
+                    "dimensions": {
+                        "area": cov.area,
+                        "thickness": cov.thickness,
+                    },
+                    "transparent": True,
+                    "opacity": opacity,
+                })
+            else:
+                w = math.sqrt(cov.area) if cov.area > 0 else 2.0
+                elements_data.append({
+                    "tag": cov.tag,
+                    "class": "IfcCovering",
+                    "material": cov.element.material,
+                    "position": [cov.center[0], cov.center[1], cov.center[2]],
+                    "rotation": [0, 0, 0],
+                    "dimensions": {
+                        "width": w,
+                        "depth": w,
+                        "height": cov.thickness,
+                        "area": cov.area,
+                        "length": cov.perimeter if cov.perimeter > 0 else None,
+                    },
+                    "color": color,
+                    "layer": cov_layer,
+                    "covering_type": c_type,
+                    "member_name": f"{c_th} - {cov.element.material}",
+                    "transparent": True,
+                    "opacity": opacity,
+                })
 
     # MEP Elements: Pipes
     for pipe in resolved.pipes:
@@ -956,7 +1092,7 @@ def generate_viewer_html(
         "storeys": storeys_data,
         "grids": grids_data,
         "elements": elements_data,
-    }, indent=2)
+    }, indent=2, ensure_ascii=False)
 
     html_content = f"""<!DOCTYPE html>
 <html lang="en">

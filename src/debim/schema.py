@@ -1052,7 +1052,9 @@ def derive_default_layer(elem) -> str:
         return "architecture/roofs"
     elif cls == "IfcCovering":
         cov_type = getattr(elem, "covering_type", "general").lower()
-        return f"architecture/coverings/{cov_type}"
+        if cov_type in ("skirting", "cladding", "ceiling", "flooring", "roofing", "insulation", "membrane"):
+            return f"architecture/finishes/{cov_type}"
+        return f"architecture/finishes/{cov_type}"
     elif cls == "IfcPipeSegment":
         sys_type = getattr(elem, "system_type", "general").lower()
         return f"mep/plumbing/{sys_type}"
