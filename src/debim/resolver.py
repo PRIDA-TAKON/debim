@@ -704,6 +704,8 @@ ResolvedElement = Union[
     ResolvedUnitaryEquipment,
     ResolvedCustomElement,
     ResolvedTerminal,
+    ResolvedDoor,
+    ResolvedWindow,
 ]
 
 
@@ -2849,8 +2851,10 @@ class SpatialResolver:
                 for child in r_roof.children:
                     if isinstance(child, ResolvedDoor):
                         resolved_manifest.doors.append(child)
+                        resolved_manifest.elements.append(child)
                     elif isinstance(child, ResolvedWindow):
                         resolved_manifest.windows.append(child)
+                        resolved_manifest.elements.append(child)
                 resolved_manifest.elements.append(r_roof)
             elif isinstance(elem, IfcColumn):
                 r_col = self.resolve_column(elem)
@@ -2868,6 +2872,8 @@ class SpatialResolver:
                 resolved_manifest.walls.append(r_wall)
                 resolved_manifest.doors.extend(doors)
                 resolved_manifest.windows.extend(windows)
+                resolved_manifest.elements.extend(doors)
+                resolved_manifest.elements.extend(windows)
                 resolved_manifest.elements.append(r_wall)
             elif isinstance(elem, IfcPipeSegment):
                 r_pipe = self.resolve_pipe(elem)

@@ -179,6 +179,7 @@ class Dimensions(BaseModel):
 class IfcDoor(BaseModel):
     class_: Literal["IfcDoor"] = Field(alias="class", default="IfcDoor")
     tag: str
+    material: Optional[str] = None
     dimensions: Dimensions
     offset_distance: float
     sill_height: float = 0.00
@@ -188,6 +189,7 @@ class IfcDoor(BaseModel):
 class IfcWindow(BaseModel):
     class_: Literal["IfcWindow"] = Field(alias="class", default="IfcWindow")
     tag: str
+    material: Optional[str] = None
     dimensions: Dimensions
     offset_distance: float
     sill_height: float = 0.00

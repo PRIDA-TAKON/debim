@@ -16,6 +16,7 @@ from debim.resolver import (
     ResolvedCovering,
     ResolvedCustomElement,
     ResolvedDistributionBoard,
+    ResolvedDoor,
     ResolvedDuctSegment,
     ResolvedElement,
     ResolvedFooting,
@@ -31,6 +32,7 @@ from debim.resolver import (
     ResolvedUnitaryEquipment,
     ResolvedTerminal,
     ResolvedWall,
+    ResolvedWindow,
     resolve_manifest,
 )
 from debim.schema import ProjectManifest, load_manifest
@@ -438,6 +440,10 @@ class ProjectQTO(BaseModel):
     total_floor_tile_area: float = 0.0
     total_floor_polish_area: float = 0.0
     total_skirting_length: float = 0.0
+    # Openings Totals
+    total_doors_count: int = 0
+    total_windows_count: int = 0
+    total_openings_area: float = 0.0
     # MEP Totals
     total_cold_water_pipe_length: float = 0.0
     total_soil_pipe_length: float = 0.0
@@ -1270,6 +1276,46 @@ def calculate_element_qto(
             ),
         )
 
+    elif isinstance(resolved, ResolvedDoor):
+        elem = resolved.element
+        mat = getattr(elem, "material", None)
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=mat,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="DOOR",
+                fixture_type=elem.class_,
+                count=1,
+                width=resolved.width,
+                height=resolved.height,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedWindow):
+        elem = resolved.element
+        mat = getattr(elem, "material", None)
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=mat,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="WINDOW",
+                fixture_type=elem.class_,
+                count=1,
+                width=resolved.width,
+                height=resolved.height,
+            ),
+        )
+
     raise TypeError(f"Unsupported resolved element type: {type(resolved)}")
 
 
@@ -1324,6 +1370,11 @@ def calculate_qto(
     total_floor_polish = 0.0
     total_skirting = 0.0
 
+    # Openings Totals
+    total_doors = 0
+    total_windows = 0
+    total_openings_area = 0.0
+
     # MEP Totals
     total_cold_water_len = 0.0
     total_soil_len = 0.0
@@ -1352,7 +1403,18 @@ def calculate_qto(
 
     manifest_obj = resolved.manifest if hasattr(resolved, "manifest") else None
 
-    for elem in resolved.elements:
+    all_elements: List[ResolvedElement] = list(resolved.elements)
+    existing_tags = {e.tag for e in all_elements}
+    for door in resolved.doors:
+        if door.tag not in existing_tags:
+            all_elements.append(door)
+            existing_tags.add(door.tag)
+    for window in resolved.windows:
+        if window.tag not in existing_tags:
+            all_elements.append(window)
+            existing_tags.add(window.tag)
+
+    for elem in all_elements:
         eqto = calculate_element_qto(elem, manifest=manifest_obj)
         qto_elements.append(eqto)
 
@@ -1431,6 +1493,13 @@ def calculate_qto(
                 total_wall_paint_ext += eqto.wall_finishes.paint_exterior_area
                 total_wall_tile += eqto.wall_finishes.tile_area
 
+        if isinstance(elem, ResolvedDoor) or eqto.element_class == "IfcDoor":
+            total_doors += 1
+            total_openings_area += elem.width * elem.height
+        elif isinstance(elem, ResolvedWindow) or eqto.element_class == "IfcWindow":
+            total_windows += 1
+            total_openings_area += elem.width * elem.height
+
         if eqto.mep:
             if eqto.element_class == "IfcPipeSegment":
                 st = eqto.mep.system_type
@@ -1507,6 +1576,9 @@ def calculate_qto(
         total_floor_tile_area=total_floor_tile,
         total_floor_polish_area=total_floor_polish,
         total_skirting_length=total_skirting,
+        total_doors_count=total_doors,
+        total_windows_count=total_windows,
+        total_openings_area=total_openings_area,
         total_cold_water_pipe_length=total_cold_water_len,
         total_soil_pipe_length=total_soil_len,
         total_waste_pipe_length=total_waste_len,
