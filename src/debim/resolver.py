@@ -256,7 +256,7 @@ class ResolvedCovering(BaseModel):
     area: float  # Surface area (m2)
     perimeter: float = 0.0  # Perimeter length (m)
     center: Tuple[float, float, float]  # Centroid (cx, cy, cz)
-    layer: str = "architecture/coverings"
+    layer: str = "architecture/finishes"
 
 
 class ResolvedStairStep(BaseModel):
