@@ -376,6 +376,26 @@ def generate_cost_template(
         )
         item_disciplines["ROOF-STEEL-TRUSS"] = "roof"
 
+    if qto.total_roof_purlin_length > 0 and "MAT-STEEL-ROOF-PURLIN" not in required_items:
+        required_items["MAT-STEEL-ROOF-PURLIN"] = PriceItem(
+            name="Roof Steel Purlin / Batten",
+            unit="m",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="05 40 00", uniformat="B1020"),
+        )
+        item_disciplines["MAT-STEEL-ROOF-PURLIN"] = "roof"
+
+    if qto.total_roof_rafter_length > 0 and "MAT-STEEL-ROOF-RAFTER" not in required_items:
+        required_items["MAT-STEEL-ROOF-RAFTER"] = PriceItem(
+            name="Roof Steel Rafter / Truss Member",
+            unit="m",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="05 12 00", uniformat="B1020"),
+        )
+        item_disciplines["MAT-STEEL-ROOF-RAFTER"] = "roof"
+
     if qto.total_roof_covering_area > 0 and "ROOF-TILE-CONC" not in required_items:
         required_items["ROOF-TILE-CONC"] = PriceItem(
             name="Roof Tile Covering",
@@ -748,9 +768,23 @@ def estimate_cost(
                 )
                 break
 
-    # 6. Map roof items (Structural steel truss, Roof tiles, Ridge/Hip caps, Fascia, Insulation)
+    # 6. Map roof items (Structural steel truss, Roof tiles, Ridge/Hip caps, Fascia, Insulation, Purlins, Rafters)
+    if qto.total_roof_purlin_length > 0:
+        for code, item in catalog.items.items():
+            if "purlin" in code.lower() or "แป" in item.name or "batten" in code.lower():
+                qty = qto.total_roof_purlin_length if item.unit.lower() in ("m", "meter", "linear_meter") else sum(eq.roof.purlin_weight for eq in qto.elements if eq.roof)
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qty
+                break
+
+    if qto.total_roof_rafter_length > 0:
+        for code, item in catalog.items.items():
+            if "rafter" in code.lower() or "จันทัน" in item.name:
+                qty = qto.total_roof_rafter_length if item.unit.lower() in ("m", "meter", "linear_meter") else sum(eq.roof.rafter_weight for eq in qto.elements if eq.roof)
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qty
+                break
+
     if qto.total_roof_steel_weight > 0:
-        has_steel = any("steel" in c.lower() or "truss" in c.lower() for c in quantities_by_code.keys())
+        has_steel = any("steel" in c.lower() or "truss" in c.lower() or "purlin" in c.lower() or "rafter" in c.lower() for c in quantities_by_code.keys())
         if not has_steel:
             for code, item in catalog.items.items():
                 if "steel" in code.lower() or "โครงเหล็ก" in item.name or "truss" in code.lower():
