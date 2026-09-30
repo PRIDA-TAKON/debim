@@ -490,6 +490,7 @@ class StepSerializer:
                         None,
                         None,
                         None,
+                        None,
                         float(child.height),
                         float(child.width),
                     )
@@ -533,6 +534,7 @@ class StepSerializer:
                         generate_ifc_guid(),
                         None,
                         child.tag,
+                        None,
                         None,
                         None,
                         None,
@@ -666,6 +668,7 @@ class StepSerializer:
                         None,
                         None,
                         None,
+                        None,
                         float(child.height),
                         float(child.width),
                     )
@@ -707,6 +710,7 @@ class StepSerializer:
                         generate_ifc_guid(),
                         None,
                         child.tag,
+                        None,
                         None,
                         None,
                         None,
@@ -935,17 +939,6 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
 
     model = ifcopenshell.file(schema="IFC4")
 
-    # Geometric Contexts
-    context = ifcopenshell.api.run("context.add_context", model, context_type="Model")
-    body_context = ifcopenshell.api.run(
-        "context.add_context",
-        model,
-        context_type="Model",
-        context_identifier="Body",
-        target_view="MODEL_VIEW",
-        parent=context,
-    )
-
     # IfcProject
     project = ifcopenshell.api.run(
         "root.create_entity", model, ifc_class="IfcProject", name=project_info.name
@@ -956,6 +949,17 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
     u_area = ifcopenshell.api.run("unit.add_si_unit", model, unit_type="AREAUNIT")
     u_vol = ifcopenshell.api.run("unit.add_si_unit", model, unit_type="VOLUMEUNIT")
     ifcopenshell.api.run("unit.assign_unit", model, units=[u_length, u_area, u_vol])
+
+    # Geometric Contexts
+    context = ifcopenshell.api.run("context.add_context", model, context_type="Model")
+    body_context = ifcopenshell.api.run(
+        "context.add_context",
+        model,
+        context_type="Model",
+        context_identifier="Body",
+        target_view="MODEL_VIEW",
+        parent=context,
+    )
 
     # Site & Building
     site = ifcopenshell.api.run(
