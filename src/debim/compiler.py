@@ -7,7 +7,7 @@ import os
 import uuid
 import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from debim.resolver import (
     ResolvedBeam,
@@ -21,6 +21,41 @@ from debim.resolver import (
     resolve_manifest,
 )
 from debim.schema import ProjectManifest, load_manifest
+
+
+def _build_transform_matrix(
+    position: Tuple[float, float, float],
+    rotation: Optional[Tuple[float, float, float]] = None,
+):
+    """Build a 4x4 affine transformation matrix for 3D position and Euler rotations (rx, ry, rz in degrees)."""
+    import math
+    import numpy as np
+
+    x, y, z = position
+    rx, ry, rz = rotation if rotation else (0.0, 0.0, 0.0)
+
+    rx_r = math.radians(float(rx))
+    ry_r = math.radians(float(ry))
+    rz_r = math.radians(float(rz))
+
+    cx, sx = math.cos(rx_r), math.sin(rx_r)
+    cy, sy = math.cos(ry_r), math.sin(ry_r)
+    cz, sz = math.cos(rz_r), math.sin(rz_r)
+
+    R = np.array(
+        [
+            [cz * cy, cz * sy * sx - sz * cx, cz * sy * cx + sz * sx],
+            [sz * cy, sz * sy * sx + cz * cx, sz * sy * cx - cz * sx],
+            [-sy, cy * sx, cy * cx],
+        ]
+    )
+
+    mat = np.eye(4)
+    mat[:3, :3] = R
+    mat[0, 3] = float(x)
+    mat[1, 3] = float(y)
+    mat[2, 3] = float(z)
+    return mat
 
 
 def derive_custom_ifc_class(layer: Optional[str]) -> str:
@@ -165,7 +200,38 @@ class StepSerializer:
             unit_assignment,
         )
 
+        # Geometric Contexts
+        axis_3d_zero = self.create_entity(
+            "IfcAxis2Placement3D",
+            self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0)),
+            None,
+            None,
+        )
+        context_ref = self.create_entity(
+            "IfcGeometricRepresentationContext",
+            None,
+            "Model",
+            3,
+            1.0e-5,
+            axis_3d_zero,
+            None,
+        )
+        body_context_ref = self.create_entity(
+            "IfcGeometricRepresentationSubContext",
+            "Body",
+            "Model",
+            "*",
+            "*",
+            "*",
+            "*",
+            context_ref,
+            None,
+            ".MODEL_VIEW.",
+            None,
+        )
+
         # IfcSite & IfcBuilding
+        site_pl_ref = self.create_entity("IfcLocalPlacement", None, axis_3d_zero)
         site_ref = self.create_entity(
             "IfcSite",
             generate_ifc_guid(),
@@ -173,7 +239,7 @@ class StepSerializer:
             "Default Site",
             None,
             None,
-            None,
+            site_pl_ref,
             None,
             None,
             None,
@@ -182,6 +248,7 @@ class StepSerializer:
             None,
             None,
         )
+        bldg_pl_ref = self.create_entity("IfcLocalPlacement", site_pl_ref, axis_3d_zero)
         bldg_ref = self.create_entity(
             "IfcBuilding",
             generate_ifc_guid(),
@@ -189,7 +256,7 @@ class StepSerializer:
             project_info.name,
             None,
             None,
-            None,
+            bldg_pl_ref,
             None,
             None,
             None,
@@ -218,7 +285,12 @@ class StepSerializer:
 
         # Storeys mapping
         storey_refs: Dict[str, str] = {}
+        storey_pl_refs: Dict[str, str] = {}
+        storey_elevations: Dict[str, float] = {}
         for storey in manifest.spatial_structure.storeys:
+            st_pt = self.create_entity("IfcCartesianPoint", (0.0, 0.0, float(storey.elevation)))
+            st_axis = self.create_entity("IfcAxis2Placement3D", st_pt, None, None)
+            st_pl = self.create_entity("IfcLocalPlacement", bldg_pl_ref, st_axis)
             st_ref = self.create_entity(
                 "IfcBuildingStorey",
                 generate_ifc_guid(),
@@ -226,13 +298,15 @@ class StepSerializer:
                 storey.name,
                 None,
                 None,
-                None,
+                st_pl,
                 None,
                 None,
                 None,
                 float(storey.elevation),
             )
             storey_refs[storey.id] = st_ref
+            storey_pl_refs[storey.id] = st_pl
+            storey_elevations[storey.id] = float(storey.elevation)
 
         # Aggregate storeys under building
         if storey_refs:
@@ -502,6 +576,54 @@ class StepSerializer:
         for custom in resolved.custom_elements:
             st_id = custom.element.placement.storey
             ifc_cls = derive_custom_ifc_class(custom.layer)
+
+            # Local placement relative to storey
+            st_pl_ref = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+
+            px, py, pz = custom.position
+            rel_z = float(pz - st_elev)
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            rx, ry, rz = custom.rotation if custom.rotation else (0.0, 0.0, 0.0)
+            if abs(rz) > 1e-4 or abs(rx) > 1e-4 or abs(ry) > 1e-4:
+                import math
+                rz_r = math.radians(float(rz))
+                ref_dir = self.create_entity("IfcDirection", (round(math.cos(rz_r), 6), round(math.sin(rz_r), 6), 0.0))
+                axis_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, axis_dir, ref_dir)
+            else:
+                elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
+            # Shape representation
+            prod_shape_ref = None
+            dims = custom.dimensions or custom.element.dimensions
+            if dims:
+                w = float(dims.width)
+                d = float(dims.depth if dims.depth is not None else dims.width)
+                h = float(dims.height)
+
+                pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, w, d)
+
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, h)
+
+                shape_rep = self.create_entity(
+                    "IfcShapeRepresentation",
+                    body_context_ref,
+                    "Body",
+                    "SweptSolid",
+                    [solid],
+                )
+                prod_shape_ref = self.create_entity(
+                    "IfcProductDefinitionShape", None, None, [shape_rep]
+                )
+
             elem_ref = self.create_entity(
                 ifc_cls,
                 generate_ifc_guid(),
@@ -509,8 +631,8 @@ class StepSerializer:
                 custom.tag,
                 None,
                 None,
-                None,
-                None,
+                elem_pl,
+                prod_shape_ref,
                 None,
             )
             if st_id in storey_elements:
@@ -806,11 +928,23 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
     """Compile model using ifcopenshell library."""
     import ifcopenshell
     import ifcopenshell.api
+    import numpy as np
 
     manifest = resolved.manifest
     project_info = manifest.project
 
     model = ifcopenshell.file(schema="IFC4")
+
+    # Geometric Contexts
+    context = ifcopenshell.api.run("context.add_context", model, context_type="Model")
+    body_context = ifcopenshell.api.run(
+        "context.add_context",
+        model,
+        context_type="Model",
+        context_identifier="Body",
+        target_view="MODEL_VIEW",
+        parent=context,
+    )
 
     # IfcProject
     project = ifcopenshell.api.run(
@@ -834,6 +968,9 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
     ifcopenshell.api.run("aggregate.assign_object", model, products=[site], relating_object=project)
     ifcopenshell.api.run("aggregate.assign_object", model, products=[building], relating_object=site)
 
+    ifcopenshell.api.run("geometry.edit_object_placement", model, product=site, matrix=np.eye(4))
+    ifcopenshell.api.run("geometry.edit_object_placement", model, product=building, matrix=np.eye(4))
+
     # Building Storeys
     storey_objs: Dict[str, ifcopenshell.entity_instance] = {}
     for storey in manifest.spatial_structure.storeys:
@@ -841,6 +978,9 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             "root.create_entity", model, ifc_class="IfcBuildingStorey", name=storey.name
         )
         st_obj.Elevation = float(storey.elevation)
+        m_st = np.eye(4)
+        m_st[2][3] = float(storey.elevation)
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=st_obj, matrix=m_st)
         storey_objs[storey.id] = st_obj
 
     if storey_objs:
@@ -978,6 +1118,59 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = custom.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(custom_obj)
+
+        if st_id in storey_objs:
+            ifcopenshell.api.run(
+                "spatial.assign_container",
+                model,
+                products=[custom_obj],
+                relating_structure=storey_objs[st_id],
+            )
+
+        px, py, pz = custom.position
+        rx, ry, rz = custom.rotation if custom.rotation else (0.0, 0.0, 0.0)
+        mat = _build_transform_matrix((px, py, pz), (rx, ry, rz))
+        ifcopenshell.api.run(
+            "geometry.edit_object_placement",
+            model,
+            product=custom_obj,
+            matrix=mat,
+        )
+
+        dims = custom.dimensions or custom.element.dimensions
+        if dims:
+            w = float(dims.width)
+            d = float(dims.depth if dims.depth is not None else dims.width)
+            h = float(dims.height)
+
+            profile = model.createIfcRectangleProfileDef(
+                "AREA",
+                None,
+                model.createIfcAxis2Placement2D(
+                    model.createIfcCartesianPoint((0.0, 0.0))
+                ),
+                w,
+                d,
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                profile,
+                model.createIfcAxis2Placement3D(
+                    model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                    model.createIfcDirection((0.0, 0.0, 1.0)),
+                    model.createIfcDirection((1.0, 0.0, 0.0)),
+                ),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                h,
+            )
+            rep = model.createIfcShapeRepresentation(
+                body_context, "Body", "SweptSolid", [solid]
+            )
+            ifcopenshell.api.run(
+                "geometry.assign_representation",
+                model,
+                product=custom_obj,
+                representation=rep,
+            )
 
     # 6. Roofs & Roof Openings / Skylights
     for roof in resolved.roofs:
