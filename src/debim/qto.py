@@ -122,6 +122,36 @@ def parse_stirrups(
     return {bar_type: weight}, weight
 
 
+def parse_footing_mesh(
+    mesh_str: Optional[str], bar_length: float, distribution_length: float
+) -> Tuple[Dict[str, float], float]:
+    """
+    Parse footing rebar mesh spec across footing dimensions (e.g. 'DB12 @ 0.15m' or '4-DB16').
+    For '@ spacing' syntax:
+        num_bars = int(distribution_length / spacing) + 1
+        total_length = num_bars * bar_length
+        weight = total_length * unit_weight
+    For main bar count syntax (e.g. '4-DB16'):
+        weight = count * bar_length * unit_weight
+    Returns (dict_by_bar_type, total_weight).
+    """
+    if not mesh_str:
+        return {}, 0.0
+
+    match_spacing = re.search(r"([A-Za-z0-9]+)\s*@\s*([0-9.]+)", mesh_str)
+    if match_spacing:
+        bar_type = match_spacing.group(1).upper()
+        spacing = float(match_spacing.group(2))
+        if spacing <= 0:
+            return {}, 0.0
+        num_bars = int(distribution_length / spacing) + 1
+        unit_weight = get_bar_unit_weight(bar_type)
+        weight = num_bars * bar_length * unit_weight
+        return {bar_type: weight}, weight
+
+    return parse_main_bars(mesh_str, bar_length)
+
+
 # Standard linear masses (kg/m) for common structural steel profiles (TIS / JIS / ISO)
 STEEL_PROFILE_MASSES: Dict[str, float] = {
     # H-Beam (TIS 1227 / JIS G3192)
@@ -266,6 +296,7 @@ class SubstructureQTO(BaseModel):
     excavation_volume: float = 0.0     # m³
     pile_count: int = 0                # count
     pile_total_length: float = 0.0     # m
+    pile_chipping_count: int = 0       # count of pile heads chipped/trimmed
     pile_type: Optional[str] = None
 
 
@@ -367,6 +398,7 @@ class ProjectQTO(BaseModel):
     total_sand_bedding_volume: float = 0.0
     total_pile_count: int = 0
     total_pile_length: float = 0.0
+    total_pile_chipping_count: int = 0
     total_nosing_length: float = 0.0
     total_railing_length: float = 0.0
     total_wall_masonry_area: float = 0.0
@@ -448,8 +480,10 @@ def calculate_element_qto(
         total_rebar = 0.0
 
         if elem.reinforcement:
-            mx_dict, mx_wt = parse_main_bars(elem.reinforcement.mesh_x, w)
-            my_dict, my_wt = parse_main_bars(elem.reinforcement.mesh_y, d)
+            # mesh_x bars run along X axis (length = w), distributed along Y axis (distribution length = d)
+            mx_dict, mx_wt = parse_footing_mesh(elem.reinforcement.mesh_x, bar_length=w, distribution_length=d)
+            # mesh_y bars run along Y axis (length = d), distributed along X axis (distribution length = w)
+            my_dict, my_wt = parse_footing_mesh(elem.reinforcement.mesh_y, bar_length=d, distribution_length=w)
 
             for btype, wt in mx_dict.items():
                 rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
@@ -494,6 +528,7 @@ def calculate_element_qto(
                 excavation_volume=excav_vol,
                 pile_count=pile_cnt,
                 pile_total_length=total_len,
+                pile_chipping_count=pile_cnt,
                 pile_type=pile_type_str,
             )
 
@@ -916,6 +951,7 @@ def calculate_element_qto(
                 sand_bedding_volume=w * l * 0.05,
                 pile_count=2,
                 pile_total_length=2 * 12.0,
+                pile_chipping_count=2,
                 pile_type="I-180",
             )
         else:
@@ -1200,6 +1236,7 @@ def calculate_qto(
     total_excav_vol = 0.0
     total_piles_count = 0
     total_piles_len = 0.0
+    total_piles_chip = 0
     total_nosing_len = 0.0
     total_railing_len = 0.0
     total_wall_masonry = 0.0
@@ -1275,6 +1312,7 @@ def calculate_qto(
             total_excav_vol += eqto.substructure.excavation_volume
             total_piles_count += eqto.substructure.pile_count
             total_piles_len += eqto.substructure.pile_total_length
+            total_piles_chip += eqto.substructure.pile_chipping_count
 
         if eqto.covering:
             ctype = eqto.covering.covering_type.upper()
@@ -1378,6 +1416,7 @@ def calculate_qto(
         total_excavation_volume=total_excav_vol,
         total_pile_count=total_piles_count,
         total_pile_length=total_piles_len,
+        total_pile_chipping_count=total_piles_chip,
         total_nosing_length=total_nosing_len,
         total_railing_length=total_railing_len,
         total_wall_masonry_area=total_wall_masonry,

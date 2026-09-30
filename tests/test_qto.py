@@ -6,6 +6,7 @@ import pytest
 from debim.qto import (
     calculate_qto,
     get_bar_unit_weight,
+    parse_footing_mesh,
     parse_main_bars,
     parse_stirrups,
 )
@@ -49,6 +50,22 @@ def test_parse_stirrups():
     w_dict, total = parse_stirrups("RB6 @ 0.15m", element_length=3.5, width=0.2, depth=0.2)
     assert w_dict["RB6"] == pytest.approx(4.2624, rel=1e-2)
     assert total == pytest.approx(4.2624, rel=1e-2)
+
+
+def test_parse_footing_mesh():
+    # DB12 @ 0.15m across bar_length=1.2m, distribution_length=1.2m
+    # num_bars = int(1.2 / 0.15) + 1 = 9
+    # total_len = 9 * 1.2 = 10.8m
+    # unit weight DB12 = 0.888 kg/m -> 10.8 * 0.888 = 9.5904 kg
+    w_dict, total = parse_footing_mesh("DB12 @ 0.15m", bar_length=1.2, distribution_length=1.2)
+    assert w_dict["DB12"] == pytest.approx(9.5904, rel=1e-3)
+    assert total == pytest.approx(9.5904, rel=1e-3)
+
+    # 4-DB16 main bar syntax fallback
+    w_dict_mb, total_mb = parse_footing_mesh("4-DB16", bar_length=1.5, distribution_length=1.5)
+    # 4 * 1.5 * 1.578 = 9.468 kg
+    assert w_dict_mb["DB16"] == pytest.approx(9.468, rel=1e-3)
+    assert total_mb == pytest.approx(9.468, rel=1e-3)
 
 
 def test_townhouse_qto_calculations(sample_project_path):
@@ -119,7 +136,7 @@ def test_footing_substructure_qto():
 
 def test_ifcfooting_with_piles_qto():
     from debim.resolver import ResolvedFooting, ResolvedPile
-    from debim.schema import IfcFooting, FootingProfile, FootingPlacement, FootingPiles, PileProfile
+    from debim.schema import IfcFooting, FootingProfile, FootingPlacement, FootingPiles, PileProfile, FootingReinforcement
     from debim.qto import calculate_element_qto
 
     footing_elem = IfcFooting(
@@ -129,6 +146,10 @@ def test_ifcfooting_with_piles_qto():
             "material": "CONC_240",
             "profile": FootingProfile(width=1.20, depth=1.20, thickness=0.40),
             "placement": FootingPlacement(grid=("1", "A"), storey="L1"),
+            "reinforcement": FootingReinforcement(
+                mesh_x="DB12 @ 0.15m",
+                mesh_y="DB12 @ 0.15m",
+            ),
             "piles": FootingPiles(
                 count=4,
                 profile=PileProfile(shape="HEXAGONAL", dimension=0.15),
@@ -157,9 +178,12 @@ def test_ifcfooting_with_piles_qto():
     eqto = calculate_element_qto(resolved)
     assert eqto.concrete_volume == pytest.approx(1.20 * 1.20 * 0.40, rel=1e-3)
     assert eqto.formwork_area == pytest.approx(2.0 * (1.20 + 1.20) * 0.40, rel=1e-3)
+    assert eqto.rebar_weights["DB12"] == pytest.approx(2 * 9.5904, rel=1e-3)
+    assert eqto.total_rebar_weight == pytest.approx(19.1808, rel=1e-3)
     assert eqto.substructure is not None
     assert eqto.substructure.pile_count == 4
     assert eqto.substructure.pile_total_length == pytest.approx(24.0, rel=1e-3)
+    assert eqto.substructure.pile_chipping_count == 4
     assert eqto.substructure.lean_concrete_volume == pytest.approx(1.20 * 1.20 * 0.10, rel=1e-3)
     assert eqto.substructure.sand_bedding_volume == pytest.approx(1.20 * 1.20 * 0.05, rel=1e-3)
 

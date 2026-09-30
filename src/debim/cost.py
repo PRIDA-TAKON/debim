@@ -244,8 +244,9 @@ def generate_cost_template(
         )
         item_disciplines["MAT-PILE-PC"] = "substructure"
 
-    if qto.total_pile_count > 0:
-        if "MAT-PILE-DRIVE" not in required_items:
+    chip_cnt = qto.total_pile_chipping_count or qto.total_pile_count
+    if qto.total_pile_count > 0 or chip_cnt > 0:
+        if "MAT-PILE-DRIVE" not in required_items and qto.total_pile_count > 0:
             required_items["MAT-PILE-DRIVE"] = PriceItem(
                 name="Pile Driving Service",
                 unit="set",
@@ -254,15 +255,15 @@ def generate_cost_template(
                 standards=PriceItemStandards(masterformat="31 62 00", uniformat="A1020"),
             )
             item_disciplines["MAT-PILE-DRIVE"] = "substructure"
-        if "MAT-PILE-CUT" not in required_items:
-            required_items["MAT-PILE-CUT"] = PriceItem(
-                name="Pile Head Cut & Trimming",
+        if "MAT-PILE-CHIP" not in required_items and "MAT-PILE-CUT" not in required_items and chip_cnt > 0:
+            required_items["MAT-PILE-CHIP"] = PriceItem(
+                name="Pile Head Chipping / Trimming",
                 unit="set",
                 material_cost=0.0,
                 labor_cost=0.0,
                 standards=PriceItemStandards(masterformat="31 62 00", uniformat="A1020"),
             )
-            item_disciplines["MAT-PILE-CUT"] = "substructure"
+            item_disciplines["MAT-PILE-CHIP"] = "substructure"
 
     # 5. Finishes
     if qto.total_wall_plaster_area > 0 and "FIN-WALL-PLASTER" not in required_items:
@@ -696,10 +697,13 @@ def estimate_cost(
                     quantities_by_code.get(code, 0.0) + qto.total_pile_count
                 )
                 break
+
+    chip_count = qto.total_pile_chipping_count or qto.total_pile_count
+    if chip_count > 0:
         for code, item in catalog.items.items():
-            if "cut" in code.lower() or "ตัด" in item.name:
+            if "chip" in code.lower() or "cut" in code.lower() or "ตัด" in item.name or "สกัด" in item.name:
                 quantities_by_code[code] = (
-                    quantities_by_code.get(code, 0.0) + qto.total_pile_count
+                    quantities_by_code.get(code, 0.0) + chip_count
                 )
                 break
 

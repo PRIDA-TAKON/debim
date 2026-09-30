@@ -140,6 +140,76 @@ def test_generate_cost_template_single_file(sample_project_path, tmp_path):
     assert item_conc.standards.masterformat == "03 30 00"
 
 
+def test_footing_piles_cost_template_and_estimate():
+    from debim.qto import calculate_qto
+    from debim.cost import generate_cost_template, estimate_cost, PriceCatalog, PriceItem
+    from debim.schema import (
+        ProjectManifest,
+        ProjectInfo,
+        SpatialStructure,
+        Storey,
+        Grids,
+        Material,
+        IfcFooting,
+        FootingProfile,
+        FootingPlacement,
+        FootingPiles,
+        PileProfile,
+        FootingReinforcement,
+    )
+
+    manifest = ProjectManifest(
+        project=ProjectInfo(id="P01", name="Footing Rebar & Pile Test"),
+        spatial_structure=SpatialStructure(storeys=[Storey(id="L1", name="Level 1", elevation=0.0, height=3.0)]),
+        grids=Grids(axes_x={"1": 0.0, "2": 4.0}, axes_y={"A": 0.0, "B": 4.0}),
+        materials=[
+            Material(id="CONC_240", name="Concrete 240 ksc", category="concrete", unit_cost_ref="MAT-CONC-01")
+        ],
+        elements=[
+            IfcFooting(
+                **{
+                    "class": "IfcFooting",
+                    "tag": "F1-01",
+                    "material": "CONC_240",
+                    "profile": FootingProfile(width=1.5, depth=1.5, thickness=0.5),
+                    "placement": FootingPlacement(grid=("1", "A"), storey="L1"),
+                    "reinforcement": FootingReinforcement(
+                        mesh_x="DB12 @ 0.15m",
+                        mesh_y="DB12 @ 0.15m",
+                    ),
+                    "piles": FootingPiles(
+                        count=4,
+                        profile=PileProfile(shape="HEXAGONAL", dimension=0.15),
+                        length=8.0,
+                    ),
+                }
+            )
+        ],
+    )
+
+    qto = calculate_qto(manifest)
+    assert qto.total_pile_count == 4
+    assert qto.total_pile_length == 32.0
+    assert qto.total_pile_chipping_count == 4
+    assert qto.total_rebar_weight > 0.0
+
+    tmpl_path = generate_cost_template(manifest)
+    catalog = load_price_catalog(tmpl_path)
+
+    assert "MAT-REBAR-DB12" in catalog.items
+    assert "MAT-PILE-PC" in catalog.items
+    assert "MAT-PILE-DRIVE" in catalog.items
+    assert "MAT-PILE-CHIP" in catalog.items
+
+    # Populate dummy costs
+    catalog.items["MAT-PILE-CHIP"].labor_cost = 250.0
+    est = estimate_cost(qto, catalog, manifest)
+
+    chip_line = next(item for item in est.line_items if item.code == "MAT-PILE-CHIP")
+    assert chip_line.quantity == 4.0
+    assert chip_line.total_labor_cost == 1000.0
+
+
 def test_generate_cost_template_modular(sample_project_path, tmp_path):
     out_main = tmp_path / "prices" / "catalog.yaml"
     res_path = generate_cost_template(sample_project_path, output_path=out_main, modular=True)
