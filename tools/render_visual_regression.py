@@ -274,6 +274,8 @@ def run_visual_regression(
     output_dir: Path,
     max_elements_per_type: int = 3,
     limit_total: int = 15,
+    save_images: bool = True,
+    save_passes_sample_limit: int = 2,
 ) -> Dict[str, Any]:
     """
     Runs component-level visual regression between Original IFC and debim Recompiled model.
@@ -287,13 +289,39 @@ def run_visual_regression(
 
     # 1. Compile through debim roundtrip and resolve 3D geometry
     print("  [1/4] Importing IFC to debim YAML & Resolving 3D Meshes...")
-    manifest = import_ifc_to_manifest(ifc_path)
-    resolved = resolve_manifest(manifest)
-    debim_meshes = extract_all_resolved_meshes(resolved)
+    try:
+        manifest = import_ifc_to_manifest(ifc_path)
+        resolved = resolve_manifest(manifest)
+        debim_meshes = extract_all_resolved_meshes(resolved)
+    except Exception as e:
+        print(f"  [WARN] debim import/resolve skipped for {ifc_path.name}: {e}")
+        return {
+            "total_tested": 0,
+            "pass_count": 0,
+            "avg_match": 0.0,
+            "avg_iou": 0.0,
+            "report_path": None,
+            "duration": round(time.time() - t0, 2),
+            "status": "IMPORT_ERROR",
+            "error": str(e),
+        }
 
     # 2. Open original IFC model
-    orig_model = ifcopenshell.open(str(ifc_path))
-    geom_settings = ifcopenshell.geom.settings()
+    try:
+        orig_model = ifcopenshell.open(str(ifc_path))
+        geom_settings = ifcopenshell.geom.settings()
+    except Exception as e:
+        print(f"  [WARN] IfcOpenShell failed to open {ifc_path.name}: {e}")
+        return {
+            "total_tested": 0,
+            "pass_count": 0,
+            "avg_match": 0.0,
+            "avg_iou": 0.0,
+            "report_path": None,
+            "duration": round(time.time() - t0, 2),
+            "status": "OPEN_ERROR",
+            "error": str(e),
+        }
 
     # 3. Categorize original elements
     orig_elements = [e for e in orig_model.by_type("IfcElement") if not e.is_a("IfcOpeningElement")]
@@ -305,6 +333,7 @@ def run_visual_regression(
         by_category.setdefault(t, []).append(e)
 
     tested_count = 0
+    passes_saved_per_class: Dict[str, int] = {}
     results: List[Dict[str, Any]] = []
 
     print(f"  [2/4] Testing isolated element shapes across {len(by_category)} categories...")
@@ -325,7 +354,11 @@ def run_visual_regression(
                         debim_mesh = v
                         break
 
-            orig_mesh = extract_mesh_from_element(elem, geom_settings)
+            try:
+                orig_mesh = extract_mesh_from_element(elem, geom_settings)
+            except Exception:
+                orig_mesh = None
+
             recomp_mesh = debim_mesh
 
             if orig_mesh is None:
@@ -354,22 +387,29 @@ def run_visual_regression(
                 iou_score = 0.0
                 pixel_score = 0.0
 
-            # Composite image
-            composite = generate_composite_panel(
-                img_orig, img_recomp, img_diff, tag, cls_name, iou_score, pixel_score
-            )
-            safe_name = f"{cls_name}_{tested_count:02d}_{tag}".replace(":", "_").replace("/", "_").replace(" ", "_")
-            img_filename = f"{safe_name}.png"
-            composite.save(images_dir / img_filename)
-
             status = "PASS" if pixel_score >= 0.85 else ("NEEDS_REVIEW" if pixel_score >= 0.60 else "FAIL")
+            saved_img_rel = None
+
+            if save_images:
+                # Save all non-pass images; for pass images, save up to sample limit per class
+                if status != "PASS" or passes_saved_per_class.get(cls_name, 0) < save_passes_sample_limit:
+                    composite = generate_composite_panel(
+                        img_orig, img_recomp, img_diff, tag, cls_name, iou_score, pixel_score
+                    )
+                    safe_name = f"{cls_name}_{tested_count:02d}_{tag}".replace(":", "_").replace("/", "_").replace(" ", "_")
+                    img_filename = f"{safe_name}.png"
+                    composite.save(images_dir / img_filename)
+                    saved_img_rel = f"images/{img_filename}"
+                    if status == "PASS":
+                        passes_saved_per_class[cls_name] = passes_saved_per_class.get(cls_name, 0) + 1
+
             results.append({
                 "tag": tag,
                 "class": cls_name,
                 "iou": round(iou_score * 100, 1),
                 "pixel_match": round(pixel_score * 100, 1),
                 "status": status,
-                "image": f"images/{img_filename}",
+                "image": saved_img_rel or "",
             })
             print(f"    - [{status}] {cls_name:18} | {tag:20} | IoU: {iou_score*100:5.1f}% | Match: {pixel_score*100:5.1f}%")
 
@@ -393,11 +433,15 @@ def run_visual_regression(
             f.write(f"| {r['class']} | `{r['tag']}` | {r['iou']}% | {r['pixel_match']}% | {status_icon} {r['status']} | ![{r['tag']}]({r['image']}) |\n")
 
     print(f"  [4/4] Done! Report written to: {report_md_path}\n")
+    avg_iou = float(np.mean([r["iou"] for r in results])) if results else 0.0
     return {
         "total_tested": len(results),
         "pass_count": pass_count,
-        "avg_match": avg_match,
+        "avg_match": float(avg_match),
+        "avg_iou": round(avg_iou, 1),
         "report_path": str(report_md_path),
+        "duration": round(time.time() - t0, 2),
+        "status": "PASS" if (pass_count == len(results) and len(results) > 0) else ("PARTIAL" if len(results) > 0 else "NO_ELEMENTS"),
     }
 
 
