@@ -328,6 +328,28 @@ flowchart LR
 2. **Deterministic & Fast:** รันเรนเดอร์และประมวลผลความต่างระดับพิกเซลจบใน **0.5 วินาทีต่อชิ้นส่วน** บน CPU ธรรมดา ไม่ต้องพึ่งพา GPU
 3. **Kaggle-Ready Batch Verification:** สคริปต์ถูกออกแบบให้รันแบบ Headless บน Kaggle ร่วมกับชุดโมเดลนับร้อยไฟล์ได้ทันที (`tools/render_visual_regression.py`)
 
+#### 4.5.7 ระเบียบวิธีวิจัย Benchmark: การขจัด Class Imbalance Bias ด้วย Geometry Variant Deduplication & Macro-Averaging
+
+ในการทดสอบมาราธอน 407 โมเดลบน Kaggle พบประเด็นสำคัญเชิงระเบียบวิธีวิจัย (Research Methodology & Benchmark Validity):
+
+```mermaid
+flowchart TD
+    subgraph Problem ["ปัญหาของการทดสอบแบบดิบ (Raw Exhaustive Testing)"]
+        P1["อาคาร MEP ขนาดใหญ่ (รพ./ศูนย์การค้า)"] --> P2["ข้องอท่อ/วาล์ว หน้าตาเดิมซ้ำ 2,500 จุด"]
+        P2 --> P3["เครื่องค้างเรนเดอร์ท่อซ้ำๆ นาน 5+ ชั่วโมง"]
+        P3 --> P4["⚠️ Artificial Accuracy Inflation & Simpson's Paradox:<br>ท่อ 2,500 ตัวได้ 98% ปั่นคะแนนรวมพุ่ง<br>บดบังเสา/คาน 30 ตัวที่หมุนผิดทิศ (0%) จนมองไม่เห็น!"]
+    end
+
+    subgraph Solution ["ทางแก้ตามหลักวิทยาศาสตร์ (debim Balanced Benchmark)"]
+        S1["สกัด Type Signature (IsTypedBy/ObjectType/Family)"] --> S2["Geometry Variant Deduplication (1-2 ตัวต่อแบบ)"]
+        S2 --> S3["เรนเดอร์เร็วขึ้น 250 เท่า (จบ 407 อาคารใน ~20 นาที)"]
+        S3 --> S4["🎯 Balanced Macro-Averaging (1 หมวดหมู่วิศวกรรม = 1 สิทธิ์โหวต)<br>แยกคะแนน Structural vs MEP บริสุทธิ์ ปราศจากตัวเลขลวงตา"]
+    end
+```
+
+> **📌 บันทึกการตัดสินใจทางวิศวกรรม (Engineering & Scientific Decision):**
+> ชุดทดสอบเดิมที่รันไปกว่า 5 ชั่วโมงและกำลังติดวนอยู่ในลูปชิ้นงานท่อซ้ำๆ ถูกสั่ง **Cancel ทันที** เนื่องจากต่อให้รันจบ ผลการทดลองก็ **ไม่สามารถนำไปใช้อ้างอิงทางวิชาการได้ (Unreliable & Statistically Flawed)** เพราะเกิดความลำเอียงของกลุ่มตัวอย่าง (Sampling Bias) การเปลี่ยนมาใช้ **Balanced Benchmark (`pridatakon/debim-3d-visual-balanced-benchmark`)** จึงเป็นแนวทางที่ถูกต้องตามมาตรฐานการประเมินผลระดับสากล (เช่นเดียวกับ mIoU ใน Computer Vision) ที่แท้จริง
+
 ---
 
 ## 5. แผนงานการพัฒนา (Milestones & Action Items)
