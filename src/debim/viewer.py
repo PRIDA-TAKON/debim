@@ -431,7 +431,9 @@ def generate_viewer_html(
             d = custom.dimensions.depth if custom.dimensions.depth is not None else 0.8
             h = custom.dimensions.height
             pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
-            if "furniture" in layer_lower or any(kw in tag_lower for kw in ["chair", "desk", "table", "bed", "sofa", "cabinet"]):
+            if "glass" in tag_lower or "glass" in layer_lower or "railing" in tag_lower or "railing" in layer_lower:
+                color = "#90CAF9"
+            elif "furniture" in layer_lower or any(kw in tag_lower for kw in ["chair", "desk", "table", "bed", "sofa", "cabinet"]):
                 color = "#D4A373" if any(kw in tag_lower for kw in ["desk", "table"]) else ("#C5A880" if "bed" in tag_lower else "#B58A63")
             elif any(kw in tag_lower for kw in ["water closet", "wc", "lavatory", "sink", "bath tub", "bathtub", "shower"]) or "sanitary" in layer_lower:
                 color = "#FFFFFF"
@@ -562,7 +564,7 @@ def generate_viewer_html(
             pos = [custom.position[0], custom.position[1], custom.position[2] + h / 2.0]
             color = "#A855F7"
 
-        elements_data.append({
+        elem_dict = {
             "tag": custom.tag,
             "class": "IfcCustomElement",
             "source": custom.element.source if custom.element and hasattr(custom.element, "source") else None,
@@ -576,7 +578,11 @@ def generate_viewer_html(
             },
             "color": color,
             "layer": custom.layer,
-        })
+        }
+        if "glass" in tag_lower or "glass" in layer_lower:
+            elem_dict["transparent"] = True
+            elem_dict["opacity"] = 0.45
+        elements_data.append(elem_dict)
 
     # Coverings
     for cov in resolved.coverings:

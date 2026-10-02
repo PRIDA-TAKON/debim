@@ -293,14 +293,14 @@ def test_export_csv(sample_project_path, sample_prices_path, tmp_path):
 
 
 def test_cli_cost_and_template_commands(sample_project_path, sample_prices_path, tmp_path):
-    # Test `bim qto`
+    # Test `debim qto`
     res_qto = runner.invoke(app, ["qto", "--manifest", str(sample_project_path)])
     assert res_qto.exit_code == 0
     assert "Quantitative Take-Off (QTO) Summary" in res_qto.output
     assert "C-A1" in res_qto.output
     assert "0.460" in res_qto.output
 
-    # Test `bim cost`
+    # Test `debim cost`
     out_csv = tmp_path / "boq.csv"
     res_cost = runner.invoke(
         app,
@@ -321,7 +321,7 @@ def test_cli_cost_and_template_commands(sample_project_path, sample_prices_path,
     assert "Exported BOQ CSV to:" in res_cost.output
     assert out_csv.exists()
 
-    # Test `bim cost -p -` (stdin piping)
+    # Test `debim cost -p -` (stdin piping)
     sample_prices_content = Path(sample_prices_path).read_text(encoding="utf-8")
     res_stdin = runner.invoke(
         app,
@@ -332,7 +332,7 @@ def test_cli_cost_and_template_commands(sample_project_path, sample_prices_path,
     assert "Cost Estimate Summary" in res_stdin.output
     assert "19,102.30" in res_stdin.output
 
-    # Test `bim cost template`
+    # Test `debim cost template`
     tmpl_file = tmp_path / "prices.template.yaml"
     res_tmpl = runner.invoke(
         app,

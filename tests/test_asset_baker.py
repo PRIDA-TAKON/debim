@@ -74,7 +74,7 @@ def test_bake_element_to_glb_helper():
 
 
 def test_import_cli_bake_assets_flag(tmp_path):
-    """Test bim import CLI command with --bake-assets flag."""
+    """Test debim import CLI command with --bake-assets flag."""
     fixture_path = Path(__file__).resolve().parent / "fixtures" / "Duplex_A_20110907.ifc"
     out_yaml = tmp_path / "project.yaml"
 

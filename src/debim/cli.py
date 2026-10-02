@@ -1,5 +1,5 @@
 """
-CLI interface for debim / bim
+CLI interface for debim
 """
 
 from pathlib import Path
@@ -25,6 +25,35 @@ app = typer.Typer(
     add_completion=False,
 )
 console = Console()
+
+DEBIM_BANNER = (
+    "\n"
+    "[bold #00ffff]  > _    [/bold #00ffff]  [bold #00ffff]██████╗ [/bold #00ffff][bold #22d3ee]███████╗[/bold #22d3ee][bold #38bdf8]██████╗ [/bold #38bdf8][bold #60a5fa]██╗[/bold #60a5fa][bold #818cf8]███╗   ███╗[/bold #818cf8]\n"
+    "[bold #00ffff]  \\ \\    [/bold #00ffff]  [bold #00ffff]██╔══██╗[/bold #00ffff][bold #22d3ee]██╔════╝[/bold #22d3ee][bold #38bdf8]██╔══██╗[/bold #38bdf8][bold #60a5fa]██║[/bold #60a5fa][bold #818cf8]████╗ ████║[/bold #818cf8]\n"
+    "[bold #00ffff] > \\ \\   [/bold #00ffff]  [bold #00ffff]██║  ██║[/bold #00ffff][bold #22d3ee]█████╗  [/bold #22d3ee][bold #38bdf8]██████╔╝[/bold #38bdf8][bold #60a5fa]██║[/bold #60a5fa][bold #818cf8]██╔████╔██║[/bold #818cf8]\n"
+    "[bold #00ffff]  \\ \\ \\  [/bold #00ffff]  [bold #00ffff]██║  ██║[/bold #00ffff][bold #22d3ee]██╔══╝  [/bold #22d3ee][bold #38bdf8]██╔══██╗[/bold #38bdf8][bold #60a5fa]██║[/bold #60a5fa][bold #818cf8]██║╚██╔╝██║[/bold #818cf8]\n"
+    "[bold #00ffff]   \\_\\_\\ [/bold #00ffff]  [bold #00ffff]██████╔╝[/bold #00ffff][bold #22d3ee]███████╗[/bold #22d3ee][bold #38bdf8]██████╔╝[/bold #38bdf8][bold #60a5fa]██║[/bold #60a5fa][bold #818cf8]██║ ╚═╝ ██║[/bold #818cf8]\n"
+    "[bold #ffd700]  ══════ [/bold #ffd700]  [bold #00ffff]╚═════╝ [/bold #00ffff][bold #22d3ee]╚══════╝[/bold #22d3ee][bold #38bdf8]╚═════╝ [/bold #38bdf8][bold #60a5fa]╚═╝[/bold #60a5fa][bold #818cf8]╚═╝     ╚═╝[/bold #818cf8]\n"
+    "[dim #64748b]  -------------------------------------------------------------[/dim #64748b]\n"
+    "[bold #94a3b8]   Declarative BIM Compiler  |  Building-as-Code for AI Agents [/bold #94a3b8]\n"
+)
+
+
+@app.callback(invoke_without_command=True)
+def main(
+    ctx: typer.Context,
+    version: bool = typer.Option(False, "--version", "-v", help="Show debim version"),
+):
+    """Minimal Declarative BIM (Building-as-Code) engine"""
+    if version:
+        console.print(DEBIM_BANNER)
+        console.print("[bold cyan]debim[/bold cyan] version [bold green]0.2.0[/bold green]")
+        raise typer.Exit()
+    if ctx.invoked_subcommand is None and not ctx.resilient_parsing:
+        console.print(DEBIM_BANNER)
+        console.print(ctx.get_help())
+        raise typer.Exit()
+
 
 
 @app.command()
@@ -597,7 +626,7 @@ def import_ifc(
                 f"[cyan]Output YAML:[/cyan] {output}\n"
                 f"[yellow]Elements Extracted:[/yellow] {len(manifest.elements)} elements\n"
                 f"[magenta]Asset Baking Enabled:[/magenta] {bake_assets}\n"
-                f"[dim]Run 'bim qto -m {output}' to calculate quantities & cost.[/dim]",
+                f"[dim]Run 'debim qto -m {output}' to calculate quantities & cost.[/dim]",
                 title="[bold green]debim IFC Importer[/bold green]",
             )
         )

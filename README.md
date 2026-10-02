@@ -1,25 +1,33 @@
-# debim 🏛️⚡
+<p align="center">
+  <img src="docs/assets/logo.svg" alt="debim logo" width="740" />
+</p>
 
-> **A minimal, Git-native, declarative BIM engine (Building-as-Code) designed for AI agents and humans.**
+<p align="center">
+  <strong>A minimal, Git-native, declarative BIM engine (Building-as-Code) designed for AI agents and humans.</strong>
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![BIM: IFC4](https://img.shields.io/badge/IFC-IFC4--Minimal-brightgreen.svg)](https://technical.buildingsmart.org/)
-[![Tests: 98 Passed](https://img.shields.io/badge/tests-98%20passed-success.svg)](tests/)
-[![Benchmark: 407 Models (100% Median)](https://img.shields.io/badge/benchmark-407%20models%20(100%25%20median)-blue.svg)](docs/research/2026_empirical_study_407_ifc_models.md)
+<p align="center">
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python: 3.11+" /></a>
+  <a href="https://technical.buildingsmart.org/"><img src="https://img.shields.io/badge/BIM-IFC4--Minimal-brightgreen.svg" alt="BIM: IFC4" /></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/tests-98%20passed-success.svg" alt="Tests: 98 Passed" /></a>
+  <a href="docs/research/2026_empirical_study_407_ifc_models.md"><img src="https://img.shields.io/badge/benchmark-407%20models%20(100%25%20median)-blue.svg" alt="Benchmark" /></a>
+</p>
 
 ---
 
-## 🎯 Why debim? (ทำไมเราถึงสร้าง debim ขึ้นมา?)
+## 🎯 Why debim? (จุดกำเนิดและปรัชญาของ debim)
+
+> *"หัวใจของ debim เริ่มจากการอยากให้ AI ทำ BOQ แต่การให้ AI คำนวณตึกทั้งหลังตรงๆ AI ตายแน่ จึงต้องใช้แบบจำลองคณิตศาสตร์ (BIM) ทว่ามาตรฐาน IFC ดั้งเดิมก็ซับซ้อนเกินไป หนักสมอง AI อีก จึงกลั่นออกมาเป็น Declarative YAML — แต่ผลพลอยได้ที่ได้รับกลับยิ่งใหญ่กว่าเป้าหมายแรกเริ่ม"*
 
 Traditional BIM tools (like Revit or Archicad) were built over 25 years ago for humans clicking with computer mice. They lock architectural data in heavy, proprietary gigabyte files (`.rvt`), charge thousands of dollars in annual licenses, and remain completely opaque to modern automation and AI agents.
 
-**debim** introduces **Building-as-Code**:
-1. **Human-First & Git-Native:** Architecture is expressed as plain text in YAML (`project.yaml`). Files are kilobytes instead of gigabytes. You can version-control buildings with Git and inspect design changes line-by-line.
-2. **Agent-Friendly by Design:** LLMs and autonomous coding agents (Jules, Claude, Antigravity) can read, modify, and optimize building designs natively without needing proprietary APIs.
-3. **Law-as-Code:** Building regulations (e.g. ministerial setback laws, clear heights, FAR) are codified as automated unit tests (`pytest`). If a design change violates local building codes, tests fail in CI/CD before breaking ground.
-4. **Site-Reality Driven (Grid-Relative):** In real construction, builders pull measuring tapes from grid lines (`[A, 1] + offset`), not global Cartesian `(X, Y, Z)` coordinates. debim computes the math so humans and foremen don't have to.
-5. **Open Standard Interoperability:** Compile directly into standard **IFC4** files (`dist/model.ifc`) to continue 2D drafting and documentation in BlenderBIM, FreeCAD, or Revit.
+**debim** ยึดมั่นใน **5 เสาหลักแห่งการออกแบบ (Core Tenets)**:
+1. **Building-as-Code & Git-Native:** อาคารคือซอฟต์แวร์ แสดงออกเป็นข้อความ YAML ขนาดกะทัดรัด (Kilobytes ไม่ใช่ Gigabytes) เพื่อให้ทำ Version Control, Git diff, และ Branching ตรวจสอบการแก้ไขได้ทีละบรรทัด
+2. **Deterministic Code Compliance:** กฎหมายอาคารและข้อกำหนดวิศวกรรมถูกแปลงเป็น Unit Test (`pytest`) รันตรวจจับข้อผิดพลาดและระยะร่นใน 0.01 วินาทีก่อนลงมือก่อสร้างจริง
+3. **Zero-License & Zero-Friction Visualization:** ตรวจสอบความถูกต้องทางเรขาคณิตได้ทันทีผ่าน 3D HTML Viewer น้ำหนักเบา เปิดบนเบราว์เซอร์หรือมือถือได้ทันที ไม่ต้องมีไลเซนส์ซอฟต์แวร์ราคาแพง
+4. **Universal Bridge & Dual Representation:** ตัวกลางเชื่อมโยง 2D, 3D (SketchUp/Blender), และ IFC โดยผสมผสาน 90% Primitives สำหรับคำนวณโครงสร้างและ BOQ + 10% Baked GLB Asset สำหรับงานสถาปัตย์ประณีต
+5. **Human & AI Super-Collaboration:** ออกแบบให้มี Explicit Uncertainty (`review_status: needs_review`) ให้มนุษย์และ AI ร่วมมือกันตรวจและเติมเต็มสเปกได้อย่างไร้รอยต่อ
 
 ---
 
@@ -29,7 +37,7 @@ If you use an AI coding assistant (like **Antigravity, Cursor, Claude Code, Jule
 
 Just copy and send this prompt to your AI:
 
-> *"Please read https://github.com/PRIDA-TAKON/debim and `AGENTS.md`, install debim in my environment, and run `bim --help` to verify."*
+> *"Please read https://github.com/PRIDA-TAKON/debim and `AGENTS.md`, install debim in my environment, and run `debim --help` to verify."*
 
 Your agent will inspect the repository, install the dependencies, and verify everything automatically.
 
@@ -55,31 +63,31 @@ pip install -e ".[ifc,dev]"
 
 ```bash
 # Initialize a new project
-bim init my-project
+debim init my-project
 
 # Validate schema syntax & grid references
-bim validate -m examples/townhouse/project.yaml
+debim validate -m examples/townhouse/project.yaml
 
 # Run automated building code compliance checks (pytest)
-bim test
+debim test
 
 # Calculate Quantitative Take-Off (Concrete vol, formwork, rebar schedule)
-bim qto -m examples/townhouse/project.yaml
+debim qto -m examples/townhouse/project.yaml
 
 # Generate project-scoped price template with international classifications
-bim cost template -m examples/townhouse/project.yaml -o prices.template.yaml
+debim cost template -m examples/townhouse/project.yaml -o prices.template.yaml
 
 # Estimate project budget & export BOQ to CSV
-bim cost -m examples/townhouse/project.yaml -p examples/townhouse/prices.json -o dist/boq.csv
+debim cost -m examples/townhouse/project.yaml -p examples/townhouse/prices.json -o dist/boq.csv
 
 # Scaffold a new BIM element class boilerplate
-bim scaffold element IfcRailing
+debim scaffold element IfcRailing
 
 # Preview 3D model in your browser (Three.js with Hierarchical Layer Explorer)
-bim view -m examples/townhouse/project.yaml
+debim view -m examples/townhouse/project.yaml
 
 # Compile declarative YAML to standard IFC4 building model
-bim compile -m examples/townhouse/project.yaml -o dist/model.ifc
+debim compile -m examples/townhouse/project.yaml -o dist/model.ifc
 ```
 
 ---
@@ -201,7 +209,7 @@ Use relative offsets: `placement: { grid: [A, 1], offset: [1.20, 0.50] }`. Just 
 <details>
 <summary><b>Does this replace Revit or AutoCAD?</b></summary>
 <br>
-No, it complements them. debim handles the early-stage upstream workload: rapid feasibility, parametric sizing, AI generation, instant QTO/costing, and automated building law validation. Once validated, run <code>bim compile</code> to export standard IFC4 and load it directly into BlenderBIM, FreeCAD, or Revit for 2D drafting and detail annotations.
+No, it complements them. debim handles the early-stage upstream workload: rapid feasibility, parametric sizing, AI generation, instant QTO/costing, and automated building law validation. Once validated, run <code>debim compile</code> to export standard IFC4 and load it directly into BlenderBIM, FreeCAD, or Revit for 2D drafting and detail annotations.
 </details>
 
 ---

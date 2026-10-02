@@ -1,5 +1,5 @@
 """
-Unit tests for Element Scaffolding tool and CLI command (debim.scaffold / bim scaffold element)
+Unit tests for Element Scaffolding tool and CLI command (debim.scaffold / debim scaffold element)
 """
 
 import ast
