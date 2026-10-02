@@ -111,6 +111,52 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
     return meshes
 
 
+def get_element_type_signature(elem: Any, cls_name: str) -> str:
+    """
+    Extracts a canonical variant/family signature for an IFC element
+    to prevent testing hundreds of identical repeated components (e.g. pipe elbows, identical bolts).
+    """
+    import re
+
+    type_name = None
+    try:
+        # Check IFC4 IsTypedBy or IFC2x3 IsDefinedBy
+        if hasattr(elem, "IsTypedBy") and elem.IsTypedBy:
+            for rel in elem.IsTypedBy:
+                if hasattr(rel, "RelatingType") and rel.RelatingType and rel.RelatingType.Name:
+                    type_name = rel.RelatingType.Name
+                    break
+        if not type_name and hasattr(elem, "IsDefinedBy") and elem.IsDefinedBy:
+            for rel in elem.IsDefinedBy:
+                if rel.is_a("IfcRelDefinesByType") and hasattr(rel, "RelatingType") and rel.RelatingType and rel.RelatingType.Name:
+                    type_name = rel.RelatingType.Name
+                    break
+    except Exception:
+        pass
+
+    if type_name:
+        return f"{cls_name}::{type_name}"
+
+    # Check ObjectType
+    obj_type = getattr(elem, "ObjectType", None)
+    if obj_type and str(obj_type).strip():
+        return f"{cls_name}::{str(obj_type).strip()}"
+
+    # Clean Name: strip trailing instance IDs, Revit IDs, or numbered duplicates
+    # e.g. "Basic Wall:Interior - 100mm:382910" -> "Basic Wall:Interior - 100mm"
+    # e.g. "Tee - PVC - Sch 40:Standard [12345]" -> "Tee - PVC - Sch 40:Standard"
+    name = elem.Name or ""
+    if name:
+        cleaned_name = re.sub(r'[:#]\d+$', '', name)
+        cleaned_name = re.sub(r'\s+\[\d+\]$', '', cleaned_name)
+        cleaned_name = re.sub(r'\.\d{3,}$', '', cleaned_name)
+        cleaned_name = re.sub(r'_\d+$', '', cleaned_name)
+        if cleaned_name.strip():
+            return f"{cls_name}::{cleaned_name.strip()}"
+
+    return f"{cls_name}::default"
+
+
 def extract_mesh_from_element(elem: Any, settings: Any) -> Optional[Tuple[np.ndarray, np.ndarray]]:
     """
     Extracts 3D vertices (N, 3) and triangular faces (M, 3) from an IFC element.
@@ -276,9 +322,13 @@ def run_visual_regression(
     limit_total: int = 15,
     save_images: bool = True,
     save_passes_sample_limit: int = 2,
+    dedup_by_variant: bool = True,
+    max_samples_per_variant: int = 2,
 ) -> Dict[str, Any]:
     """
     Runs component-level visual regression between Original IFC and debim Recompiled model.
+    Supports variant deduplication to prevent high-frequency repeated parts (e.g. pipe fittings)
+    from causing extreme slowdowns and artificial accuracy inflation.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     images_dir = output_dir / "images"
@@ -299,7 +349,12 @@ def run_visual_regression(
             "total_tested": 0,
             "pass_count": 0,
             "avg_match": 0.0,
+            "macro_avg_match": 0.0,
+            "structural_match": None,
+            "mep_match": None,
             "avg_iou": 0.0,
+            "macro_avg_iou": 0.0,
+            "class_summary": {},
             "report_path": None,
             "duration": round(time.time() - t0, 2),
             "status": "IMPORT_ERROR",
@@ -316,7 +371,12 @@ def run_visual_regression(
             "total_tested": 0,
             "pass_count": 0,
             "avg_match": 0.0,
+            "macro_avg_match": 0.0,
+            "structural_match": None,
+            "mep_match": None,
             "avg_iou": 0.0,
+            "macro_avg_iou": 0.0,
+            "class_summary": {},
             "report_path": None,
             "duration": round(time.time() - t0, 2),
             "status": "OPEN_ERROR",
@@ -336,11 +396,25 @@ def run_visual_regression(
     passes_saved_per_class: Dict[str, int] = {}
     results: List[Dict[str, Any]] = []
 
-    print(f"  [2/4] Testing isolated element shapes across {len(by_category)} categories...")
+    print(f"  [2/4] Testing isolated element shapes across {len(by_category)} categories (dedup_by_variant={dedup_by_variant})...")
     for cls_name, elems in by_category.items():
-        sample_elems = elems[:max_elements_per_type]
+        if dedup_by_variant:
+            variant_groups: Dict[str, List[Any]] = {}
+            for e in elems:
+                sig = get_element_type_signature(e, cls_name)
+                variant_groups.setdefault(sig, []).append(e)
+
+            sample_elems = []
+            for sig, var_elems in variant_groups.items():
+                sample_elems.extend(var_elems[:max_samples_per_variant])
+                if max_elements_per_type and len(sample_elems) >= max_elements_per_type:
+                    sample_elems = sample_elems[:max_elements_per_type]
+                    break
+        else:
+            sample_elems = elems[:max_elements_per_type]
+
         for elem in sample_elems:
-            if tested_count >= limit_total:
+            if limit_total and tested_count >= limit_total:
                 break
 
             tag = elem.Name or f"{cls_name}-{elem.GlobalId[:6]}"
@@ -406,6 +480,7 @@ def run_visual_regression(
             results.append({
                 "tag": tag,
                 "class": cls_name,
+                "variant": get_element_type_signature(elem, cls_name),
                 "iou": round(iou_score * 100, 1),
                 "pixel_match": round(pixel_score * 100, 1),
                 "status": status,
@@ -413,32 +488,83 @@ def run_visual_regression(
             })
             print(f"    - [{status}] {cls_name:18} | {tag:20} | IoU: {iou_score*100:5.1f}% | Match: {pixel_score*100:5.1f}%")
 
-    # 4. Generate Markdown Visual Report
+    # 4. Calculate Balanced Macro & Micro Metrics
+    micro_avg_match = float(np.mean([r["pixel_match"] for r in results])) if results else 0.0
+    micro_avg_iou = float(np.mean([r["iou"] for r in results])) if results else 0.0
+    pass_count = sum(1 for r in results if r["status"] == "PASS")
+
+    class_scores: Dict[str, List[float]] = {}
+    class_ious: Dict[str, List[float]] = {}
+    for r in results:
+        class_scores.setdefault(r["class"], []).append(r["pixel_match"])
+        class_ious.setdefault(r["class"], []).append(r["iou"])
+
+    class_summary: Dict[str, Dict[str, Any]] = {}
+    structural_classes = {"IfcWall", "IfcColumn", "IfcBeam", "IfcSlab", "IfcFooting", "IfcMember", "IfcPlate"}
+    mep_classes = {"IfcPipeSegment", "IfcPipeFitting", "IfcDuctSegment", "IfcDuctFitting", "IfcDistributionPort", "IfcFlowTerminal"}
+
+    struct_matches: List[float] = []
+    mep_matches: List[float] = []
+
+    for cls, scores in class_scores.items():
+        cls_avg = float(np.mean(scores))
+        cls_iou = float(np.mean(class_ious.get(cls, [0.0])))
+        class_summary[cls] = {
+            "count": len(scores),
+            "avg_match": round(cls_avg, 1),
+            "avg_iou": round(cls_iou, 1),
+        }
+        if cls in structural_classes:
+            struct_matches.append(cls_avg)
+        elif cls in mep_classes:
+            mep_matches.append(cls_avg)
+
+    macro_avg_match = float(np.mean([cs["avg_match"] for cs in class_summary.values()])) if class_summary else 0.0
+    macro_avg_iou = float(np.mean([cs["avg_iou"] for cs in class_summary.values()])) if class_summary else 0.0
+    structural_match = round(float(np.mean(struct_matches)), 1) if struct_matches else None
+    mep_match = round(float(np.mean(mep_matches)), 1) if mep_matches else None
+
+    # 5. Generate Markdown Visual Report
     print("  [3/4] Generating Markdown Visual Regression Report...")
     report_md_path = output_dir / "visual_regression_report.md"
-    avg_match = np.mean([r["pixel_match"] for r in results]) if results else 0.0
-    pass_count = sum(1 for r in results if r["status"] == "PASS")
 
     with open(report_md_path, "w", encoding="utf-8") as f:
         f.write(f"# 📸 debim 3D Visual Regression Report: `{ifc_path.name}`\n\n")
         f.write(f"- **Total Components Tested:** {len(results)}\n")
         f.write(f"- **Pass Rate (>= 85% match):** {pass_count}/{len(results)} ({(pass_count/len(results)*100 if results else 0):.1f}%)\n")
-        f.write(f"- **Average Visual Match:** {avg_match:.1f}%\n")
+        f.write(f"- **Macro Average Match (Unweighted Class Mean):** {macro_avg_match:.1f}%\n")
+        f.write(f"- **Micro Average Match (All Samples):** {micro_avg_match:.1f}%\n")
+        if structural_match is not None:
+            f.write(f"- **Structural Elements Match:** {structural_match}%\n")
+        if mep_match is not None:
+            f.write(f"- **MEP Elements Match:** {mep_match}%\n")
         f.write(f"- **Execution Duration:** {time.time() - t0:.2f} seconds\n\n")
+
+        f.write("## Category Breakdown\n\n")
+        f.write("| Element Class | Tested Count | Mean Match (%) | Mean IoU (%) |\n")
+        f.write("|---|---|---|---|\n")
+        for cls, cs in class_summary.items():
+            f.write(f"| `{cls}` | {cs['count']} | {cs['avg_match']}% | {cs['avg_iou']}% |\n")
+        f.write("\n")
+
         f.write("## Component Comparison Matrix\n\n")
-        f.write("| Element Class | Tag | 3D BBox IoU | Visual Match | Status | Visual Inspection |\n")
-        f.write("|---|---|---|---|---|---|\n")
+        f.write("| Element Class | Tag | Variant Signature | 3D BBox IoU | Visual Match | Status | Visual Inspection |\n")
+        f.write("|---|---|---|---|---|---|---|\n")
         for r in results:
             status_icon = "🟢" if r["status"] == "PASS" else ("🟡" if r["status"] == "NEEDS_REVIEW" else "🔴")
-            f.write(f"| {r['class']} | `{r['tag']}` | {r['iou']}% | {r['pixel_match']}% | {status_icon} {r['status']} | ![{r['tag']}]({r['image']}) |\n")
+            f.write(f"| {r['class']} | `{r['tag']}` | `{r.get('variant', '-')}` | {r['iou']}% | {r['pixel_match']}% | {status_icon} {r['status']} | ![{r['tag']}]({r['image']}) |\n")
 
     print(f"  [4/4] Done! Report written to: {report_md_path}\n")
-    avg_iou = float(np.mean([r["iou"] for r in results])) if results else 0.0
     return {
         "total_tested": len(results),
         "pass_count": pass_count,
-        "avg_match": float(avg_match),
-        "avg_iou": round(avg_iou, 1),
+        "avg_match": round(micro_avg_match, 1),
+        "macro_avg_match": round(macro_avg_match, 1),
+        "structural_match": structural_match,
+        "mep_match": mep_match,
+        "avg_iou": round(micro_avg_iou, 1),
+        "macro_avg_iou": round(macro_avg_iou, 1),
+        "class_summary": class_summary,
         "report_path": str(report_md_path),
         "duration": round(time.time() - t0, 2),
         "status": "PASS" if (pass_count == len(results) and len(results) > 0) else ("PARTIAL" if len(results) > 0 else "NO_ELEMENTS"),
@@ -452,6 +578,9 @@ def main():
     parser.add_argument("--output", type=str, default="dist/visual_regression", help="Output directory for reports & images")
     parser.add_argument("--max-per-type", type=int, default=2, help="Max components per element class")
     parser.add_argument("--limit", type=int, default=10, help="Total component test limit per model")
+    parser.add_argument("--dedup", action="store_true", default=True, help="Enable variant deduplication to prevent repetitive sampling")
+    parser.add_argument("--no-dedup", action="store_false", dest="dedup", help="Disable variant deduplication")
+    parser.add_argument("--max-per-variant", type=int, default=2, help="Max components per unique type variant")
     args = parser.parse_args()
 
     out_dir = Path(args.output)
@@ -481,7 +610,7 @@ def main():
             print("Error: Please provide --ifc or --dir")
             sys.exit(1)
 
-    print(f"\n[BATCH] Running debim 3D Visual Regression across {len(ifc_files)} IFC models...")
+    print(f"\n[BATCH] Running debim 3D Visual Regression across {len(ifc_files)} IFC models (dedup={args.dedup})...")
     summary_results = []
     for idx, f in enumerate(ifc_files, 1):
         print(f"\n[{idx}/{len(ifc_files)}] Processing: {f.name}")
@@ -492,6 +621,8 @@ def main():
                 output_dir=model_out,
                 max_elements_per_type=args.max_per_type,
                 limit_total=args.limit,
+                dedup_by_variant=args.dedup,
+                max_samples_per_variant=args.max_per_variant,
             )
             summary_results.append({"name": f.name, **stat})
         except Exception as e:
@@ -502,18 +633,22 @@ def main():
         batch_report_path = out_dir / "batch_visual_regression_summary.md"
         total_comps = sum(s.get("total_tested", 0) for s in summary_results)
         total_passed = sum(s.get("pass_count", 0) for s in summary_results)
-        avg_score = np.mean([s.get("avg_match", 0) for s in summary_results]) if summary_results else 0.0
+        macro_score = np.mean([s.get("macro_avg_match", 0) for s in summary_results]) if summary_results else 0.0
+        micro_score = np.mean([s.get("avg_match", 0) for s in summary_results]) if summary_results else 0.0
 
         with open(batch_report_path, "w", encoding="utf-8") as f:
             f.write("# debim Batch 3D Visual Regression Summary\n\n")
             f.write(f"- **Total IFC Models Evaluated:** {len(summary_results)}/{len(ifc_files)}\n")
             f.write(f"- **Total 3D Components Tested:** {total_comps}\n")
             f.write(f"- **Overall Pass Rate:** {total_passed}/{total_comps} ({(total_passed/total_comps*100 if total_comps else 0):.1f}%)\n")
-            f.write(f"- **Mean Visual Match Score:** {avg_score:.1f}%\n\n")
-            f.write("| Model Name | Components Tested | Passed (>=85%) | Mean Match (%) | Detailed Report |\n")
-            f.write("|---|---|---|---|---|\n")
+            f.write(f"- **Macro Average Match (Balanced Across Classes):** {macro_score:.1f}%\n")
+            f.write(f"- **Micro Average Match (All Elements):** {micro_score:.1f}%\n\n")
+            f.write("| Model Name | Tested | Passed | Macro Match (%) | Micro Match (%) | Structural (%) | MEP (%) | Detailed Report |\n")
+            f.write("|---|---|---|---|---|---|---|---|\n")
             for s in summary_results:
-                f.write(f"| `{s['name']}` | {s.get('total_tested', 0)} | {s.get('pass_count', 0)} | {s.get('avg_match', 0):.1f}% | [View Report]({s['name']}/visual_regression_report.md) |\n")
+                struct_str = f"{s.get('structural_match')}%" if s.get('structural_match') is not None else "N/A"
+                mep_str = f"{s.get('mep_match')}%" if s.get('mep_match') is not None else "N/A"
+                f.write(f"| `{s['name']}` | {s.get('total_tested', 0)} | {s.get('pass_count', 0)} | {s.get('macro_avg_match', 0):.1f}% | {s.get('avg_match', 0):.1f}% | {struct_str} | {mep_str} | [View Report]({s['name']}/visual_regression_report.md) |\n")
 
         print(f"\n[DONE] Batch Visual Regression Complete! Summary written to: {batch_report_path}")
 

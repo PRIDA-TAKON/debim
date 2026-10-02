@@ -240,7 +240,12 @@ def run_stress_test(
             fut = executor.submit(process_single_ifc, task)
             futures[fut] = (ifc_f.name, str(ifc_f), ifc_f.stat().st_size)
 
+        total_tasks = len(futures)
+        completed_tasks = 0
+        t_batch_start = time.time()
+
         for fut, (fname, fpath, fsize) in futures.items():
+            completed_tasks += 1
             try:
                 res = fut.result(timeout=timeout_sec)
             except TimeoutError:
@@ -311,7 +316,10 @@ def run_stress_test(
             ))
             conn.commit()
 
-            print(f"[{res['status']:<15}] {fname} | Ret: {res['retention_rate_pct']:.1f}% | Comp: {res['compression_ratio_pct']:.1f}% | Time: {res['duration_sec']:.1f}s")
+            pct = (completed_tasks / total_tasks) * 100
+            elapsed_m = (time.time() - t_batch_start) / 60
+            eta_m = (elapsed_m / completed_tasks) * (total_tasks - completed_tasks) if completed_tasks > 0 else 0
+            print(f"[{completed_tasks:>3}/{total_tasks}] ({pct:5.1f}%) [{res['status']:<15}] {fname} | Ret: {res['retention_rate_pct']:.1f}% | Time: {res['duration_sec']:.1f}s | ETA: {eta_m:.1f}m")
 
     # Generate Export CSV and Markdown summary
     export_analytics(conn, output_dir)
