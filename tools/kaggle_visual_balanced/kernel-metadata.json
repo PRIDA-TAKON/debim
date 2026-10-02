@@ -1,0 +1,20 @@
+{
+  "id": "pridatakon/debim-3d-visual-balanced",
+  "title": "debim 3d visual balanced benchmark",
+  "code_file": "debim_visual_balanced.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "false",
+  "enable_gpu": "false",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [
+    "claytonmiller/example-ifc-file",
+    "sc0v1n0/ifc-samples-daa",
+    "pridatakon/debim-5000-ifc-benchmark",
+    "mac999/bim-ifc-examples-kict-buildings"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
