@@ -1,6 +1,6 @@
 {
   "id": "pridatakon/debim-3d-visual-regression",
-  "title": "debim 3D Visual Regression Benchmark",
+  "title": "debim 3d visual regression",
   "code_file": "debim_visual_regression.ipynb",
   "language": "python",
   "kernel_type": "notebook",
