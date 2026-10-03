@@ -50,68 +50,93 @@ flowchart TD
 
 ## 🛠️ Detailed Task Specifications for Jules
 
-### Wave 1: Immediate & Parallel (Open Issues Now)
+### Wave 1: Immediate & Parallel (COMPLETED - Merged in PRs #51, #52, #53)
+- [x] **Task 1.1:** `fix(importer): Add Box Impostor Fallback for MEP Valves and Controllers` (PR #52 merged) -> Valves jumped from 0.0% to 81.4%!
+- [x] **Task 1.2:** `fix(importer): Fix IfcCovering Storey Elevation and Planar Normal Alignment` (PR #53 merged) -> Ceilings jumped from 5.8% to 86.4%!
+- [x] **Task 1.3:** `feat(importer): Add Thin-Plate Solid Profile Extrusion for IfcPlate and Parts` (PR #51 merged) -> Plates jumped from 22.7% to 89.4%!
 
-#### Task 1.1: `fix(importer): Add Box Impostor Fallback for MEP Valves and Controllers`
-- **Goal:** Resolve 0.0% match across 235 components (`IfcValve`, `IfcDamper`, `IfcFlowController`, `IfcDistributionControlElement`).
-- **Files to Modify:**
-  - `src/debim/importer.py`
-  - `src/debim/schema.py`
-  - `tests/test_mep_importer.py`
-- **Implementation Requirements:**
-  1. In `importer.py`, detect `IfcValve`, `IfcDamper`, `IfcFlowController`, and `IfcDistributionControlElement`.
-  2. Extract 3D Axis-Aligned Bounding Box (AABB) using `ifcopenshell.geom.create_shape` or shape representations.
-  3. Map them into `CustomElement` or dedicated `MEPValve` / `MEPDamper` in `mep.yaml` with explicit `dimensions: {width, depth, height}` and `center: [x, y, z]`.
-  4. Ensure `tools/render_visual_regression.py`'s `extract_all_resolved_meshes` resolves them into 3D box meshes.
-  5. Add unit tests in `tests/test_mep_importer.py`. All 121 existing tests must pass.
+---
 
-#### Task 1.2: `fix(importer): Fix IfcCovering Storey Elevation and Planar Normal Alignment`
-- **Goal:** Resolve 5.8% match across 122 components (`IfcCovering` / Ceilings).
+### Wave 2: Dual Representation Enhancements (COMPLETED - Merged in PRs #56, #57)
+- [x] **Task 2.1:** `feat(viewer): Implement Door & Window Sub-Frame and Glazing Dual Representation` (PR #56 merged)
+- [x] **Task 2.2:** `feat(mep): Implement Port-Aligned Center of Mass for Pipe & Duct Fittings` (PR #57 merged)
+
+---
+
+### Wave 3: Controlled Benchmark Verification (COMPLETED)
+- [x] **Task 3.1:** `test(benchmark): Re-run 255-Model Balanced Benchmark on Kaggle`
+  - **Macro Average:** Rose from **70.57% -> 77.60% (+7.03%)**
+  - **Median Macro Match:** Rose from **80.90% -> 84.90% (+4.00%)**
+  - **Structural Match:** Rose from **86.46% -> 89.10% (+2.64%)**
+  - **Passing Components:** Rose from **2,865 -> 3,140 (+275 components)**
+
+---
+
+## 🌊 Wave 4: Geometric Orientation & Vector Alignment (Target: Macro $\ge 85.0\%$)
+
+Addressing the remaining failure modes identified in the 255-model benchmark:
+
+```mermaid
+flowchart TD
+    subgraph Wave4 ["Wave 4: Orientation & Alignment Fixes (Open Issues NOW)"]
+        W4_1["Issue #1: Invert Door/Window Offset & Swing for Reversed Wall Vectors<br>(Assignee: jules | Scope: importer.py, resolver.py)"]
+        W4_2["Issue #2: 3D Vertical Drop Rotation for MEP Elbow/Tee Fittings<br>(Assignee: jules | Scope: importer.py, resolver.py)"]
+        W4_3["Issue #3: 3D Vector Pitch Alignment for Diagonal Braces & Stringers<br>(Assignee: jules | Scope: importer.py)"]
+    end
+
+    subgraph Wave4_Final ["Final Step: Surpass 85.0% Milestone"]
+        W4_V["Re-run 255-Model Benchmark on Kaggle<br>Goal: Global Macro Average >= 85.0%"]
+    end
+
+    W4_1 --> W4_V
+    W4_2 --> W4_V
+    W4_3 --> W4_V
+```
+
+### Detailed Task Specifications for Jules (Wave 4)
+
+#### Task 4.1: `fix(importer): Align Door and Window Placement along Reversed Wall Vectors and Inward/Outward Swings`
+- **Goal:** Fix door/window orientation flip across 16 benchmark models (e.g. `cira.ifc` 13.2%, `OTC-Conference Center` 14.4%, `Svaleveien` 31.3%).
 - **Files to Modify:**
   - `src/debim/importer.py`
   - `src/debim/resolver.py`
-  - `tests/test_roof_covering_importer.py`
-- **Implementation Requirements:**
-  1. In `importer.py`, when parsing `IfcCovering`, extract the real relative elevation relative to the container storey rather than world 0.0.
-  2. Compute polygon vertex normals; if pointing downward (ceiling), ensure polygon points are ordered consistently (counter-clockwise looking up).
-  3. Ensure ceiling thickness defaults to at least 0.02m (20mm) if original thickness is zero or unspecified.
-  4. Add unit test in `tests/test_roof_covering_importer.py`. All 121 existing tests must pass.
+  - `tests/test_door_window_importer.py`
+- **Requirements for Jules:**
+  1. In `importer.py`, when extracting `IfcDoor` or `IfcWindow`, compare the host `IfcWall`'s 3D direction vector $\vec{D}_{wall} = P_{end} - P_{start}$ with the wall's local placement $X$-axis ($\vec{X}_{local}$).
+  2. If $\vec{D}_{wall} \cdot \vec{X}_{local} < 0$ (the IFC author drew the wall in reverse relative to the debim grid direction GX1 $\rightarrow$ GX2):
+     - Invert offset distance: `offset_distance = wall_length - offset_distance - opening_width`.
+     - Invert opening normal / swing direction (flip 180° around local Z).
+  3. Extract door leaf swing orientation from `IfcDoor.OperationType` or `ObjectPlacement.RefDirection` so inward vs outward swings are respected.
+  4. Add unit test in `tests/test_door_window_importer.py` testing walls drawn in both positive and negative directions.
+  5. Ensure all 128 existing unit tests continue to pass (`pytest`).
 
-#### Task 1.3: `feat(importer): Add Thin-Plate Solid Profile Extrusion for IfcPlate and Parts`
-- **Goal:** Elevate `IfcPlate` (22.7%) and `IfcBuildingElementPart` (34.2%).
+#### Task 4.2: `feat(mep): Add 3D Vertical Rotation Alignment for Drop Pipe and Duct Fittings`
+- **Goal:** Fix vertical pipe and duct drop fittings (e.g. `WestRiverSide Hospital` fitting match 61.9%) where elbows dive vertically (-Z) into floor or riser shafts.
 - **Files to Modify:**
   - `src/debim/importer.py`
+  - `src/debim/resolver.py`
+  - `tests/test_mep_importer.py`
+- **Requirements for Jules:**
+  1. In `importer.py`, when calculating port alignment for `IfcPipeFitting` / `IfcDuctFitting`:
+     - Inspect the unit direction vectors of connected `IfcDistributionPort` entities ($\vec{V}_1, \vec{V}_2$).
+     - If one port points along vertical axis ($\pm Z$), determine pitch angle $\theta$ (rotation around local Y or X axis).
+  2. Store vertical orientation in `custom_element.placement` (e.g. `rotation_3d: [rx, ry, rz]` or `axis_direction: [dx, dy, dz]`).
+  3. In `resolver.py` & `render_visual_regression.py`, apply the pitch/roll rotation to the 3D bounding box mesh so vertical elbows are rendered pointing down rather than flat.
+  4. Add unit test in `tests/test_mep_importer.py` testing vertical drop elbow fittings.
+  5. Ensure all 128 existing unit tests continue to pass (`pytest`).
+
+#### Task 4.3: `feat(importer): Support 3D Vector Pitch Alignment for Diagonal Structural Braces and Stair Members`
+- **Goal:** Elevate diagonal structural steel braces, trusses, and stair stringers (`IfcMember`) by aligning the oriented bounding box along their 3D slope vector.
+- **Files to Modify:**
+  - `src/debim/importer.py`
+  - `src/debim/resolver.py`
   - `tests/test_precision_importer.py`
-- **Implementation Requirements:**
-  1. In `importer.py`, support `IfcPlate` and `IfcBuildingElementPart` by reading their `IfcExtrudedAreaSolid` representation.
-  2. Extract longitudinal length, cross-sectional plate thickness, and extrusion direction.
-  3. Map them as structural plates with `polygon` + `thickness` or bounding extents.
-  4. Add unit tests in `tests/test_precision_importer.py`. All 121 existing tests must pass.
+- **Requirements for Jules:**
+  1. In `importer.py`, when parsing `IfcMember`:
+     - If the member has a 3D centerline vector between start $P_1$ and end $P_2$ with $\Delta Z \ne 0$ (angled/diagonal):
+     - Compute length $L = \|P_2 - P_1\|$, pitch angle $\phi = \arcsin(\Delta Z / L)$, and yaw angle $\psi = \text{atan2}(\Delta Y, \Delta X)$.
+  2. Map diagonal members with explicit 3D orientation rather than unrotated axis-aligned bounds.
+  3. In `render_visual_regression.py`, orient the 3D mesh along $(L, W, D)$ rotated by $(\phi, \psi)$.
+  4. Add unit test in `tests/test_precision_importer.py` testing a 45-degree diagonal brace.
+  5. Ensure all 128 existing unit tests continue to pass (`pytest`).
 
----
-
-### Wave 2: Dependent Tasks (DO NOT open issues until Wave 1 is completed)
-
-#### Task 2.1: `feat(viewer): Implement Door & Window Sub-Frame and Glazing Dual Representation`
-- **Dependency:** Wait for Wave 1 PRs to merge.
-- **Goal:** Elevate `IfcDoor` (69.4%) and `IfcWindow` (68.2%) to $\ge 85.0\%$.
-- **Files:** `src/debim/viewer.py`, `tools/render_visual_regression.py`.
-- **Requirements:**
-  1. Generate door/window 3D meshes with an outer 50mm frame box + recessed 10mm glass panel box.
-  2. In `render_visual_regression.py`, include both frame and glass in the rendered composite mesh.
-
-#### Task 2.2: `feat(mep): Implement Port-Aligned Center of Mass for Pipe & Duct Fittings`
-- **Dependency:** Wait for Task 1.1 (`IfcValve` & Flow Controllers).
-- **Goal:** Elevate fitting 3D IoU from 38% to $\ge 60\%$ and visual match from 75% to $\ge 82\%$.
-- **Files:** `src/debim/importer.py`, `src/debim/resolver.py`.
-- **Requirements:**
-  1. For elbow/tee fittings, calculate the intersection point of connected distribution ports (`IfcDistributionPort`).
-  2. Place the bounding box centroid at the port intersection rather than the geometric AABB center.
-
----
-
-### Wave 3: Final Verification (DO NOT open issue until Wave 2 is completed)
-
-#### Task 3.1: `test(benchmark): Re-run 255-Model Balanced Benchmark on Kaggle`
-- **Dependency:** Wait for Wave 1 and Wave 2 PRs to merge into `main`.
-- **Goal:** Re-run `pridatakon/debim-3d-visual-balanced-benchmark` and verify **Macro Average $\ge 85.0\%$**.
