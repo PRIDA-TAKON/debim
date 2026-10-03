@@ -1148,11 +1148,74 @@ def import_ifc_to_manifest(
             )
         )
 
+    def extract_member_placement_and_dims(
+        elem: Any,
+        st_id: str,
+    ) -> Tuple[CustomElementPlacement, Optional[Dimensions]]:
+        st_elev = storey_elevation_by_id.get(st_id, 0.0)
+        if geom_settings is not None:
+            try:
+                import ifcopenshell.geom
+                import numpy as np
+
+                shape = ifcopenshell.geom.create_shape(geom_settings, elem)
+                verts = np.array(shape.geometry.verts, dtype=np.float64).reshape(-1, 3)
+                if len(verts) >= 4:
+                    mean = np.mean(verts, axis=0)
+                    cov = np.cov(verts - mean, rowvar=False)
+                    evals, evecs = np.linalg.eigh(cov)
+                    axis = evecs[:, -1]
+                    projections = (verts - mean) @ axis
+                    p1 = mean + np.min(projections) * axis
+                    p2 = mean + np.max(projections) * axis
+                    if p1[2] > p2[2]:
+                        p1, p2 = p2, p1
+
+                    dp = p2 - p1
+                    L = float(np.linalg.norm(dp))
+                    if L > 1e-4 and abs(dp[2]) > 1e-4:
+                        phi = float(math.asin(max(-1.0, min(1.0, dp[2] / L))))
+                        psi = float(math.atan2(dp[1], dp[0]))
+
+                        c_phi, s_phi = math.cos(phi), math.sin(phi)
+                        c_psi, s_psi = math.cos(psi), math.sin(psi)
+                        Ry = np.array([[c_phi, 0, -s_phi], [0, 1, 0], [s_phi, 0, c_phi]])
+                        Rz = np.array([[c_psi, -s_psi, 0], [s_psi, c_psi, 0], [0, 0, 1]])
+                        R = Rz @ Ry
+
+                        rot = _extract_euler_angles(R)
+
+                        v_local = (verts - mean) @ R
+                        w = round(L, 3)
+                        d = round(float(np.max(v_local[:, 1]) - np.min(v_local[:, 1])), 3)
+                        h = round(float(np.max(v_local[:, 2]) - np.min(v_local[:, 2])), 3)
+                        if d <= 0.0:
+                            d = 0.2
+                        if h <= 0.0:
+                            h = 0.2
+
+                        center_pos = (
+                            round(float(mean[0]), 3),
+                            round(float(mean[1]), 3),
+                            round(float(mean[2] - st_elev), 3),
+                        )
+                        placement = CustomElementPlacement(
+                            position=center_pos,
+                            storey=st_id,
+                            rotation=rot,
+                        )
+                        dims = Dimensions(width=w, depth=d, height=h)
+                        return placement, dims
+            except Exception:
+                pass
+
+        return extract_custom_placement_and_dims(elem, st_id)
+
     # 5.11 Extract Members
     for member in ifc_file.by_type("IfcMember"):
         tag = member.Name or f"MEMBER-{member.GlobalId[:8]}"
         st_id = get_elem_storey(member)
-        placement, dims = extract_custom_placement_and_dims(member, st_id)
+        placement, dims = extract_member_placement_and_dims(member, st_id)
         elements.append(
             IfcCustomElement(
                 **{
