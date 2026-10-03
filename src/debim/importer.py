@@ -63,6 +63,51 @@ def _extract_euler_angles(mat: Any) -> Optional[Tuple[float, float, float]]:
         return None
 
 
+def _extract_extruded_solid_dimensions(elem: Any) -> Optional[Dimensions]:
+    """Extract dimensions from IfcExtrudedAreaSolid representation if available."""
+    try:
+        if not hasattr(elem, "Representation") or not elem.Representation:
+            return None
+        for rep in getattr(elem.Representation, "Representations", []):
+            for item in getattr(rep, "Items", []):
+                if item.is_a("IfcExtrudedAreaSolid"):
+                    depth = float(item.Depth)
+                    profile = item.SweptArea
+                    x_dim, y_dim = None, None
+                    if profile.is_a("IfcRectangleProfileDef"):
+                        x_dim = float(profile.XDim)
+                        y_dim = float(profile.YDim)
+                    elif profile.is_a("IfcArbitraryClosedProfileDef") or profile.is_a("IfcArbitraryProfileDefWithVoids"):
+                        curve = getattr(profile, "OuterCurve", None)
+                        if curve and curve.is_a("IfcPolyline"):
+                            pts = [p.Coordinates for p in curve.Points]
+                            pxs = [float(p[0]) for p in pts]
+                            pys = [float(p[1]) for p in pts]
+                            x_dim = max(pxs) - min(pxs)
+                            y_dim = max(pys) - min(pys)
+
+                    dir_r = getattr(item.ExtrudedDirection, "DirectionRatios", (0.0, 0.0, 1.0))
+                    dx, dy, dz = (dir_r[0], dir_r[1], dir_r[2]) if len(dir_r) >= 3 else (0.0, 0.0, 1.0)
+
+                    if x_dim is not None and y_dim is not None:
+                        if abs(dz) > 0.9:
+                            w, d, h = x_dim, y_dim, depth
+                        elif abs(dx) > 0.9:
+                            w, d, h = depth, x_dim, y_dim
+                        elif abs(dy) > 0.9:
+                            w, d, h = x_dim, depth, y_dim
+                        else:
+                            w, d, h = x_dim, y_dim, depth
+                        return Dimensions(
+                            width=round(float(w), 3),
+                            depth=round(float(d), 3),
+                            height=round(float(h), 3),
+                        )
+    except Exception:
+        pass
+    return None
+
+
 def _extract_bounding_box(elem: Any, settings: Any = None) -> Optional[Dimensions]:
     """Extract exact 3D bounding box (width, depth, height) using ifcopenshell.geom.create_shape."""
     if settings is None:
@@ -70,7 +115,7 @@ def _extract_bounding_box(elem: Any, settings: Any = None) -> Optional[Dimension
             import ifcopenshell.geom
             settings = ifcopenshell.geom.settings()
         except Exception:
-            return None
+            return _extract_extruded_solid_dimensions(elem)
     try:
         import ifcopenshell.geom
         shape = ifcopenshell.geom.create_shape(settings, elem)
@@ -85,7 +130,7 @@ def _extract_bounding_box(elem: Any, settings: Any = None) -> Optional[Dimension
             return Dimensions(width=w, depth=d, height=h)
     except Exception:
         pass
-    return None
+    return _extract_extruded_solid_dimensions(elem)
 
 
 def _derive_furniture_slug(name: Optional[str]) -> str:
@@ -1073,6 +1118,33 @@ def import_ifc_to_manifest(
                         "tag": tag,
                         "name": tag,
                         "source": f"ifc/proxy/{tag}",
+                        "placement": placement,
+                        "dimensions": dims,
+                        "layer": p_layer,
+                    }
+                )
+            )
+
+    # 5.17 Extract Plates (IfcPlate) and Building Element Parts (IfcBuildingElementPart)
+    plate_configs = [
+        ("IfcPlate", "structure/plates", "PLATE"),
+        ("IfcBuildingElementPart", "structure/parts", "PART"),
+    ]
+    for p_cls, p_layer, p_prefix in plate_configs:
+        for elem in safe_by_type(p_cls):
+            if elem.GlobalId in extracted_custom_ids:
+                continue
+            extracted_custom_ids.add(elem.GlobalId)
+            tag = elem.Name or f"{p_prefix}-{elem.GlobalId[:8]}"
+            st_id = get_elem_storey(elem)
+            placement, dims = extract_custom_placement_and_dims(elem, st_id)
+            elements.append(
+                IfcCustomElement(
+                    **{
+                        "class": "IfcCustomElement",
+                        "tag": tag,
+                        "name": elem.Name or tag,
+                        "source": f"ifc/{p_prefix.lower()}/{tag}",
                         "placement": placement,
                         "dimensions": dims,
                         "layer": p_layer,

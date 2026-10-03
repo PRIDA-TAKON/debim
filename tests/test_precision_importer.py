@@ -65,3 +65,119 @@ def test_precision_bounding_box_dimensions():
         assert dims.width > 0.0
         assert dims.depth is not None and dims.depth > 0.0
         assert dims.height > 0.0
+
+
+def _create_test_ifc_with_plates_and_parts(tmp_path: Path) -> Path:
+    import ifcopenshell
+    import ifcopenshell.api
+
+    f = ifcopenshell.file(schema="IFC4")
+    project = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcProject", name="Plate Project")
+    u_length = ifcopenshell.api.run("unit.add_si_unit", f, unit_type="LENGTHUNIT")
+    ifcopenshell.api.run("unit.assign_unit", f, units=[u_length])
+
+    context = ifcopenshell.api.run("context.add_context", f, context_type="Model")
+    body_context = ifcopenshell.api.run(
+        "context.add_context",
+        f,
+        context_type="Model",
+        context_identifier="Body",
+        target_view="MODEL_VIEW",
+        parent=context,
+    )
+
+    site = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcSite", name="Site")
+    building = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcBuilding", name="Building")
+    storey = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcBuildingStorey", name="Level 1")
+    storey.Elevation = 0.0
+
+    ifcopenshell.api.run("aggregate.assign_object", f, products=[site], relating_object=project)
+    ifcopenshell.api.run("aggregate.assign_object", f, products=[building], relating_object=site)
+    ifcopenshell.api.run("aggregate.assign_object", f, products=[storey], relating_object=building)
+
+    # 1. Horizontal Plate
+    horiz_plate = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcPlate", name="HorizontalGussetPlate")
+    ifcopenshell.api.run("spatial.assign_container", f, products=[horiz_plate], relating_structure=storey)
+
+    profile_h = f.createIfcRectangleProfileDef("AREA", None, f.createIfcAxis2Placement2D(f.createIfcCartesianPoint((0.0, 0.0))), 2.0, 1.5)
+    solid_h = f.createIfcExtrudedAreaSolid(
+        profile_h,
+        f.createIfcAxis2Placement3D(f.createIfcCartesianPoint((1.0, 2.0, 0.0))),
+        f.createIfcDirection((0.0, 0.0, 1.0)),
+        0.02
+    )
+    rep_h = f.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid_h])
+    ifcopenshell.api.run("geometry.assign_representation", f, product=horiz_plate, representation=rep_h)
+
+    # 2. Vertical Plate
+    vert_plate = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcPlate", name="VerticalConnectionPlate")
+    ifcopenshell.api.run("spatial.assign_container", f, products=[vert_plate], relating_structure=storey)
+
+    profile_v = f.createIfcRectangleProfileDef("AREA", None, f.createIfcAxis2Placement2D(f.createIfcCartesianPoint((0.0, 0.0))), 0.3, 0.4)
+    solid_v = f.createIfcExtrudedAreaSolid(
+        profile_v,
+        f.createIfcAxis2Placement3D(f.createIfcCartesianPoint((3.0, 2.0, 0.5))),
+        f.createIfcDirection((1.0, 0.0, 0.0)),
+        0.015
+    )
+    rep_v = f.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid_v])
+    ifcopenshell.api.run("geometry.assign_representation", f, product=vert_plate, representation=rep_v)
+
+    # 3. Building Element Part
+    part_elem = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcBuildingElementPart", name="PrecastConnectionPart")
+    ifcopenshell.api.run("spatial.assign_container", f, products=[part_elem], relating_structure=storey)
+
+    profile_p = f.createIfcRectangleProfileDef("AREA", None, f.createIfcAxis2Placement2D(f.createIfcCartesianPoint((0.0, 0.0))), 0.5, 0.5)
+    solid_p = f.createIfcExtrudedAreaSolid(
+        profile_p,
+        f.createIfcAxis2Placement3D(f.createIfcCartesianPoint((5.0, 2.0, 0.0))),
+        f.createIfcDirection((0.0, 0.0, 1.0)),
+        0.05
+    )
+    rep_p = f.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid_p])
+    ifcopenshell.api.run("geometry.assign_representation", f, product=part_elem, representation=rep_p)
+
+    out_path = tmp_path / "test_plates.ifc"
+    f.write(str(out_path))
+    return out_path
+
+
+def test_import_horizontal_and_vertical_ifc_plates(tmp_path: Path):
+    """Test parsing and extraction of horizontal and vertical IfcPlate elements."""
+    ifc_file_path = _create_test_ifc_with_plates_and_parts(tmp_path)
+    manifest = import_ifc_to_manifest(ifc_file_path)
+
+    plates = [e for e in manifest.elements if getattr(e, "layer", "") == "structure/plates"]
+    assert len(plates) == 2
+
+    # Horizontal plate
+    horiz_plate = next((p for p in plates if p.name == "HorizontalGussetPlate"), None)
+    assert horiz_plate is not None
+    assert horiz_plate.dimensions is not None
+    assert horiz_plate.dimensions.width == 2.0
+    assert horiz_plate.dimensions.depth == 1.5
+    assert horiz_plate.dimensions.height == 0.02
+
+    # Vertical plate
+    vert_plate = next((p for p in plates if p.name == "VerticalConnectionPlate"), None)
+    assert vert_plate is not None
+    assert vert_plate.dimensions is not None
+    assert vert_plate.dimensions.width == 0.015
+    assert vert_plate.dimensions.depth == 0.3
+    assert vert_plate.dimensions.height == 0.4
+
+
+def test_import_ifc_building_element_parts(tmp_path: Path):
+    """Test parsing and extraction of IfcBuildingElementPart elements."""
+    ifc_file_path = _create_test_ifc_with_plates_and_parts(tmp_path)
+    manifest = import_ifc_to_manifest(ifc_file_path)
+
+    parts = [e for e in manifest.elements if getattr(e, "layer", "") == "structure/parts"]
+    assert len(parts) == 1
+
+    part = parts[0]
+    assert part.name == "PrecastConnectionPart"
+    assert part.dimensions is not None
+    assert part.dimensions.width == 0.5
+    assert part.dimensions.depth == 0.5
+    assert part.dimensions.height == 0.05

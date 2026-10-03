@@ -69,6 +69,10 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcRailing"
     if "member" in l:
         return "IfcMember"
+    if "plate" in l:
+        return "IfcPlate"
+    if "part" in l or "buildingelementpart" in l:
+        return "IfcBuildingElementPart"
     if "covering" in l:
         return "IfcCovering"
     if "stairflight" in l or "stair_flight" in l or "stair flight" in l or "stairflights" in l:
