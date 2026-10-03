@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 3D Visual Regression & Component-Level Render Comparator for debim.
 Renders individual architectural/structural elements from original IFC vs debim (YAML/recompiled),
@@ -15,12 +17,21 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-from PIL import Image
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+except ImportError:
+    matplotlib = None
+    plt = None
+    Poly3DCollection = None
 
 import ifcopenshell
 import ifcopenshell.geom

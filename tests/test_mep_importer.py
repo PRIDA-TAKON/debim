@@ -40,6 +40,82 @@ def test_derive_custom_ifc_class_mep_and_proxies():
     assert derive_custom_ifc_class("mep/pipes") == "IfcPipeSegment"
     assert derive_custom_ifc_class("mep/terminals") == "IfcAirTerminal"
     assert derive_custom_ifc_class("mep/fittings") == "IfcFlowFitting"
+    assert derive_custom_ifc_class("mep/valves") == "IfcValve"
+    assert derive_custom_ifc_class("mep/dampers") == "IfcDamper"
+    assert derive_custom_ifc_class("mep/flow_controllers") == "IfcFlowController"
+    assert derive_custom_ifc_class("mep/controls") == "IfcDistributionControlElement"
+
+
+def test_mep_flow_controls_extraction_and_recompilation(tmp_path: Path):
+    """Test extraction, 3D box impostor dimensions, placement, and re-compilation of valves, dampers, and controls."""
+    from debim.resolver import resolve_manifest
+    from tools.render_visual_regression import extract_all_resolved_meshes
+
+    model = ifcopenshell.file(schema="IFC4")
+    proj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcProject", name="Flow Control Test")
+    site = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcSite", name="Site")
+    bldg = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuilding", name="Bldg")
+    storey = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuildingStorey", name="Level 1")
+
+    ifcopenshell.api.run("aggregate.assign_object", model, products=[site], relating_object=proj)
+    ifcopenshell.api.run("aggregate.assign_object", model, products=[bldg], relating_object=site)
+    ifcopenshell.api.run("aggregate.assign_object", model, products=[storey], relating_object=bldg)
+
+    # Create flow control test elements
+    valve = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcValve", name="GateValve-01")
+    damper = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcDamper", name="SmokeDamper-01")
+    flow_ctrl = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcFlowController", name="FlowController-01")
+    ctrl_elem = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcDistributionControlElement", name="Thermostat-01")
+
+    elems = [valve, damper, flow_ctrl, ctrl_elem]
+    ifcopenshell.api.run("spatial.assign_container", model, products=elems, relating_structure=storey)
+
+    orig_ifc_path = tmp_path / "orig_flow_controls.ifc"
+    model.write(str(orig_ifc_path))
+
+    # 1. Import to manifest
+    manifest = import_ifc_to_manifest(orig_ifc_path)
+    assert len(manifest.elements) == 4
+
+    layers = [e.layer for e in manifest.elements if isinstance(e, IfcCustomElement)]
+    assert "mep/valves" in layers
+    assert "mep/dampers" in layers
+    assert "mep/flow_controllers" in layers
+    assert "mep/controls" in layers
+
+    # 2. Verify all extracted elements have valid non-zero dimensions & placements
+    for elem in manifest.elements:
+        assert isinstance(elem, IfcCustomElement)
+        assert elem.placement is not None
+        assert elem.placement.position is not None
+        assert elem.dimensions is not None
+        assert elem.dimensions.width > 0
+        assert elem.dimensions.height > 0
+        if elem.dimensions.depth is not None:
+            assert elem.dimensions.depth > 0
+
+    # 3. Verify 3D box mesh resolution for visual regression
+    resolved = resolve_manifest(manifest)
+    meshes = extract_all_resolved_meshes(resolved)
+    for elem in manifest.elements:
+        assert elem.tag in meshes
+        verts, faces = meshes[elem.tag]
+        assert len(verts) > 0
+        assert len(faces) > 0
+
+    # 4. Re-compile to IFC
+    recomp_ifc_path = tmp_path / "recomp_flow_controls.ifc"
+    compile_to_ifc(manifest, recomp_ifc_path)
+
+    orig_count, _ = count_ifc_elements(orig_ifc_path)
+    recomp_count, recomp_breakdown = count_ifc_elements(recomp_ifc_path)
+
+    assert orig_count == 4
+    assert recomp_count == 4
+    assert recomp_breakdown["IfcValve"] == 1
+    assert recomp_breakdown["IfcDamper"] == 1
+    assert recomp_breakdown["IfcFlowController"] == 1
+    assert recomp_breakdown["IfcDistributionControlElement"] == 1
 
 
 def test_mep_and_proxy_extraction_and_recompilation(tmp_path: Path):
