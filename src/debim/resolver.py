@@ -1057,14 +1057,20 @@ class SpatialResolver:
             calc_area = 0.0
             calc_perimeter = 0.0
             if n >= 3:
+                signed_area = 0.0
                 for i in range(n):
                     j = (i + 1) % n
-                    calc_area += pts_2d[i][0] * pts_2d[j][1]
-                    calc_area -= pts_2d[j][0] * pts_2d[i][1]
+                    signed_area += pts_2d[i][0] * pts_2d[j][1]
+                    signed_area -= pts_2d[j][0] * pts_2d[i][1]
                     dx = pts_2d[j][0] - pts_2d[i][0]
                     dy = pts_2d[j][1] - pts_2d[i][1]
                     calc_perimeter += math.sqrt(dx * dx + dy * dy)
-                calc_area = abs(calc_area) / 2.0
+                signed_area = signed_area / 2.0
+                calc_area = abs(signed_area)
+
+                if covering.covering_type == "CEILING" and signed_area > 0:
+                    pts_2d.reverse()
+                    poly_3d.reverse()
             
             area = covering.placement.area if covering.placement.area is not None else calc_area
             perimeter = covering.placement.length if covering.placement.length is not None else calc_perimeter

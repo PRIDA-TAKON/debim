@@ -11,7 +11,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from debim.compiler import compile_to_ifc
 from debim.importer import import_ifc_to_manifest
+from debim.resolver import resolve_manifest
 from debim.schema import (
+    CoveringPlacement,
     IfcCovering,
     IfcCustomElement,
     IfcRoof,
@@ -44,7 +46,7 @@ def test_extract_roofs_and_skylights(duplex_manifest):
 
 
 def test_extract_coverings(duplex_manifest):
-    """Verify that 13 ceiling coverings are extracted."""
+    """Verify that 13 ceiling coverings are extracted with correct storey offset and thickness."""
     coverings = [e for e in duplex_manifest.elements if isinstance(e, IfcCovering)]
     assert len(coverings) == 13, f"Expected 13 coverings, got {len(coverings)}"
 
@@ -52,6 +54,52 @@ def test_extract_coverings(duplex_manifest):
         assert cov.covering_type == "CEILING"
         assert cov.placement.area is not None and cov.placement.area > 0
         assert cov.thickness > 0
+        assert cov.placement.offset_z == 2.6, f"Expected offset_z 2.6, got {cov.placement.offset_z}"
+
+
+def test_ceiling_resolution_and_normal_vector_alignment(duplex_manifest):
+    """Verify resolved ceiling 3D coordinates, storey elevation, and downward normal orientation."""
+    resolved = resolve_manifest(duplex_manifest)
+    assert len(resolved.coverings) == 13
+
+    for r_cov in resolved.coverings:
+        assert r_cov.covering_type == "CEILING"
+        st_id = r_cov.element.placement.storey
+        # Level 1 elevation is 0.0 -> center Z should be 2.6
+        # Level 2 elevation is 3.1 -> center Z should be 5.7
+        if st_id == "Level 1":
+            assert abs(r_cov.center[2] - 2.6) < 0.01, f"Expected Level 1 ceiling Z=2.6, got {r_cov.center[2]}"
+        elif st_id == "Level 2":
+            assert abs(r_cov.center[2] - 5.7) < 0.01, f"Expected Level 2 ceiling Z=5.7, got {r_cov.center[2]}"
+
+        # Verify normal vector faces down towards floor (-Z)
+        if r_cov.polygon and len(r_cov.polygon) >= 3:
+            pts = r_cov.polygon
+            p1, p2, p3 = pts[0], pts[1], pts[2]
+            v1 = (p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2])
+            v2 = (p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2])
+            nz = v1[0] * v2[1] - v1[1] * v2[0]
+            assert nz < 0, f"Expected downward normal (nz < 0), got {nz}"
+
+
+def test_covering_default_thickness_fallback(tmp_path):
+    """Verify that an imported IfcCovering with missing/0.0 thickness defaults to 0.02m (20mm)."""
+    import ifcopenshell
+    f = ifcopenshell.file(schema="IFC4")
+    proj = f.create_entity("IfcProject", Name="TestProj")
+    site = f.create_entity("IfcSite", Name="TestSite")
+    bldg = f.create_entity("IfcBuilding", Name="TestBldg")
+    st = f.create_entity("IfcBuildingStorey", Name="Level 1", Elevation=0.0)
+    cov = f.create_entity("IfcCovering", Name="Ceiling_NoThick", PredefinedType="CEILING")
+    f.create_entity("IfcRelContainedInSpatialStructure", RelatedElements=[cov], RelatingStructure=st)
+
+    ifc_file_path = tmp_path / "test_no_thick.ifc"
+    f.write(str(ifc_file_path))
+
+    manifest = import_ifc_to_manifest(ifc_file_path)
+    imported_covs = [e for e in manifest.elements if isinstance(e, IfcCovering)]
+    assert len(imported_covs) == 1
+    assert imported_covs[0].thickness == 0.02
 
 
 def test_extract_stairs_railings_members(duplex_manifest):
