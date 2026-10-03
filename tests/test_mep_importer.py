@@ -171,3 +171,121 @@ def test_mep_and_proxy_extraction_and_recompilation(tmp_path: Path):
     assert recomp_breakdown["IfcBuildingElementProxy"] == 1
     assert recomp_breakdown["IfcChimney"] == 1
     assert recomp_breakdown["IfcDiscreteAccessory"] == 1
+
+
+def test_port_aligned_fitting_placement(tmp_path: Path):
+    """Verify that pipe and duct fitting placements align with connected port centerline junctions or fall back to centroid."""
+    from debim.resolver import resolve_manifest
+
+    model = ifcopenshell.file(schema="IFC4")
+    proj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcProject", name="Port Alignment Test")
+    site = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcSite", name="Site")
+    bldg = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuilding", name="Bldg")
+    storey = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuildingStorey", name="Level 1")
+
+    ifcopenshell.api.run("aggregate.assign_object", model, products=[site], relating_object=proj)
+    ifcopenshell.api.run("aggregate.assign_object", model, products=[bldg], relating_object=site)
+    ifcopenshell.api.run("aggregate.assign_object", model, products=[storey], relating_object=bldg)
+
+    # 1. Elbow Fitting (IfcPipeFitting) with raw local placement at Port 1 face (1.0, 0.0, 0.0)
+    elbow = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcPipeFitting", name="Elbow-90")
+    pt_e = model.create_entity("IfcCartesianPoint", Coordinates=(1.0, 0.0, 0.0))
+    axis_e = model.create_entity("IfcAxis2Placement3D", Location=pt_e)
+    elbow.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=axis_e)
+
+    pt_p1 = model.create_entity("IfcCartesianPoint", Coordinates=(1.0, 0.0, 0.0))
+    dir_p1_z = model.create_entity("IfcDirection", DirectionRatios=(1.0, 0.0, 0.0))
+    dir_p1_x = model.create_entity("IfcDirection", DirectionRatios=(0.0, 1.0, 0.0))
+    axis_p1 = model.create_entity("IfcAxis2Placement3D", Location=pt_p1, Axis=dir_p1_z, RefDirection=dir_p1_x)
+    port1 = model.create_entity("IfcDistributionPort", GlobalId=ifcopenshell.guid.new(), Name="Port1")
+    port1.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=axis_p1)
+
+    pt_p2 = model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 1.0, 0.0))
+    dir_p2_z = model.create_entity("IfcDirection", DirectionRatios=(0.0, 1.0, 0.0))
+    dir_p2_x = model.create_entity("IfcDirection", DirectionRatios=(1.0, 0.0, 0.0))
+    axis_p2 = model.create_entity("IfcAxis2Placement3D", Location=pt_p2, Axis=dir_p2_z, RefDirection=dir_p2_x)
+    port2 = model.create_entity("IfcDistributionPort", GlobalId=ifcopenshell.guid.new(), Name="Port2")
+    port2.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=axis_p2)
+
+    model.create_entity("IfcRelConnectsPortToElement", GlobalId=ifcopenshell.guid.new(), RelatingPort=port1, RelatedElement=elbow)
+    model.create_entity("IfcRelConnectsPortToElement", GlobalId=ifcopenshell.guid.new(), RelatingPort=port2, RelatedElement=elbow)
+
+    # 2. Tee Fitting (IfcDuctFitting) with 3 ports
+    tee = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcDuctFitting", name="Tee-Branch")
+    pt_t = model.create_entity("IfcCartesianPoint", Coordinates=(-1.0, 0.0, 0.0))
+    axis_t = model.create_entity("IfcAxis2Placement3D", Location=pt_t)
+    tee.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=axis_t)
+
+    t_p1 = model.create_entity("IfcDistributionPort", GlobalId=ifcopenshell.guid.new(), Name="TeePort1")
+    t_pt1 = model.create_entity("IfcCartesianPoint", Coordinates=(-1.0, 0.0, 0.0))
+    t_axis1 = model.create_entity("IfcAxis2Placement3D", Location=t_pt1, Axis=model.create_entity("IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)), RefDirection=model.create_entity("IfcDirection", DirectionRatios=(0.0, 1.0, 0.0)))
+    t_p1.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=t_axis1)
+
+    t_p2 = model.create_entity("IfcDistributionPort", GlobalId=ifcopenshell.guid.new(), Name="TeePort2")
+    t_pt2 = model.create_entity("IfcCartesianPoint", Coordinates=(1.0, 0.0, 0.0))
+    t_axis2 = model.create_entity("IfcAxis2Placement3D", Location=t_pt2, Axis=model.create_entity("IfcDirection", DirectionRatios=(-1.0, 0.0, 0.0)), RefDirection=model.create_entity("IfcDirection", DirectionRatios=(0.0, 1.0, 0.0)))
+    t_p2.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=t_axis2)
+
+    t_p3 = model.create_entity("IfcDistributionPort", GlobalId=ifcopenshell.guid.new(), Name="TeePort3")
+    t_pt3 = model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 1.0, 0.0))
+    t_axis3 = model.create_entity("IfcAxis2Placement3D", Location=t_pt3, Axis=model.create_entity("IfcDirection", DirectionRatios=(0.0, -1.0, 0.0)), RefDirection=model.create_entity("IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)))
+    t_p3.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=t_axis3)
+
+    model.create_entity("IfcRelConnectsPortToElement", GlobalId=ifcopenshell.guid.new(), RelatingPort=t_p1, RelatedElement=tee)
+    model.create_entity("IfcRelConnectsPortToElement", GlobalId=ifcopenshell.guid.new(), RelatingPort=t_p2, RelatedElement=tee)
+    model.create_entity("IfcRelConnectsPortToElement", GlobalId=ifcopenshell.guid.new(), RelatingPort=t_p3, RelatedElement=tee)
+
+    # 3. Parallel Coupling Fitting (IfcPipeFitting) with 2 collinear ports
+    coupling = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcPipeFitting", name="Coupling-Straight")
+    c_p1 = model.create_entity("IfcDistributionPort", GlobalId=ifcopenshell.guid.new(), Name="CoupPort1")
+    c_pt1 = model.create_entity("IfcCartesianPoint", Coordinates=(-0.5, 0.0, 0.0))
+    c_axis1 = model.create_entity("IfcAxis2Placement3D", Location=c_pt1, Axis=model.create_entity("IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)), RefDirection=model.create_entity("IfcDirection", DirectionRatios=(0.0, 1.0, 0.0)))
+    c_p1.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=c_axis1)
+
+    c_p2 = model.create_entity("IfcDistributionPort", GlobalId=ifcopenshell.guid.new(), Name="CoupPort2")
+    c_pt2 = model.create_entity("IfcCartesianPoint", Coordinates=(0.5, 0.0, 0.0))
+    c_axis2 = model.create_entity("IfcAxis2Placement3D", Location=c_pt2, Axis=model.create_entity("IfcDirection", DirectionRatios=(-1.0, 0.0, 0.0)), RefDirection=model.create_entity("IfcDirection", DirectionRatios=(0.0, 1.0, 0.0)))
+    c_p2.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=c_axis2)
+
+    model.create_entity("IfcRelConnectsPortToElement", GlobalId=ifcopenshell.guid.new(), RelatingPort=c_p1, RelatedElement=coupling)
+    model.create_entity("IfcRelConnectsPortToElement", GlobalId=ifcopenshell.guid.new(), RelatingPort=c_p2, RelatedElement=coupling)
+
+    # 4. Unlinked Fitting (0 ports)
+    unlinked = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcPipeFitting", name="Unlinked-Fitting")
+    u_pt = model.create_entity("IfcCartesianPoint", Coordinates=(5.0, 5.0, 0.0))
+    u_axis = model.create_entity("IfcAxis2Placement3D", Location=u_pt)
+    unlinked.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=u_axis)
+
+    elems = [elbow, tee, coupling, unlinked]
+    ifcopenshell.api.run("spatial.assign_container", model, products=elems, relating_structure=storey)
+
+    ifc_path = tmp_path / "port_alignment_test.ifc"
+    model.write(str(ifc_path))
+
+    manifest = import_ifc_to_manifest(ifc_path)
+    resolved = resolve_manifest(manifest)
+
+    # Verify positions
+    resolved_by_tag = {r.tag: r for r in resolved.custom_elements}
+
+    # Elbow should be aligned to (0.0, 0.0, 0.0) centerline junction
+    elbow_res = resolved_by_tag["Elbow-90"]
+    assert pytest.approx(elbow_res.position[0], abs=1e-2) == 0.0
+    assert pytest.approx(elbow_res.position[1], abs=1e-2) == 0.0
+    assert pytest.approx(elbow_res.position[2], abs=1e-2) == 0.0
+
+    # Tee should be aligned to (0.0, 0.0, 0.0) junction
+    tee_res = resolved_by_tag["Tee-Branch"]
+    assert pytest.approx(tee_res.position[0], abs=1e-2) == 0.0
+    assert pytest.approx(tee_res.position[1], abs=1e-2) == 0.0
+    assert pytest.approx(tee_res.position[2], abs=1e-2) == 0.0
+
+    # Straight Coupling should be centered at midpoint (0.0, 0.0, 0.0)
+    coup_res = resolved_by_tag["Coupling-Straight"]
+    assert pytest.approx(coup_res.position[0], abs=1e-2) == 0.0
+    assert pytest.approx(coup_res.position[1], abs=1e-2) == 0.0
+
+    # Unlinked fitting should fall back to its placement location (5.0, 5.0, 0.0)
+    unlinked_res = resolved_by_tag["Unlinked-Fitting"]
+    assert pytest.approx(unlinked_res.position[0], abs=1e-2) == 5.0
+    assert pytest.approx(unlinked_res.position[1], abs=1e-2) == 5.0

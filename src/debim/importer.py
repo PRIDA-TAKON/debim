@@ -331,6 +331,158 @@ def import_ifc_to_manifest(
         )
         return placement, dims
 
+    def _get_connected_ports(elem: Any) -> List[Any]:
+        """Retrieve connected IfcDistributionPort entities for an element via IfcRelConnectsPortToElement."""
+        ports = []
+        if hasattr(elem, "HasPorts") and elem.HasPorts:
+            for rel in elem.HasPorts:
+                p = getattr(rel, "RelatingPort", None)
+                if p and p.is_a("IfcDistributionPort"):
+                    ports.append(p)
+        if not ports and ifc_file is not None:
+            try:
+                for rel in ifc_file.by_type("IfcRelConnectsPortToElement"):
+                    if getattr(rel, "RelatedElement", None) == elem:
+                        p = getattr(rel, "RelatingPort", None)
+                        if p and p.is_a("IfcDistributionPort"):
+                            ports.append(p)
+            except Exception:
+                pass
+        seen = set()
+        unique_ports = []
+        for p in ports:
+            gid = getattr(p, "GlobalId", id(p))
+            if gid not in seen:
+                seen.add(gid)
+                unique_ports.append(p)
+        return unique_ports
+
+    def _compute_fitting_junction(
+        elem: Any,
+        ports: List[Any],
+        st_elev: float,
+    ) -> Tuple[float, float, float]:
+        """
+        Compute port-aligned centerline junction for MEP fittings (IfcPipeFitting, IfcDuctFitting, IfcFlowFitting).
+        If 2 or more ports exist, compute the intersection or midpoint of port axes.
+        Fall back to element geometric centroid if ports are unlinked.
+        """
+        import ifcopenshell.util.placement
+        import numpy as np
+
+        if len(ports) >= 2:
+            port_axes = []
+            for p in ports:
+                try:
+                    m = ifcopenshell.util.placement.get_local_placement(p.ObjectPlacement)
+                    P = np.array([float(m[0, 3]), float(m[1, 3]), float(m[2, 3])])
+                    d = np.array([float(m[0, 2]), float(m[1, 2]), float(m[2, 2])])
+                    norm = np.linalg.norm(d)
+                    if norm < 1e-6:
+                        d = np.array([float(m[0, 0]), float(m[1, 0]), float(m[2, 0])])
+                        norm = np.linalg.norm(d)
+                    if norm >= 1e-6:
+                        d = d / norm
+                        port_axes.append((P, d))
+                except Exception:
+                    pass
+
+            if len(port_axes) >= 2:
+                junctions = []
+                n = len(port_axes)
+                for i in range(n):
+                    for j in range(i + 1, n):
+                        p1, d1 = port_axes[i]
+                        p2, d2 = port_axes[j]
+                        cross = np.cross(d1, d2)
+                        denom = np.dot(cross, cross)
+                        if denom < 1e-4:
+                            junctions.append((p1 + p2) / 2.0)
+                        else:
+                            dp = p2 - p1
+                            t = np.dot(np.cross(dp, d2), cross) / denom
+                            s = np.dot(np.cross(dp, d1), cross) / denom
+                            pt1 = p1 + t * d1
+                            pt2 = p2 + s * d2
+                            junctions.append((pt1 + pt2) / 2.0)
+
+                if junctions:
+                    avg_j = np.mean(junctions, axis=0)
+                    midpoint = np.mean([p[0] for p in port_axes], axis=0)
+                    if np.linalg.norm(avg_j - midpoint) <= 2.0:
+                        return (
+                            round(float(avg_j[0]), 3),
+                            round(float(avg_j[1]), 3),
+                            round(float(avg_j[2] - st_elev), 3),
+                        )
+                    else:
+                        return (
+                            round(float(midpoint[0]), 3),
+                            round(float(midpoint[1]), 3),
+                            round(float(midpoint[2] - st_elev), 3),
+                        )
+
+        # Fallback to element geometric centroid if unlinked or < 2 ports
+        raw_pos = (0.0, 0.0, 0.0)
+        try:
+            mat = ifcopenshell.util.placement.get_local_placement(elem.ObjectPlacement)
+            raw_pos = (
+                float(mat[0, 3]),
+                float(mat[1, 3]),
+                float(mat[2, 3]),
+            )
+            if geom_settings is not None:
+                try:
+                    import ifcopenshell.geom
+                    shape = ifcopenshell.geom.create_shape(geom_settings, elem)
+                    verts = shape.geometry.verts
+                    if verts:
+                        xs = verts[0::3]
+                        ys = verts[1::3]
+                        zs = verts[2::3]
+                        c_local = np.array([
+                            (min(xs) + max(xs)) / 2.0,
+                            (min(ys) + max(ys)) / 2.0,
+                            (min(zs) + max(zs)) / 2.0,
+                        ])
+                        c_world = mat[:3, :3] @ c_local + mat[:3, 3]
+                        return (
+                            round(float(c_world[0]), 3),
+                            round(float(c_world[1]), 3),
+                            round(float(c_world[2] - st_elev), 3),
+                        )
+                except Exception:
+                    pass
+            return (
+                round(float(raw_pos[0]), 3),
+                round(float(raw_pos[1]), 3),
+                round(float(raw_pos[2] - st_elev), 3),
+            )
+        except Exception:
+            return (0.0, 0.0, round(0.0 - st_elev, 3))
+
+    def extract_fitting_placement_and_dims(
+        elem: Any,
+        st_id: str,
+    ) -> Tuple[CustomElementPlacement, Optional[Dimensions]]:
+        st_elev = storey_elevation_by_id.get(st_id, 0.0)
+        ports = _get_connected_ports(elem)
+        pos = _compute_fitting_junction(elem, ports, st_elev)
+        rot = None
+        try:
+            mat = ifcopenshell.util.placement.get_local_placement(elem.ObjectPlacement)
+            rot = _extract_euler_angles(mat)
+        except Exception:
+            pass
+
+        dims = _extract_bounding_box(elem, geom_settings)
+        placement = CustomElementPlacement(
+            position=pos,
+            storey=st_id,
+            rotation=rot,
+        )
+        return placement, dims
+
     # 3. Grids mapping & clustering
     grid_x_vals: Dict[str, float] = {}
     grid_y_vals: Dict[str, float] = {}
@@ -1152,7 +1304,7 @@ def import_ifc_to_manifest(
             extracted_custom_ids.add(fit.GlobalId)
             tag = fit.Name or f"FIT-{fit.GlobalId[:8]}"
             st_id = get_elem_storey(fit)
-            placement, dims = extract_custom_placement_and_dims(fit, st_id)
+            placement, dims = extract_fitting_placement_and_dims(fit, st_id)
             elements.append(
                 IfcCustomElement(
                     **{
