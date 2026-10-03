@@ -996,6 +996,37 @@ def import_ifc_to_manifest(
                 )
             )
 
+    # 5.17 Extract MEP Valves, Dampers, Flow Controllers & Distribution Control Elements
+    mep_ctrl_configs = [
+        ("IfcValve", "mep/valves", "VALVE"),
+        ("IfcDamper", "mep/dampers", "DAMPER"),
+        ("IfcFlowController", "mep/flow_controllers", "FLOW_CTRL"),
+        ("IfcDistributionControlElement", "mep/controls", "CTRL_ELEM"),
+    ]
+    for c_cls, c_layer, c_prefix in mep_ctrl_configs:
+        for ctrl_elem in safe_by_type(c_cls):
+            if ctrl_elem.GlobalId in extracted_custom_ids:
+                continue
+            extracted_custom_ids.add(ctrl_elem.GlobalId)
+            tag = ctrl_elem.Name or f"{c_prefix}-{ctrl_elem.GlobalId[:8]}"
+            st_id = get_elem_storey(ctrl_elem)
+            placement, dims = extract_custom_placement_and_dims(ctrl_elem, st_id)
+            if dims is None or dims.width <= 0 or (dims.depth is not None and dims.depth <= 0) or dims.height <= 0:
+                dims = Dimensions(width=0.2, depth=0.2, height=0.2)
+            elements.append(
+                IfcCustomElement(
+                    **{
+                        "class": "IfcCustomElement",
+                        "tag": tag,
+                        "name": tag,
+                        "source": f"ifc/{c_prefix.lower()}/{tag}",
+                        "placement": placement,
+                        "dimensions": dims,
+                        "layer": c_layer,
+                    }
+                )
+            )
+
     # 5.14 Extract MEP Terminals (IfcAirTerminal, IfcSanitaryTerminal, IfcFlowTerminal)
     for term_cls in ["IfcAirTerminal", "IfcSanitaryTerminal", "IfcFlowTerminal"]:
         for term in safe_by_type(term_cls):

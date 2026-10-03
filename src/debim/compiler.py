@@ -91,6 +91,14 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcAirTerminal"
     if "fitting" in l:
         return "IfcFlowFitting"
+    if "valve" in l:
+        return "IfcValve"
+    if "damper" in l:
+        return "IfcDamper"
+    if "flow_controller" in l or "flowcontroller" in l or "flow_control" in l:
+        return "IfcFlowController"
+    if "control" in l:
+        return "IfcDistributionControlElement"
     return "IfcBuildingElementProxy"
 
 
