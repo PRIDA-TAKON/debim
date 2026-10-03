@@ -289,3 +289,63 @@ def test_port_aligned_fitting_placement(tmp_path: Path):
     unlinked_res = resolved_by_tag["Unlinked-Fitting"]
     assert pytest.approx(unlinked_res.position[0], abs=1e-2) == 5.0
     assert pytest.approx(unlinked_res.position[1], abs=1e-2) == 5.0
+
+
+def test_vertical_drop_elbow_fitting_rotation(tmp_path: Path):
+    """Verify that vertical drop pipe/duct elbow fittings extract non-zero pitch angle in 3D placement rotation."""
+    import math
+    from debim.resolver import resolve_manifest
+    from tools.render_visual_regression import extract_all_resolved_meshes
+
+    model = ifcopenshell.file(schema="IFC4")
+    proj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcProject", name="Vertical Drop Test")
+    site = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcSite", name="Site")
+    bldg = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuilding", name="Bldg")
+    storey = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuildingStorey", name="Level 1")
+
+    ifcopenshell.api.run("aggregate.assign_object", model, products=[site], relating_object=proj)
+    ifcopenshell.api.run("aggregate.assign_object", model, products=[bldg], relating_object=site)
+    ifcopenshell.api.run("aggregate.assign_object", model, products=[storey], relating_object=bldg)
+
+    # Create vertical drop elbow fitting with Port 1 pointing horizontally (+X) and Port 2 pointing vertically down (-Z)
+    drop_elbow = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcPipeFitting", name="Elbow-Drop-Down")
+    pt_e = model.create_entity("IfcCartesianPoint", Coordinates=(2.0, 3.0, 1.5))
+    axis_e = model.create_entity("IfcAxis2Placement3D", Location=pt_e)
+    drop_elbow.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=axis_e)
+
+    # Port 1: Horizontal (+X)
+    p1 = model.create_entity("IfcDistributionPort", GlobalId=ifcopenshell.guid.new(), Name="Port1-Horiz")
+    pt_p1 = model.create_entity("IfcCartesianPoint", Coordinates=(2.0, 3.0, 1.5))
+    axis_p1 = model.create_entity("IfcAxis2Placement3D", Location=pt_p1, Axis=model.create_entity("IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)), RefDirection=model.create_entity("IfcDirection", DirectionRatios=(0.0, 1.0, 0.0)))
+    p1.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=axis_p1)
+
+    # Port 2: Vertical Down (-Z)
+    p2 = model.create_entity("IfcDistributionPort", GlobalId=ifcopenshell.guid.new(), Name="Port2-Drop")
+    pt_p2 = model.create_entity("IfcCartesianPoint", Coordinates=(2.0, 3.0, 1.0))
+    axis_p2 = model.create_entity("IfcAxis2Placement3D", Location=pt_p2, Axis=model.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, -1.0)), RefDirection=model.create_entity("IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)))
+    p2.ObjectPlacement = model.create_entity("IfcLocalPlacement", RelativePlacement=axis_p2)
+
+    model.create_entity("IfcRelConnectsPortToElement", GlobalId=ifcopenshell.guid.new(), RelatingPort=p1, RelatedElement=drop_elbow)
+    model.create_entity("IfcRelConnectsPortToElement", GlobalId=ifcopenshell.guid.new(), RelatingPort=p2, RelatedElement=drop_elbow)
+
+    ifcopenshell.api.run("spatial.assign_container", model, products=[drop_elbow], relating_structure=storey)
+
+    ifc_path = tmp_path / "vertical_drop_elbow.ifc"
+    model.write(str(ifc_path))
+
+    manifest = import_ifc_to_manifest(ifc_path)
+    elem = manifest.elements[0]
+    assert isinstance(elem, IfcCustomElement)
+    assert elem.placement.rotation is not None
+
+    rx, ry, rz = elem.placement.rotation
+    # Pitch angle ry should be approximately -pi/2 (-1.5708 rads) for drop down
+    assert pytest.approx(ry, abs=1e-2) == -math.pi / 2.0
+
+    # Resolve manifest and check 3D mesh generation
+    resolved = resolve_manifest(manifest)
+    meshes = extract_all_resolved_meshes(resolved)
+    assert elem.tag in meshes
+    verts, faces = meshes[elem.tag]
+    assert len(verts) > 0
+    assert len(faces) > 0
