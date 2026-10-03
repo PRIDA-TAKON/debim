@@ -181,3 +181,74 @@ def test_import_ifc_building_element_parts(tmp_path: Path):
     assert part.dimensions.width == 0.5
     assert part.dimensions.depth == 0.5
     assert part.dimensions.height == 0.05
+
+
+def _create_test_ifc_with_diagonal_member(tmp_path: Path) -> Path:
+    import math
+    import ifcopenshell
+    import ifcopenshell.api
+
+    f = ifcopenshell.file(schema="IFC4")
+    project = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcProject", name="Brace Project")
+    u_length = ifcopenshell.api.run("unit.add_si_unit", f, unit_type="LENGTHUNIT")
+    ifcopenshell.api.run("unit.assign_unit", f, units=[u_length])
+
+    context = ifcopenshell.api.run("context.add_context", f, context_type="Model")
+    body_context = ifcopenshell.api.run(
+        "context.add_context",
+        f,
+        context_type="Model",
+        context_identifier="Body",
+        target_view="MODEL_VIEW",
+        parent=context,
+    )
+
+    site = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcSite", name="Site")
+    building = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcBuilding", name="Building")
+    storey = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcBuildingStorey", name="Level 1")
+    storey.Elevation = 0.0
+
+    ifcopenshell.api.run("aggregate.assign_object", f, products=[site], relating_object=project)
+    ifcopenshell.api.run("aggregate.assign_object", f, products=[building], relating_object=site)
+    ifcopenshell.api.run("aggregate.assign_object", f, products=[storey], relating_object=building)
+
+    member = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcMember", name="DiagonalBrace_45deg")
+    ifcopenshell.api.run("spatial.assign_container", f, products=[member], relating_structure=storey)
+
+    profile = f.createIfcRectangleProfileDef(
+        "AREA", None, f.createIfcAxis2Placement2D(f.createIfcCartesianPoint((0.0, 0.0))), 0.2, 0.2
+    )
+    dir_45 = f.createIfcDirection((1.0, 0.0, 1.0))
+    solid = f.createIfcExtrudedAreaSolid(
+        profile,
+        f.createIfcAxis2Placement3D(f.createIfcCartesianPoint((0.0, 0.0, 0.0))),
+        dir_45,
+        3.0 * math.sqrt(2),
+    )
+    rep = f.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+    ifcopenshell.api.run("geometry.assign_representation", f, product=member, representation=rep)
+
+    out_path = tmp_path / "test_brace.ifc"
+    f.write(str(out_path))
+    return out_path
+
+
+def test_import_diagonal_brace_member(tmp_path: Path):
+    """Test 3D vector pitch alignment extraction for a 45-degree diagonal structural brace."""
+    ifc_file_path = _create_test_ifc_with_diagonal_member(tmp_path)
+    manifest = import_ifc_to_manifest(ifc_file_path)
+
+    members = [e for e in manifest.elements if getattr(e, "layer", "") == "structure/members"]
+    assert len(members) == 1
+
+    m = members[0]
+    assert m.name == "DiagonalBrace_45deg"
+    assert m.placement.rotation is not None
+
+    rx, ry, rz = m.placement.rotation
+    # 45 degrees slope pitch -> ry or pitch angle magnitude ~ 0.785 rad (45 deg)
+    assert abs(abs(ry) - 0.7854) < 0.05 or abs(abs(rx) - 0.7854) < 0.05
+
+    assert m.dimensions is not None
+    # True member length L = 3.0 * sqrt(2) ~ 4.24m
+    assert 4.0 <= m.dimensions.width <= 4.5
