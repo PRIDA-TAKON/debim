@@ -324,6 +324,9 @@ def import_ifc_to_manifest(
             pass
 
         dims = _extract_bounding_box(elem, geom_settings)
+        if dims is None or dims.width <= 0 or (dims.depth is not None and dims.depth <= 0) or dims.height <= 0:
+            dims = Dimensions(width=0.2, depth=0.2, height=0.2)
+
         placement = CustomElementPlacement(
             position=pos,
             storey=st_id,
@@ -465,6 +468,9 @@ def import_ifc_to_manifest(
         elem: Any,
         st_id: str,
     ) -> Tuple[CustomElementPlacement, Optional[Dimensions]]:
+        import ifcopenshell.util.placement
+        import numpy as np
+
         st_elev = storey_elevation_by_id.get(st_id, 0.0)
         ports = _get_connected_ports(elem)
         pos = _compute_fitting_junction(elem, ports, st_elev)
@@ -475,7 +481,47 @@ def import_ifc_to_manifest(
         except Exception:
             pass
 
+        # Inspect port direction vectors to detect vertical drops (+Z / -Z)
+        if ports:
+            port_dirs = []
+            for p in ports:
+                try:
+                    m = ifcopenshell.util.placement.get_local_placement(p.ObjectPlacement)
+                    d = np.array([float(m[0, 2]), float(m[1, 2]), float(m[2, 2])])
+                    norm = np.linalg.norm(d)
+                    if norm < 1e-6:
+                        d = np.array([float(m[0, 0]), float(m[1, 0]), float(m[2, 0])])
+                        norm = np.linalg.norm(d)
+                    if norm >= 1e-6:
+                        d = d / norm
+                        port_dirs.append(d)
+                except Exception:
+                    pass
+
+            if port_dirs:
+                has_vert = any(abs(d[2]) > 0.7 for d in port_dirs)
+                if has_vert:
+                    vert_d = next(d for d in port_dirs if abs(d[2]) > 0.7)
+                    horiz_d = next((d for d in port_dirs if abs(d[2]) <= 0.7), None)
+
+                    sign = -1.0 if vert_d[2] < 0 else 1.0
+                    pitch_rad = sign * (math.pi / 2.0)
+
+                    if horiz_d is not None:
+                        norm_h = np.linalg.norm(horiz_d[:2])
+                        if norm_h > 1e-4:
+                            yaw_rad = math.atan2(horiz_d[1], horiz_d[0])
+                        else:
+                            yaw_rad = rot[2] if rot else 0.0
+                    else:
+                        yaw_rad = rot[2] if rot else 0.0
+
+                    rot = (round(0.0, 4), round(pitch_rad, 4), round(yaw_rad, 4))
+
         dims = _extract_bounding_box(elem, geom_settings)
+        if dims is None or dims.width <= 0 or (dims.depth is not None and dims.depth <= 0) or dims.height <= 0:
+            dims = Dimensions(width=0.2, depth=0.2, height=0.2)
+
         placement = CustomElementPlacement(
             position=pos,
             storey=st_id,
