@@ -85,8 +85,19 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
         for child in wall.children:
             cw = float(child.width)
             ch = float(child.height)
-            cth = float(wall.thickness * 1.05)
-            cm = trimesh.creation.box(extents=(cw, cth, ch))
+            f_box = getattr(child, "frame_box", {"width": cw, "depth": 0.05, "height": ch})
+            p_box = getattr(child, "panel_box", {"width": cw - 0.1, "depth": 0.02, "height": ch - 0.1, "offset_y": 0.015})
+
+            # 1. Outer frame mesh
+            frame_mesh = trimesh.creation.box(extents=(float(f_box["width"]), float(f_box["depth"]), float(f_box["height"])))
+
+            # 2. Inner panel / glazing mesh (recessed by panel_recess in Y)
+            panel_mesh = trimesh.creation.box(extents=(float(p_box["width"]), float(p_box["depth"]), float(p_box["height"])))
+            offset_y = float(p_box.get("offset_y", 0.015))
+            panel_mesh.apply_translation([0.0, offset_y, 0.0])
+
+            # Composite sub-meshes
+            cm = trimesh.util.concatenate([frame_mesh, panel_mesh])
             meshes[child.tag] = (np.array(cm.vertices, dtype=np.float64), np.array(cm.faces, dtype=np.int32))
 
     for slab in resolved.slabs:
