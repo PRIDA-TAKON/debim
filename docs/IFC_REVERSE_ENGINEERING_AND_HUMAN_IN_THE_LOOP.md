@@ -350,6 +350,45 @@ flowchart TD
 > **📌 บันทึกการตัดสินใจทางวิศวกรรม (Engineering & Scientific Decision):**
 > ชุดทดสอบเดิมที่รันไปกว่า 5 ชั่วโมงและกำลังติดวนอยู่ในลูปชิ้นงานท่อซ้ำๆ ถูกสั่ง **Cancel ทันที** เนื่องจากต่อให้รันจบ ผลการทดลองก็ **ไม่สามารถนำไปใช้อ้างอิงทางวิชาการได้ (Unreliable & Statistically Flawed)** เพราะเกิดความลำเอียงของกลุ่มตัวอย่าง (Sampling Bias) การเปลี่ยนมาใช้ **Balanced Benchmark (`pridatakon/debim-3d-visual-balanced-benchmark`)** จึงเป็นแนวทางที่ถูกต้องตามมาตรฐานการประเมินผลระดับสากล (เช่นเดียวกับ mIoU ใน Computer Vision) ที่แท้จริง
 
+#### 4.5.8 สรุปผลการทดสอบ 255 อาคารจริง และแนวทางวิศวกรรมยกระดับสู่ Macro 85%+
+
+จากการประมวลผลบน Kaggle ด้วย 4 CPU Cores บน 255 โมเดลจริงสากล (ทดสอบ 4,695 ชิ้นงานที่ไม่ซ้ำแบบ ครอบคลุม 77 หมวดวิศวกรรม):
+
+| หมวดหมู่งาน | คะแนนปัจจุบัน (Mean Match) | สถานะความพร้อมใช้งาน | เป้าหมายหลังการปรับปรุง |
+|---|:---:|:---:|:---:|
+| **🏗️ Structural (เสา, คาน, ผนัง, พื้น, ฐานราก)** | **86.5%** | 🟢 **Production-Ready** (เกรด A) | รักษาเสถียรภาพ $\ge 88\%$ |
+| **⚡ MEP Segments (ท่อน้ำ, ท่อลม, รางไฟ)** | **92.2%** | 🟢 **Production-Ready** (เกรด A) | รักษาเสถียรภาพ $\ge 92\%$ |
+| **⚡ MEP Fittings (ข้องอ, สามทาง)** | **75.4%** | 🟡 **Acceptable (มิติเป๊ะ, ขอบเว้าโค้งต่าง)** | ยกระดับสู่ $\ge 82\%$ (IoU 60%) |
+| **🚪 Architectural Openings (ประตู, หน้าต่าง)** | **68.8%** | 🟡 **Needs Frame & Glazing Profile** | ยกระดับสู่ $\ge 85\%$ |
+| **⚡ MEP Valves & Controllers (วาล์ว, แดมเปอร์)** | **0.0%** (235 ชิ้น) | 🔴 **Missing 3D Mesh Generator** | ยกระดับสู่ $\ge 80\%$ |
+| **🏠 Coverings (ฝ้าเพดาน/วัสดุกรุ)** | **5.8%** (122 ชิ้น) | 🔴 **Elevation / Normal Misaligned** | ยกระดับสู่ $\ge 85\%$ |
+| **🔩 Thin Plates (แผ่นเหล็กประกับ/แผ่นพื้นบาง)** | **22.7%** (62 ชิ้น) | 🔴 **Thin Thickness Extrusion Issue** | ยกระดับสู่ $\ge 80\%$ |
+| **⚖️ Macro Average ทั้งระบบ (Unweighted Mean)** | **70.6%** (Median: **80.9%**) | 🟡 **Good Baseline** | **เป้าหมาย: $\ge 85.0\%$** |
+
+```mermaid
+flowchart TD
+    subgraph Wave1 ["Wave 1: แก้งาน 0% และงานผิดระนาบ (Independent Parallel Tasks)"]
+        W1A["Task 1.1: Box Impostor Fallback สำหรับ IfcValve & Controllers<br>(แก้ 0% ของ 235 ชิ้นงาน)"]
+        W1B["Task 1.2: จัดระนาบความสูง IfcCovering (ฝ้าเพดาน)<br>(แก้ 5.8% ของ 122 ชิ้นงาน)"]
+        W1C["Task 1.3: Extrusion สำหรับ IfcPlate & ElementParts<br>(แก้ 22.7% ของแผ่นเหล็ก)"]
+    end
+
+    subgraph Wave2 ["Wave 2: ยกระดับมิติและความละเอียด (Dependent on Wave 1)"]
+        W2A["Task 2.1: Tier 2 Dual Representation สำหรับประตู/หน้าต่าง<br>(เพิ่ม Frame & Glazing ดันจาก 68% -> 85%)"]
+        W2B["Task 2.2: Port-Aligned Center of Mass สำหรับ MEP Fittings<br>(ดึงจุดกึ่งกลางข้อต่อ ดัน IoU จาก 38% -> 60%)"]
+    end
+
+    subgraph Wave3 ["Wave 3: ปิดลูปการทดสอบระดับโลก (Final Verification)"]
+        W3["Task 3.1: Re-run 255-Model Balanced Benchmark บน Kaggle<br>เป้าหมาย: Macro Average Match ทะลุ 85.0% ທั่วกระดาน"]
+    end
+
+    W1A --> W2B
+    W1B --> W3
+    W1C --> W3
+    W2A --> W3
+    W2B --> W3
+```
+
 ---
 
 ## 5. แผนงานการพัฒนา (Milestones & Action Items)
