@@ -113,3 +113,72 @@ def test_duplex_overall_wall_qto_reduction(duplex_manifest):
     wall_volume = sum(e.concrete_volume for e in project_qto.elements if e.element_class == "IfcWall")
 
     assert 205.0 <= wall_volume <= 215.0, f"Expected wall volume between 205 and 215 m3, got {wall_volume}"
+
+
+def test_door_window_dual_sub_mesh_structure():
+    """Verify that ResolvedDoor and ResolvedWindow compute dual geometric sub-meshes (frame_box & panel_box)."""
+    door = IfcDoor(
+        tag="DOOR-DUAL-01",
+        dimensions=Dimensions(width=0.90, height=2.10),
+        offset_distance=1.0,
+        frame_thickness=0.060,
+    )
+    window = IfcWindow(
+        tag="WIN-DUAL-01",
+        dimensions=Dimensions(width=1.20, height=1.50),
+        offset_distance=2.5,
+        frame_thickness=0.050,
+        sill_height=0.80,
+    )
+
+    wall = IfcWall(
+        tag="WALL-DUAL-TEST",
+        material="CONC_280",
+        thickness=0.15,
+        height=3.00,
+        placement=WallPlacement(from_grid=("GX_1", "GY_1"), to_grid=("GX_2", "GY_1"), storey="GL"),
+        children=[door, window],
+    )
+
+    manifest = ProjectManifest.model_validate({
+        "schema": "IFC4-Minimal",
+        "project": {"id": "DUAL_TEST", "name": "Dual Sub-Mesh Test Project"},
+        "spatial_structure": {"storeys": [{"id": "GL", "name": "Ground Floor", "elevation": 0.0, "height": 3.0}]},
+        "grids": {"axes_x": {"GX_1": 0.0, "GX_2": 5.0}, "axes_y": {"GY_1": 0.0}},
+        "materials": [{"id": "CONC_280", "name": "Concrete 280", "category": "concrete", "unit_cost_ref": "REF"}],
+        "elements": [wall],
+    })
+
+    resolved = resolve_manifest(manifest)
+    r_door = resolved.doors[0]
+    r_win = resolved.windows[0]
+
+    # Check ResolvedDoor sub-mesh structure
+    assert r_door.frame_thickness == 0.060
+    assert r_door.frame_width == 0.050
+    assert r_door.panel_recess == 0.015
+    assert r_door.panel_thickness == 0.035
+
+    assert r_door.frame_box == {"width": 0.90, "depth": 0.060, "height": 2.10}
+    assert r_door.panel_box == {
+        "width": pytest.approx(0.80),
+        "depth": 0.035,
+        "height": pytest.approx(2.05),
+        "offset_y": 0.015,
+    }
+    assert "frame" in r_door.sub_meshes and "panel" in r_door.sub_meshes
+
+    # Check ResolvedWindow sub-mesh structure
+    assert r_win.frame_thickness == 0.050
+    assert r_win.frame_width == 0.050
+    assert r_win.panel_recess == 0.015
+    assert r_win.panel_thickness == 0.015
+
+    assert r_win.frame_box == {"width": 1.20, "depth": 0.050, "height": 1.50}
+    assert r_win.panel_box == {
+        "width": pytest.approx(1.10),
+        "depth": 0.015,
+        "height": pytest.approx(1.40),
+        "offset_y": 0.015,
+    }
+    assert "frame" in r_win.sub_meshes and "panel" in r_win.sub_meshes

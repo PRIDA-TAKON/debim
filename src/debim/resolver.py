@@ -153,7 +153,35 @@ class ResolvedDoor(BaseModel):
     height: float
     offset_distance: float
     sill_height: float
+    frame_thickness: float = 0.05
+    frame_width: float = 0.05
+    panel_recess: float = 0.015
+    panel_thickness: float = 0.035
     layer: str = "architecture/openings/doors"
+
+    @property
+    def frame_box(self) -> Dict[str, float]:
+        return {
+            "width": self.width,
+            "depth": self.frame_thickness,
+            "height": self.height,
+        }
+
+    @property
+    def panel_box(self) -> Dict[str, float]:
+        return {
+            "width": max(0.01, self.width - 2 * self.frame_width),
+            "depth": self.panel_thickness,
+            "height": max(0.01, self.height - self.frame_width),
+            "offset_y": self.panel_recess,
+        }
+
+    @property
+    def sub_meshes(self) -> Dict[str, Dict[str, float]]:
+        return {
+            "frame": self.frame_box,
+            "panel": self.panel_box,
+        }
 
 
 class ResolvedWindow(BaseModel):
@@ -166,7 +194,35 @@ class ResolvedWindow(BaseModel):
     height: float
     offset_distance: float
     sill_height: float
+    frame_thickness: float = 0.05
+    frame_width: float = 0.05
+    panel_recess: float = 0.015
+    panel_thickness: float = 0.015
     layer: str = "architecture/openings/windows"
+
+    @property
+    def frame_box(self) -> Dict[str, float]:
+        return {
+            "width": self.width,
+            "depth": self.frame_thickness,
+            "height": self.height,
+        }
+
+    @property
+    def panel_box(self) -> Dict[str, float]:
+        return {
+            "width": max(0.01, self.width - 2 * self.frame_width),
+            "depth": self.panel_thickness,
+            "height": max(0.01, self.height - 2 * self.frame_width),
+            "offset_y": self.panel_recess,
+        }
+
+    @property
+    def sub_meshes(self) -> Dict[str, Dict[str, float]]:
+        return {
+            "frame": self.frame_box,
+            "panel": self.panel_box,
+        }
 
 
 ResolvedWallChild = Union[ResolvedDoor, ResolvedWindow]
@@ -852,6 +908,7 @@ class SpatialResolver:
             child_pos = (child_x, child_y, child_z)
 
             if isinstance(child, IfcDoor):
+                f_thick = child.frame_thickness if child.frame_thickness is not None else 0.05
                 r_door = ResolvedDoor(
                     tag=child.tag,
                     element=child,
@@ -860,11 +917,16 @@ class SpatialResolver:
                     height=child.dimensions.height,
                     offset_distance=child.offset_distance,
                     sill_height=child.sill_height,
+                    frame_thickness=f_thick,
+                    frame_width=0.05,
+                    panel_recess=0.015,
+                    panel_thickness=0.035,
                     layer=derive_default_layer(child),
                 )
                 resolved_children.append(r_door)
                 resolved_doors.append(r_door)
             elif isinstance(child, IfcWindow):
+                f_thick = child.frame_thickness if child.frame_thickness is not None else 0.05
                 r_win = ResolvedWindow(
                     tag=child.tag,
                     element=child,
@@ -873,6 +935,10 @@ class SpatialResolver:
                     height=child.dimensions.height,
                     offset_distance=child.offset_distance,
                     sill_height=child.sill_height,
+                    frame_thickness=f_thick,
+                    frame_width=0.05,
+                    panel_recess=0.015,
+                    panel_thickness=0.015,
                     layer=derive_default_layer(child),
                 )
                 resolved_children.append(r_win)
@@ -2459,6 +2525,7 @@ class SpatialResolver:
         for child in roof.children:
             pos = (0.0, 0.0, st.elevation + child.sill_height)
             if isinstance(child, IfcDoor):
+                f_thick = child.frame_thickness if child.frame_thickness is not None else 0.05
                 r_door = ResolvedDoor(
                     tag=child.tag,
                     element=child,
@@ -2467,10 +2534,15 @@ class SpatialResolver:
                     height=child.dimensions.height,
                     offset_distance=child.offset_distance,
                     sill_height=child.sill_height,
+                    frame_thickness=f_thick,
+                    frame_width=0.05,
+                    panel_recess=0.015,
+                    panel_thickness=0.035,
                     layer=derive_default_layer(child),
                 )
                 resolved_children.append(r_door)
             elif isinstance(child, IfcWindow):
+                f_thick = child.frame_thickness if child.frame_thickness is not None else 0.05
                 r_win = ResolvedWindow(
                     tag=child.tag,
                     element=child,
@@ -2479,6 +2551,10 @@ class SpatialResolver:
                     height=child.dimensions.height,
                     offset_distance=child.offset_distance,
                     sill_height=child.sill_height,
+                    frame_thickness=f_thick,
+                    frame_width=0.05,
+                    panel_recess=0.015,
+                    panel_thickness=0.015,
                     layer=derive_default_layer(child),
                 )
                 resolved_children.append(r_win)

@@ -183,6 +183,7 @@ class IfcDoor(BaseModel):
     dimensions: Dimensions
     offset_distance: float
     sill_height: float = 0.00
+    frame_thickness: Optional[float] = None
     layer: Optional[str] = None
 
 
@@ -193,6 +194,7 @@ class IfcWindow(BaseModel):
     dimensions: Dimensions
     offset_distance: float
     sill_height: float = 0.00
+    frame_thickness: Optional[float] = None
     layer: Optional[str] = None
 
 
