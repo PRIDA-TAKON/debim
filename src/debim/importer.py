@@ -153,6 +153,69 @@ def _derive_furniture_slug(name: Optional[str]) -> str:
     return slug or "furniture"
 
 
+def _get_host_wall_geometry(wall: Any) -> Tuple[float, Tuple[float, float, float], Any]:
+    """
+    Returns (wall_length, vector_D_wall, w_mat) for a host IfcWall.
+    vector_D_wall = P_end - P_start in 3D world coordinates.
+    """
+    import ifcopenshell.util.element
+    import ifcopenshell.util.placement
+    import numpy as np
+
+    w_mat = ifcopenshell.util.placement.get_local_placement(wall.ObjectPlacement)
+
+    ps = ifcopenshell.util.element.get_psets(wall)
+    dims = ps.get("PSet_Revit_Dimensions", {}) or ps.get("Dimensions", {}) or ps.get("Qto_WallBaseQuantities", {}) or ps.get("PSet_WallCommon", {})
+    wall_length = float(dims.get("Length", 0.0)) if dims.get("Length") else 0.0
+    if wall_length > 100:
+        wall_length /= 1000.0
+
+    p_start_world = None
+    p_end_world = None
+
+    if hasattr(wall, "Representation") and wall.Representation:
+        for rep in getattr(wall.Representation, "Representations", []):
+            rep_id = getattr(rep, "RepresentationIdentifier", None)
+            if rep_id == "Axis" or not p_start_world:
+                for item in getattr(rep, "Items", []):
+                    pts = None
+                    if item.is_a("IfcPolyline"):
+                        pts = [p.Coordinates for p in item.Points]
+                    elif item.is_a("IfcPolyLoop"):
+                        pts = [p.Coordinates for p in item.Polygon]
+                    elif item.is_a("IfcTrimmedCurve"):
+                        bc = getattr(item, "BasisCurve", None)
+                        if bc and bc.is_a("IfcPolyline"):
+                            pts = [p.Coordinates for p in bc.Points]
+                    elif item.is_a("IfcLine"):
+                        p_loc = item.Pnt.Coordinates
+                        dir_v = item.Dir.Orientation.DirectionRatios
+                        l_val = wall_length or 3.0
+                        pts = [p_loc, [p_loc[0] + dir_v[0] * l_val, p_loc[1] + dir_v[1] * l_val, p_loc[2] if len(p_loc) > 2 else 0.0]]
+
+                    if pts and len(pts) >= 2:
+                        p_s_loc = np.array([float(pts[0][0]), float(pts[0][1]), float(pts[0][2]) if len(pts[0]) > 2 else 0.0, 1.0])
+                        p_e_loc = np.array([float(pts[-1][0]), float(pts[-1][1]), float(pts[-1][2]) if len(pts[-1]) > 2 else 0.0, 1.0])
+                        p_start_world = (w_mat @ p_s_loc)[:3]
+                        p_end_world = (w_mat @ p_e_loc)[:3]
+                        if rep_id == "Axis":
+                            break
+
+    if p_start_world is not None and p_end_world is not None:
+        vec_D = p_end_world - p_start_world
+        calc_len = float(np.linalg.norm(vec_D))
+        if wall_length <= 0.0 and calc_len > 0:
+            wall_length = calc_len
+        return wall_length, (float(vec_D[0]), float(vec_D[1]), float(vec_D[2])), w_mat
+
+    if wall_length <= 0.0:
+        wall_length = 3.0
+
+    x_local = w_mat[:3, 0]
+    vec_D = x_local * wall_length
+    return wall_length, (float(vec_D[0]), float(vec_D[1]), float(vec_D[2])), w_mat
+
+
 def _bake_element_to_glb(
     elem: Any,
     slug: str,
@@ -614,24 +677,59 @@ def import_ifc_to_manifest(
                     h /= 1000.0
 
         offset = 1.0
+        is_reversed = False
+        flipped = False
         if parent_host_elem:
             try:
+                import numpy as np
                 d_mat = ifcopenshell.util.placement.get_local_placement(door.ObjectPlacement)
-                w_mat = ifcopenshell.util.placement.get_local_placement(parent_host_elem.ObjectPlacement)
+                w_len, vec_D_wall, w_mat = _get_host_wall_geometry(parent_host_elem)
                 dx = float(d_mat[0, 3] - w_mat[0, 3])
                 dy = float(d_mat[1, 3] - w_mat[1, 3])
                 w_dir = w_mat[:2, 0]
                 offset = float(dx * w_dir[0] + dy * w_dir[1])
-                if offset < 0:
+
+                x_local_3d = w_mat[:3, 0]
+                dot_prod = float(vec_D_wall[0] * x_local_3d[0] + vec_D_wall[1] * x_local_3d[1] + vec_D_wall[2] * x_local_3d[2])
+                if dot_prod < -1e-5:
+                    is_reversed = True
+                    offset = w_len - offset - w
+                    if offset < 0:
+                        offset = abs(offset)
+                elif offset < 0:
                     offset = abs(offset)
+
+                rel_mat = np.linalg.inv(w_mat) @ d_mat
+                placement_flipped = bool(rel_mat[0, 0] < -0.5 or rel_mat[1, 1] < -0.5)
+                flipped = is_reversed ^ placement_flipped
             except Exception:
                 offset = 1.0
+
+        op_type_str = None
+        op_type = getattr(door, "OperationType", None)
+        if not op_type:
+            try:
+                ps = ifcopenshell.util.element.get_psets(door)
+                op_type = ps.get("PSet_DoorCommon", {}).get("OperationType") or ps.get("DoorCommon", {}).get("OperationType")
+            except Exception:
+                pass
+        if not op_type:
+            try:
+                door_type = ifcopenshell.util.element.get_type(door)
+                if door_type:
+                    op_type = getattr(door_type, "OperationType", None)
+            except Exception:
+                pass
+        if op_type:
+            op_type_str = str(op_type)
 
         d_obj = IfcDoor(
             class_="IfcDoor",
             tag=door.Name or f"DOOR-{door.GlobalId[:8]}",
             dimensions=Dimensions(width=round(w, 3), height=round(h, 3)),
             offset_distance=round(offset, 2),
+            operation_type=op_type_str,
+            flipped=flipped,
         )
         if parent_host_elem:
             if parent_host_elem.is_a("IfcRoof"):
@@ -679,18 +777,44 @@ def import_ifc_to_manifest(
                     h /= 1000.0
 
         offset = 1.0
+        is_reversed = False
+        flipped = False
         if parent_host_elem:
             try:
+                import numpy as np
                 win_mat = ifcopenshell.util.placement.get_local_placement(window.ObjectPlacement)
-                w_mat = ifcopenshell.util.placement.get_local_placement(parent_host_elem.ObjectPlacement)
+                w_len, vec_D_wall, w_mat = _get_host_wall_geometry(parent_host_elem)
                 dx = float(win_mat[0, 3] - w_mat[0, 3])
                 dy = float(win_mat[1, 3] - w_mat[1, 3])
                 w_dir = w_mat[:2, 0]
                 offset = float(dx * w_dir[0] + dy * w_dir[1])
-                if offset < 0:
+
+                x_local_3d = w_mat[:3, 0]
+                dot_prod = float(vec_D_wall[0] * x_local_3d[0] + vec_D_wall[1] * x_local_3d[1] + vec_D_wall[2] * x_local_3d[2])
+                if dot_prod < -1e-5:
+                    is_reversed = True
+                    offset = w_len - offset - w
+                    if offset < 0:
+                        offset = abs(offset)
+                elif offset < 0:
                     offset = abs(offset)
+
+                rel_mat = np.linalg.inv(w_mat) @ win_mat
+                placement_flipped = bool(rel_mat[0, 0] < -0.5 or rel_mat[1, 1] < -0.5)
+                flipped = is_reversed ^ placement_flipped
             except Exception:
                 offset = 1.0
+
+        op_type_str = None
+        op_type = getattr(window, "PartitioningType", None) or getattr(window, "OperationType", None)
+        if not op_type:
+            try:
+                ps = ifcopenshell.util.element.get_psets(window)
+                op_type = ps.get("PSet_WindowCommon", {}).get("PartitioningType") or ps.get("WindowCommon", {}).get("PartitioningType")
+            except Exception:
+                pass
+        if op_type:
+            op_type_str = str(op_type)
 
         win_obj = IfcWindow(
             class_="IfcWindow",
@@ -698,6 +822,8 @@ def import_ifc_to_manifest(
             dimensions=Dimensions(width=round(w, 3), height=round(h, 3)),
             offset_distance=round(offset, 2),
             sill_height=0.80,
+            operation_type=op_type_str,
+            flipped=flipped,
         )
         if parent_host_elem:
             if parent_host_elem.is_a("IfcRoof"):

@@ -182,3 +182,66 @@ def test_door_window_dual_sub_mesh_structure():
         "offset_y": 0.015,
     }
     assert "frame" in r_win.sub_meshes and "panel" in r_win.sub_meshes
+
+
+def test_reversed_wall_door_window_placement(tmp_path):
+    """Test that doors and windows on reversed walls calculate inverted offset_distance and flipped orientation."""
+    import ifcopenshell
+    import ifcopenshell.api
+
+    f = ifcopenshell.file(schema="IFC4")
+    project = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcProject", name="Test Project")
+    ifcopenshell.api.run("unit.assign_unit", f)
+    storey = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcBuildingStorey", name="Level 1")
+
+    # Reversed Wall (local matrix at (5,0,0), Axis vector going from (0,0,0) to (-5,0,0) in local coords)
+    wall_reversed = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcWall", name="WALL-REV")
+    ifcopenshell.api.run("spatial.assign_container", f, relating_structure=storey, products=[wall_reversed])
+
+    pt_loc = f.createIfcCartesianPoint((5.0, 0.0, 0.0))
+    place_rev = f.createIfcAxis2Placement3D(Location=pt_loc)
+    wall_reversed.ObjectPlacement = f.createIfcLocalPlacement(RelativePlacement=place_rev)
+
+    pt1 = f.createIfcCartesianPoint((0.0, 0.0, 0.0))
+    pt2 = f.createIfcCartesianPoint((-5.0, 0.0, 0.0))
+    poly = f.createIfcPolyline((pt1, pt2))
+    context = f.createIfcGeometricRepresentationContext(ContextType="Model", CoordinateSpaceDimension=3, Precision=1e-5)
+    rep_axis = f.createIfcShapeRepresentation(
+        ContextOfItems=context,
+        RepresentationIdentifier="Axis",
+        RepresentationType="Curve2D",
+        Items=[poly],
+    )
+    wall_reversed.Representation = f.createIfcProductDefinitionShape(Representations=[rep_axis])
+
+    door = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcDoor", name="DOOR-REV")
+    door.OverallWidth = 1.0
+    door.OverallHeight = 2.1
+    door.OperationType = "SINGLE_SWING_LEFT"
+
+    opening = ifcopenshell.api.run("root.create_entity", f, ifc_class="IfcOpeningElement", name="OPENING-REV")
+    pt_open = f.createIfcCartesianPoint((1.0, 0.0, 0.0))
+    place_open = f.createIfcAxis2Placement3D(Location=pt_open)
+    opening.ObjectPlacement = f.createIfcLocalPlacement(PlacementRelTo=wall_reversed.ObjectPlacement, RelativePlacement=place_open)
+    door.ObjectPlacement = f.createIfcLocalPlacement(PlacementRelTo=opening.ObjectPlacement, RelativePlacement=f.createIfcAxis2Placement3D(f.createIfcCartesianPoint((0.0, 0.0, 0.0))))
+
+    f.createIfcRelVoidsElement(GlobalId=ifcopenshell.guid.new(), RelatingBuildingElement=wall_reversed, RelatedOpeningElement=opening)
+    f.createIfcRelFillsElement(GlobalId=ifcopenshell.guid.new(), RelatingOpeningElement=opening, RelatedBuildingElement=door)
+
+    ifc_file_path = tmp_path / "reversed_wall_test.ifc"
+    f.write(str(ifc_file_path))
+
+    manifest = import_ifc_to_manifest(ifc_file_path)
+    door_extracted = None
+    for elem in manifest.elements:
+        if isinstance(elem, IfcWall):
+            for child in elem.children:
+                if child.tag == "DOOR-REV":
+                    door_extracted = child
+
+    assert door_extracted is not None
+    assert door_extracted.flipped is True
+    assert door_extracted.operation_type == "SINGLE_SWING_LEFT"
+    # Wall length = 5.0, raw dx = 1.0, width = 1.0
+    # Reversed wall offset = 5.0 - 1.0 - 1.0 = 3.0
+    assert pytest.approx(door_extracted.offset_distance, abs=1e-2) == 3.0
