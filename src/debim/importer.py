@@ -866,22 +866,59 @@ def import_ifc_to_manifest(
     for cov in ifc_file.by_type("IfcCovering"):
         tag = cov.Name or f"COV-{cov.GlobalId[:8]}"
         st_id = get_elem_storey(cov)
+        st_elev = storey_elevation_by_id.get(st_id, 0.0)
         ps = ifcopenshell.util.element.get_psets(cov)
         dims = ps.get("PSet_Revit_Dimensions", {}) or ps.get("Dimensions", {}) or ps.get("Qto_CoveringBaseQuantities", {})
         area = float(dims.get("Area", 10.0)) if dims.get("Area") else 10.0
-        th = 0.057
+        th = 0.0
         if dims.get("Thickness"):
             th = float(dims["Thickness"])
         elif ps.get("PSet_Revit_Type_Construction", {}).get("Thickness"):
             th = float(ps["PSet_Revit_Type_Construction"]["Thickness"])
         if th > 10:
             th /= 1000.0
+        if th <= 0.0:
+            th = 0.02  # Default 20mm (0.02m) gypsum ceiling
 
         pred_type = "CEILING"
         if getattr(cov, "PredefinedType", None):
             pred_type = str(cov.PredefinedType)
         if pred_type not in ["CEILING", "FLOORING", "SKIRTING", "CLADDING", "ROOFING", "INSULATION", "MEMBRANE"]:
             pred_type = "CEILING"
+
+        mat_z = 0.0
+        try:
+            mat = ifcopenshell.util.placement.get_local_placement(cov.ObjectPlacement)
+            mat_z = float(mat[2, 3])
+        except Exception:
+            pass
+
+        world_z = mat_z
+        boundary = None
+        if geom_settings is not None:
+            try:
+                shape = ifcopenshell.geom.create_shape(geom_settings, cov)
+                verts = shape.geometry.verts
+                if verts:
+                    xs = verts[0::3]
+                    ys = verts[1::3]
+                    zs = verts[2::3]
+                    min_z = min(zs)
+                    world_z = mat_z + min_z
+
+                    min_x, max_x = min(xs), max(xs)
+                    min_y, max_y = min(ys), max(ys)
+                    if abs(max_x - min_x) > 0.05 and abs(max_y - min_y) > 0.05:
+                        gx1 = get_or_create_grid_x(min_x)
+                        gy1 = get_or_create_grid_y(min_y)
+                        gx2 = get_or_create_grid_x(max_x)
+                        gy2 = get_or_create_grid_y(max_y)
+                        if gx1 != gx2 and gy1 != gy2:
+                            boundary = [(gx1, gy1), (gx2, gy1), (gx2, gy2), (gx1, gy2)]
+            except Exception:
+                pass
+
+        offset_z = round(float(world_z - st_elev), 3)
 
         mat_id = resolve_material(cov, "CONC_280")
         elements.append(
@@ -894,7 +931,9 @@ def import_ifc_to_manifest(
                     "thickness": round(th, 3),
                     "placement": CoveringPlacement(
                         storey=st_id,
+                        offset_z=offset_z,
                         area=round(area, 3),
+                        boundary=boundary,
                     ),
                 }
             )
