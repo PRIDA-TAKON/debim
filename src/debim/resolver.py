@@ -157,6 +157,8 @@ class ResolvedDoor(BaseModel):
     frame_width: float = 0.05
     panel_recess: float = 0.015
     panel_thickness: float = 0.035
+    operation_type: Optional[str] = None
+    flipped: bool = False
     layer: str = "architecture/openings/doors"
 
     @property
@@ -198,6 +200,8 @@ class ResolvedWindow(BaseModel):
     frame_width: float = 0.05
     panel_recess: float = 0.015
     panel_thickness: float = 0.015
+    operation_type: Optional[str] = None
+    flipped: bool = False
     layer: str = "architecture/openings/windows"
 
     @property
@@ -921,6 +925,8 @@ class SpatialResolver:
                     frame_width=0.05,
                     panel_recess=0.015,
                     panel_thickness=0.035,
+                    operation_type=child.operation_type,
+                    flipped=child.flipped,
                     layer=derive_default_layer(child),
                 )
                 resolved_children.append(r_door)
@@ -939,6 +945,8 @@ class SpatialResolver:
                     frame_width=0.05,
                     panel_recess=0.015,
                     panel_thickness=0.015,
+                    operation_type=child.operation_type,
+                    flipped=child.flipped,
                     layer=derive_default_layer(child),
                 )
                 resolved_children.append(r_win)

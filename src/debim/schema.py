@@ -184,6 +184,8 @@ class IfcDoor(BaseModel):
     offset_distance: float
     sill_height: float = 0.00
     frame_thickness: Optional[float] = None
+    operation_type: Optional[str] = None
+    flipped: bool = False
     layer: Optional[str] = None
 
 
@@ -195,6 +197,8 @@ class IfcWindow(BaseModel):
     offset_distance: float
     sill_height: float = 0.00
     frame_thickness: Optional[float] = None
+    operation_type: Optional[str] = None
+    flipped: bool = False
     layer: Optional[str] = None
 
 

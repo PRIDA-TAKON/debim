@@ -130,8 +130,8 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             m = trimesh.creation.box(extents=(w, d, h))
             if custom.rotation and any(abs(r) > 1e-4 for r in custom.rotation):
                 rx, ry, rz = custom.rotation
-                rot_mat = trimesh.transformations.euler_matrix(rx, ry, rz)
-                m.apply_transform(rot_mat)
+                T = trimesh.transformations.euler_matrix(rx, ry, rz)
+                m.apply_transform(T)
             meshes[custom.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     return meshes

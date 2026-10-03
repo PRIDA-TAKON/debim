@@ -140,3 +140,19 @@ flowchart TD
   4. Add unit test in `tests/test_precision_importer.py` testing a 45-degree diagonal brace.
   5. Ensure all 128 existing unit tests continue to pass (`pytest`).
 
+---
+
+## 🌊 Wave 5: Fast Human Visual Audit & 3D Web Viewer UX (Future Backlog)
+
+Designed for Human-AI Super-Collaboration to enable 2-second visual audits:
+
+- **Task 5.1:** `feat(viewer): Implement Traffic-Light Audit Overlay Mode (Green/Yellow/Red)`
+  - Toggle between standard materials and audit heatmap (Emissive Red for orientation errors, Emissive Yellow for unverified proxies).
+- **Task 5.2:** `feat(viewer): Implement 1-Click Ghost Shell / X-Ray Transparency Mode (Opacity 10%)`
+  - Keyboard shortcut `X` to make walls and slabs 10-15% semi-transparent, allowing immediate inspection of internal pipes and structural framing.
+- **Task 5.3:** `feat(viewer): Add Clickable Review Checklist with Smooth Camera Fly-To Zoom`
+  - Side panel listing flagged items; clicking smoothly flies the camera to a close-up focus with outline glow.
+- **Task 5.4:** `feat(viewer): Add Storey Slicer Cross-Section Clipping Plane Slider`
+  - Three.js horizontal clipping plane slider to inspect building floor-by-floor in 3D isometric view.
+
+
