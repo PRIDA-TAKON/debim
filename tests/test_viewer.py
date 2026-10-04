@@ -109,8 +109,8 @@ elements:
     assert "CLAD-1" in html
     assert "architecture/finishes/skirting" in html
     assert "architecture/finishes/cladding" in html
-    assert "บัวเชิงผนัง (Skirting)" in html
-    assert "ผนังตกแต่ง (Cladding)" in html
+    assert "Skirting" in html
+    assert "Cladding" in html
 
 
 def test_cli_view_help():

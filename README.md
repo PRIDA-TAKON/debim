@@ -42,26 +42,26 @@
 
 > [!TIP]
 > **🤖 Authored 100% by AI Agent (Antigravity powered by Gemini 3.8 Flash):**  
-> โมเดลสถาปัตยกรรมระดับโลกชิ้นนี้ **ไม่ได้เขียนด้วยมือมนุษย์ทีละบรรทัด!** แต่เกิดจากการให้ **AI Coding Agent (Antigravity ขับเคลื่อนด้วย Gemini 3.8 Flash)** ทำการสืบค้นข้อมูลแบบแปลน มิติโครงสร้าง และระยะกริดทางประวัติศาสตร์ของ Farnsworth House ด้วยตนเอง แล้วสังเคราะห์โค้ด Declarative YAML (`project.yaml`) ออกมาโดยอัตโนมัติ ก่อนสั่งให้ `debim` ถอดปริมาณงาน (QTO) และคอมไพล์เป็น IFC4 มาตรฐานสากลในเสี้ยววินาที — ยืนยันว่า **คุณไม่จำเป็นต้องพิมพ์โค้ดเองทั้งหมดหากทำงานร่วมกับ AI Agent!**
+> This iconic architectural masterpiece was **not coded by hand line-by-line!** Instead, an **autonomous AI Coding Agent (Google Antigravity powered by Gemini 3.8 Flash)** researched historical blueprints, structural grids, and architectural dimensions of the Farnsworth House, synthesized the declarative YAML specification (`project.yaml`), computed material quantities (QTO), and compiled standard IFC4 building models in seconds — proving that **humans don't need to manually code YAML when assisted by AI agents!**
 
 ---
 
-## 🎯 Why debim? (จุดกำเนิดและปรัชญาของ debim)
+## 🎯 Why debim?
 
-> *"หัวใจของ debim เริ่มจากการอยากให้ AI ทำ BOQ แต่การให้ AI คำนวณตึกทั้งหลังตรงๆ AI ตายแน่ จึงต้องใช้แบบจำลองคณิตศาสตร์ (BIM) ทว่ามาตรฐาน IFC ดั้งเดิมก็ซับซ้อนเกินไป หนักสมอง AI อีก จึงกลั่นออกมาเป็น Declarative YAML — แต่ผลพลอยได้ที่ได้รับกลับยิ่งใหญ่กว่าเป้าหมายแรกเริ่ม"*
+> *"debim originated from a simple desire: to make AI calculate accurate Bills of Quantities (BOQ). Asking an LLM to guess building dimensions directly in text leads to fatal hallucinations. An exact mathematical model (BIM) is essential, yet traditional IFC files are bloated and overwhelm AI context windows. The solution is Declarative YAML — but the resulting Building-as-Code engine proved far more transformative than our initial goal."*
 
-Traditional BIM tools (like Revit or Archicad) were built over 25 years ago for humans clicking with computer mice. They lock architectural data in heavy, proprietary gigabyte files (`.rvt`), charge thousands of dollars in annual licenses, and remain completely opaque to modern automation and AI agents.
+Traditional BIM tools (like Revit or Archicad) were conceived over 25 years ago for humans clicking with computer mice. They lock architectural data inside heavy, proprietary gigabyte files (`.rvt`), charge thousands of dollars in annual licenses, and remain completely opaque to modern automation and AI agents.
 
-**debim** ยึดมั่นใน **5 เสาหลักแห่งการออกแบบ (Core Tenets)**:
-1. **Building-as-Code & Git-Native:** อาคารคือซอฟต์แวร์ แสดงออกเป็นข้อความ YAML ขนาดกะทัดรัด (Kilobytes ไม่ใช่ Gigabytes) เพื่อให้ทำ Version Control, Git diff, และ Branching ตรวจสอบการแก้ไขได้ทีละบรรทัด
-2. **Deterministic Code Compliance:** กฎหมายอาคารและข้อกำหนดวิศวกรรมถูกแปลงเป็น Unit Test (`pytest`) รันตรวจจับข้อผิดพลาดและระยะร่นใน 0.01 วินาทีก่อนลงมือก่อสร้างจริง
-3. **Zero-License & Zero-Friction Visualization:** ตรวจสอบความถูกต้องทางเรขาคณิตได้ทันทีผ่าน 3D HTML Viewer น้ำหนักเบา เปิดบนเบราว์เซอร์หรือมือถือได้ทันที ไม่ต้องมีไลเซนส์ซอฟต์แวร์ราคาแพง
-4. **Universal Bridge & Dual Representation:** ตัวกลางเชื่อมโยง 2D, 3D (SketchUp/Blender), และ IFC โดยผสมผสาน 90% Primitives สำหรับคำนวณโครงสร้างและ BOQ + 10% Baked GLB Asset สำหรับงานสถาปัตย์ประณีต
-5. **Human & AI Super-Collaboration:** ออกแบบให้มี Explicit Uncertainty (`review_status: needs_review`) ให้มนุษย์และ AI ร่วมมือกันตรวจและเติมเต็มสเปกได้อย่างไร้รอยต่อ
+**debim** is built on **5 Core Architectural Tenets**:
+1. **Building-as-Code & Git-Native:** Buildings are software. Expressed as compact YAML (Kilobytes, not Gigabytes) for transparent Version Control, line-by-line Git diffs, and branching.
+2. **Deterministic Code Compliance:** Building codes and engineering regulations are treated as automated Unit Tests (`pytest`), catching setback violations and structural errors in 0.01 seconds before ground is broken.
+3. **Zero-License & Zero-Friction Visualization:** Instant geometric verification through lightweight 3D HTML viewers that load in any browser or mobile device in 2 seconds without expensive licenses.
+4. **Universal Bridge & Dual Representation:** Seamlessly connects 2D drafts, 3D DCC tools (Blender/SketchUp), and open IFC standards using a dual approach: 90% geometric primitives for engineering/BOQ + 10% baked GLB assets for architectural refinement.
+5. **Human & AI Super-Collaboration:** Designed with explicit uncertainty flags (`review_status: needs_review`), enabling humans and autonomous AI agents to co-author and verify building models without friction.
 
 ---
 
-## 🤖 AI-Agent Installation (ติดตั้งง่ายที่สุดในโลกด้วย AI ของคุณ)
+## 🤖 Autonomous AI-Agent Setup
 
 If you use an AI coding assistant (like **Antigravity, Cursor, Claude Code, Jules, or ChatGPT/Copilot**), you don't even need to install it manually!
 
@@ -213,52 +213,52 @@ elements:
 
 ---
 
-## 🔬 Empirical Research & Benchmark (การทดสอบระดับอุตสาหกรรม)
-
-debim ให้ความสำคัญกับความถูกต้องทางวิศวกรรมและการทดสอบแบบเปิดเผย ตรวจสอบซ้ำได้จริง (100% Reproducible Open Science) บน **Kaggle Cloud Multi-Core Benchmark Suite**:
-
-### 1. ⚖️ 3D Visual Regression & Alignment Benchmark (255 อาคารจริงสากล)
-
+## 🔬 Empirical Research & Benchmark
+ 
+debim prioritizes engineering precision and reproducible open science on our **Kaggle Cloud Multi-Core Benchmark Suite**:
+ 
+### 1. ⚖️ 3D Visual Regression & Alignment Benchmark (255 Real-World Buildings)
+ 
 <p align="center">
   <a href="https://www.kaggle.com/code/pridatakon/debim-3d-visual-balanced-benchmark">
     <img src="https://img.shields.io/badge/Kaggle-Run%20Reproducible%20Benchmark-20BEFF?logo=kaggle&style=for-the-badge" alt="Kaggle Benchmark" />
   </a>
 </p>
-
-การทดสอบความแม่นยำด้านเรขาคณิต 3 มิติ (3D Visual Fidelity) แบบปิดตาเทียบกับ IFC ต้นฉบับผ่าน **Geometry Variant Deduplication + Balanced Macro-Averaging** บน 4,695 ชิ้นส่วนตัวแทน:
-
-- **🎯 85.50% Median Visual Fidelity:** ทะลุเกณฑ์มาตรฐานสากล ($\ge 85\%$) ครอบคลุมเกินกึ่งหนึ่งของโมเดลทดสอบ
-- **🏗️ 89.07% Structural Match:** งานโครงสร้างรับแรงหลัก (เสา คาน ผนัง ฐานราก) มีความเสถียรระดับเกรด A+
-- **⚡ 82.64% MEP System Match:** งานระบบท่อ ระบบปรับอากาศ และอุปกรณ์ไฟฟ้าอยู่ในตำแหน่งและระนาบที่ถูกต้อง
-
-#### 📈 วิวัฒนาการเปรียบเทียบข้าม 3 เจเนอเรชัน (Progression Across Waves):
-
-| ตัวชี้วัดสากล (Global Metric) | V1 (Baseline) | V2 (Wave 1-2) | V3 (Wave 4 ล่าสุด) | $\Delta$ พัฒนาขึ้นสะสม |
+ 
+Evaluating blind 3D geometric fidelity against ground-truth IFC models using **Geometry Variant Deduplication + Balanced Macro-Averaging** across 4,695 representative building elements:
+ 
+- **🎯 85.50% Median Visual Fidelity:** Surpassing the international standard benchmark ($\ge 85\%$) across the majority of test suites.
+- **🏗️ 89.07% Structural Match:** Primary load-bearing elements (columns, beams, slabs, foundations) maintain Grade-A+ geometric alignment.
+- **⚡ 82.64% MEP System Match:** Ductwork, drainage, piping, and electrical fixtures align accurately in 3D coordinate planes.
+ 
+#### 📈 Progression Across Waves:
+ 
+| Global Metric | V1 (Baseline) | V2 (Wave 1-2) | V3 (Latest Wave 4) | Cumulative Improvement |
 |---|:---:|:---:|:---:|:---:|
-| **🎯 Median Visual Match (ค่ามัธยฐาน)** | 80.90% | 84.90% | **85.50%** | 🏆 **+4.60% (ทะลุเป้า 85%)** |
+| **🎯 Median Visual Match** | 80.90% | 84.90% | **85.50%** | 🏆 **+4.60% (Exceeded 85%)** |
 | **⚖️ Macro Average Visual Match** | 70.57% | 77.60% | **77.71%** | 🟢 **+7.13%** |
 | **📊 Micro Average Visual Match** | 72.24% | 80.35% | **80.46%** | 🟢 **+8.23%** |
-| **ชิ้นส่วนที่ผ่านเกณฑ์ ($\ge 85\%$)** | 2,865 ชิ้น | 3,140 ชิ้น | **3,135 ชิ้น** | 🟢 **+270 ชิ้น** |
-| **หมวดหมู่งานระบบและตกแต่งที่ก้าวกระโดด** | | | | |
-| • *ฝ้าเพดาน (`IfcCovering`)* | 11.4% | 89.0% | **89.0%** | 🟢 **+77.6% (ผ่านเกณฑ์)** |
-| • *วาล์วระบบท่อ (`IfcValve`)* | 0.0% | 82.2% | **82.4%** | 🟢 **+82.4% (พุ่งจากศูนย์)** |
-| • *แผ่นเหล็กโครงสร้าง (`IfcPlate`)* | 10.2% | 88.9% | **87.1%** | 🟢 **+76.9% (ผ่านเกณฑ์)** |
-| • *เหล็กค้ำยันเฉียง (`IfcMember`)* | 91.8% | 91.6% | **92.4%** | 🟢 **+0.8% (3D Vector Pitch)** |
-
-👉 *ต้องการตรวจสอบการทดลองเชิงลึกหรือรันซ้ำด้วยตนเอง? ดูโค้ดและดาต้าเซ็ตได้ที่ [Kaggle Benchmark Notebook](https://www.kaggle.com/code/pridatakon/debim-3d-visual-balanced-benchmark)*
-
+| **Passing Elements ($\ge 85\%$)** | 2,865 | 3,140 | **3,135** | 🟢 **+270 elements** |
+| **Top Performing Disciplines** | | | | |
+| • *Ceilings (`IfcCovering`)* | 11.4% | 89.0% | **89.0%** | 🟢 **+77.6% (Passing)** |
+| • *Valves & Piping (`IfcValve`)* | 0.0% | 82.2% | **82.4%** | 🟢 **+82.4% (Zero-shot lift)** |
+| • *Structural Plates (`IfcPlate`)* | 10.2% | 88.9% | **87.1%** | 🟢 **+76.9% (Passing)** |
+| • *Bracing Members (`IfcMember`)* | 91.8% | 91.6% | **92.4%** | 🟢 **+0.8% (3D Vector Pitch)** |
+ 
+👉 *Want to inspect raw visual data or reproduce tests yourself? Explore the full dataset and code on the [Kaggle Benchmark Notebook](https://www.kaggle.com/code/pridatakon/debim-3d-visual-balanced-benchmark).*
+ 
 ---
-
-### 2. 📦 Roundtrip Retention & Storage Reduction Study (407 อาคารสากล)
-
-debim ได้รับการทดสอบอย่างเข้มงวดกับโมเดลอาคารจริงกว่า **407 โครงการ** (สถาปัตยกรรม โครงสร้าง และ MEP โรงพยาบาล):
-
-- **100.0% Median Retention Rate:** โมเดลส่วนใหญ่สามารถสกัดและ Re-compile กลับสู่มาตรฐาน IFC4 ได้ครบถ้วนทุกชิ้นงาน
-- **91.6% Average Storage Reduction:** ลดขนาดไฟล์จาก IFC ดิบลงเฉลี่ย 91%
-- **558M+ LLM Tokens Saved:** ประหยัดบริบทของโมเดลภาษาไปได้มากกว่า **558,629,804 โทเคน**
-- **100.0% Modern Schema Crash-Resilience:** ไม่พบ Fatal Crash หรือ Unhandled Exception บนมาตรฐาน IFC2X3 และ IFC4
-
-📖 **อ่านรายงานวิจัยฉบับเต็ม:** [debim: An Empirical Study of Declarative Building-as-Code on 407 Heterogeneous Real-World OpenBIM Models](docs/research/2026_empirical_study_407_ifc_models.md)  
+ 
+### 2. 📦 Roundtrip Retention & Storage Reduction Study (407 Real-World OpenBIM Models)
+ 
+Rigorously benchmarked against **407 real-world projects** across architectural, structural, and complex hospital MEP domains:
+ 
+- **100.0% Median Retention Rate:** Extract and re-compile back to standard IFC4 without element loss.
+- **91.6% Average Storage Reduction:** Compresses raw IFC files by an average of 91%.
+- **558M+ LLM Tokens Saved:** Prevented **558,629,804 tokens** from cluttering agent context windows.
+- **100.0% Modern Schema Crash-Resilience:** Zero fatal crashes or unhandled exceptions across standard IFC2X3 and IFC4 datasets.
+ 
+📖 **Read Full Research Paper:** [debim: An Empirical Study of Declarative Building-as-Code on 407 Heterogeneous Real-World OpenBIM Models](docs/research/2026_empirical_study_407_ifc_models.md)  
 📦 **Kaggle Public Benchmark Dataset:** [debim-5000-ifc-benchmark](https://www.kaggle.com/datasets/pridatakon/debim-5000-ifc-benchmark)  
 ⚡ **Kaggle Automated Stress Test:** [debim-ifc-stress-test](https://www.kaggle.com/code/pridatakon/debim-ifc-stress-test)
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>debim 3D Live Demo — Farnsworth House (Ludwig Mies van der Rohe, 1951)</title>
+    <title>debim 3D Viewer - Farnsworth House (Ludwig Mies van der Rohe, 1951 - Plano, Illinois)</title>
     <!-- CDN-hosted Three.js and OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -249,14 +249,14 @@
     <div id="canvas-container"></div>
 
     <div id="view-toolbar">
-        <button class="view-btn" onclick="setView('top')">📐 ผังพื้น (Top View)</button>
+        <button class="view-btn" onclick="setView('top')">📐 Floor Plan (Top View)</button>
         <button class="view-btn" onclick="setView('iso')">🏢 3D Isometric</button>
-        <button class="view-btn" onclick="setView('front')">↔️ ด้านหน้า (Front)</button>
-        <button class="view-btn" onclick="setView('side')">↕️ ด้านข้าง (Side)</button>
-        <button id="xray-btn" class="view-btn" onclick="toggleXRay()" style="background:#0284c7; color:#fff; font-weight:600; border-color:#38bdf8;">👁️ ผนังโปร่งใส (X-Ray)</button>
-        <button id="section-btn" class="view-btn" onclick="toggleSectionPlaneUI()" style="background:#8b5cf6; color:#fff; font-weight:600; border-color:#a78bfa;">✂️ ตัดระนาบ (Section Plane)</button>
-        <button id="measure-btn" class="view-btn" onclick="toggleMeasureTool()" style="background:#0d9488; color:#fff; font-weight:600; border-color:#2dd4bf;">📏 วัดระยะ (Measure)</button>
-        <button id="clear-measure-btn" class="view-btn" onclick="clearMeasurements()" style="display:none; background:#e11d48; color:#fff; font-weight:500;">✕ ลบเส้นวัด</button>
+        <button class="view-btn" onclick="setView('front')">↔️ Front Elevation</button>
+        <button class="view-btn" onclick="setView('side')">↕️ Side Elevation</button>
+        <button id="xray-btn" class="view-btn" onclick="toggleXRay()" style="background:#0284c7; color:#fff; font-weight:600; border-color:#38bdf8;">👁️ X-Ray Mode</button>
+        <button id="section-btn" class="view-btn" onclick="toggleSectionPlaneUI()" style="background:#8b5cf6; color:#fff; font-weight:600; border-color:#a78bfa;">✂️ Section Plane</button>
+        <button id="measure-btn" class="view-btn" onclick="toggleMeasureTool()" style="background:#0d9488; color:#fff; font-weight:600; border-color:#2dd4bf;">📏 Measure Tool</button>
+        <button id="clear-measure-btn" class="view-btn" onclick="clearMeasurements()" style="display:none; background:#e11d48; color:#fff; font-weight:500;">✕ Clear Dimensions</button>
         <a href="https://github.com/PRIDA-TAKON/debim" target="_blank" class="view-btn" style="background:#238636; color:#fff; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:4px; border-color:#2ea44f;">⭐ GitHub Repo</a>
     </div>
 
@@ -298,9 +298,9 @@
     </div>
 
     <div id="axes-legend">
-        <div><span style="color:#ff4d4d; font-weight:bold;">🔴 แกน X:</span> แนวนอน</div>
-        <div><span style="color:#4dff4d; font-weight:bold;">🟢 แกน Y:</span> แนวตั้ง</div>
-        <div><span style="color:#4da6ff; font-weight:bold;">🔵 แกน Z:</span> Elevation</div>
+        <div><span style="color:#ff4d4d; font-weight:bold;">🔴 Axis X:</span> Width (E-W)</div>
+        <div><span style="color:#4dff4d; font-weight:bold;">🟢 Axis Y:</span> Depth (N-S)</div>
+        <div><span style="color:#4da6ff; font-weight:bold;">🔵 Axis Z:</span> Elevation</div>
     </div>
 
     <div id="info-panel" class="ui-panel">
@@ -1126,7 +1126,7 @@
         const bubbleOffset = 1.8;
         const lineExtend = 1.2;
 
-        // X Grids (แสดงเฉพาะกริตหลัก ข้ามกริตย่อยที่มี '-')
+        // X Grids (display primary grids, skip secondary '-')
         Object.entries(sceneData.grids.axes_x).forEach(([name, xVal]) => {
             if (name.includes('-')) return;
             const pts = [
@@ -1146,7 +1146,7 @@
             gridGroup.add(botBubble);
         });
 
-        // Y Grids (แสดงเฉพาะกริตหลัก ข้ามกริตย่อยที่มี '-')
+        // Y Grids (display primary grids, skip secondary '-')
         Object.entries(sceneData.grids.axes_y).forEach(([name, yVal]) => {
             if (name.includes('-')) return;
             const pts = [
@@ -1383,7 +1383,7 @@
             const btn = document.getElementById('xray-btn');
             if (btn) {
                 btn.style.background = isXRay ? '#10b981' : '#0284c7';
-                btn.innerHTML = isXRay ? '👁️ ผนังโปร่งใส (เปิดอยู่)' : '👁️ ผนังโปร่งใส (X-Ray)';
+                btn.innerHTML = isXRay ? '👁️ X-Ray Mode (Active)' : '👁️ X-Ray Mode';
             }
             pickableObjects.forEach(obj => {
                 if (obj.userData && (obj.userData.class === "IfcWall" || obj.userData.class === "IfcRoofCovering" || (obj.userData.layer && obj.userData.layer.includes("walls")))) {
@@ -1706,13 +1706,13 @@
 
             if (isMeasureActive) {
                 btn.style.background = '#0f766e';
-                btn.innerHTML = '📏 โหมดวัดระยะ (เปิดอยู่)';
+                btn.innerHTML = '📏 Measure Tool (Active)';
                 container.style.cursor = 'crosshair';
-                document.getElementById('instructions').textContent = '📏 โหมดวัดระยะ: คลิกชิ้นงานเพื่อกำหนดจุดเริ่มต้น (A) | Esc เพื่อปิด';
+                document.getElementById('instructions').textContent = '📏 Measure: Click an element to set Point A | Esc to exit';
                 if (measureHistory.length > 0) clearBtn.style.display = 'inline-block';
             } else {
                 btn.style.background = '#0d9488';
-                btn.innerHTML = '📏 วัดระยะ (Measure)';
+                btn.innerHTML = '📏 Measure Tool';
                 container.style.cursor = 'default';
                 document.getElementById('instructions').textContent = 'Rotate: Left Click + Drag | Pan: Right Click + Drag | Zoom: Scroll';
                 resetCurrentMeasure();
@@ -1776,7 +1776,7 @@
                     measureGroup.add(livePreviewLine);
 
                     const curDist = measurePointA.distanceTo(snap.point);
-                    document.getElementById('instructions').textContent = '📏 ระยะชั่วคราว: ' + curDist.toFixed(2) + ' m | คลิกจุดที่ 2 เพื่อยืนยัน';
+                    document.getElementById('instructions').textContent = '📏 Distance: ' + curDist.toFixed(2) + ' m | Click Point B to complete';
                 }
             } else {
                 snapMarker.visible = false;
@@ -1816,7 +1816,7 @@
                     );
                     startMarkerA.position.copy(measurePointA);
                     measureGroup.add(startMarkerA);
-                    document.getElementById('instructions').textContent = '📏 จุดที่ 1 บันทึกแล้ว! คลิกจุดที่ 2 เพื่อวัดระยะ';
+                    document.getElementById('instructions').textContent = '📏 Point A set! Click Point B to measure distance';
                 } else {
                     const measurePointB = snap.point.clone();
                     const dist = measurePointA.distanceTo(measurePointB);
@@ -1857,7 +1857,7 @@
                     measureHistory.push(record);
 
                     document.getElementById('clear-measure-btn').style.display = 'inline-block';
-                    document.getElementById('instructions').textContent = '✅ วัดระยะเสร็จ: ' + dist.toFixed(2) + ' m (ΔX: ' + dx.toFixed(2) + ', ΔY: ' + dy.toFixed(2) + ', ΔZ: ' + dz.toFixed(2) + ') | คลิกชิ้นงานเพื่อวัดเส้นใหม่';
+                    document.getElementById('instructions').textContent = '✅ Measured: ' + dist.toFixed(2) + ' m (ΔX: ' + dx.toFixed(2) + ', ΔY: ' + dy.toFixed(2) + ', ΔZ: ' + dz.toFixed(2) + ') | Click element to start new measurement';
 
                     resetCurrentMeasure();
                 }
@@ -1907,46 +1907,46 @@
             let memberRow = '';
             if (data.member_name) {
                 const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${data.color};margin-right:6px;"></span>` : '';
-                memberRow = `<div class="data-row"><span class="data-label">ชิ้นส่วน (Member)</span><span class="data-value">${colorDot}${data.member_name}</span></div>`;
+                memberRow = `<div class="data-row"><span class="data-label">Member</span><span class="data-value">${colorDot}${data.member_name}</span></div>`;
             }
 
             let profileRow = '';
             if (data.profile) {
-                profileRow = `<div class="data-row"><span class="data-label">หน้าตัด (Profile)</span><span class="data-value">${data.profile}</span></div>`;
+                profileRow = `<div class="data-row"><span class="data-label">Profile</span><span class="data-value">${data.profile}</span></div>`;
             }
 
             let mepRow = '';
             if (data.system_name_th) {
                 const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${data.color};margin-right:6px;"></span>` : '';
-                mepRow += `<div class="data-row"><span class="data-label">ระบบ (System)</span><span class="data-value">${colorDot}${data.system_name_th}</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">System</span><span class="data-value">${colorDot}${data.system_name_th}</span></div>`;
             }
             if (data.fixture_name_th) {
                 const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${data.color};margin-right:6px;"></span>` : '';
-                mepRow += `<div class="data-row"><span class="data-label">อุปกรณ์ (Fixture)</span><span class="data-value">${colorDot}${data.fixture_name_th}</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Fixture</span><span class="data-value">${colorDot}${data.fixture_name_th}</span></div>`;
             }
             if (data.dimensions && data.dimensions.diameter !== undefined) {
                 const dia_mm = (data.dimensions.diameter * 1000).toFixed(0);
-                mepRow += `<div class="data-row"><span class="data-label">ขนาดท่อ (Dia)</span><span class="data-value">Ø ${dia_mm} mm (${data.dimensions.diameter}m)</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Pipe Dia</span><span class="data-value">Ø ${dia_mm} mm (${data.dimensions.diameter}m)</span></div>`;
             }
             if (data.dimensions && data.dimensions.slope) {
                 const slope_pct = (data.dimensions.slope * 100).toFixed(1);
-                mepRow += `<div class="data-row"><span class="data-label">ความลาดชัน (Slope)</span><span class="data-value">${slope_pct}% (1:${Math.round(1/data.dimensions.slope)})</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Slope</span><span class="data-value">${slope_pct}% (1:${Math.round(1/data.dimensions.slope)})</span></div>`;
             }
             if (data.wattage) {
-                mepRow += `<div class="data-row"><span class="data-label">กำลังไฟฟ้า (Power)</span><span class="data-value">${data.wattage} W</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Power</span><span class="data-value">${data.wattage} W</span></div>`;
             }
             if (data.circuits_count) {
-                mepRow += `<div class="data-row"><span class="data-label">จำนวนวงจร (Circuits)</span><span class="data-value">${data.circuits_count} วงจรย่อย</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Circuits</span><span class="data-value">${data.circuits_count} circuits</span></div>`;
             }
             if (data.cooling_capacity_btu) {
-                mepRow += `<div class="data-row"><span class="data-label">ขนาดทำความเย็น (Cooling)</span><span class="data-value">${data.cooling_capacity_btu.toLocaleString()} BTU/hr</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Cooling</span><span class="data-value">${data.cooling_capacity_btu.toLocaleString()} BTU/hr</span></div>`;
             }
             if (data.flow_rate_cfm) {
-                mepRow += `<div class="data-row"><span class="data-label">อัตราลมระบาย (Air Flow)</span><span class="data-value">${data.flow_rate_cfm} CFM</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Air Flow</span><span class="data-value">${data.flow_rate_cfm} CFM</span></div>`;
             }
             if (data.covering_type) {
                 const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${data.color};margin-right:6px;"></span>` : '';
-                mepRow += `<div class="data-row"><span class="data-label">ประเภทงานตกแต่ง</span><span class="data-value">${colorDot}${data.covering_type}</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Finish Type</span><span class="data-value">${colorDot}${data.covering_type}</span></div>`;
             }
 
 

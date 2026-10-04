@@ -33,7 +33,7 @@ dependencies = [
 
 [project.optional-dependencies]
 mcp = [
-    "mcp>=1.0.0",
+    "mcp>=1.0.0,<2",
 ]
 ifc = [
     "ifcopenshell>=0.7.0",
@@ -44,7 +44,7 @@ dev = [
 ]
 all = [
     "ifcopenshell>=0.7.0",
-    "mcp>=1.0.0",
+    "mcp>=1.0.0,<2",
 ]
 
 [project.scripts]

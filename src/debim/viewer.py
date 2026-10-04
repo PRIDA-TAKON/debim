@@ -378,7 +378,7 @@ def generate_viewer_html(
                 "material": roof.element.covering.tile_type if roof.element.covering else "Roof Tiles",
                 "color": "#9E4734",
                 "layer": f"{roof.layer}/covering",
-                "member_name": "กระเบื้องมุงหลังคา (Roof Covering)",
+                "member_name": "Roof Covering",
                 "dimensions": {
                     "area": plane.area,
                     "slope_degrees": plane.slope_degrees,
@@ -395,7 +395,7 @@ def generate_viewer_html(
                 "linewidth": 3 if member.member_type in ("RIDGE_BEAM", "HIP_RAFTER", "KING_POST", "WALL_PLATE") else 2,
                 "layer": f"{roof.layer}/framing",
                 "member_type": member.member_type,
-                "member_name": member.name_th,
+                "member_name": member.member_type.replace("_", " ").title(),
                 "material": member.material or "STEEL_SS400",
                 "profile": member.profile,
                 "dimensions": {
@@ -413,7 +413,7 @@ def generate_viewer_html(
                 "color": color,
                 "linewidth": 3 if ridge.ridge_type in ("RIDGE", "HIP") else 2,
                 "layer": f"{roof.layer}/covering",
-                "member_name": f"แนวสันหลังคา ({ridge.ridge_type})",
+                "member_name": f"Roof Ridge ({ridge.ridge_type.title()})",
                 "dimensions": {
                     "length": ridge.length,
                 },
@@ -594,23 +594,23 @@ def generate_viewer_html(
             cov_layer = f"architecture/finishes/{c_type.lower()}"
 
         if c_type == "CEILING":
-            c_th = "ฝ้าเพดาน (Ceiling)"
+            c_th = "Ceiling"
             color = "#EDE8F5" if "GYPSUM" in (cov.element.material or "") else ("#E2E8F0" if "TBAR" in (cov.element.material or "") else "#D1D5DB")
             opacity = 0.50
         elif c_type == "FLOORING":
-            c_th = "งานปูพื้น / ผิวตกแต่ง (Flooring)"
+            c_th = "Flooring"
             color = "#CBD5E1"
             opacity = 0.85
         elif c_type == "SKIRTING":
-            c_th = "บัวเชิงผนัง (Skirting)"
+            c_th = "Skirting"
             color = "#B45309"
             opacity = 1.0
         elif c_type == "CLADDING":
-            c_th = "ผนังตกแต่ง (Cladding)"
+            c_th = "Cladding"
             color = "#D97706"
             opacity = 1.0
         else:
-            c_th = f"วัสดุตกแต่งผิว ({c_type})"
+            c_th = f"Finish ({c_type})"
             color = "#E5E7EB"
             opacity = 0.70
 
@@ -800,14 +800,14 @@ def generate_viewer_html(
     # MEP Elements: Pipes
     for pipe in resolved.pipes:
         sys_th = {
-            "COLD_WATER": "ท่อน้ำดี (Cold Water)",
-            "HOT_WATER": "ท่อน้ำร้อน (Hot Water)",
-            "SOIL": "ท่อโสโครก/ส้วม (Soil Pipe)",
-            "WASTE": "ท่อน้ำทิ้ง (Waste Pipe)",
-            "VENT": "ท่อระบายอากาศ (Vent Pipe)",
-            "DRAINAGE": "ท่อระบายน้ำรอบอาคาร (Drainage)",
-            "REFRIGERANT": "ท่อน้ำยาแอร์ (Refrigerant Pipe)",
-            "CONDENSATE": "ท่อน้ำทิ้งแอร์ (AC Condensate Drain)",
+            "COLD_WATER": "Cold Water",
+            "HOT_WATER": "Hot Water",
+            "SOIL": "Soil Pipe",
+            "WASTE": "Waste Pipe",
+            "VENT": "Vent Pipe",
+            "DRAINAGE": "Drainage",
+            "REFRIGERANT": "Refrigerant Pipe",
+            "CONDENSATE": "AC Condensate Drain",
         }.get(pipe.system_type, pipe.system_type)
 
         elements_data.append({
@@ -832,11 +832,11 @@ def generate_viewer_html(
     # MEP Elements: Conduits
     for conduit in resolved.conduits:
         sys_th = {
-            "POWER": "ท่อร้อยสายไฟกำลัง (Power Conduit)",
-            "LIGHTING": "ท่อร้อยสายไฟแสงสว่าง (Lighting Conduit)",
-            "MAIN_FEEDER": "ท่อร้อยสายเมน (Main Feeder)",
-            "COMMUNICATION": "สายสื่อสาร/LAN",
-            "SOLAR": "สายไฟฟ้าโซล่าร์เซลล์",
+            "POWER": "Power Conduit",
+            "LIGHTING": "Lighting Conduit",
+            "MAIN_FEEDER": "Main Feeder",
+            "COMMUNICATION": "Telecom / LAN",
+            "SOLAR": "Solar PV Conduit",
         }.get(conduit.system_type, conduit.system_type)
 
         elements_data.append({
@@ -860,15 +860,15 @@ def generate_viewer_html(
     # MEP Elements: Sanitary Terminals
     for term in resolved.sanitary_terminals:
         type_th = {
-            "WATER_CLOSET": "โถส้วม / สุขภัณฑ์ (WC)",
-            "LAVATORY": "อ่างล้างหน้า (Lavatory)",
-            "SHOWER": "ฝักบัวอาบน้ำ (Shower)",
-            "KITCHEN_SINK": "อ่างล้างจาน (Kitchen Sink)",
-            "FLOOR_DRAIN": "ตะแกรงดักกลิ่นที่พื้น (Floor Drain)",
-            "GREASE_TRAP": "บ่อดักไขมัน (Grease Trap)",
-            "SEPTIC_TANK": "ถังบำบัดน้ำเสีย (Septic Tank)",
-            "WATER_TANK": "ถังเก็บน้ำบนดิน (Water Tank)",
-            "WATER_PUMP": "ปั๊มน้ำอัตโนมัติ (Water Pump)",
+            "WATER_CLOSET": "Water Closet (WC)",
+            "LAVATORY": "Lavatory",
+            "SHOWER": "Shower",
+            "KITCHEN_SINK": "Kitchen Sink",
+            "FLOOR_DRAIN": "Floor Drain",
+            "GREASE_TRAP": "Grease Trap",
+            "SEPTIC_TANK": "Septic Tank",
+            "WATER_TANK": "Water Storage Tank",
+            "WATER_PUMP": "Water Booster Pump",
         }.get(term.terminal_type, term.terminal_type)
 
         elements_data.append({
@@ -894,7 +894,7 @@ def generate_viewer_html(
 
     # MEP Elements: Distribution Boards
     for board in resolved.distribution_boards:
-        b_th = "ตู้ควบคุมไฟฟ้าหลัก (Consumer Unit / MDB)"
+        b_th = "Distribution Panel (Consumer Unit / MDB)"
         elements_data.append({
             "tag": board.tag,
             "class": "IfcDistributionBoard",
@@ -920,11 +920,11 @@ def generate_viewer_html(
     # MEP Elements: Lighting Fixtures
     for light in resolved.light_fixtures:
         l_th = {
-            "DOWNLIGHT": "โคมไฟดาวน์ไลท์ (Downlight)",
-            "LED_TUBE": "โคมไฟรางนีออน/LED (LED Tube)",
-            "PENDANT": "โคมไฟแขวน (Pendant Lamp)",
-            "WALL_LAMP": "โคมไฟกิ่งติดผนัง (Wall Lamp)",
-            "FLOODLIGHT": "โคมไฟฟลัดไลท์ (Floodlight)",
+            "DOWNLIGHT": "Downlight",
+            "LED_TUBE": "LED Tube / Batten",
+            "PENDANT": "Pendant Lamp",
+            "WALL_LAMP": "Wall Lamp",
+            "FLOODLIGHT": "Floodlight",
         }.get(light.fixture_type, light.fixture_type)
 
         elements_data.append({
@@ -951,7 +951,7 @@ def generate_viewer_html(
 
     # MEP Elements: Switches
     for sw in resolved.switches:
-        s_th = f"สวิตช์ไฟ {sw.gangs} ช่อง ({sw.switch_type})"
+        s_th = f"Switch {sw.gangs}-Gang ({sw.switch_type})"
         elements_data.append({
             "tag": sw.tag,
             "class": "IfcSwitchingDevice",
@@ -976,7 +976,7 @@ def generate_viewer_html(
 
     # MEP Elements: Outlets
     for out in resolved.outlets:
-        o_th = f"เต้ารับไฟฟ้า ({out.outlet_type})"
+        o_th = f"Power Outlet ({out.outlet_type})"
         elements_data.append({
             "tag": out.tag,
             "class": "IfcOutlet",
@@ -1001,10 +1001,10 @@ def generate_viewer_html(
     # MEP Elements: Ducts
     for duct in resolved.ducts:
         sys_th = {
-            "SUPPLY_AIR": "ท่อลมจ่าย (Supply Air Duct)",
-            "RETURN_AIR": "ท่อลมกลับ (Return Air Duct)",
-            "EXHAUST_AIR": "ท่อระบายอากาศ/ดูดควัน (Exhaust Air Duct)",
-            "FRESH_AIR": "ท่อเติมอากาศบริสุทธิ์ (Fresh Air Duct)",
+            "SUPPLY_AIR": "Supply Air Duct",
+            "RETURN_AIR": "Return Air Duct",
+            "EXHAUST_AIR": "Exhaust Air Duct",
+            "FRESH_AIR": "Fresh Air Duct",
         }.get(duct.system_type, duct.system_type)
 
         elements_data.append({
@@ -1029,11 +1029,11 @@ def generate_viewer_html(
     # MEP Elements: Air Terminals
     for air in resolved.air_terminals:
         type_th = {
-            "EXHAUST_FAN_CEILING": "พัดลมดูดอากาศติดเพดาน (Ceiling Exhaust Fan)",
-            "EXHAUST_FAN_WALL": "พัดลมดูดอากาศติดผนัง (Wall Exhaust Fan)",
-            "KITCHEN_HOOD": "ฮูดดูดควันห้องครัว (Kitchen Range Hood)",
-            "SUPPLY_DIFFUSER": "หน้ากากหัวจ่ายลม (Supply Diffuser)",
-            "RETURN_GRILLE": "หน้ากากลมกลับ (Return Grille)",
+            "EXHAUST_FAN_CEILING": "Ceiling Exhaust Fan",
+            "EXHAUST_FAN_WALL": "Wall Exhaust Fan",
+            "KITCHEN_HOOD": "Kitchen Range Hood",
+            "SUPPLY_DIFFUSER": "Supply Diffuser",
+            "RETURN_GRILLE": "Return Grille",
         }.get(air.terminal_type, air.terminal_type)
 
         elements_data.append({
@@ -1061,10 +1061,10 @@ def generate_viewer_html(
     # MEP Elements: Unitary Equipment
     for eq in resolved.unitary_equipments:
         eq_th = {
-            "AC_INDOOR_WALL": "เครื่องปรับอากาศแบบติดผนัง (Wall Mounted AC)",
-            "AC_INDOOR_CASSETTE": "เครื่องปรับอากาศแบบฝังฝ้า 4 ทิศทาง (Cassette AC)",
-            "AC_INDOOR_CONCEALED": "เครื่องปรับอากาศแบบซ่อนในฝ้า (Concealed Duct AC)",
-            "AC_OUTDOOR_CONDENSER": "คอนเดนซิ่งยูนิตภายนอก (Outdoor Condensing Unit)",
+            "AC_INDOOR_WALL": "Wall Mounted AC",
+            "AC_INDOOR_CASSETTE": "4-Way Cassette AC",
+            "AC_INDOOR_CONCEALED": "Concealed Duct AC",
+            "AC_OUTDOOR_CONDENSER": "Outdoor Condensing Unit",
         }.get(eq.equipment_type, eq.equipment_type)
 
         elements_data.append({
@@ -1351,14 +1351,14 @@ def generate_viewer_html(
     <div id="canvas-container"></div>
 
     <div id="view-toolbar">
-        <button class="view-btn" onclick="setView('top')">📐 ผังพื้น (Top View)</button>
+        <button class="view-btn" onclick="setView('top')">📐 Floor Plan (Top View)</button>
         <button class="view-btn" onclick="setView('iso')">🏢 3D Isometric</button>
-        <button class="view-btn" onclick="setView('front')">↔️ ด้านหน้า (Front)</button>
-        <button class="view-btn" onclick="setView('side')">↕️ ด้านข้าง (Side)</button>
-        <button id="xray-btn" class="view-btn" onclick="toggleXRay()" style="background:#0284c7; color:#fff; font-weight:600; border-color:#38bdf8;">👁️ ผนังโปร่งใส (X-Ray)</button>
-        <button id="section-btn" class="view-btn" onclick="toggleSectionPlaneUI()" style="background:#8b5cf6; color:#fff; font-weight:600; border-color:#a78bfa;">✂️ ตัดระนาบ (Section Plane)</button>
-        <button id="measure-btn" class="view-btn" onclick="toggleMeasureTool()" style="background:#0d9488; color:#fff; font-weight:600; border-color:#2dd4bf;">📏 วัดระยะ (Measure)</button>
-        <button id="clear-measure-btn" class="view-btn" onclick="clearMeasurements()" style="display:none; background:#e11d48; color:#fff; font-weight:500;">✕ ลบเส้นวัด</button>
+        <button class="view-btn" onclick="setView('front')">↔️ Front Elevation</button>
+        <button class="view-btn" onclick="setView('side')">↕️ Side Elevation</button>
+        <button id="xray-btn" class="view-btn" onclick="toggleXRay()" style="background:#0284c7; color:#fff; font-weight:600; border-color:#38bdf8;">👁️ X-Ray Mode</button>
+        <button id="section-btn" class="view-btn" onclick="toggleSectionPlaneUI()" style="background:#8b5cf6; color:#fff; font-weight:600; border-color:#a78bfa;">✂️ Section Plane</button>
+        <button id="measure-btn" class="view-btn" onclick="toggleMeasureTool()" style="background:#0d9488; color:#fff; font-weight:600; border-color:#2dd4bf;">📏 Measure Tool</button>
+        <button id="clear-measure-btn" class="view-btn" onclick="clearMeasurements()" style="display:none; background:#e11d48; color:#fff; font-weight:500;">✕ Clear Dimensions</button>
     </div>
 
     <div id="section-plane-panel" class="ui-panel" style="display: none; top: 60px; left: 50%; transform: translateX(-50%); width: 380px; z-index: 1000;">
@@ -1399,9 +1399,9 @@ def generate_viewer_html(
     </div>
 
     <div id="axes-legend">
-        <div><span style="color:#ff4d4d; font-weight:bold;">🔴 แกน X:</span> แนวนอน</div>
-        <div><span style="color:#4dff4d; font-weight:bold;">🟢 แกน Y:</span> แนวตั้ง</div>
-        <div><span style="color:#4da6ff; font-weight:bold;">🔵 แกน Z:</span> Elevation</div>
+        <div><span style="color:#ff4d4d; font-weight:bold;">🔴 Axis X:</span> Width (E-W)</div>
+        <div><span style="color:#4dff4d; font-weight:bold;">🟢 Axis Y:</span> Depth (N-S)</div>
+        <div><span style="color:#4da6ff; font-weight:bold;">🔵 Axis Z:</span> Elevation</div>
     </div>
 
     <div id="info-panel" class="ui-panel">
@@ -1613,7 +1613,7 @@ def generate_viewer_html(
         const bubbleOffset = 1.8;
         const lineExtend = 1.2;
 
-        // X Grids (แสดงเฉพาะกริตหลัก ข้ามกริตย่อยที่มี '-')
+        // X Grids (display primary grids, skip secondary '-')
         Object.entries(sceneData.grids.axes_x).forEach(([name, xVal]) => {{
             if (name.includes('-')) return;
             const pts = [
@@ -1633,7 +1633,7 @@ def generate_viewer_html(
             gridGroup.add(botBubble);
         }});
 
-        // Y Grids (แสดงเฉพาะกริตหลัก ข้ามกริตย่อยที่มี '-')
+        // Y Grids (display primary grids, skip secondary '-')
         Object.entries(sceneData.grids.axes_y).forEach(([name, yVal]) => {{
             if (name.includes('-')) return;
             const pts = [
@@ -1870,7 +1870,7 @@ def generate_viewer_html(
             const btn = document.getElementById('xray-btn');
             if (btn) {{
                 btn.style.background = isXRay ? '#10b981' : '#0284c7';
-                btn.innerHTML = isXRay ? '👁️ ผนังโปร่งใส (เปิดอยู่)' : '👁️ ผนังโปร่งใส (X-Ray)';
+                btn.innerHTML = isXRay ? '👁️ X-Ray Mode (Active)' : '👁️ X-Ray Mode';
             }}
             pickableObjects.forEach(obj => {{
                 if (obj.userData && (obj.userData.class === "IfcWall" || obj.userData.class === "IfcRoofCovering" || (obj.userData.layer && obj.userData.layer.includes("walls")))) {{
@@ -2193,13 +2193,13 @@ def generate_viewer_html(
 
             if (isMeasureActive) {{
                 btn.style.background = '#0f766e';
-                btn.innerHTML = '📏 โหมดวัดระยะ (เปิดอยู่)';
+                btn.innerHTML = '📏 Measure Tool (Active)';
                 container.style.cursor = 'crosshair';
-                document.getElementById('instructions').textContent = '📏 โหมดวัดระยะ: คลิกชิ้นงานเพื่อกำหนดจุดเริ่มต้น (A) | Esc เพื่อปิด';
+                document.getElementById('instructions').textContent = '📏 Measure: Click an element to set Point A | Esc to exit';
                 if (measureHistory.length > 0) clearBtn.style.display = 'inline-block';
             }} else {{
                 btn.style.background = '#0d9488';
-                btn.innerHTML = '📏 วัดระยะ (Measure)';
+                btn.innerHTML = '📏 Measure Tool';
                 container.style.cursor = 'default';
                 document.getElementById('instructions').textContent = 'Rotate: Left Click + Drag | Pan: Right Click + Drag | Zoom: Scroll';
                 resetCurrentMeasure();
@@ -2263,7 +2263,7 @@ def generate_viewer_html(
                     measureGroup.add(livePreviewLine);
 
                     const curDist = measurePointA.distanceTo(snap.point);
-                    document.getElementById('instructions').textContent = '📏 ระยะชั่วคราว: ' + curDist.toFixed(2) + ' m | คลิกจุดที่ 2 เพื่อยืนยัน';
+                    document.getElementById('instructions').textContent = '📏 Distance: ' + curDist.toFixed(2) + ' m | Click Point B to complete';
                 }}
             }} else {{
                 snapMarker.visible = false;
@@ -2303,7 +2303,7 @@ def generate_viewer_html(
                     );
                     startMarkerA.position.copy(measurePointA);
                     measureGroup.add(startMarkerA);
-                    document.getElementById('instructions').textContent = '📏 จุดที่ 1 บันทึกแล้ว! คลิกจุดที่ 2 เพื่อวัดระยะ';
+                    document.getElementById('instructions').textContent = '📏 Point A set! Click Point B to measure distance';
                 }} else {{
                     const measurePointB = snap.point.clone();
                     const dist = measurePointA.distanceTo(measurePointB);
@@ -2344,7 +2344,7 @@ def generate_viewer_html(
                     measureHistory.push(record);
 
                     document.getElementById('clear-measure-btn').style.display = 'inline-block';
-                    document.getElementById('instructions').textContent = '✅ วัดระยะเสร็จ: ' + dist.toFixed(2) + ' m (ΔX: ' + dx.toFixed(2) + ', ΔY: ' + dy.toFixed(2) + ', ΔZ: ' + dz.toFixed(2) + ') | คลิกชิ้นงานเพื่อวัดเส้นใหม่';
+                    document.getElementById('instructions').textContent = '✅ Measured: ' + dist.toFixed(2) + ' m (ΔX: ' + dx.toFixed(2) + ', ΔY: ' + dy.toFixed(2) + ', ΔZ: ' + dz.toFixed(2) + ') | Click element to start new measurement';
 
                     resetCurrentMeasure();
                 }}
@@ -2394,46 +2394,46 @@ def generate_viewer_html(
             let memberRow = '';
             if (data.member_name) {{
                 const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${{data.color}};margin-right:6px;"></span>` : '';
-                memberRow = `<div class="data-row"><span class="data-label">ชิ้นส่วน (Member)</span><span class="data-value">${{colorDot}}${{data.member_name}}</span></div>`;
+                memberRow = `<div class="data-row"><span class="data-label">Member</span><span class="data-value">${{colorDot}}${{data.member_name}}</span></div>`;
             }}
 
             let profileRow = '';
             if (data.profile) {{
-                profileRow = `<div class="data-row"><span class="data-label">หน้าตัด (Profile)</span><span class="data-value">${{data.profile}}</span></div>`;
+                profileRow = `<div class="data-row"><span class="data-label">Profile</span><span class="data-value">${{data.profile}}</span></div>`;
             }}
 
             let mepRow = '';
             if (data.system_name_th) {{
                 const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${{data.color}};margin-right:6px;"></span>` : '';
-                mepRow += `<div class="data-row"><span class="data-label">ระบบ (System)</span><span class="data-value">${{colorDot}}${{data.system_name_th}}</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">System</span><span class="data-value">${{colorDot}}${{data.system_name_th}}</span></div>`;
             }}
             if (data.fixture_name_th) {{
                 const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${{data.color}};margin-right:6px;"></span>` : '';
-                mepRow += `<div class="data-row"><span class="data-label">อุปกรณ์ (Fixture)</span><span class="data-value">${{colorDot}}${{data.fixture_name_th}}</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Fixture</span><span class="data-value">${{colorDot}}${{data.fixture_name_th}}</span></div>`;
             }}
             if (data.dimensions && data.dimensions.diameter !== undefined) {{
                 const dia_mm = (data.dimensions.diameter * 1000).toFixed(0);
-                mepRow += `<div class="data-row"><span class="data-label">ขนาดท่อ (Dia)</span><span class="data-value">Ø ${{dia_mm}} mm (${{data.dimensions.diameter}}m)</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Pipe Dia</span><span class="data-value">Ø ${{dia_mm}} mm (${{data.dimensions.diameter}}m)</span></div>`;
             }}
             if (data.dimensions && data.dimensions.slope) {{
                 const slope_pct = (data.dimensions.slope * 100).toFixed(1);
-                mepRow += `<div class="data-row"><span class="data-label">ความลาดชัน (Slope)</span><span class="data-value">${{slope_pct}}% (1:${{Math.round(1/data.dimensions.slope)}})</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Slope</span><span class="data-value">${{slope_pct}}% (1:${{Math.round(1/data.dimensions.slope)}})</span></div>`;
             }}
             if (data.wattage) {{
-                mepRow += `<div class="data-row"><span class="data-label">กำลังไฟฟ้า (Power)</span><span class="data-value">${{data.wattage}} W</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Power</span><span class="data-value">${{data.wattage}} W</span></div>`;
             }}
             if (data.circuits_count) {{
-                mepRow += `<div class="data-row"><span class="data-label">จำนวนวงจร (Circuits)</span><span class="data-value">${{data.circuits_count}} วงจรย่อย</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Circuits</span><span class="data-value">${{data.circuits_count}} circuits</span></div>`;
             }}
             if (data.cooling_capacity_btu) {{
-                mepRow += `<div class="data-row"><span class="data-label">ขนาดทำความเย็น (Cooling)</span><span class="data-value">${{data.cooling_capacity_btu.toLocaleString()}} BTU/hr</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Cooling</span><span class="data-value">${{data.cooling_capacity_btu.toLocaleString()}} BTU/hr</span></div>`;
             }}
             if (data.flow_rate_cfm) {{
-                mepRow += `<div class="data-row"><span class="data-label">อัตราลมระบาย (Air Flow)</span><span class="data-value">${{data.flow_rate_cfm}} CFM</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Air Flow</span><span class="data-value">${{data.flow_rate_cfm}} CFM</span></div>`;
             }}
             if (data.covering_type) {{
                 const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${{data.color}};margin-right:6px;"></span>` : '';
-                mepRow += `<div class="data-row"><span class="data-label">ประเภทงานตกแต่ง</span><span class="data-value">${{colorDot}}${{data.covering_type}}</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Finish Type</span><span class="data-value">${{colorDot}}${{data.covering_type}}</span></div>`;
             }}
 
 
