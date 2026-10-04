@@ -12,7 +12,13 @@
   <a href="https://technical.buildingsmart.org/"><img src="https://img.shields.io/badge/BIM-IFC4--Minimal-brightgreen.svg" alt="BIM: IFC4" /></a>
   <a href="tests/"><img src="https://img.shields.io/badge/tests-131%20passed-success.svg" alt="Tests: 131 Passed" /></a>
   <a href="https://www.kaggle.com/code/pridatakon/debim-3d-visual-balanced-benchmark"><img src="https://img.shields.io/badge/visual%20fidelity-85.5%25%20median-brightgreen.svg" alt="Visual Fidelity: 85.5% Median" /></a>
-  <a href="docs/research/2026_empirical_study_407_ifc_models.md"><img src="https://img.shields.io/badge/retention-407%20models%20(100%25%20median)-blue.svg" alt="Benchmark" /></a>
+  <a href="https://prida-takon.github.io/debim/"><img src="https://img.shields.io/badge/Live%203D%20Demo-Interactive%20Viewer-2ea44f.svg?logo=three.js" alt="Live 3D Demo" /></a>
+</p>
+
+<p align="center">
+  <a href="https://prida-takon.github.io/debim/">
+    <img src="https://img.shields.io/badge/🔴%20Click%20Here-Open%20Live%203D%20Viewer%20(No%20Install)-2ea44f?style=for-the-badge&logo=three.js" alt="Open Live 3D Demo" />
+  </a>
 </p>
 
 ---
@@ -25,8 +31,8 @@
         <img src="docs/assets/terminal_preview.png" alt="debim Terminal CLI - Farnsworth House" width="100%" />
       </td>
       <td width="50%" align="center" valign="top">
-        <b>🌐 Zero-Install 3D Web Viewer (Interactive BIM)</b><br>
-        <img src="docs/assets/viewer_preview.png" alt="debim 3D HTML Viewer - Farnsworth House (1951)" width="100%" />
+        <b>🌐 Zero-Install 3D Web Viewer (<a href="https://prida-takon.github.io/debim/">Try Live Demo</a>)</b><br>
+        <a href="https://prida-takon.github.io/debim/"><img src="docs/assets/viewer_preview.png" alt="debim 3D HTML Viewer - Farnsworth House (1951)" width="100%" /></a>
       </td>
     </tr>
   </table>
