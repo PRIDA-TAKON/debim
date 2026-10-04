@@ -10,8 +10,9 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python: 3.11+" /></a>
   <a href="https://technical.buildingsmart.org/"><img src="https://img.shields.io/badge/BIM-IFC4--Minimal-brightgreen.svg" alt="BIM: IFC4" /></a>
-  <a href="tests/"><img src="https://img.shields.io/badge/tests-98%20passed-success.svg" alt="Tests: 98 Passed" /></a>
-  <a href="docs/research/2026_empirical_study_407_ifc_models.md"><img src="https://img.shields.io/badge/benchmark-407%20models%20(100%25%20median)-blue.svg" alt="Benchmark" /></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/tests-131%20passed-success.svg" alt="Tests: 131 Passed" /></a>
+  <a href="https://www.kaggle.com/code/pridatakon/debim-3d-visual-balanced-benchmark"><img src="https://img.shields.io/badge/visual%20fidelity-85.5%25%20median-brightgreen.svg" alt="Visual Fidelity: 85.5% Median" /></a>
+  <a href="docs/research/2026_empirical_study_407_ifc_models.md"><img src="https://img.shields.io/badge/retention-407%20models%20(100%25%20median)-blue.svg" alt="Benchmark" /></a>
 </p>
 
 ---
@@ -179,16 +180,52 @@ elements:
 
 ## 🔬 Empirical Research & Benchmark (การทดสอบระดับอุตสาหกรรม)
 
-debim ได้รับการทดสอบอย่างเข้มงวดกับโมเดลอาคารจริงในระดับอุตสาหกรรมกว่า **407 โครงการ** (ทั้งสถาปัตยกรรม โครงสร้าง และงานระบบโรงพยาบาล/คลินิก MEP) บน **Kaggle Cloud Multi-Core Benchmark Suite**:
+debim ให้ความสำคัญกับความถูกต้องทางวิศวกรรมและการทดสอบแบบเปิดเผย ตรวจสอบซ้ำได้จริง (100% Reproducible Open Science) บน **Kaggle Cloud Multi-Core Benchmark Suite**:
+
+### 1. ⚖️ 3D Visual Regression & Alignment Benchmark (255 อาคารจริงสากล)
+
+<p align="center">
+  <a href="https://www.kaggle.com/code/pridatakon/debim-3d-visual-balanced-benchmark">
+    <img src="https://img.shields.io/badge/Kaggle-Run%20Reproducible%20Benchmark-20BEFF?logo=kaggle&style=for-the-badge" alt="Kaggle Benchmark" />
+  </a>
+</p>
+
+การทดสอบความแม่นยำด้านเรขาคณิต 3 มิติ (3D Visual Fidelity) แบบปิดตาเทียบกับ IFC ต้นฉบับผ่าน **Geometry Variant Deduplication + Balanced Macro-Averaging** บน 4,695 ชิ้นส่วนตัวแทน:
+
+- **🎯 85.50% Median Visual Fidelity:** ทะลุเกณฑ์มาตรฐานสากล ($\ge 85\%$) ครอบคลุมเกินกึ่งหนึ่งของโมเดลทดสอบ
+- **🏗️ 89.07% Structural Match:** งานโครงสร้างรับแรงหลัก (เสา คาน ผนัง ฐานราก) มีความเสถียรระดับเกรด A+
+- **⚡ 82.64% MEP System Match:** งานระบบท่อ ระบบปรับอากาศ และอุปกรณ์ไฟฟ้าอยู่ในตำแหน่งและระนาบที่ถูกต้อง
+
+#### 📈 วิวัฒนาการเปรียบเทียบข้าม 3 เจเนอเรชัน (Progression Across Waves):
+
+| ตัวชี้วัดสากล (Global Metric) | V1 (Baseline) | V2 (Wave 1-2) | V3 (Wave 4 ล่าสุด) | $\Delta$ พัฒนาขึ้นสะสม |
+|---|:---:|:---:|:---:|:---:|
+| **🎯 Median Visual Match (ค่ามัธยฐาน)** | 80.90% | 84.90% | **85.50%** | 🏆 **+4.60% (ทะลุเป้า 85%)** |
+| **⚖️ Macro Average Visual Match** | 70.57% | 77.60% | **77.71%** | 🟢 **+7.13%** |
+| **📊 Micro Average Visual Match** | 72.24% | 80.35% | **80.46%** | 🟢 **+8.23%** |
+| **ชิ้นส่วนที่ผ่านเกณฑ์ ($\ge 85\%$)** | 2,865 ชิ้น | 3,140 ชิ้น | **3,135 ชิ้น** | 🟢 **+270 ชิ้น** |
+| **หมวดหมู่งานระบบและตกแต่งที่ก้าวกระโดด** | | | | |
+| • *ฝ้าเพดาน (`IfcCovering`)* | 11.4% | 89.0% | **89.0%** | 🟢 **+77.6% (ผ่านเกณฑ์)** |
+| • *วาล์วระบบท่อ (`IfcValve`)* | 0.0% | 82.2% | **82.4%** | 🟢 **+82.4% (พุ่งจากศูนย์)** |
+| • *แผ่นเหล็กโครงสร้าง (`IfcPlate`)* | 10.2% | 88.9% | **87.1%** | 🟢 **+76.9% (ผ่านเกณฑ์)** |
+| • *เหล็กค้ำยันเฉียง (`IfcMember`)* | 91.8% | 91.6% | **92.4%** | 🟢 **+0.8% (3D Vector Pitch)** |
+
+👉 *ต้องการตรวจสอบการทดลองเชิงลึกหรือรันซ้ำด้วยตนเอง? ดูโค้ดและดาต้าเซ็ตได้ที่ [Kaggle Benchmark Notebook](https://www.kaggle.com/code/pridatakon/debim-3d-visual-balanced-benchmark)*
+
+---
+
+### 2. 📦 Roundtrip Retention & Storage Reduction Study (407 อาคารสากล)
+
+debim ได้รับการทดสอบอย่างเข้มงวดกับโมเดลอาคารจริงกว่า **407 โครงการ** (สถาปัตยกรรม โครงสร้าง และ MEP โรงพยาบาล):
 
 - **100.0% Median Retention Rate:** โมเดลส่วนใหญ่สามารถสกัดและ Re-compile กลับสู่มาตรฐาน IFC4 ได้ครบถ้วนทุกชิ้นงาน
 - **91.6% Average Storage Reduction:** ลดขนาดไฟล์จาก IFC ดิบลงเฉลี่ย 91%
 - **558M+ LLM Tokens Saved:** ประหยัดบริบทของโมเดลภาษาไปได้มากกว่า **558,629,804 โทเคน**
-- **100.0% Modern Schema Crash-Resilience:** ไม่พบ Fatal Crash หรือ Unhandled Exception เลยแม้แต่ไฟล์เดียวบนมาตรฐาน IFC2X3 และ IFC4
+- **100.0% Modern Schema Crash-Resilience:** ไม่พบ Fatal Crash หรือ Unhandled Exception บนมาตรฐาน IFC2X3 และ IFC4
 
-📖 **อ่านรายงานวิจัยฉบับเต็ม:** [debim: An Empirical Study of Declarative Building-as-Code on 407 Heterogeneous Real-World OpenBIM Models](docs/research/2026_empirical_study_407_ifc_models.md) (Author: Prida Takon)  
+📖 **อ่านรายงานวิจัยฉบับเต็ม:** [debim: An Empirical Study of Declarative Building-as-Code on 407 Heterogeneous Real-World OpenBIM Models](docs/research/2026_empirical_study_407_ifc_models.md)  
 📦 **Kaggle Public Benchmark Dataset:** [debim-5000-ifc-benchmark](https://www.kaggle.com/datasets/pridatakon/debim-5000-ifc-benchmark)  
-⚡ **Kaggle Automated Runner:** [debim-ifc-stress-test](https://www.kaggle.com/code/pridatakon/debim-ifc-stress-test)
+⚡ **Kaggle Automated Stress Test:** [debim-ifc-stress-test](https://www.kaggle.com/code/pridatakon/debim-ifc-stress-test)
 
 ---
 
