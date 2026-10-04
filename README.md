@@ -22,14 +22,15 @@
     <tr>
       <td width="50%" align="center" valign="top">
         <b>💻 Modern CLI, QTO & Costing Engine</b><br>
-        <img src="docs/assets/terminal_preview.png" alt="debim Terminal CLI" width="100%" />
+        <img src="docs/assets/terminal_preview.png" alt="debim Terminal CLI - Farnsworth House" width="100%" />
       </td>
       <td width="50%" align="center" valign="top">
-        <b>🌐 Zero-Install 3D Web Viewer (Hierarchical Layers)</b><br>
-        <img src="docs/assets/viewer_preview.png" alt="debim 3D HTML Viewer" width="100%" />
+        <b>🌐 Zero-Install 3D Web Viewer (Interactive BIM)</b><br>
+        <img src="docs/assets/viewer_preview.png" alt="debim 3D HTML Viewer - Farnsworth House (1951)" width="100%" />
       </td>
     </tr>
   </table>
+  <sub>🏛️ <i>Showcase: Ludwig Mies van der Rohe's iconic <b>Farnsworth House (1951)</b> — compiled from declarative YAML (<a href="examples/farnsworth_house/project.yaml">examples/farnsworth_house/project.yaml</a>) into standard IFC4 and rendered in real-time in a lightweight 3D web viewer.</i></sub>
 </p>
 
 ---
