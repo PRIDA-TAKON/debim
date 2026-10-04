@@ -1,7 +1,10 @@
 # Smithery.ai MCP Server configuration
 startCommand:
   type: stdio
-  config:
-    command: debim
-    args:
-      - mcp
+  configSchema:
+    type: object
+  commandFunction: |-
+    (config) => ({
+      command: 'debim',
+      args: ['mcp']
+    })
