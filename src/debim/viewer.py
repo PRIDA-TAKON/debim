@@ -1653,7 +1653,7 @@ def generate_viewer_html(
             gridGroup.add(rightBubble);
         }});
 
-        const axesHelper = new THREE.AxesHelper(15);
+        const axesHelper = new THREE.AxesHelper(2.5);
         axesHelper.position.set(0, 0, 0.05);
         gridGroup.add(axesHelper);
 
@@ -1813,37 +1813,50 @@ def generate_viewer_html(
             pickableObjects.push(object3D);
         }});
 
-        // Camera position setup (Default: ISO View)
-        camera.position.set(centerX + 60, centerY - 80, 60);
+        // Automatic Model Bounding Box & Target Framing
+        const modelBox = new THREE.Box3();
+        pickableObjects.forEach(obj => modelBox.expandByObject(obj));
+        const bCenter = new THREE.Vector3();
+        const bSize = new THREE.Vector3();
+        modelBox.getCenter(bCenter);
+        modelBox.getSize(bSize);
+
+        const targetX = (isFinite(bCenter.x) && bSize.x > 0.1) ? bCenter.x : centerX;
+        const targetY = (isFinite(bCenter.y) && bSize.y > 0.1) ? bCenter.y : centerY;
+        const targetZ = (isFinite(bCenter.z) && bSize.z > 0.1) ? bCenter.z : 2.5;
+        const maxSpan = Math.max(bSize.x, bSize.y, bSize.z, 15);
+
+        // Camera position setup (Default: ISO View framed to model)
+        camera.position.set(targetX + maxSpan * 0.9, targetY - maxSpan * 1.2, targetZ + maxSpan * 0.8);
         camera.up.set(0, 0, 1);
-        controls.target.set(centerX, centerY, 0);
+        controls.target.set(targetX, targetY, targetZ);
         controls.minPolarAngle = 0;
         controls.maxPolarAngle = Math.PI;
         controls.update();
 
         window.setView = function(mode) {{
             if (mode === 'top') {{
-                camera.position.set(centerX, centerY, 160);
+                camera.position.set(targetX, targetY, targetZ + maxSpan * 1.6);
                 camera.up.set(0, 1, 0);
-                controls.target.set(centerX, centerY, 0);
+                controls.target.set(targetX, targetY, targetZ);
                 controls.minPolarAngle = 0;
                 controls.maxPolarAngle = 0;
             }} else if (mode === 'iso') {{
-                camera.position.set(centerX + 60, centerY - 80, 60);
+                camera.position.set(targetX + maxSpan * 0.9, targetY - maxSpan * 1.2, targetZ + maxSpan * 0.8);
                 camera.up.set(0, 0, 1);
-                controls.target.set(centerX, centerY, 0);
+                controls.target.set(targetX, targetY, targetZ);
                 controls.minPolarAngle = 0;
                 controls.maxPolarAngle = Math.PI;
             }} else if (mode === 'front') {{
-                camera.position.set(centerX, minGridY - 90, 15);
+                camera.position.set(targetX, targetY - maxSpan * 1.5, targetZ);
                 camera.up.set(0, 0, 1);
-                controls.target.set(centerX, centerY, 0);
+                controls.target.set(targetX, targetY, targetZ);
                 controls.minPolarAngle = 0;
                 controls.maxPolarAngle = Math.PI;
             }} else if (mode === 'side') {{
-                camera.position.set(maxGridX + 70, centerY, 15);
+                camera.position.set(targetX + maxSpan * 1.5, targetY, targetZ);
                 camera.up.set(0, 0, 1);
-                controls.target.set(centerX, centerY, 0);
+                controls.target.set(targetX, targetY, targetZ);
                 controls.minPolarAngle = 0;
                 controls.maxPolarAngle = Math.PI;
             }}
