@@ -8,7 +8,7 @@ version = "0.2.0"
 description = "A minimal, Git-native, declarative BIM engine (Building-as-Code) designed for AI agents and humans."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
     { name = "PRIDA-TAKON" }
 ]
@@ -16,8 +16,7 @@ keywords = ["bim", "building-as-code", "openbim", "ifc", "declarative", "cad", "
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "Intended Audience :: Architecture / Engineering",
-    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",

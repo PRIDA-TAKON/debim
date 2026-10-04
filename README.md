@@ -7,6 +7,7 @@
 </p>
 
 <p align="center">
+  <a href="https://pypi.org/project/debim/"><img src="https://img.shields.io/pypi/v/debim.svg?color=blue" alt="PyPI Version" /></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python: 3.11+" /></a>
   <a href="https://technical.buildingsmart.org/"><img src="https://img.shields.io/badge/BIM-IFC4--Minimal-brightgreen.svg" alt="BIM: IFC4" /></a>
@@ -72,19 +73,25 @@ Your agent will inspect the repository, install the dependencies, and verify eve
 
 ---
 
-## 🚀 Manual Quickstart
-
+## 🚀 Quickstart
+ 
 ### 1. Installation
 
+Install directly from **[PyPI](https://pypi.org/project/debim/)**:
+
 ```bash
-# Clone the repository
+# Standard installation
+pip install debim
+
+# Or with full IFC compiler support
+pip install "debim[ifc]"
+```
+
+Or install in editable mode from source:
+
+```bash
 git clone https://github.com/PRIDA-TAKON/debim.git
 cd debim
-
-# Install in editable mode
-pip install -e .
-
-# Or with full dev & IFC compiler tools
 pip install -e ".[ifc,dev]"
 ```
 
