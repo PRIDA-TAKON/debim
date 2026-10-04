@@ -880,5 +880,12 @@ def scaffold_element_cmd(
             raise typer.Exit(code=1)
 
 
+@app.command()
+def mcp():
+    """Start the Model Context Protocol (MCP) server for AI coding agents."""
+    from debim.mcp import run_mcp_server
+    run_mcp_server()
+
+
 if __name__ == "__main__":
     app()
