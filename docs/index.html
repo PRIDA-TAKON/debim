@@ -190,33 +190,48 @@
         }
         #view-toolbar {
             position: absolute;
-            top: 16px;
+            top: 12px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 8px;
-            background: rgba(20, 24, 33, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            align-items: center;
+            gap: 4px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             backdrop-filter: blur(10px);
-            padding: 6px 12px;
-            border-radius: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            padding: 3px 6px;
+            border-radius: 6px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
             z-index: 100;
+            white-space: nowrap;
+            max-width: calc(100vw - 32px);
+            overflow-x: auto;
         }
         .view-btn {
-            background: #2a3a4e;
-            color: #e0e0e0;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
             font-weight: 500;
+            line-height: 1.3;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
         }
         .view-btn:hover {
-            background: #3b82f6;
+            background: #334155;
             color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        .view-btn.active {
+            background: #334155;
+            color: #38bdf8;
+            border-color: #38bdf8;
         }
         #axes-legend {
             position: absolute;
@@ -249,15 +264,15 @@
     <div id="canvas-container"></div>
 
     <div id="view-toolbar">
-        <button class="view-btn" onclick="setView('top')">📐 Floor Plan (Top View)</button>
-        <button class="view-btn" onclick="setView('iso')">🏢 3D Isometric</button>
-        <button class="view-btn" onclick="setView('front')">↔️ Front Elevation</button>
-        <button class="view-btn" onclick="setView('side')">↕️ Side Elevation</button>
-        <button id="xray-btn" class="view-btn" onclick="toggleXRay()" style="background:#0284c7; color:#fff; font-weight:600; border-color:#38bdf8;">👁️ X-Ray Mode</button>
-        <button id="section-btn" class="view-btn" onclick="toggleSectionPlaneUI()" style="background:#8b5cf6; color:#fff; font-weight:600; border-color:#a78bfa;">✂️ Section Plane</button>
-        <button id="measure-btn" class="view-btn" onclick="toggleMeasureTool()" style="background:#0d9488; color:#fff; font-weight:600; border-color:#2dd4bf;">📏 Measure Tool</button>
-        <button id="clear-measure-btn" class="view-btn" onclick="clearMeasurements()" style="display:none; background:#e11d48; color:#fff; font-weight:500;">✕ Clear Dimensions</button>
-        <a href="https://github.com/PRIDA-TAKON/debim" target="_blank" class="view-btn" style="background:#238636; color:#fff; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:4px; border-color:#2ea44f;">⭐ GitHub Repo</a>
+        <button class="view-btn" onclick="setView('top')">Top</button>
+        <button class="view-btn" onclick="setView('iso')">Isometric</button>
+        <button class="view-btn" onclick="setView('front')">Front</button>
+        <button class="view-btn" onclick="setView('side')">Side</button>
+        <button id="xray-btn" class="view-btn" onclick="toggleXRay()">X-Ray</button>
+        <button id="section-btn" class="view-btn" onclick="toggleSectionPlaneUI()">Section</button>
+        <button id="measure-btn" class="view-btn" onclick="toggleMeasureTool()">Measure</button>
+        <button id="clear-measure-btn" class="view-btn" onclick="clearMeasurements()" style="display:none;">Clear</button>
+        <a href="https://github.com/PRIDA-TAKON/debim" target="_blank" class="view-btn">GitHub</a>
     </div>
 
     <div id="section-plane-panel" class="ui-panel" style="display: none; top: 60px; left: 50%; transform: translateX(-50%); width: 380px; z-index: 1000;">
@@ -970,7 +985,13 @@
 
         window.toggleSectionPlaneUI = function() {
             const panel = document.getElementById('section-plane-panel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            const btn = document.getElementById('section-btn');
+            const isVisible = panel.style.display !== 'none';
+            panel.style.display = isVisible ? 'none' : 'block';
+            if (btn) {
+                if (!isVisible) btn.classList.add('active');
+                else btn.classList.remove('active');
+            }
         };
 
         window.setSectionCutEnabled = function(enabled) {
@@ -1382,8 +1403,13 @@
             isXRay = !isXRay;
             const btn = document.getElementById('xray-btn');
             if (btn) {
-                btn.style.background = isXRay ? '#10b981' : '#0284c7';
-                btn.innerHTML = isXRay ? '👁️ X-Ray Mode (Active)' : '👁️ X-Ray Mode';
+                if (isXRay) {
+                    btn.classList.add('active');
+                    btn.textContent = 'X-Ray (On)';
+                } else {
+                    btn.classList.remove('active');
+                    btn.textContent = 'X-Ray';
+                }
             }
             pickableObjects.forEach(obj => {
                 if (obj.userData && (obj.userData.class === "IfcWall" || obj.userData.class === "IfcRoofCovering" || (obj.userData.layer && obj.userData.layer.includes("walls")))) {
@@ -1705,14 +1731,14 @@
             const container = document.getElementById('canvas-container');
 
             if (isMeasureActive) {
-                btn.style.background = '#0f766e';
-                btn.innerHTML = '📏 Measure Tool (Active)';
+                btn.classList.add('active');
+                btn.textContent = 'Measure (On)';
                 container.style.cursor = 'crosshair';
-                document.getElementById('instructions').textContent = '📏 Measure: Click an element to set Point A | Esc to exit';
+                document.getElementById('instructions').textContent = 'Measure: Click element to set Point A | Esc to exit';
                 if (measureHistory.length > 0) clearBtn.style.display = 'inline-block';
             } else {
-                btn.style.background = '#0d9488';
-                btn.innerHTML = '📏 Measure Tool';
+                btn.classList.remove('active');
+                btn.textContent = 'Measure';
                 container.style.cursor = 'default';
                 document.getElementById('instructions').textContent = 'Rotate: Left Click + Drag | Pan: Right Click + Drag | Zoom: Scroll';
                 resetCurrentMeasure();
@@ -1776,7 +1802,7 @@
                     measureGroup.add(livePreviewLine);
 
                     const curDist = measurePointA.distanceTo(snap.point);
-                    document.getElementById('instructions').textContent = '📏 Distance: ' + curDist.toFixed(2) + ' m | Click Point B to complete';
+                    document.getElementById('instructions').textContent = 'Distance: ' + curDist.toFixed(2) + ' m | Click Point B to complete';
                 }
             } else {
                 snapMarker.visible = false;
@@ -1816,7 +1842,7 @@
                     );
                     startMarkerA.position.copy(measurePointA);
                     measureGroup.add(startMarkerA);
-                    document.getElementById('instructions').textContent = '📏 Point A set! Click Point B to measure distance';
+                    document.getElementById('instructions').textContent = 'Point A set! Click Point B to measure distance';
                 } else {
                     const measurePointB = snap.point.clone();
                     const dist = measurePointA.distanceTo(measurePointB);
@@ -1857,7 +1883,7 @@
                     measureHistory.push(record);
 
                     document.getElementById('clear-measure-btn').style.display = 'inline-block';
-                    document.getElementById('instructions').textContent = '✅ Measured: ' + dist.toFixed(2) + ' m (ΔX: ' + dx.toFixed(2) + ', ΔY: ' + dy.toFixed(2) + ', ΔZ: ' + dz.toFixed(2) + ') | Click element to start new measurement';
+                    document.getElementById('instructions').textContent = 'Measured: ' + dist.toFixed(2) + ' m (ΔX: ' + dx.toFixed(2) + ', ΔY: ' + dy.toFixed(2) + ', ΔZ: ' + dz.toFixed(2) + ') | Click element to start new measurement';
 
                     resetCurrentMeasure();
                 }
