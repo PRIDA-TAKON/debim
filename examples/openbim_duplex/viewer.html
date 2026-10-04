@@ -26604,12 +26604,12 @@
             pickableObjects.push(object3D);
         });
 
-        // Camera position setup
-        camera.position.set(centerX, centerY, 160);
-        camera.up.set(0, 1, 0);
-        controls.target.set(centerX, centerY, 0);
+        // Camera position setup - default to 3D Isometric view
+        camera.position.set(centerX + 30, centerY - 40, 25);
+        camera.up.set(0, 0, 1);
+        controls.target.set(centerX, centerY, 3.5);
         controls.minPolarAngle = 0;
-        controls.maxPolarAngle = 0;
+        controls.maxPolarAngle = Math.PI;
         controls.update();
 
         window.setView = function(mode) {

@@ -17,6 +17,23 @@
 
 ---
 
+<p align="center">
+  <table width="100%">
+    <tr>
+      <td width="50%" align="center" valign="top">
+        <b>💻 Modern CLI, QTO & Costing Engine</b><br>
+        <img src="docs/assets/terminal_preview.png" alt="debim Terminal CLI" width="100%" />
+      </td>
+      <td width="50%" align="center" valign="top">
+        <b>🌐 Zero-Install 3D Web Viewer (Hierarchical Layers)</b><br>
+        <img src="docs/assets/viewer_preview.png" alt="debim 3D HTML Viewer" width="100%" />
+      </td>
+    </tr>
+  </table>
+</p>
+
+---
+
 ## 🎯 Why debim? (จุดกำเนิดและปรัชญาของ debim)
 
 > *"หัวใจของ debim เริ่มจากการอยากให้ AI ทำ BOQ แต่การให้ AI คำนวณตึกทั้งหลังตรงๆ AI ตายแน่ จึงต้องใช้แบบจำลองคณิตศาสตร์ (BIM) ทว่ามาตรฐาน IFC ดั้งเดิมก็ซับซ้อนเกินไป หนักสมอง AI อีก จึงกลั่นออกมาเป็น Declarative YAML — แต่ผลพลอยได้ที่ได้รับกลับยิ่งใหญ่กว่าเป้าหมายแรกเริ่ม"*
