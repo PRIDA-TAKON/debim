@@ -2,6 +2,7 @@
 Unit tests for 3D Viewer generator and local HTTP server (debim.viewer)
 """
 
+import re
 from pathlib import Path
 from typer.testing import CliRunner
 from debim.cli import app
@@ -116,9 +117,10 @@ elements:
 def test_cli_view_help():
     result = runner.invoke(app, ["view", "--help"])
     assert result.exit_code == 0
-    assert "--manifest" in result.output or "-m" in result.output
-    assert "--port" in result.output or "-p" in result.output
-    assert "--no-browser" in result.output
+    clean_output = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", result.output)
+    assert "--manifest" in clean_output or "-m" in clean_output
+    assert "--port" in clean_output or "-p" in clean_output
+    assert "--no-browser" in clean_output or "no-browser" in clean_output
 
 
 def test_cli_view_missing_manifest():
