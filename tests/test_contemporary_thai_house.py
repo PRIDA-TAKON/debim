@@ -9,7 +9,7 @@ from debim.viewer import generate_viewer_html
 
 
 def test_contemporary_thai_house_manifest():
-    manifest_path = Path("examples/contemporary_thai_house/project.yaml")
+    manifest_path = Path("tests/fixtures/contemporary_thai_house/project.yaml")
     assert manifest_path.exists(), "Manifest file should exist"
 
     manifest = load_manifest(manifest_path)
@@ -20,7 +20,7 @@ def test_contemporary_thai_house_manifest():
 
 
 def test_contemporary_thai_house_resolution_and_qto():
-    manifest_path = Path("examples/contemporary_thai_house/project.yaml")
+    manifest_path = Path("tests/fixtures/contemporary_thai_house/project.yaml")
     manifest = load_manifest(manifest_path)
     resolved = resolve_manifest(manifest)
 
@@ -147,7 +147,7 @@ def test_contemporary_thai_house_resolution_and_qto():
 
 
 def test_contemporary_thai_house_ifc_compilation(tmp_path):
-    manifest_path = Path("examples/contemporary_thai_house/project.yaml")
+    manifest_path = Path("tests/fixtures/contemporary_thai_house/project.yaml")
     out_ifc = tmp_path / "thai_house.ifc"
     
     compile_to_ifc(manifest_path, out_ifc)
@@ -156,8 +156,8 @@ def test_contemporary_thai_house_ifc_compilation(tmp_path):
 
 
 def test_contemporary_thai_house_cost_estimation():
-    manifest_path = Path("examples/contemporary_thai_house/project.yaml")
-    prices_yaml_path = Path("examples/contemporary_thai_house/prices.yaml")
+    manifest_path = Path("tests/fixtures/contemporary_thai_house/project.yaml")
+    prices_yaml_path = Path("tests/fixtures/contemporary_thai_house/prices.yaml")
     assert prices_yaml_path.exists(), "prices.yaml should exist"
 
     manifest = load_manifest(manifest_path)
@@ -177,7 +177,7 @@ def test_contemporary_thai_house_cost_estimation():
 
 
 def test_contemporary_thai_house_viewer_generation():
-    manifest_path = Path("examples/contemporary_thai_house/project.yaml")
+    manifest_path = Path("tests/fixtures/contemporary_thai_house/project.yaml")
     html = generate_viewer_html(manifest_path)
     assert "Hierarchical Layer Explorer" in html
     assert "layer-tree-container" in html

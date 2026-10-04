@@ -12,7 +12,7 @@ runner = CliRunner()
 
 
 def test_view_export(tmp_path: Path):
-    sample_manifest = Path("examples/townhouse/project.yaml")
+    sample_manifest = Path("tests/fixtures/townhouse/project.yaml")
     export_path = tmp_path / "dist" / "viewer.html"
 
     result = runner.invoke(app, ["view", "-m", str(sample_manifest), "--export", str(export_path)])
@@ -25,8 +25,8 @@ def test_view_export(tmp_path: Path):
 
 
 def test_summary_and_info():
-    sample_manifest = Path("examples/townhouse/project.yaml")
-    prices_path = Path("examples/townhouse/prices.json")
+    sample_manifest = Path("tests/fixtures/townhouse/project.yaml")
+    prices_path = Path("tests/fixtures/townhouse/prices.json")
 
     res_summary = runner.invoke(app, ["summary", "-m", str(sample_manifest), "-p", str(prices_path)])
     assert res_summary.exit_code == 0
@@ -42,8 +42,8 @@ def test_summary_and_info():
 
 
 def test_diff_files(tmp_path: Path):
-    manifest_a_path = Path("examples/townhouse/project.yaml")
-    prices_path = Path("examples/townhouse/prices.json")
+    manifest_a_path = Path("tests/fixtures/townhouse/project.yaml")
+    prices_path = Path("tests/fixtures/townhouse/prices.json")
 
     # Read manifest_a and create modified manifest_b
     with open(manifest_a_path, "r", encoding="utf-8") as f:
@@ -76,9 +76,9 @@ def test_diff_files(tmp_path: Path):
 
 
 def test_diff_git_revision():
-    # Use HEAD~0 (or HEAD) vs HEAD on git repo
-    prices_path = Path("examples/townhouse/prices.json")
-    res = runner.invoke(app, ["diff", "HEAD:examples/townhouse/project.yaml", "examples/townhouse/project.yaml", "-p", str(prices_path)])
+    # Use HEAD vs working tree on git repo
+    prices_path = Path("examples/farnsworth_house/prices.yaml")
+    res = runner.invoke(app, ["diff", "HEAD:examples/farnsworth_house/project.yaml", "examples/farnsworth_house/project.yaml", "-p", str(prices_path)])
     assert res.exit_code == 0
     assert "Comparing BIM Revisions:" in res.output
     assert "Diff Summary" in res.output

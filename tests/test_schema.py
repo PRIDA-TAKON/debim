@@ -18,7 +18,7 @@ from debim.schema import (
 
 
 def test_load_townhouse_manifest():
-    manifest_path = Path("examples/townhouse/project.yaml")
+    manifest_path = Path("tests/fixtures/townhouse/project.yaml")
     manifest = load_manifest(manifest_path)
     assert isinstance(manifest, ProjectManifest)
     assert manifest.project.id == "PRJ-2026-001"
@@ -51,7 +51,7 @@ def test_load_townhouse_manifest():
 
 
 def test_invalid_storey_reference():
-    with open("examples/townhouse/project.yaml", "r", encoding="utf-8") as f:
+    with open("tests/fixtures/townhouse/project.yaml", "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
     # Change column base_storey to non-existent storey L99
@@ -63,7 +63,7 @@ def test_invalid_storey_reference():
 
 
 def test_invalid_grid_reference():
-    with open("examples/townhouse/project.yaml", "r", encoding="utf-8") as f:
+    with open("tests/fixtures/townhouse/project.yaml", "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
     # Change beam from_grid X axis to unknown axis Z
@@ -75,7 +75,7 @@ def test_invalid_grid_reference():
 
 
 def test_invalid_material_reference():
-    with open("examples/townhouse/project.yaml", "r", encoding="utf-8") as f:
+    with open("tests/fixtures/townhouse/project.yaml", "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
     # Change wall material to unknown material MAT_999

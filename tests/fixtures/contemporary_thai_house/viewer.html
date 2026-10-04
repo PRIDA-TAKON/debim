@@ -7,6 +7,7 @@
     <!-- CDN-hosted Three.js and OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -252,6 +253,34 @@
         <button class="view-btn" onclick="setView('iso')">🏢 3D Isometric</button>
         <button class="view-btn" onclick="setView('front')">↔️ ด้านหน้า (Front)</button>
         <button class="view-btn" onclick="setView('side')">↕️ ด้านข้าง (Side)</button>
+        <button id="xray-btn" class="view-btn" onclick="toggleXRay()" style="background:#0284c7; color:#fff; font-weight:600; border-color:#38bdf8;">👁️ ผนังโปร่งใส (X-Ray)</button>
+        <button id="section-btn" class="view-btn" onclick="toggleSectionPlaneUI()" style="background:#8b5cf6; color:#fff; font-weight:600; border-color:#a78bfa;">✂️ ตัดระนาบ (Section Plane)</button>
+        <button id="measure-btn" class="view-btn" onclick="toggleMeasureTool()" style="background:#0d9488; color:#fff; font-weight:600; border-color:#2dd4bf;">📏 วัดระยะ (Measure)</button>
+        <button id="clear-measure-btn" class="view-btn" onclick="clearMeasurements()" style="display:none; background:#e11d48; color:#fff; font-weight:500;">✕ ลบเส้นวัด</button>
+    </div>
+
+    <div id="section-plane-panel" class="ui-panel" style="display: none; top: 60px; left: 50%; transform: translateX(-50%); width: 380px; z-index: 1000;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h1 style="font-size: 0.95rem; color: #a78bfa;">✂️ 3D Section Plane / Floor Slicer</h1>
+            <button class="batch-btn" onclick="toggleSectionPlaneUI()">✕</button>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span class="data-label">Enable Section Cut:</span>
+            <input type="checkbox" id="section-enable-toggle" onchange="setSectionCutEnabled(this.checked)">
+        </div>
+        <div id="section-controls" style="opacity: 0.5; pointer-events: none; transition: opacity 0.2s;">
+            <div class="data-row" style="margin-bottom: 4px;">
+                <span class="data-label">Cut Elevation (Z):</span>
+                <span class="data-value" id="cut-z-display">0.00 m</span>
+            </div>
+            <input type="range" id="cut-height-slider" min="0" max="10" step="0.1" value="10" style="width: 100%; margin-bottom: 8px;" oninput="onSectionSliderChange(this.value)">
+            <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                <button class="batch-btn" style="flex: 1;" onclick="flipSectionDirection()">🔄 Flip Cut Dir (<span id="dir-label">Clip Above</span>)</button>
+                <button class="batch-btn" style="flex: 1;" onclick="resetSectionPlane()">↺ Reset View</button>
+            </div>
+            <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">Quick Storey Slices:</div>
+            <div id="storey-quick-btns" style="display: flex; gap: 4px; flex-wrap: wrap;"></div>
+        </div>
     </div>
 
     <div id="layer-explorer-panel" class="ui-panel">
@@ -298,7 +327,7 @@
         const sceneData = {
   "project": {
     "id": "PRJ-THAI-HOUSE-05",
-    "name": "Contemporary Thai House 5 (\u0e1a\u0e49\u0e32\u0e19\u0e04\u0e23\u0e2d\u0e1a\u0e04\u0e23\u0e31\u0e27\u0e44\u0e17\u0e22\u0e23\u0e48\u0e27\u0e21\u0e2a\u0e21\u0e31\u0e22 \u0e55)",
+    "name": "Contemporary Thai House 5 (บ้านครอบครัวไทยร่วมสมัย ๕)",
     "units": {
       "length": "METER",
       "area": "SQUARE_METER",
@@ -5184,7 +5213,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5206,7 +5235,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5228,7 +5257,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5250,7 +5279,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5272,7 +5301,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5294,7 +5323,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5316,7 +5345,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5338,7 +5367,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5360,7 +5389,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5382,7 +5411,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5404,7 +5433,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5426,7 +5455,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5448,7 +5477,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5470,7 +5499,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5492,7 +5521,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5514,7 +5543,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5536,7 +5565,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5558,7 +5587,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5580,7 +5609,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -5602,7 +5631,7 @@
       "rotation": [
         0,
         0,
-        0
+        0.0
       ],
       "dimensions": {
         "width": 1.0,
@@ -7658,7 +7687,7 @@
       "material": "CONCRETE_TILE",
       "color": "#9E4734",
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
+      "member_name": "กระเบื้องมุงหลังคา (Roof Covering)",
       "dimensions": {
         "area": 34.92969128597235,
         "slope_degrees": 30.0
@@ -7688,7 +7717,7 @@
       "material": "CONCRETE_TILE",
       "color": "#9E4734",
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
+      "member_name": "กระเบื้องมุงหลังคา (Roof Covering)",
       "dimensions": {
         "area": 34.92969128597236,
         "slope_degrees": 30.0
@@ -7723,7 +7752,7 @@
       "material": "CONCRETE_TILE",
       "color": "#9E4734",
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
+      "member_name": "กระเบื้องมุงหลังคา (Roof Covering)",
       "dimensions": {
         "area": 38.74020306262388,
         "slope_degrees": 30.0
@@ -7758,7 +7787,7 @@
       "material": "CONCRETE_TILE",
       "color": "#9E4734",
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e01\u0e23\u0e30\u0e40\u0e1a\u0e37\u0e49\u0e2d\u0e07\u0e21\u0e38\u0e07\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (Roof Covering)",
+      "member_name": "กระเบื้องมุงหลังคา (Roof Covering)",
       "dimensions": {
         "area": 38.740203062623884,
         "slope_degrees": 30.0
@@ -7784,7 +7813,7 @@
       "linewidth": 3,
       "layer": "architecture/roofs/framing",
       "member_type": "WALL_PLATE",
-      "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
+      "member_name": "อะเส (Wall Plate)",
       "material": "STEEL_SS400",
       "profile": "C150x50x20x3.2",
       "dimensions": {
@@ -7811,7 +7840,7 @@
       "linewidth": 3,
       "layer": "architecture/roofs/framing",
       "member_type": "WALL_PLATE",
-      "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
+      "member_name": "อะเส (Wall Plate)",
       "material": "STEEL_SS400",
       "profile": "C150x50x20x3.2",
       "dimensions": {
@@ -7838,7 +7867,7 @@
       "linewidth": 3,
       "layer": "architecture/roofs/framing",
       "member_type": "WALL_PLATE",
-      "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
+      "member_name": "อะเส (Wall Plate)",
       "material": "STEEL_SS400",
       "profile": "C150x50x20x3.2",
       "dimensions": {
@@ -7865,7 +7894,7 @@
       "linewidth": 3,
       "layer": "architecture/roofs/framing",
       "member_type": "WALL_PLATE",
-      "member_name": "\u0e2d\u0e30\u0e40\u0e2a (Wall Plate)",
+      "member_name": "อะเส (Wall Plate)",
       "material": "STEEL_SS400",
       "profile": "C150x50x20x3.2",
       "dimensions": {
@@ -7892,7 +7921,7 @@
       "linewidth": 3,
       "layer": "architecture/roofs/framing",
       "member_type": "RIDGE_BEAM",
-      "member_name": "\u0e2d\u0e01\u0e44\u0e01\u0e48 (Ridge Beam)",
+      "member_name": "อกไก่ (Ridge Beam)",
       "material": "STEEL_SS400",
       "profile": "2C150x50x20x3.2",
       "dimensions": {
@@ -7919,7 +7948,7 @@
       "linewidth": 3,
       "layer": "architecture/roofs/framing",
       "member_type": "KING_POST",
-      "member_name": "\u0e40\u0e2a\u0e32\u0e14\u0e31\u0e49\u0e07 (King Post)",
+      "member_name": "เสาดั้ง (King Post)",
       "material": "STEEL_SS400",
       "profile": "2C100x50x20x3.2",
       "dimensions": {
@@ -7946,7 +7975,7 @@
       "linewidth": 3,
       "layer": "architecture/roofs/framing",
       "member_type": "KING_POST",
-      "member_name": "\u0e40\u0e2a\u0e32\u0e14\u0e31\u0e49\u0e07 (King Post)",
+      "member_name": "เสาดั้ง (King Post)",
       "material": "STEEL_SS400",
       "profile": "2C100x50x20x3.2",
       "dimensions": {
@@ -7973,7 +8002,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "TIE_BEAM",
-      "member_name": "\u0e02\u0e37\u0e48\u0e2d (Tie Beam)",
+      "member_name": "ขื่อ (Tie Beam)",
       "material": "STEEL_SS400",
       "profile": "2C125x50x20x3.2",
       "dimensions": {
@@ -8000,7 +8029,7 @@
       "linewidth": 3,
       "layer": "architecture/roofs/framing",
       "member_type": "HIP_RAFTER",
-      "member_name": "\u0e15\u0e30\u0e40\u0e02\u0e49\u0e2a\u0e31\u0e19 (Hip Rafter)",
+      "member_name": "ตะเข้สัน (Hip Rafter)",
       "material": "STEEL_SS400",
       "profile": "2C150x50x20x3.2",
       "dimensions": {
@@ -8027,7 +8056,7 @@
       "linewidth": 3,
       "layer": "architecture/roofs/framing",
       "member_type": "HIP_RAFTER",
-      "member_name": "\u0e15\u0e30\u0e40\u0e02\u0e49\u0e2a\u0e31\u0e19 (Hip Rafter)",
+      "member_name": "ตะเข้สัน (Hip Rafter)",
       "material": "STEEL_SS400",
       "profile": "2C150x50x20x3.2",
       "dimensions": {
@@ -8054,7 +8083,7 @@
       "linewidth": 3,
       "layer": "architecture/roofs/framing",
       "member_type": "HIP_RAFTER",
-      "member_name": "\u0e15\u0e30\u0e40\u0e02\u0e49\u0e2a\u0e31\u0e19 (Hip Rafter)",
+      "member_name": "ตะเข้สัน (Hip Rafter)",
       "material": "STEEL_SS400",
       "profile": "2C150x50x20x3.2",
       "dimensions": {
@@ -8081,7 +8110,7 @@
       "linewidth": 3,
       "layer": "architecture/roofs/framing",
       "member_type": "HIP_RAFTER",
-      "member_name": "\u0e15\u0e30\u0e40\u0e02\u0e49\u0e2a\u0e31\u0e19 (Hip Rafter)",
+      "member_name": "ตะเข้สัน (Hip Rafter)",
       "material": "STEEL_SS400",
       "profile": "2C150x50x20x3.2",
       "dimensions": {
@@ -8108,7 +8137,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8135,7 +8164,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8162,7 +8191,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8189,7 +8218,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8216,7 +8245,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8243,7 +8272,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8270,7 +8299,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8297,7 +8326,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8324,7 +8353,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8351,7 +8380,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8378,7 +8407,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8405,7 +8434,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8432,7 +8461,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8459,7 +8488,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8486,7 +8515,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8513,7 +8542,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8540,7 +8569,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8567,7 +8596,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8594,7 +8623,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8621,7 +8650,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8648,7 +8677,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8675,7 +8704,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8702,7 +8731,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8729,7 +8758,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8756,7 +8785,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8783,7 +8812,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "COMMON_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8810,7 +8839,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8837,7 +8866,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8864,7 +8893,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8891,7 +8920,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8918,7 +8947,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8945,7 +8974,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8972,7 +9001,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -8999,7 +9028,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -9026,7 +9055,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -9053,7 +9082,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -9080,7 +9109,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "COMMON_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -9107,7 +9136,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -9134,7 +9163,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -9161,7 +9190,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -9188,7 +9217,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -9215,7 +9244,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "JACK_RAFTER",
-      "member_name": "\u0e08\u0e31\u0e19\u0e17\u0e31\u0e19 (Rafter)",
+      "member_name": "จันทัน (Rafter)",
       "material": "STEEL_SS400",
       "profile": "C100x50x20x3.2",
       "dimensions": {
@@ -9242,7 +9271,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9269,7 +9298,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9296,7 +9325,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9323,7 +9352,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9350,7 +9379,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9377,7 +9406,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9404,7 +9433,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9431,7 +9460,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9458,7 +9487,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9485,7 +9514,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9512,7 +9541,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9539,7 +9568,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9566,7 +9595,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9593,7 +9622,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9620,7 +9649,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9647,7 +9676,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9674,7 +9703,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9701,7 +9730,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9728,7 +9757,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9755,7 +9784,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9782,7 +9811,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9809,7 +9838,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9836,7 +9865,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9863,7 +9892,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9890,7 +9919,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9917,7 +9946,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9944,7 +9973,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9971,7 +10000,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -9998,7 +10027,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10025,7 +10054,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10052,7 +10081,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10079,7 +10108,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10106,7 +10135,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10133,7 +10162,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10160,7 +10189,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10187,7 +10216,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10214,7 +10243,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10241,7 +10270,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10268,7 +10297,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10295,7 +10324,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10322,7 +10351,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10349,7 +10378,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10376,7 +10405,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10403,7 +10432,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10430,7 +10459,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10457,7 +10486,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10484,7 +10513,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10511,7 +10540,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10538,7 +10567,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10565,7 +10594,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10592,7 +10621,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10619,7 +10648,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10646,7 +10675,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10673,7 +10702,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10700,7 +10729,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10727,7 +10756,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10754,7 +10783,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10781,7 +10810,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10808,7 +10837,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10835,7 +10864,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10862,7 +10891,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10889,7 +10918,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10916,7 +10945,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10943,7 +10972,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10970,7 +10999,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -10997,7 +11026,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -11024,7 +11053,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -11051,7 +11080,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -11078,7 +11107,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -11105,7 +11134,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -11132,7 +11161,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -11159,7 +11188,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -11186,7 +11215,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -11213,7 +11242,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -11240,7 +11269,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -11267,7 +11296,7 @@
       "linewidth": 2,
       "layer": "architecture/roofs/framing",
       "member_type": "PURLIN",
-      "member_name": "\u0e41\u0e1b (Purlin)",
+      "member_name": "แป (Purlin)",
       "material": "STEEL_SS400",
       "profile": "C75x45x15x2.3",
       "dimensions": {
@@ -11293,7 +11322,7 @@
       "color": "#DC2626",
       "linewidth": 3,
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (RIDGE)",
+      "member_name": "แนวสันหลังคา (RIDGE)",
       "dimensions": {
         "length": 0.6000000000000005
       }
@@ -11317,7 +11346,7 @@
       "color": "#F59E0B",
       "linewidth": 3,
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (HIP)",
+      "member_name": "แนวสันหลังคา (HIP)",
       "dimensions": {
         "length": 8.401388774085707
       }
@@ -11341,7 +11370,7 @@
       "color": "#F59E0B",
       "linewidth": 3,
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (HIP)",
+      "member_name": "แนวสันหลังคา (HIP)",
       "dimensions": {
         "length": 8.401388774085707
       }
@@ -11365,7 +11394,7 @@
       "color": "#F59E0B",
       "linewidth": 3,
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (HIP)",
+      "member_name": "แนวสันหลังคา (HIP)",
       "dimensions": {
         "length": 8.401388774085707
       }
@@ -11389,7 +11418,7 @@
       "color": "#F59E0B",
       "linewidth": 3,
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (HIP)",
+      "member_name": "แนวสันหลังคา (HIP)",
       "dimensions": {
         "length": 8.401388774085707
       }
@@ -11413,7 +11442,7 @@
       "color": "#64748B",
       "linewidth": 2,
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
+      "member_name": "แนวสันหลังคา (EAVE)",
       "dimensions": {
         "length": 11.0
       }
@@ -11437,7 +11466,7 @@
       "color": "#64748B",
       "linewidth": 2,
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
+      "member_name": "แนวสันหลังคา (EAVE)",
       "dimensions": {
         "length": 11.6
       }
@@ -11461,7 +11490,7 @@
       "color": "#64748B",
       "linewidth": 2,
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
+      "member_name": "แนวสันหลังคา (EAVE)",
       "dimensions": {
         "length": 11.0
       }
@@ -11485,7 +11514,7 @@
       "color": "#64748B",
       "linewidth": 2,
       "layer": "architecture/roofs/covering",
-      "member_name": "\u0e41\u0e19\u0e27\u0e2a\u0e31\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e04\u0e32 (EAVE)",
+      "member_name": "แนวสันหลังคา (EAVE)",
       "dimensions": {
         "length": 11.6
       }
@@ -11498,29 +11527,29 @@
       "points": [
         [
           0.0,
-          1.8,
-          2.8
-        ],
-        [
-          6.0,
-          1.8,
+          11.4,
           2.8
         ],
         [
           6.0,
           11.4,
+          2.8
+        ],
+        [
+          6.0,
+          1.8,
           2.8
         ],
         [
           0.0,
-          11.4,
+          1.8,
           2.8
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
         "area": 57.6,
         "thickness": 0.009
@@ -11536,29 +11565,29 @@
       "points": [
         [
           6.0,
-          1.8,
-          2.8
-        ],
-        [
-          9.0,
-          1.8,
+          7.7,
           2.8
         ],
         [
           9.0,
           7.7,
+          2.8
+        ],
+        [
+          9.0,
+          1.8,
           2.8
         ],
         [
           6.0,
-          7.7,
+          1.8,
           2.8
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
         "area": 17.7,
         "thickness": 0.009
@@ -11574,29 +11603,29 @@
       "points": [
         [
           6.0,
-          9.7,
-          2.8
-        ],
-        [
-          9.0,
-          9.7,
+          11.4,
           2.8
         ],
         [
           9.0,
           11.4,
+          2.8
+        ],
+        [
+          9.0,
+          9.7,
           2.8
         ],
         [
           6.0,
-          11.4,
+          9.7,
           2.8
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
         "area": 5.1,
         "thickness": 0.009
@@ -11612,12 +11641,7 @@
       "points": [
         [
           0.0,
-          0.0,
-          2.8
-        ],
-        [
-          4.0,
-          0.0,
+          1.15,
           2.8
         ],
         [
@@ -11626,15 +11650,20 @@
           2.8
         ],
         [
+          4.0,
           0.0,
-          1.15,
+          2.8
+        ],
+        [
+          0.0,
+          0.0,
           2.8
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
         "area": 4.6,
         "thickness": 0.009
@@ -11650,29 +11679,29 @@
       "points": [
         [
           0.0,
-          1.8,
-          6.45
-        ],
-        [
-          6.0,
-          1.8,
+          11.4,
           6.45
         ],
         [
           6.0,
           11.4,
+          6.45
+        ],
+        [
+          6.0,
+          1.8,
           6.45
         ],
         [
           0.0,
-          11.4,
+          1.8,
           6.45
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
         "area": 57.6,
         "thickness": 0.009
@@ -11688,29 +11717,29 @@
       "points": [
         [
           6.0,
-          1.8,
-          6.45
-        ],
-        [
-          9.0,
-          1.8,
+          6.2,
           6.45
         ],
         [
           9.0,
           6.2,
+          6.45
+        ],
+        [
+          9.0,
+          1.8,
           6.45
         ],
         [
           6.0,
-          6.2,
+          1.8,
           6.45
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
         "area": 13.2,
         "thickness": 0.009
@@ -11726,29 +11755,29 @@
       "points": [
         [
           6.0,
-          9.666666666666666,
-          6.45
-        ],
-        [
-          9.0,
-          9.666666666666666,
+          11.4,
           6.45
         ],
         [
           9.0,
           11.4,
+          6.45
+        ],
+        [
+          9.0,
+          9.666666666666666,
           6.45
         ],
         [
           6.0,
-          11.4,
+          9.666666666666666,
           6.45
         ]
       ],
       "color": "#EDE8F5",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_GYPSUM",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_GYPSUM",
       "dimensions": {
         "area": 5.2,
         "thickness": 0.009
@@ -11764,29 +11793,29 @@
       "points": [
         [
           6.0,
-          7.7,
-          2.6
-        ],
-        [
-          9.0,
-          7.7,
+          9.7,
           2.6
         ],
         [
           9.0,
           9.7,
+          2.6
+        ],
+        [
+          9.0,
+          7.7,
           2.6
         ],
         [
           6.0,
-          9.7,
+          7.7,
           2.6
         ]
       ],
       "color": "#E2E8F0",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_TBAR",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_TBAR",
       "dimensions": {
         "area": 6.0,
         "thickness": 0.009
@@ -11802,29 +11831,29 @@
       "points": [
         [
           6.0,
-          6.2,
-          6.35
-        ],
-        [
-          9.0,
-          6.2,
+          7.7,
           6.35
         ],
         [
           9.0,
           7.7,
+          6.35
+        ],
+        [
+          9.0,
+          6.2,
           6.35
         ],
         [
           6.0,
-          7.7,
+          6.2,
           6.35
         ]
       ],
       "color": "#E2E8F0",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_TBAR",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_TBAR",
       "dimensions": {
         "area": 4.5,
         "thickness": 0.009
@@ -11840,29 +11869,29 @@
       "points": [
         [
           6.0,
-          7.7,
-          6.35
-        ],
-        [
-          9.0,
-          7.7,
+          9.2,
           6.35
         ],
         [
           9.0,
           9.2,
+          6.35
+        ],
+        [
+          9.0,
+          7.7,
           6.35
         ],
         [
           6.0,
-          9.2,
+          7.7,
           6.35
         ]
       ],
       "color": "#E2E8F0",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_TBAR",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_TBAR",
       "dimensions": {
         "area": 4.5,
         "thickness": 0.009
@@ -11878,29 +11907,29 @@
       "points": [
         [
           -1.0,
-          -0.2,
-          6.65
-        ],
-        [
-          10.0,
-          -0.2,
+          0.8,
           6.65
         ],
         [
           10.0,
           0.8,
+          6.65
+        ],
+        [
+          10.0,
+          -0.2,
           6.65
         ],
         [
           -1.0,
-          0.8,
+          -0.2,
           6.65
         ]
       ],
       "color": "#D1D5DB",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_EAVES",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_EAVES",
       "dimensions": {
         "area": 11.0,
         "thickness": 0.004
@@ -11916,29 +11945,29 @@
       "points": [
         [
           -1.0,
-          13.8,
-          6.65
-        ],
-        [
-          10.0,
-          13.8,
+          14.8,
           6.65
         ],
         [
           10.0,
           14.8,
+          6.65
+        ],
+        [
+          10.0,
+          13.8,
           6.65
         ],
         [
           -1.0,
-          14.8,
+          13.8,
           6.65
         ]
       ],
       "color": "#D1D5DB",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_EAVES",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_EAVES",
       "dimensions": {
         "area": 11.0,
         "thickness": 0.004
@@ -11954,29 +11983,29 @@
       "points": [
         [
           -1.0,
-          0.8,
-          6.65
-        ],
-        [
-          0.0,
-          0.8,
+          13.8,
           6.65
         ],
         [
           0.0,
           13.8,
+          6.65
+        ],
+        [
+          0.0,
+          0.8,
           6.65
         ],
         [
           -1.0,
-          13.8,
+          0.8,
           6.65
         ]
       ],
       "color": "#D1D5DB",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_EAVES",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_EAVES",
       "dimensions": {
         "area": 13.0,
         "thickness": 0.004
@@ -11992,29 +12021,29 @@
       "points": [
         [
           9.0,
-          0.8,
-          6.65
-        ],
-        [
-          10.0,
-          0.8,
+          13.8,
           6.65
         ],
         [
           10.0,
           13.8,
+          6.65
+        ],
+        [
+          10.0,
+          0.8,
           6.65
         ],
         [
           9.0,
-          13.8,
+          0.8,
           6.65
         ]
       ],
       "color": "#D1D5DB",
-      "layer": "architecture/coverings/ceiling",
+      "layer": "architecture/finishes/ceiling",
       "covering_type": "CEILING",
-      "member_name": "\u0e1d\u0e49\u0e32\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling) - CEIL_EAVES",
+      "member_name": "ฝ้าเพดาน (Ceiling) - CEIL_EAVES",
       "dimensions": {
         "area": 13.0,
         "thickness": 0.004
@@ -12050,9 +12079,9 @@
         ]
       ],
       "color": "#CBD5E1",
-      "layer": "architecture/coverings/flooring",
+      "layer": "architecture/finishes/flooring",
       "covering_type": "FLOORING",
-      "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_CONC_POLISH",
+      "member_name": "งานปูพื้น / ผิวตกแต่ง (Flooring) - FIN_CONC_POLISH",
       "dimensions": {
         "area": 27.5,
         "thickness": 0.05
@@ -12088,9 +12117,9 @@
         ]
       ],
       "color": "#CBD5E1",
-      "layer": "architecture/coverings/flooring",
+      "layer": "architecture/finishes/flooring",
       "covering_type": "FLOORING",
-      "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_CONC_POLISH",
+      "member_name": "งานปูพื้น / ผิวตกแต่ง (Flooring) - FIN_CONC_POLISH",
       "dimensions": {
         "area": 10.0,
         "thickness": 0.05
@@ -12126,9 +12155,9 @@
         ]
       ],
       "color": "#CBD5E1",
-      "layer": "architecture/coverings/flooring",
+      "layer": "architecture/finishes/flooring",
       "covering_type": "FLOORING",
-      "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_CONC_POLISH",
+      "member_name": "งานปูพื้น / ผิวตกแต่ง (Flooring) - FIN_CONC_POLISH",
       "dimensions": {
         "area": 7.2,
         "thickness": 0.05
@@ -12164,9 +12193,9 @@
         ]
       ],
       "color": "#CBD5E1",
-      "layer": "architecture/coverings/flooring",
+      "layer": "architecture/finishes/flooring",
       "covering_type": "FLOORING",
-      "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_CONC_POLISH",
+      "member_name": "งานปูพื้น / ผิวตกแต่ง (Flooring) - FIN_CONC_POLISH",
       "dimensions": {
         "area": 10.3,
         "thickness": 0.05
@@ -12202,9 +12231,9 @@
         ]
       ],
       "color": "#CBD5E1",
-      "layer": "architecture/coverings/flooring",
+      "layer": "architecture/finishes/flooring",
       "covering_type": "FLOORING",
-      "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_TILE_FLOOR",
+      "member_name": "งานปูพื้น / ผิวตกแต่ง (Flooring) - FIN_TILE_FLOOR",
       "dimensions": {
         "area": 55.0,
         "thickness": 0.012
@@ -12240,9 +12269,9 @@
         ]
       ],
       "color": "#CBD5E1",
-      "layer": "architecture/coverings/flooring",
+      "layer": "architecture/finishes/flooring",
       "covering_type": "FLOORING",
-      "member_name": "\u0e07\u0e32\u0e19\u0e1b\u0e39\u0e1e\u0e37\u0e49\u0e19 / \u0e1c\u0e34\u0e27\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Flooring) - FIN_TILE_FLOOR",
+      "member_name": "งานปูพื้น / ผิวตกแต่ง (Flooring) - FIN_TILE_FLOOR",
       "dimensions": {
         "area": 55.0,
         "thickness": 0.012
@@ -12251,76 +12280,196 @@
       "opacity": 0.85
     },
     {
-      "tag": "SKIRTING-L1",
+      "tag": "SKIRTING-L1-Seg-1",
       "class": "IfcCovering",
       "material": "FIN_SKIRTING",
-      "geometry_type": "line_loop",
-      "points": [
-        [
-          0.0,
-          1.8,
-          0.0
-        ],
-        [
-          9.0,
-          1.8,
-          0.0
-        ],
-        [
-          9.0,
-          11.4,
-          0.0
-        ],
-        [
-          0.0,
-          11.4,
-          0.0
-        ]
+      "position": [
+        4.5,
+        1.8,
+        0.05
       ],
-      "color": "#B45309",
-      "linewidth": 3,
-      "layer": "architecture/coverings/skirting",
-      "covering_type": "SKIRTING",
-      "member_name": "\u0e1a\u0e31\u0e27\u0e40\u0e0a\u0e34\u0e07\u0e1c\u0e19\u0e31\u0e07 (Skirting) - FIN_SKIRTING",
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
       "dimensions": {
-        "length": 65.0
-      }
+        "length": 9.0,
+        "thickness": 0.012,
+        "height": 0.1
+      },
+      "color": "#B45309",
+      "layer": "architecture/finishes/skirting",
+      "covering_type": "SKIRTING",
+      "member_name": "บัวเชิงผนัง (Skirting) - FIN_SKIRTING"
     },
     {
-      "tag": "SKIRTING-L2",
+      "tag": "SKIRTING-L1-Seg-2",
       "class": "IfcCovering",
       "material": "FIN_SKIRTING",
-      "geometry_type": "line_loop",
-      "points": [
-        [
-          0.0,
-          1.8,
-          3.75
-        ],
-        [
-          9.0,
-          1.8,
-          3.75
-        ],
-        [
-          9.0,
-          11.4,
-          3.75
-        ],
-        [
-          0.0,
-          11.4,
-          3.75
-        ]
+      "position": [
+        9.0,
+        6.6000000000000005,
+        0.05
       ],
-      "color": "#B45309",
-      "linewidth": 3,
-      "layer": "architecture/coverings/skirting",
-      "covering_type": "SKIRTING",
-      "member_name": "\u0e1a\u0e31\u0e27\u0e40\u0e0a\u0e34\u0e07\u0e1c\u0e19\u0e31\u0e07 (Skirting) - FIN_SKIRTING",
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
       "dimensions": {
-        "length": 58.0
-      }
+        "length": 9.6,
+        "thickness": 0.012,
+        "height": 0.1
+      },
+      "color": "#B45309",
+      "layer": "architecture/finishes/skirting",
+      "covering_type": "SKIRTING",
+      "member_name": "บัวเชิงผนัง (Skirting) - FIN_SKIRTING"
+    },
+    {
+      "tag": "SKIRTING-L1-Seg-3",
+      "class": "IfcCovering",
+      "material": "FIN_SKIRTING",
+      "position": [
+        4.5,
+        11.4,
+        0.05
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 9.0,
+        "thickness": 0.012,
+        "height": 0.1
+      },
+      "color": "#B45309",
+      "layer": "architecture/finishes/skirting",
+      "covering_type": "SKIRTING",
+      "member_name": "บัวเชิงผนัง (Skirting) - FIN_SKIRTING"
+    },
+    {
+      "tag": "SKIRTING-L1-Seg-4",
+      "class": "IfcCovering",
+      "material": "FIN_SKIRTING",
+      "position": [
+        0.0,
+        6.6000000000000005,
+        0.05
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 9.6,
+        "thickness": 0.012,
+        "height": 0.1
+      },
+      "color": "#B45309",
+      "layer": "architecture/finishes/skirting",
+      "covering_type": "SKIRTING",
+      "member_name": "บัวเชิงผนัง (Skirting) - FIN_SKIRTING"
+    },
+    {
+      "tag": "SKIRTING-L2-Seg-1",
+      "class": "IfcCovering",
+      "material": "FIN_SKIRTING",
+      "position": [
+        4.5,
+        1.8,
+        3.8
+      ],
+      "rotation": [
+        0,
+        0,
+        0.0
+      ],
+      "dimensions": {
+        "length": 9.0,
+        "thickness": 0.012,
+        "height": 0.1
+      },
+      "color": "#B45309",
+      "layer": "architecture/finishes/skirting",
+      "covering_type": "SKIRTING",
+      "member_name": "บัวเชิงผนัง (Skirting) - FIN_SKIRTING"
+    },
+    {
+      "tag": "SKIRTING-L2-Seg-2",
+      "class": "IfcCovering",
+      "material": "FIN_SKIRTING",
+      "position": [
+        9.0,
+        6.6000000000000005,
+        3.8
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 9.6,
+        "thickness": 0.012,
+        "height": 0.1
+      },
+      "color": "#B45309",
+      "layer": "architecture/finishes/skirting",
+      "covering_type": "SKIRTING",
+      "member_name": "บัวเชิงผนัง (Skirting) - FIN_SKIRTING"
+    },
+    {
+      "tag": "SKIRTING-L2-Seg-3",
+      "class": "IfcCovering",
+      "material": "FIN_SKIRTING",
+      "position": [
+        4.5,
+        11.4,
+        3.8
+      ],
+      "rotation": [
+        0,
+        0,
+        3.141592653589793
+      ],
+      "dimensions": {
+        "length": 9.0,
+        "thickness": 0.012,
+        "height": 0.1
+      },
+      "color": "#B45309",
+      "layer": "architecture/finishes/skirting",
+      "covering_type": "SKIRTING",
+      "member_name": "บัวเชิงผนัง (Skirting) - FIN_SKIRTING"
+    },
+    {
+      "tag": "SKIRTING-L2-Seg-4",
+      "class": "IfcCovering",
+      "material": "FIN_SKIRTING",
+      "position": [
+        0.0,
+        6.6000000000000005,
+        3.8
+      ],
+      "rotation": [
+        0,
+        0,
+        -1.5707963267948966
+      ],
+      "dimensions": {
+        "length": 9.6,
+        "thickness": 0.012,
+        "height": 0.1
+      },
+      "color": "#B45309",
+      "layer": "architecture/finishes/skirting",
+      "covering_type": "SKIRTING",
+      "member_name": "บัวเชิงผนัง (Skirting) - FIN_SKIRTING"
     },
     {
       "tag": "PIPE-CW-MAIN-01",
@@ -12352,7 +12501,7 @@
       "linewidth": 4,
       "layer": "mep/plumbing/cold_water",
       "system_type": "COLD_WATER",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
+      "system_name_th": "ท่อน้ำดี (Cold Water)",
       "material": "PIPE_PPR",
       "dimensions": {
         "length": 8.400000000000002,
@@ -12381,7 +12530,7 @@
       "linewidth": 4,
       "layer": "mep/plumbing/cold_water",
       "system_type": "COLD_WATER",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
+      "system_name_th": "ท่อน้ำดี (Cold Water)",
       "material": "PIPE_PPR",
       "dimensions": {
         "length": 3.75,
@@ -12430,7 +12579,7 @@
       "linewidth": 4,
       "layer": "mep/plumbing/cold_water",
       "system_type": "COLD_WATER",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
+      "system_name_th": "ท่อน้ำดี (Cold Water)",
       "material": "PIPE_PVC_BLUE",
       "dimensions": {
         "length": 6.441975905133014,
@@ -12474,7 +12623,7 @@
       "linewidth": 4,
       "layer": "mep/plumbing/cold_water",
       "system_type": "COLD_WATER",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e14\u0e35 (Cold Water)",
+      "system_name_th": "ท่อน้ำดี (Cold Water)",
       "material": "PIPE_PVC_BLUE",
       "dimensions": {
         "length": 11.043335930760271,
@@ -12503,7 +12652,7 @@
       "linewidth": 4,
       "layer": "mep/plumbing/soil",
       "system_type": "SOIL",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e42\u0e2a\u0e42\u0e04\u0e23\u0e01/\u0e2a\u0e49\u0e27\u0e21 (Soil Pipe)",
+      "system_name_th": "ท่อโสโครก/ส้วม (Soil Pipe)",
       "material": "PIPE_PVC_GREY",
       "dimensions": {
         "length": 4.2,
@@ -12537,7 +12686,7 @@
       "linewidth": 4,
       "layer": "mep/plumbing/soil",
       "system_type": "SOIL",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e42\u0e2a\u0e42\u0e04\u0e23\u0e01/\u0e2a\u0e49\u0e27\u0e21 (Soil Pipe)",
+      "system_name_th": "ท่อโสโครก/ส้วม (Soil Pipe)",
       "material": "PIPE_PVC_GREY",
       "dimensions": {
         "length": 5.305378788761205,
@@ -12576,7 +12725,7 @@
       "linewidth": 4,
       "layer": "mep/plumbing/soil",
       "system_type": "SOIL",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e42\u0e2a\u0e42\u0e04\u0e23\u0e01/\u0e2a\u0e49\u0e27\u0e21 (Soil Pipe)",
+      "system_name_th": "ท่อโสโครก/ส้วม (Soil Pipe)",
       "material": "PIPE_PVC_GREY",
       "dimensions": {
         "length": 4.502974757922865,
@@ -12615,7 +12764,7 @@
       "linewidth": 4,
       "layer": "mep/plumbing/waste",
       "system_type": "WASTE",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e17\u0e34\u0e49\u0e07 (Waste Pipe)",
+      "system_name_th": "ท่อน้ำทิ้ง (Waste Pipe)",
       "material": "PIPE_PVC_GREY",
       "dimensions": {
         "length": 5.5928281966474085,
@@ -12649,7 +12798,7 @@
       "linewidth": 4,
       "layer": "mep/plumbing/waste",
       "system_type": "WASTE",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e17\u0e34\u0e49\u0e07 (Waste Pipe)",
+      "system_name_th": "ท่อน้ำทิ้ง (Waste Pipe)",
       "material": "PIPE_PVC_GREY",
       "dimensions": {
         "length": 2.816238711488067,
@@ -12678,7 +12827,7 @@
       "linewidth": 4,
       "layer": "mep/plumbing/vent",
       "system_type": "VENT",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e30\u0e1a\u0e32\u0e22\u0e2d\u0e32\u0e01\u0e32\u0e28 (Vent Pipe)",
+      "system_name_th": "ท่อระบายอากาศ (Vent Pipe)",
       "material": "PIPE_PVC_GREY",
       "dimensions": {
         "length": 3.5,
@@ -12727,7 +12876,7 @@
       "linewidth": 4,
       "layer": "mep/plumbing/refrigerant",
       "system_type": "REFRIGERANT",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e22\u0e32\u0e41\u0e2d\u0e23\u0e4c (Refrigerant Pipe)",
+      "system_name_th": "ท่อน้ำยาแอร์ (Refrigerant Pipe)",
       "material": "PIPE_PPR",
       "dimensions": {
         "length": 8.55,
@@ -12771,7 +12920,7 @@
       "linewidth": 4,
       "layer": "mep/plumbing/condensate",
       "system_type": "CONDENSATE",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e19\u0e49\u0e33\u0e17\u0e34\u0e49\u0e07\u0e41\u0e2d\u0e23\u0e4c (AC Condensate Drain)",
+      "system_name_th": "ท่อน้ำทิ้งแอร์ (AC Condensate Drain)",
       "material": "PIPE_PVC_BLUE",
       "dimensions": {
         "length": 7.65,
@@ -12810,7 +12959,7 @@
       "linewidth": 3,
       "layer": "mep/electrical/main_feeder",
       "system_type": "MAIN_FEEDER",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e49\u0e2d\u0e22\u0e2a\u0e32\u0e22\u0e40\u0e21\u0e19 (Main Feeder)",
+      "system_name_th": "ท่อร้อยสายเมน (Main Feeder)",
       "material": "CONDUIT_EMT",
       "dimensions": {
         "length": 10.8,
@@ -12858,7 +13007,7 @@
       "linewidth": 3,
       "layer": "mep/electrical/lighting",
       "system_type": "LIGHTING",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e49\u0e2d\u0e22\u0e2a\u0e32\u0e22\u0e44\u0e1f\u0e41\u0e2a\u0e07\u0e2a\u0e27\u0e48\u0e32\u0e07 (Lighting Conduit)",
+      "system_name_th": "ท่อร้อยสายไฟแสงสว่าง (Lighting Conduit)",
       "material": "CONDUIT_EMT",
       "dimensions": {
         "length": 12.068469753953039,
@@ -12896,7 +13045,7 @@
       "linewidth": 3,
       "layer": "mep/electrical/power",
       "system_type": "POWER",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e49\u0e2d\u0e22\u0e2a\u0e32\u0e22\u0e44\u0e1f\u0e01\u0e33\u0e25\u0e31\u0e07 (Power Conduit)",
+      "system_name_th": "ท่อร้อยสายไฟกำลัง (Power Conduit)",
       "material": "CONDUIT_EMT",
       "dimensions": {
         "length": 9.792492955535426,
@@ -12926,7 +13075,7 @@
       "color": "#1E293B",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "SEPTIC_TANK",
-      "fixture_name_th": "\u0e16\u0e31\u0e07\u0e1a\u0e33\u0e1a\u0e31\u0e14\u0e19\u0e49\u0e33\u0e40\u0e2a\u0e35\u0e22 (Septic Tank)"
+      "fixture_name_th": "ถังบำบัดน้ำเสีย (Septic Tank)"
     },
     {
       "tag": "GREASE-01",
@@ -12950,7 +13099,7 @@
       "color": "#0D9488",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "GREASE_TRAP",
-      "fixture_name_th": "\u0e1a\u0e48\u0e2d\u0e14\u0e31\u0e01\u0e44\u0e02\u0e21\u0e31\u0e19 (Grease Trap)"
+      "fixture_name_th": "บ่อดักไขมัน (Grease Trap)"
     },
     {
       "tag": "TANK-01",
@@ -12974,7 +13123,7 @@
       "color": "#0284C7",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "WATER_TANK",
-      "fixture_name_th": "\u0e16\u0e31\u0e07\u0e40\u0e01\u0e47\u0e1a\u0e19\u0e49\u0e33\u0e1a\u0e19\u0e14\u0e34\u0e19 (Water Tank)"
+      "fixture_name_th": "ถังเก็บน้ำบนดิน (Water Tank)"
     },
     {
       "tag": "PUMP-01",
@@ -12998,7 +13147,7 @@
       "color": "#2563EB",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "WATER_PUMP",
-      "fixture_name_th": "\u0e1b\u0e31\u0e4a\u0e21\u0e19\u0e49\u0e33\u0e2d\u0e31\u0e15\u0e42\u0e19\u0e21\u0e31\u0e15\u0e34 (Water Pump)"
+      "fixture_name_th": "ปั๊มน้ำอัตโนมัติ (Water Pump)"
     },
     {
       "tag": "WC-L1-01",
@@ -13022,7 +13171,7 @@
       "color": "#F8FAFC",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "WATER_CLOSET",
-      "fixture_name_th": "\u0e42\u0e16\u0e2a\u0e49\u0e27\u0e21 / \u0e2a\u0e38\u0e02\u0e20\u0e31\u0e13\u0e11\u0e4c (WC)"
+      "fixture_name_th": "โถส้วม / สุขภัณฑ์ (WC)"
     },
     {
       "tag": "LAV-L1-01",
@@ -13046,7 +13195,7 @@
       "color": "#F1F5F9",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "LAVATORY",
-      "fixture_name_th": "\u0e2d\u0e48\u0e32\u0e07\u0e25\u0e49\u0e32\u0e07\u0e2b\u0e19\u0e49\u0e32 (Lavatory)"
+      "fixture_name_th": "อ่างล้างหน้า (Lavatory)"
     },
     {
       "tag": "SH-L1-01",
@@ -13070,7 +13219,7 @@
       "color": "#CBD5E1",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "SHOWER",
-      "fixture_name_th": "\u0e1d\u0e31\u0e01\u0e1a\u0e31\u0e27\u0e2d\u0e32\u0e1a\u0e19\u0e49\u0e33 (Shower)"
+      "fixture_name_th": "ฝักบัวอาบน้ำ (Shower)"
     },
     {
       "tag": "FD-L1-01",
@@ -13094,7 +13243,7 @@
       "color": "#64748B",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "FLOOR_DRAIN",
-      "fixture_name_th": "\u0e15\u0e30\u0e41\u0e01\u0e23\u0e07\u0e14\u0e31\u0e01\u0e01\u0e25\u0e34\u0e48\u0e19\u0e17\u0e35\u0e48\u0e1e\u0e37\u0e49\u0e19 (Floor Drain)"
+      "fixture_name_th": "ตะแกรงดักกลิ่นที่พื้น (Floor Drain)"
     },
     {
       "tag": "SINK-L1-01",
@@ -13118,7 +13267,7 @@
       "color": "#94A3B8",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "KITCHEN_SINK",
-      "fixture_name_th": "\u0e2d\u0e48\u0e32\u0e07\u0e25\u0e49\u0e32\u0e07\u0e08\u0e32\u0e19 (Kitchen Sink)"
+      "fixture_name_th": "อ่างล้างจาน (Kitchen Sink)"
     },
     {
       "tag": "WC-L2-01",
@@ -13142,7 +13291,7 @@
       "color": "#F8FAFC",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "WATER_CLOSET",
-      "fixture_name_th": "\u0e42\u0e16\u0e2a\u0e49\u0e27\u0e21 / \u0e2a\u0e38\u0e02\u0e20\u0e31\u0e13\u0e11\u0e4c (WC)"
+      "fixture_name_th": "โถส้วม / สุขภัณฑ์ (WC)"
     },
     {
       "tag": "LAV-L2-01",
@@ -13166,7 +13315,7 @@
       "color": "#F1F5F9",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "LAVATORY",
-      "fixture_name_th": "\u0e2d\u0e48\u0e32\u0e07\u0e25\u0e49\u0e32\u0e07\u0e2b\u0e19\u0e49\u0e32 (Lavatory)"
+      "fixture_name_th": "อ่างล้างหน้า (Lavatory)"
     },
     {
       "tag": "SH-L2-01",
@@ -13190,7 +13339,7 @@
       "color": "#CBD5E1",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "SHOWER",
-      "fixture_name_th": "\u0e1d\u0e31\u0e01\u0e1a\u0e31\u0e27\u0e2d\u0e32\u0e1a\u0e19\u0e49\u0e33 (Shower)"
+      "fixture_name_th": "ฝักบัวอาบน้ำ (Shower)"
     },
     {
       "tag": "FD-L2-01",
@@ -13214,7 +13363,7 @@
       "color": "#64748B",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "FLOOR_DRAIN",
-      "fixture_name_th": "\u0e15\u0e30\u0e41\u0e01\u0e23\u0e07\u0e14\u0e31\u0e01\u0e01\u0e25\u0e34\u0e48\u0e19\u0e17\u0e35\u0e48\u0e1e\u0e37\u0e49\u0e19 (Floor Drain)"
+      "fixture_name_th": "ตะแกรงดักกลิ่นที่พื้น (Floor Drain)"
     },
     {
       "tag": "WC-L2-02",
@@ -13238,7 +13387,7 @@
       "color": "#F8FAFC",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "WATER_CLOSET",
-      "fixture_name_th": "\u0e42\u0e16\u0e2a\u0e49\u0e27\u0e21 / \u0e2a\u0e38\u0e02\u0e20\u0e31\u0e13\u0e11\u0e4c (WC)"
+      "fixture_name_th": "โถส้วม / สุขภัณฑ์ (WC)"
     },
     {
       "tag": "LAV-L2-02",
@@ -13262,7 +13411,7 @@
       "color": "#F1F5F9",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "LAVATORY",
-      "fixture_name_th": "\u0e2d\u0e48\u0e32\u0e07\u0e25\u0e49\u0e32\u0e07\u0e2b\u0e19\u0e49\u0e32 (Lavatory)"
+      "fixture_name_th": "อ่างล้างหน้า (Lavatory)"
     },
     {
       "tag": "SH-L2-02",
@@ -13286,7 +13435,7 @@
       "color": "#CBD5E1",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "SHOWER",
-      "fixture_name_th": "\u0e1d\u0e31\u0e01\u0e1a\u0e31\u0e27\u0e2d\u0e32\u0e1a\u0e19\u0e49\u0e33 (Shower)"
+      "fixture_name_th": "ฝักบัวอาบน้ำ (Shower)"
     },
     {
       "tag": "FD-L2-02",
@@ -13310,7 +13459,7 @@
       "color": "#64748B",
       "layer": "mep/plumbing/fixtures",
       "fixture_type": "FLOOR_DRAIN",
-      "fixture_name_th": "\u0e15\u0e30\u0e41\u0e01\u0e23\u0e07\u0e14\u0e31\u0e01\u0e01\u0e25\u0e34\u0e48\u0e19\u0e17\u0e35\u0e48\u0e1e\u0e37\u0e49\u0e19 (Floor Drain)"
+      "fixture_name_th": "ตะแกรงดักกลิ่นที่พื้น (Floor Drain)"
     },
     {
       "tag": "CU-MAIN-01",
@@ -13335,7 +13484,7 @@
       "layer": "mep/electrical/distribution",
       "board_type": "CONSUMER_UNIT",
       "circuits_count": 12,
-      "fixture_name_th": "\u0e15\u0e39\u0e49\u0e04\u0e27\u0e1a\u0e04\u0e38\u0e21\u0e44\u0e1f\u0e1f\u0e49\u0e32\u0e2b\u0e25\u0e31\u0e01 (Consumer Unit / MDB)"
+      "fixture_name_th": "ตู้ควบคุมไฟฟ้าหลัก (Consumer Unit / MDB)"
     },
     {
       "tag": "LIGHT-L1-LIVING",
@@ -13360,7 +13509,7 @@
       "layer": "mep/electrical/lighting",
       "fixture_type": "DOWNLIGHT",
       "wattage": 12.0,
-      "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
+      "fixture_name_th": "โคมไฟดาวน์ไลท์ (Downlight)"
     },
     {
       "tag": "LIGHT-L1-HALL",
@@ -13385,7 +13534,7 @@
       "layer": "mep/electrical/lighting",
       "fixture_type": "DOWNLIGHT",
       "wattage": 12.0,
-      "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
+      "fixture_name_th": "โคมไฟดาวน์ไลท์ (Downlight)"
     },
     {
       "tag": "LIGHT-L1-BATH",
@@ -13410,7 +13559,7 @@
       "layer": "mep/electrical/lighting",
       "fixture_type": "DOWNLIGHT",
       "wattage": 9.0,
-      "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
+      "fixture_name_th": "โคมไฟดาวน์ไลท์ (Downlight)"
     },
     {
       "tag": "LIGHT-L2-BED1",
@@ -13435,7 +13584,7 @@
       "layer": "mep/electrical/lighting",
       "fixture_type": "DOWNLIGHT",
       "wattage": 12.0,
-      "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
+      "fixture_name_th": "โคมไฟดาวน์ไลท์ (Downlight)"
     },
     {
       "tag": "LIGHT-L2-BATH1",
@@ -13460,7 +13609,7 @@
       "layer": "mep/electrical/lighting",
       "fixture_type": "DOWNLIGHT",
       "wattage": 9.0,
-      "fixture_name_th": "\u0e42\u0e04\u0e21\u0e44\u0e1f\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e44\u0e25\u0e17\u0e4c (Downlight)"
+      "fixture_name_th": "โคมไฟดาวน์ไลท์ (Downlight)"
     },
     {
       "tag": "SW-L1-01",
@@ -13485,7 +13634,7 @@
       "layer": "mep/electrical/switches",
       "switch_type": "ONE_WAY",
       "gangs": 2,
-      "fixture_name_th": "\u0e2a\u0e27\u0e34\u0e15\u0e0a\u0e4c\u0e44\u0e1f 2 \u0e0a\u0e48\u0e2d\u0e07 (ONE_WAY)"
+      "fixture_name_th": "สวิตช์ไฟ 2 ช่อง (ONE_WAY)"
     },
     {
       "tag": "SW-L1-02",
@@ -13510,7 +13659,7 @@
       "layer": "mep/electrical/switches",
       "switch_type": "ONE_WAY",
       "gangs": 1,
-      "fixture_name_th": "\u0e2a\u0e27\u0e34\u0e15\u0e0a\u0e4c\u0e44\u0e1f 1 \u0e0a\u0e48\u0e2d\u0e07 (ONE_WAY)"
+      "fixture_name_th": "สวิตช์ไฟ 1 ช่อง (ONE_WAY)"
     },
     {
       "tag": "REC-L1-01",
@@ -13534,7 +13683,7 @@
       "color": "#E2E8F0",
       "layer": "mep/electrical/outlets",
       "outlet_type": "DUPLEX_GROUNDED",
-      "fixture_name_th": "\u0e40\u0e15\u0e49\u0e32\u0e23\u0e31\u0e1a\u0e44\u0e1f\u0e1f\u0e49\u0e32 (DUPLEX_GROUNDED)"
+      "fixture_name_th": "เต้ารับไฟฟ้า (DUPLEX_GROUNDED)"
     },
     {
       "tag": "REC-L1-02",
@@ -13558,7 +13707,7 @@
       "color": "#E2E8F0",
       "layer": "mep/electrical/outlets",
       "outlet_type": "DUPLEX_GROUNDED",
-      "fixture_name_th": "\u0e40\u0e15\u0e49\u0e32\u0e23\u0e31\u0e1a\u0e44\u0e1f\u0e1f\u0e49\u0e32 (DUPLEX_GROUNDED)"
+      "fixture_name_th": "เต้ารับไฟฟ้า (DUPLEX_GROUNDED)"
     },
     {
       "tag": "DUCT-HOOD-01",
@@ -13585,7 +13734,7 @@
       "linewidth": 4,
       "layer": "mep/hvac/exhaust_air",
       "system_type": "EXHAUST_AIR",
-      "system_name_th": "\u0e17\u0e48\u0e2d\u0e23\u0e30\u0e1a\u0e32\u0e22\u0e2d\u0e32\u0e01\u0e32\u0e28/\u0e14\u0e39\u0e14\u0e04\u0e27\u0e31\u0e19 (Exhaust Air Duct)",
+      "system_name_th": "ท่อระบายอากาศ/ดูดควัน (Exhaust Air Duct)",
       "material": "HVAC_SYSTEM",
       "dimensions": {
         "length": 2.0000000000000004,
@@ -13617,7 +13766,7 @@
       "layer": "mep/hvac/terminals",
       "terminal_type": "KITCHEN_HOOD",
       "flow_rate_cfm": 650.0,
-      "fixture_name_th": "\u0e2e\u0e39\u0e14\u0e14\u0e39\u0e14\u0e04\u0e27\u0e31\u0e19\u0e2b\u0e49\u0e2d\u0e07\u0e04\u0e23\u0e31\u0e27 (Kitchen Range Hood)"
+      "fixture_name_th": "ฮูดดูดควันห้องครัว (Kitchen Range Hood)"
     },
     {
       "tag": "EXH-FAN-BATH-L1",
@@ -13642,7 +13791,7 @@
       "layer": "mep/hvac/terminals",
       "terminal_type": "EXHAUST_FAN_CEILING",
       "flow_rate_cfm": 120.0,
-      "fixture_name_th": "\u0e1e\u0e31\u0e14\u0e25\u0e21\u0e14\u0e39\u0e14\u0e2d\u0e32\u0e01\u0e32\u0e28\u0e15\u0e34\u0e14\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling Exhaust Fan)"
+      "fixture_name_th": "พัดลมดูดอากาศติดเพดาน (Ceiling Exhaust Fan)"
     },
     {
       "tag": "EXH-FAN-BATH-L2",
@@ -13667,7 +13816,7 @@
       "layer": "mep/hvac/terminals",
       "terminal_type": "EXHAUST_FAN_CEILING",
       "flow_rate_cfm": 120.0,
-      "fixture_name_th": "\u0e1e\u0e31\u0e14\u0e25\u0e21\u0e14\u0e39\u0e14\u0e2d\u0e32\u0e01\u0e32\u0e28\u0e15\u0e34\u0e14\u0e40\u0e1e\u0e14\u0e32\u0e19 (Ceiling Exhaust Fan)"
+      "fixture_name_th": "พัดลมดูดอากาศติดเพดาน (Ceiling Exhaust Fan)"
     },
     {
       "tag": "AC-FCU-LIVING",
@@ -13692,7 +13841,7 @@
       "layer": "mep/hvac/equipment",
       "equipment_type": "AC_INDOOR_WALL",
       "cooling_capacity_btu": 18000.0,
-      "fixture_name_th": "\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e1b\u0e23\u0e31\u0e1a\u0e2d\u0e32\u0e01\u0e32\u0e28\u0e41\u0e1a\u0e1a\u0e15\u0e34\u0e14\u0e1c\u0e19\u0e31\u0e07 (Wall Mounted AC)"
+      "fixture_name_th": "เครื่องปรับอากาศแบบติดผนัง (Wall Mounted AC)"
     },
     {
       "tag": "AC-CDU-LIVING",
@@ -13717,7 +13866,7 @@
       "layer": "mep/hvac/equipment",
       "equipment_type": "AC_OUTDOOR_CONDENSER",
       "cooling_capacity_btu": 18000.0,
-      "fixture_name_th": "\u0e04\u0e2d\u0e19\u0e40\u0e14\u0e19\u0e0b\u0e34\u0e48\u0e07\u0e22\u0e39\u0e19\u0e34\u0e15\u0e20\u0e32\u0e22\u0e19\u0e2d\u0e01 (Outdoor Condensing Unit)"
+      "fixture_name_th": "คอนเดนซิ่งยูนิตภายนอก (Outdoor Condensing Unit)"
     },
     {
       "tag": "AC-FCU-BED1",
@@ -13742,7 +13891,7 @@
       "layer": "mep/hvac/equipment",
       "equipment_type": "AC_INDOOR_WALL",
       "cooling_capacity_btu": 12000.0,
-      "fixture_name_th": "\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e1b\u0e23\u0e31\u0e1a\u0e2d\u0e32\u0e01\u0e32\u0e28\u0e41\u0e1a\u0e1a\u0e15\u0e34\u0e14\u0e1c\u0e19\u0e31\u0e07 (Wall Mounted AC)"
+      "fixture_name_th": "เครื่องปรับอากาศแบบติดผนัง (Wall Mounted AC)"
     },
     {
       "tag": "AC-CDU-BED1",
@@ -13767,7 +13916,7 @@
       "layer": "mep/hvac/equipment",
       "equipment_type": "AC_OUTDOOR_CONDENSER",
       "cooling_capacity_btu": 12000.0,
-      "fixture_name_th": "\u0e04\u0e2d\u0e19\u0e40\u0e14\u0e19\u0e0b\u0e34\u0e48\u0e07\u0e22\u0e39\u0e19\u0e34\u0e15\u0e20\u0e32\u0e22\u0e19\u0e2d\u0e01 (Outdoor Condensing Unit)"
+      "fixture_name_th": "คอนเดนซิ่งยูนิตภายนอก (Outdoor Condensing Unit)"
     }
   ]
 };
@@ -13788,7 +13937,93 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.shadowMap.enabled = true;
+        renderer.localClippingEnabled = true;
         container.appendChild(renderer.domElement);
+
+        const gltfLoader = new THREE.GLTFLoader();
+
+        // Section Plane Slicer Engine
+        let isSectionCutEnabled = false;
+        let sectionCutDir = -1; // -1: clip above, +1: clip below
+        let currentCutZ = 10.0;
+        let clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), currentCutZ);
+
+        window.toggleSectionPlaneUI = function() {
+            const panel = document.getElementById('section-plane-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        };
+
+        window.setSectionCutEnabled = function(enabled) {
+            isSectionCutEnabled = enabled;
+            const controls = document.getElementById('section-controls');
+            controls.style.opacity = enabled ? '1' : '0.5';
+            controls.style.pointerEvents = enabled ? 'auto' : 'none';
+            updateSectionPlane();
+        };
+
+        window.onSectionSliderChange = function(val) {
+            currentCutZ = parseFloat(val);
+            document.getElementById('cut-z-display').textContent = currentCutZ.toFixed(2) + ' m';
+            updateSectionPlane();
+        };
+
+        window.flipSectionDirection = function() {
+            sectionCutDir *= -1;
+            document.getElementById('dir-label').textContent = sectionCutDir === -1 ? 'Clip Above' : 'Clip Below';
+            updateSectionPlane();
+        };
+
+        const storeyElevations = sceneData.storeys.map(s => s.elevation);
+        const minCutZ = storeyElevations.length > 0 ? Math.min(...storeyElevations) - 1.0 : -2.0;
+        const maxCutZ = storeyElevations.length > 0 ? Math.max(...storeyElevations) + 4.0 : 15.0;
+
+        window.resetSectionPlane = function() {
+            const toggle = document.getElementById('section-enable-toggle');
+            toggle.checked = false;
+            setSectionCutEnabled(false);
+            currentCutZ = maxCutZ;
+            document.getElementById('cut-height-slider').value = currentCutZ;
+            document.getElementById('cut-z-display').textContent = currentCutZ.toFixed(2) + ' m';
+        };
+
+        function updateSectionPlane() {
+            if (isSectionCutEnabled) {
+                const nz = sectionCutDir;
+                clipPlane.normal.set(0, 0, nz);
+                clipPlane.constant = sectionCutDir === -1 ? currentCutZ : -currentCutZ;
+                renderer.clippingPlanes = [clipPlane];
+            } else {
+                renderer.clippingPlanes = [];
+            }
+        }
+
+        // Setup Section Plane slider & quick buttons
+        setTimeout(() => {
+            const slider = document.getElementById('cut-height-slider');
+            if (slider) {
+                slider.min = minCutZ.toFixed(2);
+                slider.max = maxCutZ.toFixed(2);
+                slider.value = maxCutZ.toFixed(2);
+                currentCutZ = maxCutZ;
+                document.getElementById('cut-z-display').textContent = currentCutZ.toFixed(2) + ' m';
+            }
+            const quickBtnsContainer = document.getElementById('storey-quick-btns');
+            if (quickBtnsContainer) {
+                sceneData.storeys.forEach(s => {
+                    const btn = document.createElement('button');
+                    btn.className = 'batch-btn';
+                    btn.textContent = `${s.name} (+${s.elevation.toFixed(1)}m)`;
+                    btn.onclick = () => {
+                        document.getElementById('section-enable-toggle').checked = true;
+                        setSectionCutEnabled(true);
+                        const targetZ = s.elevation + 1.2;
+                        slider.value = targetZ.toFixed(2);
+                        onSectionSliderChange(targetZ);
+                    };
+                    quickBtnsContainer.appendChild(btn);
+                });
+            }
+        }, 100);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -13825,7 +14060,7 @@
             canvas.width = 128;
             canvas.height = 128;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = 'rgba(25, 30, 42, 0.88)';
+            ctx.fillStyle = 'rgba(25, 30, 42, 0.90)';
             ctx.beginPath();
             ctx.arc(64, 64, 52, 0, Math.PI * 2);
             ctx.fill();
@@ -13840,13 +14075,15 @@
             const texture = new THREE.CanvasTexture(canvas);
             const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false });
             const sprite = new THREE.Sprite(spriteMat);
-            sprite.scale.set(4, 4, 1);
+            sprite.scale.set(0.8, 0.8, 1);
             return sprite;
         }
 
         // Render Grid Lines & Ground
-        const allX = Object.values(sceneData.grids.axes_x);
-        const allY = Object.values(sceneData.grids.axes_y);
+        const mainX = Object.entries(sceneData.grids.axes_x).filter(([n]) => !n.includes('-')).map(([_, v]) => v);
+        const mainY = Object.entries(sceneData.grids.axes_y).filter(([n]) => !n.includes('-')).map(([_, v]) => v);
+        const allX = mainX.length > 0 ? mainX : Object.values(sceneData.grids.axes_x);
+        const allY = mainY.length > 0 ? mainY : Object.values(sceneData.grids.axes_y);
         const minGridX = Math.min(...allX);
         const maxGridX = Math.max(...allX);
         const minGridY = Math.min(...allY);
@@ -13866,11 +14103,15 @@
             linewidth: 1
         });
 
-        // X Grids
+        const bubbleOffset = 1.8;
+        const lineExtend = 1.2;
+
+        // X Grids (แสดงเฉพาะกริตหลัก ข้ามกริตย่อยที่มี '-')
         Object.entries(sceneData.grids.axes_x).forEach(([name, xVal]) => {
+            if (name.includes('-')) return;
             const pts = [
-                new THREE.Vector3(xVal, minGridY - 6, 0),
-                new THREE.Vector3(xVal, maxGridY + 6, 0)
+                new THREE.Vector3(xVal, minGridY - lineExtend, 0),
+                new THREE.Vector3(xVal, maxGridY + lineExtend, 0)
             ];
             const geom = new THREE.BufferGeometry().setFromPoints(pts);
             const line = new THREE.Line(geom, gridLineMat);
@@ -13878,18 +14119,19 @@
             gridGroup.add(line);
 
             const topBubble = makeGridSprite(name, '#38bdf8');
-            topBubble.position.set(xVal, maxGridY + 8, 0.1);
+            topBubble.position.set(xVal, maxGridY + bubbleOffset, 0.1);
             gridGroup.add(topBubble);
             const botBubble = makeGridSprite(name, '#38bdf8');
-            botBubble.position.set(xVal, minGridY - 8, 0.1);
+            botBubble.position.set(xVal, minGridY - bubbleOffset, 0.1);
             gridGroup.add(botBubble);
         });
 
-        // Y Grids
+        // Y Grids (แสดงเฉพาะกริตหลัก ข้ามกริตย่อยที่มี '-')
         Object.entries(sceneData.grids.axes_y).forEach(([name, yVal]) => {
+            if (name.includes('-')) return;
             const pts = [
-                new THREE.Vector3(minGridX - 6, yVal, 0),
-                new THREE.Vector3(maxGridX + 6, yVal, 0)
+                new THREE.Vector3(minGridX - lineExtend, yVal, 0),
+                new THREE.Vector3(maxGridX + lineExtend, yVal, 0)
             ];
             const geom = new THREE.BufferGeometry().setFromPoints(pts);
             const line = new THREE.Line(geom, gridLineMat);
@@ -13897,14 +14139,14 @@
             gridGroup.add(line);
 
             const leftBubble = makeGridSprite(name, '#4ade80');
-            leftBubble.position.set(minGridX - 8, yVal, 0.1);
+            leftBubble.position.set(minGridX - bubbleOffset, yVal, 0.1);
             gridGroup.add(leftBubble);
             const rightBubble = makeGridSprite(name, '#4ade80');
-            rightBubble.position.set(maxGridX + 8, yVal, 0.1);
+            rightBubble.position.set(maxGridX + bubbleOffset, yVal, 0.1);
             gridGroup.add(rightBubble);
         });
 
-        const axesHelper = new THREE.AxesHelper(15);
+        const axesHelper = new THREE.AxesHelper(2.5);
         axesHelper.position.set(0, 0, 0.05);
         gridGroup.add(axesHelper);
 
@@ -13925,9 +14167,87 @@
         // Render Elements
         const pickableObjects = [];
 
+        function renderProceduralBox(data) {
+            let geometry;
+            const dim = data.dimensions || { width: 1, depth: 1, height: 1 };
+            if (data.class === "IfcColumn") {
+                geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
+            } else if (data.class === "IfcBeam") {
+                geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
+            } else if (data.class === "IfcWall") {
+                geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
+            } else if (data.class === "IfcDoor" || data.class === "IfcWindow") {
+                geometry = new THREE.BoxGeometry(dim.width, dim.thickness, dim.height);
+            } else {
+                geometry = new THREE.BoxGeometry(dim.width || 1, dim.depth || 1, dim.height || 1);
+            }
+
+            const matOptions = {
+                color: new THREE.Color(data.color || "#808080"),
+                roughness: 0.5,
+                metalness: 0.1
+            };
+            if (data.transparent) {
+                matOptions.transparent = true;
+                matOptions.opacity = data.opacity || 0.6;
+            }
+
+            const material = new THREE.MeshStandardMaterial(matOptions);
+            const mesh = new THREE.Mesh(geometry, material);
+
+            if (data.position) mesh.position.set(...data.position);
+            if (data.rotation) mesh.rotation.set(...data.rotation);
+
+            const edges = new THREE.EdgesGeometry(geometry);
+            const line = new THREE.LineSegments(
+                edges,
+                new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 1 })
+            );
+            mesh.add(line);
+            mesh.userData = data;
+
+            let layerPath = data.layer || "general/other";
+            if (!layerPath.includes("/")) {
+                layerPath = "general/" + layerPath;
+            }
+            mesh.userData.layer = layerPath;
+
+            scene.add(mesh);
+            pickableObjects.push(mesh);
+        }
+
         sceneData.elements.forEach(data => {
             let object3D;
-            const dim = data.dimensions;
+
+            if (data.source && (data.source.endsWith(".glb") || data.source.endsWith(".gltf"))) {
+                gltfLoader.load(
+                    data.source,
+                    function (gltf) {
+                        const model = gltf.scene;
+                        if (data.position) model.position.set(...data.position);
+                        if (data.rotation) model.rotation.set(...data.rotation);
+                        model.userData = data;
+                        let layerPath = data.layer || "general/other";
+                        if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
+                        model.userData.layer = layerPath;
+
+                        model.traverse((child) => {
+                            if (child.isMesh) {
+                                child.userData = data;
+                                child.userData.layer = layerPath;
+                            }
+                        });
+
+                        scene.add(model);
+                        pickableObjects.push(model);
+                    },
+                    undefined,
+                    function (error) {
+                        renderProceduralBox(data);
+                    }
+                );
+                return;
+            }
 
             if (data.geometry_type === "line" || data.geometry_type === "line_loop") {
                 const points = data.points.map(p => new THREE.Vector3(...p));
@@ -13970,42 +14290,8 @@
                 mesh.add(line);
                 object3D = mesh;
             } else {
-                let geometry;
-                if (data.class === "IfcColumn") {
-                    geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
-                } else if (data.class === "IfcBeam") {
-                    geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
-                } else if (data.class === "IfcWall") {
-                    geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
-                } else if (data.class === "IfcDoor" || data.class === "IfcWindow") {
-                    geometry = new THREE.BoxGeometry(dim.width, dim.thickness, dim.height);
-                } else {
-                    geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
-                }
-
-                const matOptions = {
-                    color: new THREE.Color(data.color),
-                    roughness: 0.5,
-                    metalness: 0.1
-                };
-                if (data.transparent) {
-                    matOptions.transparent = true;
-                    matOptions.opacity = data.opacity || 0.6;
-                }
-
-                const material = new THREE.MeshStandardMaterial(matOptions);
-                const mesh = new THREE.Mesh(geometry, material);
-
-                mesh.position.set(...data.position);
-                mesh.rotation.set(...data.rotation);
-
-                const edges = new THREE.EdgesGeometry(geometry);
-                const line = new THREE.LineSegments(
-                    edges,
-                    new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 1 })
-                );
-                mesh.add(line);
-                object3D = mesh;
+                renderProceduralBox(data);
+                return;
             }
 
             object3D.userData = data;
@@ -14020,41 +14306,106 @@
             pickableObjects.push(object3D);
         });
 
-        // Camera position setup
-        camera.position.set(centerX, centerY, 160);
-        camera.up.set(0, 1, 0);
-        controls.target.set(centerX, centerY, 0);
+        // Automatic Model Bounding Box & Target Framing
+        const modelBox = new THREE.Box3();
+        pickableObjects.forEach(obj => modelBox.expandByObject(obj));
+        const bCenter = new THREE.Vector3();
+        const bSize = new THREE.Vector3();
+        modelBox.getCenter(bCenter);
+        modelBox.getSize(bSize);
+
+        const targetX = (isFinite(bCenter.x) && bSize.x > 0.1) ? bCenter.x : centerX;
+        const targetY = (isFinite(bCenter.y) && bSize.y > 0.1) ? bCenter.y : centerY;
+        const targetZ = (isFinite(bCenter.z) && bSize.z > 0.1) ? bCenter.z : 2.5;
+        const maxSpan = Math.max(bSize.x, bSize.y, bSize.z, 15);
+
+        // Camera position setup (Default: ISO View framed to model)
+        camera.position.set(targetX + maxSpan * 0.9, targetY - maxSpan * 1.2, targetZ + maxSpan * 0.8);
+        camera.up.set(0, 0, 1);
+        controls.target.set(targetX, targetY, targetZ);
         controls.minPolarAngle = 0;
-        controls.maxPolarAngle = 0;
+        controls.maxPolarAngle = Math.PI;
         controls.update();
 
         window.setView = function(mode) {
             if (mode === 'top') {
-                camera.position.set(centerX, centerY, 160);
+                camera.position.set(targetX, targetY, targetZ + maxSpan * 1.6);
                 camera.up.set(0, 1, 0);
-                controls.target.set(centerX, centerY, 0);
+                controls.target.set(targetX, targetY, targetZ);
                 controls.minPolarAngle = 0;
                 controls.maxPolarAngle = 0;
             } else if (mode === 'iso') {
-                camera.position.set(centerX + 60, centerY - 80, 60);
+                camera.position.set(targetX + maxSpan * 0.9, targetY - maxSpan * 1.2, targetZ + maxSpan * 0.8);
                 camera.up.set(0, 0, 1);
-                controls.target.set(centerX, centerY, 0);
+                controls.target.set(targetX, targetY, targetZ);
                 controls.minPolarAngle = 0;
                 controls.maxPolarAngle = Math.PI;
             } else if (mode === 'front') {
-                camera.position.set(centerX, minGridY - 90, 15);
+                camera.position.set(targetX, targetY - maxSpan * 1.5, targetZ);
                 camera.up.set(0, 0, 1);
-                controls.target.set(centerX, centerY, 0);
+                controls.target.set(targetX, targetY, targetZ);
                 controls.minPolarAngle = 0;
                 controls.maxPolarAngle = Math.PI;
             } else if (mode === 'side') {
-                camera.position.set(maxGridX + 70, centerY, 15);
+                camera.position.set(targetX + maxSpan * 1.5, targetY, targetZ);
                 camera.up.set(0, 0, 1);
-                controls.target.set(centerX, centerY, 0);
+                controls.target.set(targetX, targetY, targetZ);
                 controls.minPolarAngle = 0;
                 controls.maxPolarAngle = Math.PI;
             }
             controls.update();
+        };
+
+        // X-Ray and Quick Discipline Filters
+        let isXRay = false;
+        window.toggleXRay = function() {
+            isXRay = !isXRay;
+            const btn = document.getElementById('xray-btn');
+            if (btn) {
+                btn.style.background = isXRay ? '#10b981' : '#0284c7';
+                btn.innerHTML = isXRay ? '👁️ ผนังโปร่งใส (เปิดอยู่)' : '👁️ ผนังโปร่งใส (X-Ray)';
+            }
+            pickableObjects.forEach(obj => {
+                if (obj.userData && (obj.userData.class === "IfcWall" || obj.userData.class === "IfcRoofCovering" || (obj.userData.layer && obj.userData.layer.includes("walls")))) {
+                    if (obj.material) {
+                        if (isXRay) {
+                            obj.material.transparent = true;
+                            obj.material.opacity = 0.20;
+                            obj.material.needsUpdate = true;
+                        } else {
+                            obj.material.transparent = Boolean(obj.userData.transparent);
+                            obj.material.opacity = obj.userData.opacity || 1.0;
+                            obj.material.needsUpdate = true;
+                        }
+                    }
+                }
+            });
+        };
+
+        window.filterDiscipline = function(discipline) {
+            if (!layerTreeRoot || !layerTreeRoot.children) return;
+            if (discipline === 'all') {
+                setAllLayers(true);
+                return;
+            }
+            setAllLayers(false);
+            if (discipline === 'mep') {
+                if (layerTreeRoot.children['mep']) setNodeChecked(layerTreeRoot.children['mep'], true);
+                if (layerTreeRoot.children['architecture'] && layerTreeRoot.children['architecture'].children['walls']) {
+                    layerTreeRoot.children['architecture'].children['walls'].checked = true;
+                }
+                if (!isXRay) toggleXRay();
+            } else if (discipline === 'interior') {
+                if (layerTreeRoot.children['interior']) setNodeChecked(layerTreeRoot.children['interior'], true);
+                if (layerTreeRoot.children['structure'] && layerTreeRoot.children['structure'].children['slabs']) {
+                    layerTreeRoot.children['structure'].children['slabs'].checked = true;
+                }
+                if (!isXRay) toggleXRay();
+            } else if (discipline === 'structure') {
+                if (layerTreeRoot.children['structure']) setNodeChecked(layerTreeRoot.children['structure'], true);
+            }
+            update3DVisibility();
+            renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
         };
 
         // Hierarchical Tree Layer Explorer Engine
@@ -14245,6 +14596,173 @@
             showInspector(sceneData.elements[0]);
         }
 
+        // 3D Measurement Tool Engine
+        let isMeasureActive = false;
+        let measurePointA = null;
+        const measureGroup = new THREE.Group();
+        scene.add(measureGroup);
+        const measureHistory = [];
+
+        const previewSphereGeom = new THREE.SphereGeometry(0.12, 16, 16);
+        const snapMarker = new THREE.Mesh(
+            previewSphereGeom,
+            new THREE.MeshBasicMaterial({ color: 0xf59e0b, depthTest: false, transparent: true, opacity: 0.85 })
+        );
+        snapMarker.visible = false;
+        measureGroup.add(snapMarker);
+
+        let livePreviewLine = null;
+        let startMarkerA = null;
+
+        function getSnappedPoint(hit) {
+            let pt = hit.point.clone();
+            const obj = hit.object;
+            if (obj && obj.geometry && obj.geometry.attributes && obj.geometry.attributes.position) {
+                const posAttr = obj.geometry.attributes.position;
+                const localHit = obj.worldToLocal(pt.clone());
+                let closestDistSq = Infinity;
+                let closestVertex = null;
+                const v = new THREE.Vector3();
+                const count = Math.min(posAttr.count, 200);
+                for (let i = 0; i < count; i++) {
+                    v.fromBufferAttribute(posAttr, i);
+                    const dSq = v.distanceToSquared(localHit);
+                    if (dSq < closestDistSq) {
+                        closestDistSq = dSq;
+                        closestVertex = v.clone();
+                    }
+                }
+                if (closestVertex) {
+                    const worldV = obj.localToWorld(closestVertex);
+                    if (worldV.distanceTo(hit.point) <= 0.40) {
+                        return { point: worldV, snapped: true };
+                    }
+                }
+            }
+            return { point: pt, snapped: false };
+        }
+
+        function makeDimensionSprite(dist, dx, dy, dz) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 380;
+            canvas.height = 140;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+            ctx.strokeStyle = '#2dd4bf';
+            ctx.lineWidth = 4;
+            const r = 16;
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(8, 8, 364, 124, r);
+            } else {
+                ctx.rect(8, 8, 364, 124);
+            }
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = 'bold 44px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(dist.toFixed(2) + ' m', 190, 48);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillText('ΔX: ' + dx.toFixed(2) + '  ΔY: ' + dy.toFixed(2) + '  ΔZ: ' + dz.toFixed(2), 190, 94);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(2.4, 0.88, 1);
+            return sprite;
+        }
+
+        window.toggleMeasureTool = function() {
+            isMeasureActive = !isMeasureActive;
+            const btn = document.getElementById('measure-btn');
+            const clearBtn = document.getElementById('clear-measure-btn');
+            const container = document.getElementById('canvas-container');
+
+            if (isMeasureActive) {
+                btn.style.background = '#0f766e';
+                btn.innerHTML = '📏 โหมดวัดระยะ (เปิดอยู่)';
+                container.style.cursor = 'crosshair';
+                document.getElementById('instructions').textContent = '📏 โหมดวัดระยะ: คลิกชิ้นงานเพื่อกำหนดจุดเริ่มต้น (A) | Esc เพื่อปิด';
+                if (measureHistory.length > 0) clearBtn.style.display = 'inline-block';
+            } else {
+                btn.style.background = '#0d9488';
+                btn.innerHTML = '📏 วัดระยะ (Measure)';
+                container.style.cursor = 'default';
+                document.getElementById('instructions').textContent = 'Rotate: Left Click + Drag | Pan: Right Click + Drag | Zoom: Scroll';
+                resetCurrentMeasure();
+            }
+        };
+
+        function resetCurrentMeasure() {
+            measurePointA = null;
+            snapMarker.visible = false;
+            if (livePreviewLine) {
+                measureGroup.remove(livePreviewLine);
+                livePreviewLine = null;
+            }
+            if (startMarkerA) {
+                measureGroup.remove(startMarkerA);
+                startMarkerA = null;
+            }
+        }
+
+        window.clearMeasurements = function() {
+            measureHistory.forEach(obj => measureGroup.remove(obj));
+            measureHistory.length = 0;
+            resetCurrentMeasure();
+            document.getElementById('clear-measure-btn').style.display = 'none';
+        };
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isMeasureActive) {
+                toggleMeasureTool();
+            }
+        });
+
+        window.addEventListener('mousemove', (event) => {
+            if (!isMeasureActive) return;
+            if (event.target.closest('.ui-panel')) {
+                snapMarker.visible = false;
+                return;
+            }
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            let intersects = raycaster.intersectObjects(pickableObjects);
+            if (isSectionCutEnabled) {
+                intersects = intersects.filter(hit => clipPlane.distanceToPoint(hit.point) >= 0);
+            }
+
+            if (intersects.length > 0) {
+                const snap = getSnappedPoint(intersects[0]);
+                snapMarker.position.copy(snap.point);
+                snapMarker.material.color.setHex(snap.snapped ? 0x22c55e : 0xf59e0b);
+                snapMarker.visible = true;
+
+                if (measurePointA) {
+                    if (livePreviewLine) measureGroup.remove(livePreviewLine);
+                    const pts = [measurePointA, snap.point];
+                    const geom = new THREE.BufferGeometry().setFromPoints(pts);
+                    const mat = new THREE.LineDashedMaterial({ color: 0x2dd4bf, dashSize: 0.3, gapSize: 0.15, linewidth: 2 });
+                    livePreviewLine = new THREE.Line(geom, mat);
+                    livePreviewLine.computeLineDistances();
+                    measureGroup.add(livePreviewLine);
+
+                    const curDist = measurePointA.distanceTo(snap.point);
+                    document.getElementById('instructions').textContent = '📏 ระยะชั่วคราว: ' + curDist.toFixed(2) + ' m | คลิกจุดที่ 2 เพื่อยืนยัน';
+                }
+            } else {
+                snapMarker.visible = false;
+            }
+        });
+
         // Element Selection / Raycasting
         const raycaster = new THREE.Raycaster();
         raycaster.params.Line = { threshold: 0.35 };
@@ -14259,7 +14777,72 @@
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(pickableObjects);
+            let intersects = raycaster.intersectObjects(pickableObjects);
+
+            if (isSectionCutEnabled) {
+                intersects = intersects.filter(hit => clipPlane.distanceToPoint(hit.point) >= 0);
+            }
+
+            // Measurement Mode Click Handler
+            if (isMeasureActive) {
+                if (intersects.length === 0) return;
+                const snap = getSnappedPoint(intersects[0]);
+
+                if (!measurePointA) {
+                    measurePointA = snap.point.clone();
+                    startMarkerA = new THREE.Mesh(
+                        previewSphereGeom,
+                        new THREE.MeshBasicMaterial({ color: 0x38bdf8, depthTest: false })
+                    );
+                    startMarkerA.position.copy(measurePointA);
+                    measureGroup.add(startMarkerA);
+                    document.getElementById('instructions').textContent = '📏 จุดที่ 1 บันทึกแล้ว! คลิกจุดที่ 2 เพื่อวัดระยะ';
+                } else {
+                    const measurePointB = snap.point.clone();
+                    const dist = measurePointA.distanceTo(measurePointB);
+                    const dx = Math.abs(measurePointB.x - measurePointA.x);
+                    const dy = Math.abs(measurePointB.y - measurePointA.y);
+                    const dz = Math.abs(measurePointB.z - measurePointA.z);
+
+                    // Create permanent dimension line
+                    const lineGeom = new THREE.BufferGeometry().setFromPoints([measurePointA, measurePointB]);
+                    const lineMat = new THREE.LineBasicMaterial({ color: 0x2dd4bf, linewidth: 3, depthTest: false });
+                    const dimLine = new THREE.Line(lineGeom, lineMat);
+
+                    // Markers
+                    const endMarker = new THREE.Mesh(
+                        previewSphereGeom,
+                        new THREE.MeshBasicMaterial({ color: 0x2dd4bf, depthTest: false })
+                    );
+                    endMarker.position.copy(measurePointB);
+
+                    const persistentStart = new THREE.Mesh(
+                        previewSphereGeom,
+                        new THREE.MeshBasicMaterial({ color: 0x38bdf8, depthTest: false })
+                    );
+                    persistentStart.position.copy(measurePointA);
+
+                    // Midpoint label
+                    const midPt = new THREE.Vector3().addVectors(measurePointA, measurePointB).multiplyScalar(0.5);
+                    midPt.z += 0.20;
+                    const labelSprite = makeDimensionSprite(dist, dx, dy, dz);
+                    labelSprite.position.copy(midPt);
+
+                    const record = new THREE.Group();
+                    record.add(dimLine);
+                    record.add(persistentStart);
+                    record.add(endMarker);
+                    record.add(labelSprite);
+                    measureGroup.add(record);
+                    measureHistory.push(record);
+
+                    document.getElementById('clear-measure-btn').style.display = 'inline-block';
+                    document.getElementById('instructions').textContent = '✅ วัดระยะเสร็จ: ' + dist.toFixed(2) + ' m (ΔX: ' + dx.toFixed(2) + ', ΔY: ' + dy.toFixed(2) + ', ΔZ: ' + dz.toFixed(2) + ') | คลิกชิ้นงานเพื่อวัดเส้นใหม่';
+
+                    resetCurrentMeasure();
+                }
+                return;
+            }
 
             if (selectedMesh && originalColor) {
                 selectedMesh.material.color.copy(originalColor);

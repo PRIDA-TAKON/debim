@@ -1,0 +1,50 @@
+currency: THB
+items:
+  MAT-STEEL-01:
+    name: White Painted Structural Steel
+    unit: kg
+    material_cost: 45.0
+    labor_cost: 15.0
+    standards:
+      masterformat: 05 12 00
+      uniformat: B10
+  MAT-STONE-01:
+    name: Italian Roman Travertine
+    unit: m3
+    material_cost: 18500.0
+    labor_cost: 3500.0
+    standards:
+      masterformat: 04 42 00
+      uniformat: B10
+  MAT-GLASS-01:
+    name: Clear Architectural Float Glass
+    unit: m3
+    material_cost: 24000.0
+    labor_cost: 6000.0
+    standards:
+      masterformat: 08 81 00
+      uniformat: B2020
+  MAT-TIMBER-01:
+    name: Natural Teak Wood Core Paneling
+    unit: m3
+    material_cost: 48000.0
+    labor_cost: 12000.0
+    standards:
+      masterformat: 06 20 00
+      uniformat: C10
+  MAT-PLASTER-01:
+    name: Smooth White Finish Ceiling
+    unit: m3
+    material_cost: 1200.0
+    labor_cost: 800.0
+    standards:
+      masterformat: 09 20 00
+      uniformat: C30
+  MAT-FORMWORK:
+    name: Timber Formwork
+    unit: m2
+    material_cost: 0.0
+    labor_cost: 0.0
+    standards:
+      masterformat: 03 11 00
+      uniformat: B1010

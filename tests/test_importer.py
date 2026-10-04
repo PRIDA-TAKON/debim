@@ -14,7 +14,7 @@ from debim.qto import calculate_qto
 
 
 def test_import_ifc_roundtrip(tmp_path):
-    manifest_path = Path("examples/townhouse/project.yaml")
+    manifest_path = Path("tests/fixtures/townhouse/project.yaml")
     ifc_path = tmp_path / "test_model.ifc"
 
     # Compile townhouse to IFC first

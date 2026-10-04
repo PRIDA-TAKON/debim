@@ -89,28 +89,28 @@ pip install -e ".[ifc,dev]"
 debim init my-project
 
 # Validate schema syntax & grid references
-debim validate -m examples/townhouse/project.yaml
+debim validate -m examples/farnsworth_house/project.yaml
 
 # Run automated building code compliance checks (pytest)
 debim test
 
-# Calculate Quantitative Take-Off (Concrete vol, formwork, rebar schedule)
-debim qto -m examples/townhouse/project.yaml
+# Calculate Quantitative Take-Off (Steel weight, stone volume, glass area)
+debim qto -m examples/farnsworth_house/project.yaml
 
 # Generate project-scoped price template with international classifications
-debim cost template -m examples/townhouse/project.yaml -o prices.template.yaml
+debim cost template -m examples/farnsworth_house/project.yaml -o prices.template.yaml
 
 # Estimate project budget & export BOQ to CSV
-debim cost -m examples/townhouse/project.yaml -p examples/townhouse/prices.json -o dist/boq.csv
+debim cost -m examples/farnsworth_house/project.yaml -p examples/farnsworth_house/prices.yaml -o dist/boq.csv
 
 # Scaffold a new BIM element class boilerplate
 debim scaffold element IfcRailing
 
 # Preview 3D model in your browser (Three.js with Hierarchical Layer Explorer)
-debim view -m examples/townhouse/project.yaml
+debim view -m examples/farnsworth_house/project.yaml
 
 # Compile declarative YAML to standard IFC4 building model
-debim compile -m examples/townhouse/project.yaml -o dist/model.ifc
+debim compile -m examples/farnsworth_house/project.yaml -o dist/farnsworth_house.ifc
 ```
 
 ---

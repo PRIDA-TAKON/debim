@@ -39,9 +39,10 @@ debim/
 │       ├── viewer.py          # Standalone lightweight 3D viewer generator
 │       └── scaffold.py        # Element code generator & boilerplate scaffolder
 ├── examples/
-│   └── townhouse/
-│       ├── project.yaml       # Sample project manifest
-│       └── prices.json        # Sample price catalog
+│   └── farnsworth_house/
+│       ├── project.yaml       # Sample project manifest (Ludwig Mies van der Rohe, 1951)
+│       ├── prices.yaml        # Sample price catalog
+│       └── viewer.html        # Lightweight 3D HTML viewer
 ├── tests/
 │   ├── conftest.py            # Pytest fixtures loading project.yaml
 │   ├── test_schema.py         # Schema parsing & validation tests

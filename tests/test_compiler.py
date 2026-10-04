@@ -19,7 +19,7 @@ def test_generate_ifc_guid():
 
 
 def test_compile_to_ifc_townhouse_default(tmp_path):
-    manifest_path = Path("examples/townhouse/project.yaml")
+    manifest_path = Path("tests/fixtures/townhouse/project.yaml")
     output_path = tmp_path / "model.ifc"
 
     result_path = compile_to_ifc(manifest_path, output_path)
@@ -37,7 +37,7 @@ def test_compile_to_ifc_townhouse_default(tmp_path):
 
 
 def test_compile_to_ifc_townhouse_fallback(tmp_path):
-    manifest_path = Path("examples/townhouse/project.yaml")
+    manifest_path = Path("tests/fixtures/townhouse/project.yaml")
     output_path = tmp_path / "model_fallback.ifc"
 
     result_path = compile_to_ifc(manifest_path, output_path, force_fallback=True)
@@ -55,7 +55,7 @@ def test_compile_to_ifc_townhouse_fallback(tmp_path):
 
 
 def test_compile_from_manifest_object(tmp_path):
-    manifest = load_manifest("examples/townhouse/project.yaml")
+    manifest = load_manifest("tests/fixtures/townhouse/project.yaml")
     output_path = tmp_path / "from_obj.ifc"
 
     result_path = compile_to_ifc(manifest, output_path)
@@ -64,7 +64,7 @@ def test_compile_from_manifest_object(tmp_path):
 
 
 def test_compile_from_resolved_manifest_object(tmp_path):
-    manifest = load_manifest("examples/townhouse/project.yaml")
+    manifest = load_manifest("tests/fixtures/townhouse/project.yaml")
     resolved = resolve_manifest(manifest)
     output_path = tmp_path / "from_resolved.ifc"
 

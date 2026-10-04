@@ -97,7 +97,7 @@ def test_import_cli_bake_assets_flag(tmp_path):
 
 def test_viewer_html_section_plane_and_gltfloader():
     """Verify generated viewer HTML includes GLTFLoader and section plane controls."""
-    html = generate_viewer_html("examples/townhouse/project.yaml")
+    html = generate_viewer_html("tests/fixtures/townhouse/project.yaml")
 
     assert "GLTFLoader.js" in html
     assert "section-plane-panel" in html
