@@ -11,6 +11,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from debim.version import __version__, check_and_notify_updates
 from debim.compiler import compile_to_ifc
 from debim.scaffold import scaffold_element
 from debim.cost import estimate_cost, generate_cost_template, load_price_catalog
@@ -43,16 +44,23 @@ DEBIM_BANNER = (
 def main(
     ctx: typer.Context,
     version: bool = typer.Option(False, "--version", "-v", help="Show debim version"),
+    quiet: bool = typer.Option(
+        False, "--quiet", "-q", help="Suppress update check and non-essential output"
+    ),
 ):
     """Minimal Declarative BIM (Building-as-Code) engine"""
     if version:
         console.print(DEBIM_BANNER)
-        console.print("[bold cyan]debim[/bold cyan] version [bold green]0.2.0[/bold green]")
+        console.print(f"[bold cyan]debim[/bold cyan] version [bold green]{__version__}[/bold green]")
+        check_and_notify_updates(console=console, quiet=quiet, ctx=ctx)
         raise typer.Exit()
     if ctx.invoked_subcommand is None and not ctx.resilient_parsing:
         console.print(DEBIM_BANNER)
         console.print(ctx.get_help())
+        check_and_notify_updates(console=console, quiet=quiet, ctx=ctx)
         raise typer.Exit()
+
+    check_and_notify_updates(console=console, quiet=quiet, ctx=ctx)
 
 
 

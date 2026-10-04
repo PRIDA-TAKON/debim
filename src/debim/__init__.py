@@ -2,4 +2,6 @@
 debim: Minimal Declarative BIM (Building-as-Code)
 """
 
-__version__ = "0.2.0"
+from debim.version import __version__
+
+__all__ = ["__version__"]
