@@ -1,3 +1,11 @@
+# ==============================================================================
+# Model: Farnsworth House (1951) - Plano, Illinois
+# Original Architect: Ludwig Mies van der Rohe (Public Domain / National Historic Landmark)
+# Authored by: AI Agent (Google Antigravity powered by Gemini 3.8 Flash)
+# Workflow: Autonomous architectural research -> Declarative YAML synthesis -> debim compile
+# Note: Demonstrates that humans do not need to manually code YAML when assisted by AI agents!
+# ==============================================================================
+
 schema: IFC4-Minimal
 project:
   id: PRJ-MIES-FARNSWORTH-1951

@@ -33,6 +33,10 @@
   <sub>🏛️ <i>Showcase: Ludwig Mies van der Rohe's iconic <b>Farnsworth House (1951)</b> — compiled from declarative YAML (<a href="examples/farnsworth_house/project.yaml">examples/farnsworth_house/project.yaml</a>) into standard IFC4 and rendered in real-time in a lightweight 3D web viewer.</i></sub>
 </p>
 
+> [!TIP]
+> **🤖 Authored 100% by AI Agent (Antigravity powered by Gemini 3.8 Flash):**  
+> โมเดลสถาปัตยกรรมระดับโลกชิ้นนี้ **ไม่ได้เขียนด้วยมือมนุษย์ทีละบรรทัด!** แต่เกิดจากการให้ **AI Coding Agent (Antigravity ขับเคลื่อนด้วย Gemini 3.8 Flash)** ทำการสืบค้นข้อมูลแบบแปลน มิติโครงสร้าง และระยะกริดทางประวัติศาสตร์ของ Farnsworth House ด้วยตนเอง แล้วสังเคราะห์โค้ด Declarative YAML (`project.yaml`) ออกมาโดยอัตโนมัติ ก่อนสั่งให้ `debim` ถอดปริมาณงาน (QTO) และคอมไพล์เป็น IFC4 มาตรฐานสากลในเสี้ยววินาที — ยืนยันว่า **คุณไม่จำเป็นต้องพิมพ์โค้ดเองทั้งหมดหากทำงานร่วมกับ AI Agent!**
+
 ---
 
 ## 🎯 Why debim? (จุดกำเนิดและปรัชญาของ debim)
