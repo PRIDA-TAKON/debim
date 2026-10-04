@@ -3,11 +3,12 @@
 </p>
 
 <p align="center">
-  <strong>A minimal, Git-native, declarative BIM engine (Building-as-Code) designed for AI agents and humans.</strong>
+  <strong>A minimal, Git-native, declarative BIM engine & Model Context Protocol (MCP) Server for AI agents and humans.</strong>
 </p>
 
 <p align="center">
   <a href="https://pypi.org/project/debim/"><img src="https://img.shields.io/pypi/v/debim.svg?color=blue" alt="PyPI Version" /></a>
+  <a href="#-model-context-protocol-mcp-server"><img src="https://img.shields.io/badge/MCP-FastMCP%20Server-purple.svg?logo=anthropic" alt="MCP Server" /></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python: 3.11+" /></a>
   <a href="https://technical.buildingsmart.org/"><img src="https://img.shields.io/badge/BIM-IFC4--Minimal-brightgreen.svg" alt="BIM: IFC4" /></a>
@@ -73,6 +74,58 @@ Your agent will inspect the repository, install the dependencies, and verify eve
 
 ---
 
+## 🔌 Model Context Protocol (MCP) Server
+
+`debim` natively implements the official **[Model Context Protocol (MCP)](https://modelcontextprotocol.io/)** via `FastMCP` (Python SDK). It provides LLMs and AI Agents (such as Claude Desktop, Cursor, Cline, Windsurf, Devin, and Antigravity) with deterministic tools to model, inspect, calculate, compile, and visualize buildings directly via function calling.
+
+### Connecting to Claude Desktop / Cursor / Cline
+
+Add `debim` to your MCP configuration (`claude_desktop_config.json` or `.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "debim": {
+      "command": "debim",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+Or run via Docker:
+
+```json
+{
+  "mcpServers": {
+    "debim": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "ghcr.io/prida-takon/debim:latest"]
+    }
+  }
+}
+```
+
+### Exposed MCP Tools
+
+| MCP Tool | Description | Input Parameters |
+|---|---|---|
+| `debim_validate` | Validates YAML manifest syntax, structural grid alignments, storey heights, and material references. | `manifest_yaml: str` |
+| `debim_qto` | Computes deterministic Quantitative Take-Off (concrete vol, formwork area, rebar kg, structural steel, timber, masonry). | `manifest_yaml: str` |
+| `debim_cost_template` | Extracts materials used by the building model and generates a minimal project-scoped price catalog template. | `manifest_yaml: str` |
+| `debim_cost` | Maps QTO quantities against unit prices, calculates total project cost, and optionally exports BOQ to CSV. | `manifest_yaml: str`, `prices_yaml?: str`, `export_csv_path?: str` |
+| `debim_compile_ifc` | Compiles declarative YAML into an open, standardized buildingSMART IFC4 model (`.ifc`). | `manifest_yaml: str`, `output_ifc_path: str` |
+| `debim_generate_viewer` | Generates a standalone, zero-dependency interactive 3D WebGL HTML viewer with section cut and layer tree. | `manifest_yaml: str`, `output_html_path: str` |
+
+### Running the MCP Server Locally
+
+```bash
+# Start MCP server over stdio
+debim mcp
+```
+
+---
+
 ## 🚀 Quickstart
  
 ### 1. Installation
@@ -124,6 +177,9 @@ debim view -m examples/farnsworth_house/project.yaml
 
 # Compile declarative YAML to standard IFC4 building model
 debim compile -m examples/farnsworth_house/project.yaml -o dist/farnsworth_house.ifc
+
+# Launch Model Context Protocol (MCP) server over stdio
+debim mcp
 ```
 
 ---

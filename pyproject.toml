@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "debim"
 version = "0.2.1"
-description = "A minimal, Git-native, declarative BIM engine (Building-as-Code) designed for AI agents and humans."
+description = "A minimal, Git-native, declarative BIM engine & Model Context Protocol (MCP) Server for AI agents and humans."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 authors = [
     { name = "PRIDA-TAKON" }
 ]
-keywords = ["bim", "building-as-code", "openbim", "ifc", "declarative", "cad", "ai-agents"]
+keywords = ["bim", "building-as-code", "openbim", "ifc", "declarative", "cad", "ai-agents", "mcp", "model-context-protocol", "fastmcp"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
