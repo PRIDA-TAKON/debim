@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/debim/"><img src="https://img.shields.io/pypi/v/debim.svg?color=blue" alt="PyPI Version" /></a>
+  <a href="docs/winget.md"><img src="https://img.shields.io/badge/WinGet-debim-0078D4.svg?logo=windows&logoColor=white" alt="WinGet Package" /></a>
   <a href="https://glama.ai/mcp/servers/PRIDA-TAKON/debim"><img src="https://glama.ai/mcp/servers/PRIDA-TAKON/debim/badges/score.svg" alt="Glama MCP Server Score" /></a>
   <a href="#-model-context-protocol-mcp-server"><img src="https://img.shields.io/badge/MCP-FastMCP%20Server-purple.svg?logo=anthropic" alt="MCP Server" /></a>
   <a href="https://github.com/PRIDA-TAKON/debim/pkgs/container/debim"><img src="https://img.shields.io/badge/Docker-GHCR%20Image-2496ED.svg?logo=docker&logoColor=white" alt="Docker GHCR" /></a>
@@ -139,13 +140,16 @@ Choose your operating system and preferred terminal:
 #### 🪟 Windows (PowerShell / Command Prompt)
 
 ```powershell
-# Option A: Standard pip
-python -m pip install --upgrade pip
-pip install "debim[all]"
+# Option A: Windows Package Manager (Zero-Python / One-Click Native Install)
+winget install debim
 
 # Option B: Isolated CLI (Recommended via pipx or uv)
 pipx install "debim[all]"
 # or: uv tool install "debim[all]"
+
+# Option C: Standard pip
+python -m pip install --upgrade pip
+pip install "debim[all]"
 
 # Verify installation
 debim --help
