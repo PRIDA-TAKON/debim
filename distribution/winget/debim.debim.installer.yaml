@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.9.0.schema.json
+PackageIdentifier: debim.debim
+PackageVersion: 0.2.2
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: debim.exe
+    PortableCommandAlias: debim
+Commands:
+  - debim
+  - bim
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/PRIDA-TAKON/debim/releases/download/v0.2.2/debim-windows-x64.zip
+    InstallerSha256: 0000000000000000000000000000000000000000000000000000000000000000 # Automatically calculated and injected on release
+ManifestType: installer
+ManifestVersion: 1.9.0

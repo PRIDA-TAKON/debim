@@ -1,0 +1,77 @@
+name: Build Windows Binary & Publish to WinGet
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-binary:
+    name: Build Standalone Windows Executable
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies & PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[all] pyinstaller
+
+      - name: Build debim.exe binary
+        run: |
+          python -m PyInstaller --name debim --paths src --collect-all debim --exclude-module torch --exclude-module scipy --exclude-module matplotlib --exclude-module pandas --exclude-module IPython --exclude-module tensorboard --exclude-module cv2 --exclude-module PySide6 --onefile --clean src/debim/cli.py
+
+      - name: Verify debim.exe functionality
+        run: |
+          .\dist\debim.exe --help
+          .\dist\debim.exe --version
+
+      - name: Package Windows ZIP archive
+        id: package
+        shell: pwsh
+        run: |
+          $zipName = "debim-windows-x64.zip"
+          if (Test-Path "LICENSE") {
+              Copy-Item -Path "LICENSE" -Destination "dist/LICENSE" -Force
+          }
+          Compress-Archive -Path "dist/debim.exe", "dist/LICENSE" -DestinationPath $zipName -Force
+          $sha = (Get-FileHash -Path $zipName -Algorithm SHA256).Hash
+          Set-Content -Path "$zipName.sha256" -Value "$sha  $zipName"
+          Write-Host "Created $zipName with SHA256: $sha"
+          echo "sha256=$sha" >> $env:GITHUB_OUTPUT
+
+      - name: Upload binary asset to GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            debim-windows-x64.zip
+            debim-windows-x64.zip.sha256
+
+  publish-winget:
+    name: Submit to Windows Package Manager (WinGet)
+    needs: build-windows-binary
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Publish to WinGet Community Repository
+        uses: vedantmgoyal2009/winget-releaser@v2
+        if: env.WINGET_PAT != ''
+        env:
+          WINGET_PAT: ${{ secrets.WINGET_PAT }}
+        with:
+          identifier: debim.debim
+          token: ${{ secrets.WINGET_PAT }}

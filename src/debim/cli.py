@@ -2,6 +2,7 @@
 CLI interface for debim
 """
 
+import sys
 from pathlib import Path
 from typing import Optional
 import typer
@@ -10,6 +11,15 @@ from pydantic import ValidationError
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+
+if sys.platform == "win32":
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8")
+        if hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 from debim.version import __version__, check_and_notify_updates
 from debim.compiler import compile_to_ifc
@@ -25,7 +35,7 @@ app = typer.Typer(
     help="Minimal Declarative BIM (Building-as-Code) engine",
     add_completion=False,
 )
-console = Console()
+console = Console(legacy_windows=False)
 
 DEBIM_BANNER = (
     "\n"
