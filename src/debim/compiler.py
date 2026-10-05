@@ -390,6 +390,18 @@ class StepSerializer:
         # 1. Columns
         for col in resolved.columns:
             st_id = col.element.placement.base_storey
+            st_pl_ref = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+
+            px, py, pz = col.start_point
+            rel_z = float(pz - st_elev)
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            dx, dy, dz = col.direction_vector_3d
+            axis_dir = self.create_entity("IfcDirection", (round(dx, 6), round(dy, 6), round(dz, 6)))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, axis_dir, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
             elem_ref = self.create_entity(
                 "IfcColumn",
                 generate_ifc_guid(),
@@ -397,7 +409,7 @@ class StepSerializer:
                 col.tag,
                 None,
                 None,
-                None,
+                elem_pl,
                 None,
                 None,
             )
@@ -407,6 +419,18 @@ class StepSerializer:
         # 2. Beams
         for beam in resolved.beams:
             st_id = beam.element.placement.storey
+            st_pl_ref = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+
+            px, py, pz = beam.start_point
+            rel_z = float(pz - st_elev)
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            dx, dy, dz = beam.direction_vector_3d
+            ref_dir = self.create_entity("IfcDirection", (round(dx, 6), round(dy, 6), round(dz, 6)))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, ref_dir)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
             elem_ref = self.create_entity(
                 "IfcBeam",
                 generate_ifc_guid(),
@@ -414,7 +438,7 @@ class StepSerializer:
                 beam.tag,
                 None,
                 None,
-                None,
+                elem_pl,
                 None,
                 None,
             )
@@ -1037,6 +1061,41 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id in storey_products:
             storey_products[st_id].append(col_obj)
 
+        px, py, pz = col.start_point
+        dx, dy, dz = col.direction_vector_3d
+        z_axis = np.array([dx, dy, dz], dtype=float)
+        z_norm = np.linalg.norm(z_axis)
+        if z_norm > 1e-6:
+            z_axis /= z_norm
+        else:
+            z_axis = np.array([0, 0, 1], dtype=float)
+
+        if abs(z_axis[2]) < 0.9:
+            x_axis = np.cross(np.array([0, 0, 1]), z_axis)
+        else:
+            x_axis = np.cross(np.array([0, 1, 0]), z_axis)
+        x_norm = np.linalg.norm(x_axis)
+        if x_norm > 1e-6:
+            x_axis /= x_norm
+        else:
+            x_axis = np.array([1, 0, 0], dtype=float)
+        y_axis = np.cross(z_axis, x_axis)
+
+        mat = np.eye(4)
+        mat[:3, 0] = x_axis
+        mat[:3, 1] = y_axis
+        mat[:3, 2] = z_axis
+        mat[0, 3] = px
+        mat[1, 3] = py
+        mat[2, 3] = pz
+
+        ifcopenshell.api.run(
+            "geometry.edit_object_placement",
+            model,
+            product=col_obj,
+            matrix=mat,
+        )
+
     # 2. Beams
     for beam in resolved.beams:
         beam_obj = ifcopenshell.api.run(
@@ -1045,6 +1104,49 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = beam.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(beam_obj)
+
+        px, py, pz = beam.start_point
+        dx, dy, dz = beam.direction_vector_3d
+        x_axis = np.array([dx, dy, dz], dtype=float)
+        x_norm = np.linalg.norm(x_axis)
+        if x_norm > 1e-6:
+            x_axis /= x_norm
+        else:
+            x_axis = np.array([1, 0, 0], dtype=float)
+
+        if abs(x_axis[2]) < 0.9:
+            z_axis = np.array([0, 0, 1], dtype=float)
+            y_axis = np.cross(z_axis, x_axis)
+            y_norm = np.linalg.norm(y_axis)
+            if y_norm > 1e-6:
+                y_axis /= y_norm
+            else:
+                y_axis = np.array([0, 1, 0], dtype=float)
+            z_axis = np.cross(x_axis, y_axis)
+        else:
+            y_axis = np.array([0, 1, 0], dtype=float)
+            z_axis = np.cross(x_axis, y_axis)
+            z_norm = np.linalg.norm(z_axis)
+            if z_norm > 1e-6:
+                z_axis /= z_norm
+            else:
+                z_axis = np.array([0, 0, 1], dtype=float)
+            y_axis = np.cross(z_axis, x_axis)
+
+        mat = np.eye(4)
+        mat[:3, 0] = x_axis
+        mat[:3, 1] = y_axis
+        mat[:3, 2] = z_axis
+        mat[0, 3] = px
+        mat[1, 3] = py
+        mat[2, 3] = pz
+
+        ifcopenshell.api.run(
+            "geometry.edit_object_placement",
+            model,
+            product=beam_obj,
+            matrix=mat,
+        )
 
     # 3. Slabs
     for slab in resolved.slabs:
