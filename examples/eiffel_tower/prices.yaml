@@ -1,0 +1,50 @@
+currency: EUR
+items:
+  MAT-IRON-01:
+    name: Puddle Iron Structural Member (Fer Puddle 1889)
+    unit: kg
+    material_cost: 3.8
+    labor_cost: 1.2
+    standards:
+      masterformat: 05 12 00
+      uniformat: B10
+  MAT-IRON-02:
+    name: Eiffel Tower Coated Structural Iron
+    unit: kg
+    material_cost: 4.5
+    labor_cost: 1.8
+    standards:
+      masterformat: 05 12 00
+      uniformat: B10
+  MAT-CONC-01:
+    name: Heavy Hydraulic Lime Foundation Concrete
+    unit: m3
+    material_cost: 140.0
+    labor_cost: 40.0
+    standards:
+      masterformat: 03 30 00
+      uniformat: A10
+  MAT-FLOOR-01:
+    name: Galvanized Steel Grating Floor Plate
+    unit: m3
+    material_cost: 1200.0
+    labor_cost: 300.0
+    standards:
+      masterformat: 05 51 00
+      uniformat: B10
+  MAT-GLASS-01:
+    name: Laminated Safety Glass Panel Walkway
+    unit: m3
+    material_cost: 3200.0
+    labor_cost: 800.0
+    standards:
+      masterformat: 08 81 00
+      uniformat: B20
+  MAT-TIMBER-01:
+    name: Treated Hardwood Promenade Decking
+    unit: m3
+    material_cost: 1500.0
+    labor_cost: 500.0
+    standards:
+      masterformat: 06 20 00
+      uniformat: C10
