@@ -10,6 +10,7 @@
   <a href="https://pypi.org/project/debim/"><img src="https://img.shields.io/pypi/v/debim.svg?color=blue" alt="PyPI Version" /></a>
   <a href="https://glama.ai/mcp/servers/PRIDA-TAKON/debim"><img src="https://glama.ai/mcp/servers/PRIDA-TAKON/debim/badges/score.svg" alt="Glama MCP Server Score" /></a>
   <a href="#-model-context-protocol-mcp-server"><img src="https://img.shields.io/badge/MCP-FastMCP%20Server-purple.svg?logo=anthropic" alt="MCP Server" /></a>
+  <a href="https://github.com/PRIDA-TAKON/debim/pkgs/container/debim"><img src="https://img.shields.io/badge/Docker-GHCR%20Image-2496ED.svg?logo=docker&logoColor=white" alt="Docker GHCR" /></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python: 3.11+" /></a>
   <a href="https://technical.buildingsmart.org/"><img src="https://img.shields.io/badge/BIM-IFC4--Minimal-brightgreen.svg" alt="BIM: IFC4" /></a>
@@ -131,22 +132,98 @@ debim mcp
  
 ### 1. Installation
 
-Install directly from **[PyPI](https://pypi.org/project/debim/)**:
+`debim` is officially available on **[PyPI](https://pypi.org/project/debim/)** and requires **Python 3.11+**.
 
-```bash
-# Standard installation
-pip install debim
+Choose your operating system and preferred terminal:
 
-# Or with full IFC compiler support
-pip install "debim[ifc]"
+#### 🪟 Windows (PowerShell / Command Prompt)
+
+```powershell
+# Option A: Standard pip
+python -m pip install --upgrade pip
+pip install "debim[all]"
+
+# Option B: Isolated CLI (Recommended via pipx or uv)
+pipx install "debim[all]"
+# or: uv tool install "debim[all]"
+
+# Verify installation
+debim --help
 ```
 
-Or install in editable mode from source:
+#### 🍎 macOS (Terminal / zsh)
+
+```bash
+# Option A: Isolated CLI (Recommended on macOS to prevent Homebrew/PEP 668 conflicts)
+brew install pipx
+pipx ensurepath
+pipx install "debim[all]"
+
+# Option B: Virtual Environment
+python3 -m venv .venv
+source .venv/bin/activate
+pip install "debim[all]"
+
+# Option C: uv tool
+uv tool install "debim[all]"
+
+# Verify installation
+debim --help
+```
+
+#### 🐧 Linux (Ubuntu / Debian / Fedora / Arch)
+
+```bash
+# Option A: Isolated CLI (Recommended on Ubuntu 23.04+ / Debian 12+)
+sudo apt update && sudo apt install -y python3-pip python3-venv pipx
+pipx ensurepath
+pipx install "debim[all]"
+
+# Option B: Virtual Environment
+python3 -m venv .venv
+source .venv/bin/activate
+pip install "debim[all]"
+
+# Option C: uv tool
+uv tool install "debim[all]"
+
+# Verify installation
+debim --help
+```
+
+#### 📦 Package Extras Summary
+
+| Package Target | Command | Included Capabilities |
+|---|---|---|
+| **Core** | `pip install debim` | Fast CLI, Declarative YAML engine, 3D WebGL viewer generator, QTO & Costing |
+| **All (Recommended)** | `pip install "debim[all]"` | Full suite: Core + IFC4 Compiler (`ifcopenshell`) + FastMCP Server |
+| **IFC only** | `pip install "debim[ifc]"` | Core + buildingSMART IFC4 compiler |
+| **MCP only** | `pip install "debim[mcp]"` | Core + Model Context Protocol server for Claude / Cursor |
+
+#### 🐳 Docker Container (Zero-Install & Sandbox)
+
+If you prefer not to install Python locally or want to run `debim` in an isolated sandbox for AI agents:
+
+```bash
+# Pull official pre-built image from GitHub Container Registry (GHCR)
+docker pull ghcr.io/prida-takon/debim:latest
+
+# Run debim MCP Server over stdio for AI Agents / Claude Desktop
+docker run -i --rm ghcr.io/prida-takon/debim:latest
+
+# Or execute CLI commands in your current directory
+docker run --rm -v "${PWD}:/workspace" -w /workspace ghcr.io/prida-takon/debim:latest debim --help
+
+# Alternatively, build the container image locally from source
+docker build -t debim .
+```
+
+#### 🛠️ Install from Source (Development)
 
 ```bash
 git clone https://github.com/PRIDA-TAKON/debim.git
 cd debim
-pip install -e ".[ifc,dev]"
+pip install -e ".[all,dev]"
 ```
 
 ### 2. Basic Commands
