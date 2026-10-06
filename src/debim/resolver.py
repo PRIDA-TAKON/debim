@@ -34,8 +34,11 @@ from debim.schema import (
     IfcUnitaryEquipment,
     IfcWall,
     IfcWindow,
+    Profile,
     ProjectManifest,
+    RevolvedAreaSolid,
     Storey,
+    SweptDiskSolid,
     derive_default_layer,
 )
 
@@ -256,6 +259,33 @@ class ResolvedWall(BaseModel):
     layer: str = "architecture/walls"
 
 
+class ResolvedSweptDisk(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    directrix: List[Tuple[float, float, float]]
+    radius: float
+    inner_radius: Optional[float] = None
+    length: float
+    centroid: Tuple[float, float, float]
+    bounding_box: Dict[str, float]
+
+
+class ResolvedRevolvedArea(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    profile: Profile
+    axis_point: Tuple[float, float, float]
+    axis_direction: Tuple[float, float, float]
+    revolution_angle: float
+    centroid: Tuple[float, float, float]
+    bounding_box: Dict[str, float]
+    distance_to_axis: float
+    profile_area: float
+    profile_perimeter: float
+
+
 class ResolvedCustomElement(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -264,6 +294,7 @@ class ResolvedCustomElement(BaseModel):
     position: Tuple[float, float, float]
     rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     dimensions: Optional[Dimensions] = None
+    resolved_solid: Optional[Union[ResolvedSweptDisk, ResolvedRevolvedArea]] = None
     layer: str = "general/custom"
 
 
@@ -1127,12 +1158,118 @@ class SpatialResolver:
         world_pos = (pos_x, pos_y, storey.elevation + pos_z)
         rot = custom.placement.rotation if custom.placement.rotation is not None else (0.0, 0.0, 0.0)
 
+        resolved_solid = None
+        if custom.solid:
+            if isinstance(custom.solid, SweptDiskSolid):
+                world_pts: List[Tuple[float, float, float]] = []
+                for pt in custom.solid.directrix:
+                    world_pts.append((
+                        world_pos[0] + pt[0],
+                        world_pos[1] + pt[1],
+                        world_pos[2] + pt[2],
+                    ))
+                tot_length = sum(
+                    math.dist(world_pts[i], world_pts[i + 1])
+                    for i in range(len(world_pts) - 1)
+                )
+                xs = [p[0] for p in world_pts]
+                ys = [p[1] for p in world_pts]
+                zs = [p[2] for p in world_pts]
+                r = custom.solid.radius
+                min_x, max_x = min(xs) - r, max(xs) + r
+                min_y, max_y = min(ys) - r, max(ys) + r
+                min_z, max_z = min(zs) - r, max(zs) + r
+
+                c_x = sum(p[0] for p in world_pts) / len(world_pts)
+                c_y = sum(p[1] for p in world_pts) / len(world_pts)
+                c_z = sum(p[2] for p in world_pts) / len(world_pts)
+
+                bbox = {
+                    "min_x": min_x, "max_x": max_x,
+                    "min_y": min_y, "max_y": max_y,
+                    "min_z": min_z, "max_z": max_z,
+                    "width": max_x - min_x,
+                    "depth": max_y - min_y,
+                    "height": max_z - min_z,
+                }
+
+                resolved_solid = ResolvedSweptDisk(
+                    tag=custom.tag,
+                    directrix=world_pts,
+                    radius=custom.solid.radius,
+                    inner_radius=custom.solid.inner_radius,
+                    length=tot_length,
+                    centroid=(c_x, c_y, c_z),
+                    bounding_box=bbox,
+                )
+
+            elif isinstance(custom.solid, RevolvedAreaSolid):
+                ax_pt = (
+                    world_pos[0] + custom.solid.axis_point[0],
+                    world_pos[1] + custom.solid.axis_point[1],
+                    world_pos[2] + custom.solid.axis_point[2],
+                )
+                axis_dir = custom.solid.axis_direction
+                dir_len = math.sqrt(sum(x * x for x in axis_dir))
+                u_dir = (axis_dir[0] / dir_len, axis_dir[1] / dir_len, axis_dir[2] / dir_len)
+
+                from debim.qto import compute_profile_geometry
+                prof_area, prof_perim, p_width, p_depth = compute_profile_geometry(custom.solid.profile)
+
+                v = (world_pos[0] - ax_pt[0], world_pos[1] - ax_pt[1], world_pos[2] - ax_pt[2])
+                cross_x = v[1] * u_dir[2] - v[2] * u_dir[1]
+                cross_y = v[2] * u_dir[0] - v[0] * u_dir[2]
+                cross_z = v[0] * u_dir[1] - v[1] * u_dir[0]
+                dist_to_axis = math.sqrt(cross_x**2 + cross_y**2 + cross_z**2)
+
+                if dist_to_axis < 1e-9 and custom.solid.axis_point != (0.0, 0.0, 0.0):
+                    v_ax = (-custom.solid.axis_point[0], -custom.solid.axis_point[1], -custom.solid.axis_point[2])
+                    cx = v_ax[1] * u_dir[2] - v_ax[2] * u_dir[1]
+                    cy = v_ax[2] * u_dir[0] - v_ax[0] * u_dir[2]
+                    cz = v_ax[0] * u_dir[1] - v_ax[1] * u_dir[0]
+                    dist_to_axis = math.sqrt(cx**2 + cy**2 + cz**2)
+
+                sweep_r = dist_to_axis + max(p_width, p_depth) / 2.0
+                bbox = {
+                    "min_x": world_pos[0] - sweep_r,
+                    "max_x": world_pos[0] + sweep_r,
+                    "min_y": world_pos[1] - sweep_r,
+                    "max_y": world_pos[1] + sweep_r,
+                    "min_z": world_pos[2] - p_depth / 2.0,
+                    "max_z": world_pos[2] + p_depth / 2.0,
+                    "width": 2.0 * sweep_r,
+                    "depth": 2.0 * sweep_r,
+                    "height": max(p_width, p_depth),
+                }
+
+                resolved_solid = ResolvedRevolvedArea(
+                    tag=custom.tag,
+                    profile=custom.solid.profile,
+                    axis_point=ax_pt,
+                    axis_direction=u_dir,
+                    revolution_angle=custom.solid.revolution_angle,
+                    centroid=world_pos,
+                    bounding_box=bbox,
+                    distance_to_axis=dist_to_axis,
+                    profile_area=prof_area,
+                    profile_perimeter=prof_perim,
+                )
+
+        dims = custom.dimensions
+        if dims is None and resolved_solid is not None:
+            dims = Dimensions(
+                width=resolved_solid.bounding_box["width"],
+                depth=resolved_solid.bounding_box["depth"],
+                height=resolved_solid.bounding_box["height"],
+            )
+
         return ResolvedCustomElement(
             tag=custom.tag,
             element=custom,
             position=world_pos,
             rotation=rot,
-            dimensions=custom.dimensions,
+            dimensions=dims,
+            resolved_solid=resolved_solid,
             layer=derive_default_layer(custom),
         )
 

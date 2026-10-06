@@ -27,14 +27,16 @@ from debim.resolver import (
     ResolvedPipeSegment,
     ResolvedRailing,
     ResolvedRamp,
+    ResolvedRevolvedArea,
     ResolvedRoof,
     ResolvedSanitaryTerminal,
     ResolvedSlab,
     ResolvedStair,
     ResolvedStairFlight,
+    ResolvedSweptDisk,
     ResolvedSwitchingDevice,
-    ResolvedUnitaryEquipment,
     ResolvedTerminal,
+    ResolvedUnitaryEquipment,
     ResolvedWall,
     ResolvedWindow,
     resolve_manifest,
@@ -699,7 +701,7 @@ def calculate_element_qto(
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
-            material=elem.material,
+            material=getattr(elem, "material", None),
             concrete_volume=vol,
             formwork_area=formwork,
             rebar_weights=rebar_dict,
@@ -1019,7 +1021,7 @@ def calculate_element_qto(
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
-            material=elem.material,
+            material=getattr(elem, "material", None),
             concrete_volume=vol,
             formwork_area=formwork,
             rebar_weights=rebar_dict,
@@ -1091,7 +1093,7 @@ def calculate_element_qto(
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
-            material=elem.material,
+            material=getattr(elem, "material", None),
             concrete_volume=vol,
             formwork_area=formwork,
             rebar_weights=rebar_dict,
@@ -1184,43 +1186,55 @@ def calculate_element_qto(
         total_rebar = 0.0
         substructure = None
 
-        tag_upper = tag.upper()
-        if "F2" in tag_upper or "FOOTING" in tag_upper:
-            # Footing dimensions (LOD 350 standard: 0.8m width x 1.5m length x 0.8m thickness)
-            w, l, d = 0.8, 1.5, 0.8
-            vol = w * l * d
-            formwork = 2.0 * (w + l) * d
-            # Reinforcement mesh: 8-DB16 in Y (1.4m active length), 5-DB16 in X (0.7m active length)
-            unit_db16 = get_bar_unit_weight("DB16")
-            rebar_wt = (8 * 1.4 + 5 * 0.7) * unit_db16
-            rebar_dict["DB16"] = rebar_wt
-            total_rebar = rebar_wt
-            # Substructure items: Lean concrete (10cm), Sand bedding (5cm), Piles (2 x I-180 @ 12m)
-            substructure = SubstructureQTO(
-                lean_concrete_volume=w * l * 0.10,
-                sand_bedding_volume=w * l * 0.05,
-                pile_count=2,
-                pile_total_length=2 * 12.0,
-                pile_chipping_count=2,
-                pile_type="I-180",
-            )
+        if resolved.resolved_solid:
+            s = resolved.resolved_solid
+            if isinstance(s, ResolvedSweptDisk):
+                r = s.radius
+                r_in = s.inner_radius or 0.0
+                vol = math.pi * (r**2 - r_in**2) * s.length
+                formwork = 2.0 * math.pi * (r + r_in) * s.length
+            elif isinstance(s, ResolvedRevolvedArea):
+                angle_ratio = s.revolution_angle / 360.0
+                vol = s.profile_area * (2.0 * math.pi * s.distance_to_axis) * angle_ratio
+                formwork = s.profile_perimeter * (2.0 * math.pi * s.distance_to_axis) * angle_ratio
         else:
-            # Try loading trimesh volume if source exists
-            source_path = Path(elem.source)
-            if source_path.exists():
-                try:
-                    import trimesh
+            tag_upper = tag.upper()
+            if "F2" in tag_upper or "FOOTING" in tag_upper:
+                # Footing dimensions (LOD 350 standard: 0.8m width x 1.5m length x 0.8m thickness)
+                w, l, d = 0.8, 1.5, 0.8
+                vol = w * l * d
+                formwork = 2.0 * (w + l) * d
+                # Reinforcement mesh: 8-DB16 in Y (1.4m active length), 5-DB16 in X (0.7m active length)
+                unit_db16 = get_bar_unit_weight("DB16")
+                rebar_wt = (8 * 1.4 + 5 * 0.7) * unit_db16
+                rebar_dict["DB16"] = rebar_wt
+                total_rebar = rebar_wt
+                # Substructure items: Lean concrete (10cm), Sand bedding (5cm), Piles (2 x I-180 @ 12m)
+                substructure = SubstructureQTO(
+                    lean_concrete_volume=w * l * 0.10,
+                    sand_bedding_volume=w * l * 0.05,
+                    pile_count=2,
+                    pile_total_length=2 * 12.0,
+                    pile_chipping_count=2,
+                    pile_type="I-180",
+                )
+            else:
+                # Try loading trimesh volume if source exists
+                source_path = Path(elem.source) if elem.source else None
+                if source_path and source_path.exists():
+                    try:
+                        import trimesh
 
-                    mesh = trimesh.load(str(source_path))
-                    if hasattr(mesh, "volume") and mesh.is_watertight:
-                        vol = float(mesh.volume)
-                except Exception:
-                    vol = 0.0
+                        mesh = trimesh.load(str(source_path))
+                        if hasattr(mesh, "volume") and mesh.is_watertight:
+                            vol = float(mesh.volume)
+                    except Exception:
+                        vol = 0.0
 
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
-            material=None,
+            material=getattr(elem, "material", None),
             concrete_volume=vol,
             formwork_area=formwork,
             rebar_weights=rebar_dict,

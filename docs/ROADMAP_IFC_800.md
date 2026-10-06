@@ -122,7 +122,7 @@ my_project/
 - [x] **Task 1.3:** `feat: Support Arbitrary Closed Profile with Voids` *(เสร็จสิ้น)*
   - **Scope:** `IfcArbitraryClosedProfileDefWithVoids`
   - **DoD:** เจาะรูหน้าตัดเสา/คาน/พื้นหลายเหลี่ยม, คำนวณพื้นที่สุทธิหักรูกลวง
-- [ ] **Task 1.4:** `feat: Support Swept Disk & Revolved Area Solids`
+- [x] **Task 1.4:** `feat: Support Swept Disk & Revolved Area Solids` *(เสร็จสิ้น: Issue #72, PR #77)*
   - **Scope:** `IfcSweptDiskSolid`, `IfcRevolvedAreaSolid`
   - **DoD:** รองรับท่อโค้งอิสระตาม 3D Spline, โครงสร้างโดม และหลังคาโค้งหมุนวน
 
