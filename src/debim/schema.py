@@ -1178,8 +1178,16 @@ HvacEquipmentType = Literal[
     "AC_INDOOR_WALL", "AC_INDOOR_CASSETTE", "AC_INDOOR_CONCEALED", "AC_OUTDOOR_CONDENSER"
 ]
 SanitaryTerminalType = Literal[
-    "WATER_CLOSET", "LAVATORY", "SHOWER", "KITCHEN_SINK",
-    "FLOOR_DRAIN", "GREASE_TRAP", "SEPTIC_TANK", "WATER_TANK", "WATER_PUMP"
+    "WATERCLOSET", "WASHHANDBASIN", "URINAL", "SHOWER", "BATH", "BIDET", "SINK",
+    "WATER_CLOSET", "LAVATORY", "KITCHEN_SINK",
+    "FLOOR_DRAIN", "GREASE_TRAP", "SEPTIC_TANK", "WATER_TANK", "WATER_PUMP",
+    "USERDEFINED", "NOTDEFINED"
+]
+
+WasteTerminalType = Literal[
+    "FLOORDRAIN", "FLOORTRAP", "GULLYSUMP", "GREASEINTERCEPTOR", "ROOFDRAIN",
+    "FLOOR_DRAIN", "GREASE_TRAP",
+    "USERDEFINED", "NOTDEFINED"
 ]
 BoardType = Literal["CONSUMER_UNIT", "MDB", "PANELBOARD"]
 LightFixtureType = Literal["DOWNLIGHT", "LED_TUBE", "PENDANT", "WALL_LAMP", "FLOODLIGHT"]
@@ -1292,13 +1300,71 @@ class IfcSanitaryTerminal(BaseModel):
     class_: Literal["IfcSanitaryTerminal"] = Field(alias="class", default="IfcSanitaryTerminal")
     tag: str
     terminal_type: SanitaryTerminalType = "WATER_CLOSET"
+    predefined_type: Optional[str] = None
     material: Optional[str] = None
     width: float = 0.0
     depth: float = 0.0
     height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
+    cold_water_inlet_diameter: Optional[float] = None
+    hot_water_inlet_diameter: Optional[float] = None
+    waste_outlet_diameter: Optional[float] = None
+    catalog_reference: Optional[str] = None
+    catalog_code: Optional[str] = None
     layer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def resolve_predefined_type(self) -> "IfcSanitaryTerminal":
+        if not self.predefined_type:
+            tt = self.terminal_type.upper()
+            mapping = {
+                "WATER_CLOSET": "WATERCLOSET",
+                "WATERCLOSET": "WATERCLOSET",
+                "LAVATORY": "WASHHANDBASIN",
+                "WASHHANDBASIN": "WASHHANDBASIN",
+                "URINAL": "URINAL",
+                "SHOWER": "SHOWER",
+                "BATH": "BATH",
+                "BIDET": "BIDET",
+                "KITCHEN_SINK": "SINK",
+                "SINK": "SINK",
+            }
+            self.predefined_type = mapping.get(tt, "USERDEFINED")
+        return self
+
+
+class IfcWasteTerminal(BaseModel):
+    class_: Literal["IfcWasteTerminal"] = Field(alias="class", default="IfcWasteTerminal")
+    tag: str
+    terminal_type: WasteTerminalType = "FLOORDRAIN"
+    predefined_type: Optional[str] = None
+    material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
+    placement: TerminalPlacement
+    dimensions: Optional[TerminalDimensions] = None
+    waste_outlet_diameter: Optional[float] = None
+    catalog_reference: Optional[str] = None
+    catalog_code: Optional[str] = None
+    layer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def resolve_predefined_type(self) -> "IfcWasteTerminal":
+        if not self.predefined_type:
+            tt = self.terminal_type.upper()
+            mapping = {
+                "FLOOR_DRAIN": "FLOORDRAIN",
+                "FLOORDRAIN": "FLOORDRAIN",
+                "FLOORTRAP": "FLOORTRAP",
+                "GULLYSUMP": "GULLYSUMP",
+                "GREASE_TRAP": "GREASEINTERCEPTOR",
+                "GREASEINTERCEPTOR": "GREASEINTERCEPTOR",
+                "ROOFDRAIN": "ROOFDRAIN",
+            }
+            self.predefined_type = mapping.get(tt, "USERDEFINED")
+        return self
 
 
 class IfcDistributionBoard(BaseModel):
@@ -1440,6 +1506,7 @@ Element = Annotated[
         IfcCableCarrierSegment,
         IfcDuctSegment,
         IfcSanitaryTerminal,
+        IfcWasteTerminal,
         IfcDistributionBoard,
         IfcLightFixture,
         IfcSwitchingDevice,
@@ -1728,7 +1795,7 @@ class ProjectManifest(BaseModel):
                             if gy not in grid_y_ids:
                                 raise ValueError(f"Element '{elem.tag}' path references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, (IfcSanitaryTerminal, IfcDistributionBoard, IfcLightFixture, IfcSwitchingDevice, IfcOutlet, IfcAirTerminal, IfcUnitaryEquipment)):
+            elif isinstance(elem, (IfcSanitaryTerminal, IfcWasteTerminal, IfcDistributionBoard, IfcLightFixture, IfcSwitchingDevice, IfcOutlet, IfcAirTerminal, IfcUnitaryEquipment)):
                 if elem.placement.storey and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -1902,6 +1969,8 @@ def derive_default_layer(elem) -> str:
         return f"mep/hvac/{sys_type}"
     elif cls == "IfcSanitaryTerminal":
         return "mep/plumbing/fixtures"
+    elif cls == "IfcWasteTerminal":
+        return "mep/plumbing/drainage"
     elif cls == "IfcDistributionBoard":
         return "mep/electrical/distribution"
     elif cls == "IfcLightFixture":

@@ -30,6 +30,7 @@ from debim.resolver import (
     ResolvedRevolvedArea,
     ResolvedRoof,
     ResolvedSanitaryTerminal,
+    ResolvedWasteTerminal,
     ResolvedSlab,
     ResolvedStair,
     ResolvedStairFlight,
@@ -475,6 +476,7 @@ class ProjectQTO(BaseModel):
     total_duct_length: float = 0.0
     total_duct_fittings_count: int = 0
     total_sanitary_terminals_count: int = 0
+    total_waste_terminals_count: int = 0
     total_distribution_boards_count: int = 0
     total_lighting_fixtures_count: int = 0
     total_switches_count: int = 0
@@ -1385,6 +1387,24 @@ def calculate_element_qto(
             ),
         )
 
+    elif isinstance(resolved, ResolvedWasteTerminal):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="DRAINAGE",
+                fixture_type=resolved.terminal_type,
+                count=1,
+                dimensions=resolved.dimensions,
+            ),
+        )
+
     elif isinstance(resolved, ResolvedDistributionBoard):
         elem = resolved.element
         return ElementQTO(
@@ -1628,6 +1648,7 @@ def calculate_qto(
     total_duct_len = 0.0
     total_duct_fittings = 0
     total_sanitary_terms = 0
+    total_waste_terms = 0
     total_dist_boards = 0
     total_lights = 0
     total_switches = 0
@@ -1768,6 +1789,8 @@ def calculate_qto(
                 total_duct_fittings += eqto.mep.fittings_count
             elif eqto.element_class == "IfcSanitaryTerminal":
                 total_sanitary_terms += eqto.mep.count
+            elif eqto.element_class == "IfcWasteTerminal":
+                total_waste_terms += eqto.mep.count
             elif eqto.element_class == "IfcDistributionBoard":
                 total_dist_boards += eqto.mep.count
             elif eqto.element_class == "IfcLightFixture":
@@ -1834,6 +1857,7 @@ def calculate_qto(
         total_duct_length=total_duct_len,
         total_duct_fittings_count=total_duct_fittings,
         total_sanitary_terminals_count=total_sanitary_terms,
+        total_waste_terminals_count=total_waste_terms,
         total_distribution_boards_count=total_dist_boards,
         total_lighting_fixtures_count=total_lights,
         total_switches_count=total_switches,
