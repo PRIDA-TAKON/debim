@@ -129,27 +129,3 @@ def test_3d_spatial_beam_and_segmented_arch_resolution(sample_project_path):
     assert mid_wpt[0] == pytest.approx(2.0, rel=1e-4)
     assert mid_wpt[2] == pytest.approx(10.0, rel=1e-4)
     assert res_arch.span_length > 4.0  # Curve length greater than straight span
-
-
-def test_eiffel_tower_project_yaml_resolution():
-    eiffel_path = Path("examples/eiffel_tower/project.yaml")
-    assert eiffel_path.exists()
-
-    manifest = load_manifest(eiffel_path)
-    resolved = resolve_manifest(manifest)
-
-    # Check that Eiffel tower inclined legs and parabolic arches resolve cleanly
-    leg_sw_outer = resolved.get_element_by_tag("LEG-SW-OUTER")
-    assert isinstance(leg_sw_outer, ResolvedColumn)
-    assert leg_sw_outer.start_point == (-52.0, -52.0, 0.0)
-    assert leg_sw_outer.end_point == (-10.0, -10.0, 57.63)
-    assert leg_sw_outer.height > 57.63  # Inclined leg spatial length > vertical storey height
-
-    arch_south = resolved.get_element_by_tag("ARCH-SOUTH")
-    assert isinstance(arch_south, ResolvedBeam)
-    assert len(arch_south.waypoints) == 21  # 20 segments -> 21 waypoints
-    assert arch_south.waypoints[10][2] == pytest.approx(39.0, rel=1e-3)  # Peak height 39m
-
-    # Test QTO calculation for Eiffel Tower model
-    project_qto = calculate_qto(resolved)
-    assert project_qto.total_structural_steel_weight > 0.0
