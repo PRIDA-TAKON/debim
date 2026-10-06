@@ -12,6 +12,8 @@ import webbrowser
 from debim.resolver import (
     ResolvedDoor,
     ResolvedManifest,
+    ResolvedRevolvedArea,
+    ResolvedSweptDisk,
     ResolvedWindow,
     resolve_manifest,
 )
@@ -371,6 +373,68 @@ def generate_viewer_html(
                     "layer": f"{stair.layer}/railing",
                 })
 
+    # Standalone Stair Flights
+    for flight in resolved.stair_flights:
+        for step in flight.steps:
+            elements_data.append({
+                "tag": f"{flight.tag}-Step-{step.step_index}",
+                "class": "IfcStairStep",
+                "material": flight.element.material if flight.element else "MAT_CONC",
+                "position": [step.position[0], step.position[1], step.position[2]],
+                "rotation": [0, 0, getattr(step, "rotation", 0.0)],
+                "dimensions": {
+                    "width": step.width,
+                    "depth": step.tread,
+                    "height": step.riser,
+                },
+                "color": "#D4A373",
+                "layer": f"{flight.layer}/steps",
+            })
+
+    # Ramps
+    for ramp in resolved.ramps:
+        cx = (ramp.start_point[0] + ramp.end_point[0]) / 2.0
+        cy = (ramp.start_point[1] + ramp.end_point[1]) / 2.0
+        cz = (ramp.start_point[2] + ramp.end_point[2]) / 2.0
+        elements_data.append({
+            "tag": ramp.tag,
+            "class": "IfcRamp",
+            "material": ramp.element.material,
+            "position": [cx, cy, cz],
+            "direction_vector_3d": ramp.direction_vector_3d,
+            "dimensions": {
+                "length": ramp.slope_length,
+                "width": ramp.width,
+                "height": ramp.slab_thickness,
+                "slope_percentage": ramp.slope_percentage,
+            },
+            "color": "#78716C",
+            "layer": ramp.layer,
+        })
+
+    # Railings
+    for railing in resolved.railings:
+        for p_idx, (p_base, p_top) in enumerate(railing.posts):
+            elements_data.append({
+                "tag": f"{railing.tag}-Post-{p_idx+1}",
+                "class": "IfcRailing",
+                "geometry_type": "line",
+                "points": [p_base, p_top],
+                "color": "#0F172A",
+                "linewidth": 3,
+                "layer": f"{railing.layer}/posts",
+            })
+        for r_idx, (r_start, r_end) in enumerate(railing.rails):
+            elements_data.append({
+                "tag": f"{railing.tag}-Rail-{r_idx+1}",
+                "class": "IfcRailing",
+                "geometry_type": "line",
+                "points": [r_start, r_end],
+                "color": "#E11D48",
+                "linewidth": 4,
+                "layer": f"{railing.layer}/rails",
+            })
+
     # Walls & Children
     for wall in resolved.walls:
         dx = wall.end_point[0] - wall.start_point[0]
@@ -495,6 +559,43 @@ def generate_viewer_html(
         tag_lower = custom.tag.lower()
         layer_lower = (custom.layer or "").lower()
         rot = list(custom.rotation) if custom.rotation else [0.0, 0.0, 0.0]
+
+        if custom.resolved_solid:
+            s = custom.resolved_solid
+            if isinstance(s, ResolvedSweptDisk):
+                elem_dict = {
+                    "tag": custom.tag,
+                    "class": "IfcCustomElement",
+                    "geometry_type": "swept_disk",
+                    "material": "Swept Disk Asset",
+                    "position": list(s.centroid),
+                    "points": list(s.directrix),
+                    "radius": s.radius,
+                    "inner_radius": s.inner_radius,
+                    "color": "#38BDF8",
+                    "layer": custom.layer,
+                    "dimensions": s.bounding_box,
+                }
+                elements_data.append(elem_dict)
+                continue
+            elif isinstance(s, ResolvedRevolvedArea):
+                prof_dim = extract_profile_viewer_dim(s.profile, 1.0, is_column=True)
+                elem_dict = {
+                    "tag": custom.tag,
+                    "class": "IfcCustomElement",
+                    "geometry_type": "revolved_area",
+                    "material": "Revolved Asset",
+                    "position": list(custom.position),
+                    "profile": prof_dim,
+                    "axis_point": list(s.axis_point),
+                    "axis_direction": list(s.axis_direction),
+                    "revolution_angle": s.revolution_angle,
+                    "color": "#A855F7",
+                    "layer": custom.layer,
+                    "dimensions": s.bounding_box,
+                }
+                elements_data.append(elem_dict)
+                continue
 
         if custom.dimensions:
             w = custom.dimensions.width
@@ -931,9 +1032,15 @@ def generate_viewer_html(
     for term in resolved.sanitary_terminals:
         type_th = {
             "WATER_CLOSET": "Water Closet (WC)",
-            "LAVATORY": "Lavatory",
+            "WATERCLOSET": "Water Closet (WC)",
+            "LAVATORY": "Lavatory / Basin",
+            "WASHHANDBASIN": "Wash Hand Basin",
+            "URINAL": "Urinal",
             "SHOWER": "Shower",
+            "BATH": "Bathtub",
+            "BIDET": "Bidet",
             "KITCHEN_SINK": "Kitchen Sink",
+            "SINK": "Sink",
             "FLOOR_DRAIN": "Floor Drain",
             "GREASE_TRAP": "Grease Trap",
             "SEPTIC_TANK": "Septic Tank",
@@ -941,7 +1048,7 @@ def generate_viewer_html(
             "WATER_PUMP": "Water Booster Pump",
         }.get(term.terminal_type, term.terminal_type)
 
-        elements_data.append({
+        elem_dict = {
             "tag": term.tag,
             "class": "IfcSanitaryTerminal",
             "material": term.element.material or "Sanitary Ware",
@@ -959,8 +1066,55 @@ def generate_viewer_html(
             "color": term.color,
             "layer": term.layer,
             "fixture_type": term.terminal_type,
+            "predefined_type": term.predefined_type,
             "fixture_name_th": type_th,
-        })
+        }
+        if term.element.cold_water_inlet_diameter or term.element.hot_water_inlet_diameter or term.element.waste_outlet_diameter:
+            elem_dict["ports"] = {
+                "cold_water_in": term.element.cold_water_inlet_diameter,
+                "hot_water_in": term.element.hot_water_inlet_diameter,
+                "waste_out": term.element.waste_outlet_diameter,
+            }
+        elements_data.append(elem_dict)
+
+    # MEP Elements: Waste Terminals
+    for term in resolved.waste_terminals:
+        type_th = {
+            "FLOORDRAIN": "Floor Drain",
+            "FLOOR_DRAIN": "Floor Drain",
+            "FLOORTRAP": "Floor Trap",
+            "GULLYSUMP": "Gully Sump",
+            "GREASEINTERCEPTOR": "Grease Interceptor / Trap",
+            "GREASE_TRAP": "Grease Trap",
+            "ROOFDRAIN": "Roof Drain",
+        }.get(term.terminal_type, term.terminal_type)
+
+        elem_dict = {
+            "tag": term.tag,
+            "class": "IfcWasteTerminal",
+            "material": term.element.material or "Drainage Fixture",
+            "position": [
+                term.position[0],
+                term.position[1],
+                term.position[2] + term.dimensions[2] / 2.0,
+            ],
+            "rotation": [0, 0, math.radians(term.rotation)],
+            "dimensions": {
+                "width": term.dimensions[0],
+                "depth": term.dimensions[1],
+                "height": term.dimensions[2],
+            },
+            "color": term.color,
+            "layer": term.layer,
+            "fixture_type": term.terminal_type,
+            "predefined_type": term.predefined_type,
+            "fixture_name_th": type_th,
+        }
+        if term.element.waste_outlet_diameter:
+            elem_dict["ports"] = {
+                "waste_out": term.element.waste_outlet_diameter,
+            }
+        elements_data.append(elem_dict)
 
     # MEP Elements: Distribution Boards
     for board in resolved.distribution_boards:
@@ -2063,7 +2217,40 @@ def generate_viewer_html(
                 return;
             }}
 
-            if (data.geometry_type === "line" || data.geometry_type === "line_loop") {{
+            if (data.geometry_type === "swept_disk") {{
+                const points = data.points.map(p => new THREE.Vector3(...p));
+                const curve = new THREE.CatmullRomCurve3(points);
+                const tubeGeom = new THREE.TubeGeometry(curve, 64, data.radius, 16, false);
+                const mat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color(data.color || "#38bdf8"),
+                    roughness: 0.4,
+                    metalness: 0.2
+                }});
+                object3D = new THREE.Mesh(tubeGeom, mat);
+            }} else if (data.geometry_type === "revolved_area") {{
+                const prof = data.profile || {{}};
+                const w = prof.width || 0.4;
+                const d = prof.depth || 0.4;
+                const shape = new THREE.Shape();
+                shape.moveTo(-w/2, -d/2);
+                shape.lineTo(w/2, -d/2);
+                shape.lineTo(w/2, d/2);
+                shape.lineTo(-w/2, d/2);
+                shape.closePath();
+                const pts2d = shape.getPoints(12);
+                const points = pts2d.map(p => new THREE.Vector2(p.x, p.y));
+                const segments = Math.max(12, Math.round((data.revolution_angle / 360) * 32));
+                const phiLength = (data.revolution_angle / 360) * Math.PI * 2;
+                const latheGeom = new THREE.LatheGeometry(points, segments, 0, phiLength);
+                const mat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color(data.color || "#a855f7"),
+                    roughness: 0.5,
+                    metalness: 0.1,
+                    side: THREE.DoubleSide
+                }});
+                object3D = new THREE.Mesh(latheGeom, mat);
+                if (data.position) object3D.position.set(...data.position);
+            }} else if (data.geometry_type === "line" || data.geometry_type === "line_loop") {{
                 const points = data.points.map(p => new THREE.Vector3(...p));
                 const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
                 const lineMat = new THREE.LineBasicMaterial({{
@@ -2740,6 +2927,20 @@ def generate_viewer_html(
             if (data.fixture_name_th) {{
                 const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${{data.color}};margin-right:6px;"></span>` : '';
                 mepRow += `<div class="data-row"><span class="data-label">Fixture</span><span class="data-value">${{colorDot}}${{data.fixture_name_th}}</span></div>`;
+            }}
+            if (data.predefined_type) {{
+                mepRow += `<div class="data-row"><span class="data-label">PredefinedType</span><span class="data-value">${{data.predefined_type}}</span></div>`;
+            }}
+            if (data.ports) {{
+                if (data.ports.cold_water_in) {{
+                    mepRow += `<div class="data-row"><span class="data-label">CW Inlet</span><span class="data-value">Ø ${{ (data.ports.cold_water_in * 1000).toFixed(0) }} mm</span></div>`;
+                }}
+                if (data.ports.hot_water_in) {{
+                    mepRow += `<div class="data-row"><span class="data-label">HW Inlet</span><span class="data-value">Ø ${{ (data.ports.hot_water_in * 1000).toFixed(0) }} mm</span></div>`;
+                }}
+                if (data.ports.waste_out) {{
+                    mepRow += `<div class="data-row"><span class="data-label">Waste Outlet</span><span class="data-value">Ø ${{ (data.ports.waste_out * 1000).toFixed(0) }} mm</span></div>`;
+                }}
             }}
             if (data.dimensions && data.dimensions.diameter !== undefined) {{
                 const dia_mm = (data.dimensions.diameter * 1000).toFixed(0);

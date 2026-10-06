@@ -25,13 +25,19 @@ from debim.resolver import (
     ResolvedManifest,
     ResolvedOutlet,
     ResolvedPipeSegment,
+    ResolvedRailing,
+    ResolvedRamp,
+    ResolvedRevolvedArea,
     ResolvedRoof,
     ResolvedSanitaryTerminal,
+    ResolvedWasteTerminal,
     ResolvedSlab,
     ResolvedStair,
+    ResolvedStairFlight,
+    ResolvedSweptDisk,
     ResolvedSwitchingDevice,
-    ResolvedUnitaryEquipment,
     ResolvedTerminal,
+    ResolvedUnitaryEquipment,
     ResolvedWall,
     ResolvedWindow,
     resolve_manifest,
@@ -475,6 +481,7 @@ class ProjectQTO(BaseModel):
     total_duct_length: float = 0.0
     total_duct_fittings_count: int = 0
     total_sanitary_terminals_count: int = 0
+    total_waste_terminals_count: int = 0
     total_distribution_boards_count: int = 0
     total_lighting_fixtures_count: int = 0
     total_switches_count: int = 0
@@ -701,7 +708,7 @@ def calculate_element_qto(
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
-            material=elem.material,
+            material=getattr(elem, "material", None),
             concrete_volume=vol,
             formwork_area=formwork,
             rebar_weights=rebar_dict,
@@ -1021,7 +1028,7 @@ def calculate_element_qto(
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
-            material=elem.material,
+            material=getattr(elem, "material", None),
             concrete_volume=vol,
             formwork_area=formwork,
             rebar_weights=rebar_dict,
@@ -1093,7 +1100,7 @@ def calculate_element_qto(
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
-            material=elem.material,
+            material=getattr(elem, "material", None),
             concrete_volume=vol,
             formwork_area=formwork,
             rebar_weights=rebar_dict,
@@ -1101,6 +1108,81 @@ def calculate_element_qto(
             structural_steel_weight=resolved.total_steel_weight,
             painting_area=steel_paint_area,
             stair_assembly=stair_qto,
+        )
+
+    elif isinstance(resolved, ResolvedStairFlight):
+        elem = resolved.element or IfcStairFlight(
+            tag=resolved.tag,
+            material="MAT_CONC",
+            flight_width=resolved.width,
+            waist_thickness=resolved.waist_thickness,
+            riser_height=resolved.riser,
+            tread_length=resolved.tread,
+            placement=None,  # Not accessed directly for qto
+        )
+        vol = (resolved.slope_length * resolved.width * resolved.waist_thickness) + (
+            resolved.n_risers * 0.5 * resolved.tread * resolved.riser * resolved.width
+        )
+        formwork = (resolved.slope_length * resolved.width) + (
+            resolved.n_risers * resolved.riser * resolved.width
+        ) + (resolved.slope_length * resolved.waist_thickness * 2.0)
+
+        tread_finish = resolved.n_risers * resolved.width * resolved.tread
+        riser_finish = resolved.n_risers * resolved.width * resolved.riser
+        nosing_len = resolved.n_risers * resolved.width if (elem and elem.finishes and elem.finishes.nosing) else 0.0
+
+        stair_qto = StairQTO(
+            total_steps=resolved.n_risers,
+            tread_finish_area=tread_finish,
+            riser_finish_area=riser_finish,
+            nosing_length=nosing_len,
+        )
+
+        return ElementQTO(
+            tag=tag,
+            element_class="IfcStairFlight",
+            material=elem.material if elem else None,
+            length=resolved.slope_length,
+            concrete_volume=vol,
+            formwork_area=formwork,
+            stair_assembly=stair_qto,
+        )
+
+    elif isinstance(resolved, ResolvedRamp):
+        elem = resolved.element
+        vol = resolved.concrete_volume
+        formwork = resolved.formwork_area
+
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.slope_length,
+            concrete_volume=vol,
+            formwork_area=formwork,
+        )
+
+    elif isinstance(resolved, ResolvedRailing):
+        elem = resolved.element
+        linear_m = resolved.total_length
+
+        # Estimate steel/handrail weight based on profile or standard rate (~8.5 kg/m)
+        steel_wt = 0.0
+        if elem.handrail_profile:
+            area, perimeter, w, d = compute_profile_geometry(elem.handrail_profile)
+            steel_wt = area * 7850.0 * linear_m
+        else:
+            steel_wt = linear_m * 8.50
+
+        paint_area = linear_m * math.pi * 0.05 * 2.0
+
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=linear_m,
+            structural_steel_weight=steel_wt,
+            painting_area=paint_area,
         )
 
     elif isinstance(resolved, ResolvedCustomElement):
@@ -1111,43 +1193,55 @@ def calculate_element_qto(
         total_rebar = 0.0
         substructure = None
 
-        tag_upper = tag.upper()
-        if "F2" in tag_upper or "FOOTING" in tag_upper:
-            # Footing dimensions (LOD 350 standard: 0.8m width x 1.5m length x 0.8m thickness)
-            w, l, d = 0.8, 1.5, 0.8
-            vol = w * l * d
-            formwork = 2.0 * (w + l) * d
-            # Reinforcement mesh: 8-DB16 in Y (1.4m active length), 5-DB16 in X (0.7m active length)
-            unit_db16 = get_bar_unit_weight("DB16")
-            rebar_wt = (8 * 1.4 + 5 * 0.7) * unit_db16
-            rebar_dict["DB16"] = rebar_wt
-            total_rebar = rebar_wt
-            # Substructure items: Lean concrete (10cm), Sand bedding (5cm), Piles (2 x I-180 @ 12m)
-            substructure = SubstructureQTO(
-                lean_concrete_volume=w * l * 0.10,
-                sand_bedding_volume=w * l * 0.05,
-                pile_count=2,
-                pile_total_length=2 * 12.0,
-                pile_chipping_count=2,
-                pile_type="I-180",
-            )
+        if resolved.resolved_solid:
+            s = resolved.resolved_solid
+            if isinstance(s, ResolvedSweptDisk):
+                r = s.radius
+                r_in = s.inner_radius or 0.0
+                vol = math.pi * (r**2 - r_in**2) * s.length
+                formwork = 2.0 * math.pi * (r + r_in) * s.length
+            elif isinstance(s, ResolvedRevolvedArea):
+                angle_ratio = s.revolution_angle / 360.0
+                vol = s.profile_area * (2.0 * math.pi * s.distance_to_axis) * angle_ratio
+                formwork = s.profile_perimeter * (2.0 * math.pi * s.distance_to_axis) * angle_ratio
         else:
-            # Try loading trimesh volume if source exists
-            source_path = Path(elem.source)
-            if source_path.exists():
-                try:
-                    import trimesh
+            tag_upper = tag.upper()
+            if "F2" in tag_upper or "FOOTING" in tag_upper:
+                # Footing dimensions (LOD 350 standard: 0.8m width x 1.5m length x 0.8m thickness)
+                w, l, d = 0.8, 1.5, 0.8
+                vol = w * l * d
+                formwork = 2.0 * (w + l) * d
+                # Reinforcement mesh: 8-DB16 in Y (1.4m active length), 5-DB16 in X (0.7m active length)
+                unit_db16 = get_bar_unit_weight("DB16")
+                rebar_wt = (8 * 1.4 + 5 * 0.7) * unit_db16
+                rebar_dict["DB16"] = rebar_wt
+                total_rebar = rebar_wt
+                # Substructure items: Lean concrete (10cm), Sand bedding (5cm), Piles (2 x I-180 @ 12m)
+                substructure = SubstructureQTO(
+                    lean_concrete_volume=w * l * 0.10,
+                    sand_bedding_volume=w * l * 0.05,
+                    pile_count=2,
+                    pile_total_length=2 * 12.0,
+                    pile_chipping_count=2,
+                    pile_type="I-180",
+                )
+            else:
+                # Try loading trimesh volume if source exists
+                source_path = Path(elem.source) if elem.source else None
+                if source_path and source_path.exists():
+                    try:
+                        import trimesh
 
-                    mesh = trimesh.load(str(source_path))
-                    if hasattr(mesh, "volume") and mesh.is_watertight:
-                        vol = float(mesh.volume)
-                except Exception:
-                    vol = 0.0
+                        mesh = trimesh.load(str(source_path))
+                        if hasattr(mesh, "volume") and mesh.is_watertight:
+                            vol = float(mesh.volume)
+                    except Exception:
+                        vol = 0.0
 
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
-            material=None,
+            material=getattr(elem, "material", None),
             concrete_volume=vol,
             formwork_area=formwork,
             rebar_weights=rebar_dict,
@@ -1292,6 +1386,24 @@ def calculate_element_qto(
             total_rebar_weight=0.0,
             mep=MepQTO(
                 system_type="SANITARY",
+                fixture_type=resolved.terminal_type,
+                count=1,
+                dimensions=resolved.dimensions,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedWasteTerminal):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="DRAINAGE",
                 fixture_type=resolved.terminal_type,
                 count=1,
                 dimensions=resolved.dimensions,
@@ -1548,6 +1660,7 @@ def calculate_qto(
     total_duct_len = 0.0
     total_duct_fittings = 0
     total_sanitary_terms = 0
+    total_waste_terms = 0
     total_dist_boards = 0
     total_lights = 0
     total_switches = 0
@@ -1633,6 +1746,9 @@ def calculate_qto(
             total_nosing_len += eqto.stair_assembly.nosing_length
             total_railing_len += eqto.stair_assembly.railing_length
 
+        if eqto.element_class == "IfcRailing":
+            total_railing_len += eqto.length
+
         if eqto.roof:
             total_roof_covering += eqto.roof.sloped_area
             total_roof_steel += eqto.roof.structural_steel_weight
@@ -1685,6 +1801,8 @@ def calculate_qto(
                 total_duct_fittings += eqto.mep.fittings_count
             elif eqto.element_class == "IfcSanitaryTerminal":
                 total_sanitary_terms += eqto.mep.count
+            elif eqto.element_class == "IfcWasteTerminal":
+                total_waste_terms += eqto.mep.count
             elif eqto.element_class in ("IfcDistributionBoard", "IfcElectricDistributionBoard"):
                 total_dist_boards += eqto.mep.count
             elif eqto.element_class == "IfcLightFixture":
@@ -1751,6 +1869,7 @@ def calculate_qto(
         total_duct_length=total_duct_len,
         total_duct_fittings_count=total_duct_fittings,
         total_sanitary_terminals_count=total_sanitary_terms,
+        total_waste_terminals_count=total_waste_terms,
         total_distribution_boards_count=total_dist_boards,
         total_lighting_fixtures_count=total_lights,
         total_switches_count=total_switches,

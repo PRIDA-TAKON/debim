@@ -15,12 +15,14 @@ from debim.resolver import (
     ResolvedCustomElement,
     ResolvedDoor,
     ResolvedManifest,
+    ResolvedRevolvedArea,
+    ResolvedSweptDisk,
     ResolvedTerminal,
     ResolvedWall,
     ResolvedWindow,
     resolve_manifest,
 )
-from debim.schema import ProjectManifest, load_manifest
+from debim.schema import ProjectManifest, RevolvedAreaSolid, SweptDiskSolid, load_manifest
 
 
 def _build_transform_matrix(
@@ -91,6 +93,10 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcDuctSegment"
     if "pipe" in l:
         return "IfcPipeSegment"
+    if "waste" in l or "drainage" in l:
+        return "IfcWasteTerminal"
+    if "sanitary" in l:
+        return "IfcSanitaryTerminal"
     if "terminal" in l or "air_terminal" in l:
         return "IfcAirTerminal"
     if "fitting" in l:
@@ -416,6 +422,8 @@ class StepSerializer:
                 term.hosting_wall.element.placement.storey if term.hosting_wall else None
             )
             ifc_cls = term.element.class_
+            raw_pred_type = getattr(term, "predefined_type", None) or getattr(term.element, "predefined_type", None)
+            pred_type = f".{raw_pred_type.upper()}." if raw_pred_type else None
             elem_ref = self.create_entity(
                 ifc_cls,
                 generate_ifc_guid(),
@@ -425,7 +433,7 @@ class StepSerializer:
                 None,
                 None,
                 None,
-                None,
+                pred_type,
             )
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
@@ -567,7 +575,7 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
-        # 4. Stairs
+        # 4. Stairs, Stair Flights, Ramps, Railings
         for stair in resolved.stairs:
             st_id = stair.element.placement.from_storey
             elem_ref = self.create_entity(
@@ -580,6 +588,59 @@ class StepSerializer:
                 None,
                 None,
                 None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for flight in resolved.stair_flights:
+            st_id = flight.element.placement.from_storey if flight.element else None
+            elem_ref = self.create_entity(
+                "IfcStairFlight",
+                generate_ifc_guid(),
+                None,
+                flight.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+                flight.n_risers,
+                int(flight.n_risers - 1) if flight.n_risers > 1 else 1,
+                float(flight.riser),
+                float(flight.tread),
+            )
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for ramp in resolved.ramps:
+            st_id = ramp.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcRamp",
+                generate_ifc_guid(),
+                None,
+                ramp.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for railing in resolved.railings:
+            st_id = railing.element.placement.storey
+            ptype = railing.predefined_type if railing.predefined_type in ("HANDRAIL", "GUARDRAIL", "BALUSTRADE", "USERDEFINED") else "HANDRAIL"
+            elem_ref = self.create_entity(
+                "IfcRailing",
+                generate_ifc_guid(),
+                None,
+                railing.tag,
+                None,
+                None,
+                None,
+                None,
+                f".{ptype}.",
             )
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
@@ -723,31 +784,65 @@ class StepSerializer:
 
             # Shape representation
             prod_shape_ref = None
-            dims = custom.dimensions or custom.element.dimensions
-            if dims:
-                w = float(dims.width)
-                d = float(dims.depth if dims.depth is not None else dims.width)
-                h = float(dims.height)
+            solid_ref = None
 
-                pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
-                axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
-                rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, w, d)
+            if custom.element.solid or custom.resolved_solid:
+                c_solid = custom.element.solid or custom.resolved_solid
+                if isinstance(c_solid, (SweptDiskSolid, ResolvedSweptDisk)):
+                    directrix_pts = c_solid.directrix
+                    pt_refs = [self.create_entity("IfcCartesianPoint", (float(p[0]), float(p[1]), float(p[2]))) for p in directrix_pts]
+                    polyline_ref = self.create_entity("IfcPolyline", pt_refs)
+                    r = float(c_solid.radius)
+                    inner_r = float(c_solid.inner_radius) if c_solid.inner_radius is not None else None
+                    solid_ref = self.create_entity("IfcSweptDiskSolid", polyline_ref, r, inner_r, None, None)
+                elif isinstance(c_solid, (RevolvedAreaSolid, ResolvedRevolvedArea)):
+                    import math
+                    pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                    axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                    prof_ref = self.create_ifc_profile_def(c_solid.profile, custom.tag, axis2d)
+                    ax_pt_ref = self.create_entity("IfcCartesianPoint", (float(x) for x in c_solid.axis_point))
+                    ax_dir_ref = self.create_entity("IfcDirection", (float(x) for x in c_solid.axis_direction))
+                    axis1_ref = self.create_entity("IfcAxis1Placement", ax_pt_ref, ax_dir_ref)
+                    angle_rad = float(c_solid.revolution_angle) * math.pi / 180.0
+                    solid_ref = self.create_entity("IfcRevolvedAreaSolid", prof_ref, None, axis1_ref, angle_rad)
 
-                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
-                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
-                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
-                solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, h)
-
+            if solid_ref:
                 shape_rep = self.create_entity(
                     "IfcShapeRepresentation",
                     body_context_ref,
                     "Body",
                     "SweptSolid",
-                    [solid],
+                    [solid_ref],
                 )
                 prod_shape_ref = self.create_entity(
                     "IfcProductDefinitionShape", None, None, [shape_rep]
                 )
+            else:
+                dims = custom.dimensions or custom.element.dimensions
+                if dims:
+                    w = float(dims.width)
+                    d = float(dims.depth if dims.depth is not None else dims.width)
+                    h = float(dims.height)
+
+                    pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                    axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                    rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, w, d)
+
+                    pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                    axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                    ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                    solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, h)
+
+                    shape_rep = self.create_entity(
+                        "IfcShapeRepresentation",
+                        body_context_ref,
+                        "Body",
+                        "SweptSolid",
+                        [solid],
+                    )
+                    prod_shape_ref = self.create_entity(
+                        "IfcProductDefinitionShape", None, None, [shape_rep]
+                    )
 
             elem_ref = self.create_entity(
                 ifc_cls,
@@ -1359,7 +1454,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id in storey_products:
             storey_products[st_id].append(cov_obj)
 
-    # 4. Stairs
+    # 4. Stairs, Stair Flights, Ramps, Railings
     for stair in resolved.stairs:
         stair_obj = ifcopenshell.api.run(
             "root.create_entity", model, ifc_class="IfcStair", name=stair.tag
@@ -1367,6 +1462,31 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = stair.element.placement.from_storey
         if st_id in storey_products:
             storey_products[st_id].append(stair_obj)
+
+    for flight in resolved.stair_flights:
+        flight_obj = ifcopenshell.api.run(
+            "root.create_entity", model, ifc_class="IfcStairFlight", name=flight.tag
+        )
+        st_id = flight.element.placement.from_storey if flight.element else None
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(flight_obj)
+
+    for ramp in resolved.ramps:
+        ramp_obj = ifcopenshell.api.run(
+            "root.create_entity", model, ifc_class="IfcRamp", name=ramp.tag
+        )
+        st_id = ramp.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(ramp_obj)
+
+    for railing in resolved.railings:
+        ptype = railing.predefined_type if railing.predefined_type in ("HANDRAIL", "GUARDRAIL", "BALUSTRADE", "USERDEFINED") else "HANDRAIL"
+        railing_obj = ifcopenshell.api.run(
+            "root.create_entity", model, ifc_class="IfcRailing", name=railing.tag, predefined_type=ptype
+        )
+        st_id = railing.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(railing_obj)
 
     # 5. Walls & Children
     for wall in resolved.walls:
@@ -1447,33 +1567,29 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             matrix=mat,
         )
 
-        dims = custom.dimensions or custom.element.dimensions
-        if dims:
-            w = float(dims.width)
-            d = float(dims.depth if dims.depth is not None else dims.width)
-            h = float(dims.height)
+        solid_entity = None
+        if custom.element.solid or custom.resolved_solid:
+            c_solid = custom.element.solid or custom.resolved_solid
+            if isinstance(c_solid, (SweptDiskSolid, ResolvedSweptDisk)):
+                directrix_pts = c_solid.directrix
+                pt_objs = [model.createIfcCartesianPoint((float(p[0]), float(p[1]), float(p[2]))) for p in directrix_pts]
+                directrix_curve = model.createIfcPolyline(pt_objs)
+                r = float(c_solid.radius)
+                inner_r = float(c_solid.inner_radius) if c_solid.inner_radius is not None else None
+                solid_entity = model.createIfcSweptDiskSolid(directrix_curve, r, inner_r, None, None)
+            elif isinstance(c_solid, (RevolvedAreaSolid, ResolvedRevolvedArea)):
+                import math
+                pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+                prof_def = _create_ifcopenshell_profile(model, c_solid.profile, custom.tag, pos2d)
+                axis_pt = model.createIfcCartesianPoint((float(x) for x in c_solid.axis_point))
+                axis_dir = model.createIfcDirection((float(x) for x in c_solid.axis_direction))
+                axis1 = model.createIfcAxis1Placement(axis_pt, axis_dir)
+                angle_rad = float(c_solid.revolution_angle) * math.pi / 180.0
+                solid_entity = model.createIfcRevolvedAreaSolid(prof_def, None, axis1, angle_rad)
 
-            profile = model.createIfcRectangleProfileDef(
-                "AREA",
-                None,
-                model.createIfcAxis2Placement2D(
-                    model.createIfcCartesianPoint((0.0, 0.0))
-                ),
-                w,
-                d,
-            )
-            solid = model.createIfcExtrudedAreaSolid(
-                profile,
-                model.createIfcAxis2Placement3D(
-                    model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
-                    model.createIfcDirection((0.0, 0.0, 1.0)),
-                    model.createIfcDirection((1.0, 0.0, 0.0)),
-                ),
-                model.createIfcDirection((0.0, 0.0, 1.0)),
-                h,
-            )
+        if solid_entity:
             rep = model.createIfcShapeRepresentation(
-                body_context, "Body", "SweptSolid", [solid]
+                body_context, "Body", "SweptSolid", [solid_entity]
             )
             ifcopenshell.api.run(
                 "geometry.assign_representation",
@@ -1481,6 +1597,41 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 product=custom_obj,
                 representation=rep,
             )
+        else:
+            dims = custom.dimensions or custom.element.dimensions
+            if dims:
+                w = float(dims.width)
+                d = float(dims.depth if dims.depth is not None else dims.width)
+                h = float(dims.height)
+
+                profile = model.createIfcRectangleProfileDef(
+                    "AREA",
+                    None,
+                    model.createIfcAxis2Placement2D(
+                        model.createIfcCartesianPoint((0.0, 0.0))
+                    ),
+                    w,
+                    d,
+                )
+                solid = model.createIfcExtrudedAreaSolid(
+                    profile,
+                    model.createIfcAxis2Placement3D(
+                        model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                        model.createIfcDirection((0.0, 0.0, 1.0)),
+                        model.createIfcDirection((1.0, 0.0, 0.0)),
+                    ),
+                    model.createIfcDirection((0.0, 0.0, 1.0)),
+                    h,
+                )
+                rep = model.createIfcShapeRepresentation(
+                    body_context, "Body", "SweptSolid", [solid]
+                )
+                ifcopenshell.api.run(
+                    "geometry.assign_representation",
+                    model,
+                    product=custom_obj,
+                    representation=rep,
+                )
 
     # 6. Roofs & Roof Openings / Skylights
     for roof in resolved.roofs:
@@ -1564,6 +1715,19 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             model,
             ifc_class="IfcSanitaryTerminal",
             name=term.tag,
+            predefined_type=term.predefined_type or "USERDEFINED",
+        )
+        st_id = term.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(term_obj)
+
+    for term in resolved.waste_terminals:
+        term_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcWasteTerminal",
+            name=term.tag,
+            predefined_type=term.predefined_type or "USERDEFINED",
         )
         st_id = term.element.placement.storey
         if st_id in storey_products:

@@ -122,7 +122,7 @@ my_project/
 - [x] **Task 1.3:** `feat: Support Arbitrary Closed Profile with Voids` *(เสร็จสิ้น)*
   - **Scope:** `IfcArbitraryClosedProfileDefWithVoids`
   - **DoD:** เจาะรูหน้าตัดเสา/คาน/พื้นหลายเหลี่ยม, คำนวณพื้นที่สุทธิหักรูกลวง
-- [ ] **Task 1.4:** `feat: Support Swept Disk & Revolved Area Solids`
+- [x] **Task 1.4:** `feat: Support Swept Disk & Revolved Area Solids` *(เสร็จสิ้น: Issue #72, PR #77)*
   - **Scope:** `IfcSweptDiskSolid`, `IfcRevolvedAreaSolid`
   - **DoD:** รองรับท่อโค้งอิสระตาม 3D Spline, โครงสร้างโดม และหลังคาโค้งหมุนวน
 
@@ -131,13 +131,13 @@ my_project/
 ### 🟢 Phase 2: Architectural & MEP Core Entities (Top 50 Entities)
 > **เป้าหมาย:** เพิ่ม Entity พื้นฐานที่พบในอาคารจริงมากกว่า 90% ของงานก่อสร้าง โดยแบ่งงานให้ Jules เป็นชุดๆ ชุดละ 1 โดเมน
 
-- [ ] **Task 2.1 (Circulation):** `feat: Support IfcStair, IfcStairFlight, IfcRamp, and IfcRailing`
+- [x] **Task 2.1 (Circulation):** `feat: Support IfcStair, IfcStairFlight, IfcRamp, and IfcRailing` *(เสร็จสิ้น: Issue #73, PR #76)*
   - บันไดตรง, บันไดวน, ชานพัก, ทางลาดผู้พิการ, และราวกันตก
   - QTO: ปริมาตรคอนกรีตบันได, พื้นผิวไม้/กระเบื้องลูกตั้ง-ลูกนอน, ความยาวราวกันตก
 - [ ] **Task 2.2 (Enclosure):** `feat: Support IfcRoof, IfcCurtainWall, and IfcPlate`
   - หลังคาจั่ว, หลังคาปั้นหยา, ผนังกระจกเคอร์เทนวอลล์, และแผ่นปิดผิว
   - QTO: พื้นที่หลังคาลาดเอียง, จำนวนแผ่นกระจก, โครงคร่าวอลูมิเนียม
-- [ ] **Task 2.3 (Plumbing & Sanitation):** `feat: Support IfcSanitaryTerminal and IfcWasteTerminal`
+- [x] **Task 2.3 (Plumbing & Sanitation):** `feat: Support IfcSanitaryTerminal and IfcWasteTerminal` *(เสร็จสิ้น: Issue #74, PR #78)*
   - สุขภัณฑ์, อ่างล้างหน้า, โถปัสสาวะ, Floor Drain, ถังดักไขมัน
   - QTO: นับจำนวนชิ้น, จับคู่กับราคาอุปกรณ์สุขภัณฑ์ใน `prices.yaml`
 - [ ] **Task 2.4 (HVAC Distribution):** `feat: Support IfcAirTerminal, IfcDamper, and IfcFlowController`
