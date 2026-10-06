@@ -111,5 +111,8 @@ The CLI tool exposes the binary command `debim`:
 | `debim scaffold element <Name>` | Scaffold Pydantic model, resolver logic, QTO branch, and Pytest test skeleton |
 | `debim compile` | Compile declarative YAML to standardized IFC4 file (`dist/model.ifc`) |
 | `debim view` | Launch a lightweight local 3D preview server with hierarchical layer tree explorer |
+| `debim split` | Decompose monolithic `project.yaml` into modular multi-file manifest under `models/` |
+| `debim bundle` | Bundle modular multi-file manifest into a standalone single-file `project.yaml` |
+
 
 

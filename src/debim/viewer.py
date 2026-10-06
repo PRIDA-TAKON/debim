@@ -18,6 +18,57 @@ from debim.resolver import (
 from debim.schema import ProjectManifest, load_manifest
 
 
+def extract_profile_viewer_dim(prof: Any, length_or_height: float, is_column: bool = True) -> Dict[str, Any]:
+    shape = getattr(prof, "shape", "BOX")
+    len_key = "height" if is_column else "length"
+    dim: Dict[str, Any] = {
+        "shape": shape,
+        len_key: length_or_height,
+        "width": getattr(prof, "width", 0.3),
+        "depth": getattr(prof, "depth", 0.3),
+    }
+    if shape == "CIRCULAR":
+        dim["radius"] = prof.radius
+        dim["diameter"] = prof.diameter
+    elif shape == "ELLIPSE":
+        dim["semi_major_axis"] = prof.semi_major_axis
+        dim["semi_minor_axis"] = prof.semi_minor_axis
+    elif shape in ("ISHAPE", "I", "H"):
+        dim["overall_width"] = prof.overall_width
+        dim["overall_depth"] = prof.overall_depth
+        dim["web_thickness"] = prof.web_thickness
+        dim["flange_thickness"] = prof.flange_thickness
+        dim["width"] = prof.overall_width
+        dim["depth"] = prof.overall_depth
+    elif shape in ("LSHAPE", "L"):
+        dim["width"] = prof.width
+        dim["depth"] = prof.depth
+        dim["thickness"] = prof.thickness
+    elif shape in ("USHAPE", "U", "CSHAPE", "C"):
+        dim["flange_width"] = prof.flange_width
+        dim["depth"] = prof.depth
+        dim["web_thickness"] = prof.web_thickness
+        dim["flange_thickness"] = prof.flange_thickness
+        dim["width"] = prof.flange_width
+    elif shape in ("TSHAPE", "T"):
+        dim["flange_width"] = prof.flange_width
+        dim["depth"] = prof.depth
+        dim["web_thickness"] = prof.web_thickness
+        dim["flange_thickness"] = prof.flange_thickness
+        dim["width"] = prof.flange_width
+    elif shape in ("RHS", "RECTANGLE_HOLLOW", "BOX_HOLLOW"):
+        dim["width"] = prof.width
+        dim["depth"] = prof.depth
+        dim["wall_thickness"] = prof.wall_thickness
+    elif shape in ("CHS", "CIRCLE_HOLLOW", "PIPE_HOLLOW"):
+        dim["radius"] = prof.radius
+        dim["diameter"] = prof.diameter
+        dim["wall_thickness"] = prof.wall_thickness
+        dim["width"] = prof.diameter
+        dim["depth"] = prof.diameter
+    return dim
+
+
 def generate_viewer_html(
     manifest: Union[ProjectManifest, ResolvedManifest, Path, str]
 ) -> str:
@@ -88,27 +139,7 @@ def generate_viewer_html(
     # Columns
     for col in resolved.columns:
         prof = col.element.profile
-        if prof.shape == "CIRCULAR":
-            dim = {
-                "shape": "CIRCULAR",
-                "radius": prof.radius,
-                "diameter": prof.diameter,
-                "height": col.height,
-            }
-        elif prof.shape == "ELLIPSE":
-            dim = {
-                "shape": "ELLIPSE",
-                "semi_major_axis": prof.semi_major_axis,
-                "semi_minor_axis": prof.semi_minor_axis,
-                "height": col.height,
-            }
-        else:
-            dim = {
-                "shape": "BOX",
-                "width": prof.width,
-                "depth": prof.depth,
-                "height": col.height,
-            }
+        dim = extract_profile_viewer_dim(prof, col.height, is_column=True)
 
         cx = (col.start_point[0] + col.end_point[0]) / 2.0
         cy = (col.start_point[1] + col.end_point[1]) / 2.0
@@ -127,27 +158,7 @@ def generate_viewer_html(
     # Beams
     for beam in resolved.beams:
         prof = beam.element.profile
-        if prof.shape == "CIRCULAR":
-            dim = {
-                "shape": "CIRCULAR",
-                "length": beam.span_length,
-                "radius": prof.radius,
-                "diameter": prof.diameter,
-            }
-        elif prof.shape == "ELLIPSE":
-            dim = {
-                "shape": "ELLIPSE",
-                "length": beam.span_length,
-                "semi_major_axis": prof.semi_major_axis,
-                "semi_minor_axis": prof.semi_minor_axis,
-            }
-        else:
-            dim = {
-                "shape": "BOX",
-                "length": beam.span_length,
-                "width": prof.width,
-                "depth": prof.depth,
-            }
+        dim = extract_profile_viewer_dim(prof, beam.span_length, is_column=False)
 
         if beam.waypoints and len(beam.waypoints) > 2:
             elements_data.append({
@@ -1750,24 +1761,112 @@ def generate_viewer_html(
             let geometry;
             const dim = data.dimensions || {{ width: 1, depth: 1, height: 1 }};
             if (data.class === "IfcColumn") {{
-                if (dim.shape === "CIRCULAR") {{
+                if (dim.shape === "CIRCULAR" || dim.shape === "CHS") {{
                     geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.height, 32);
                     geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "ELLIPSE") {{
                     geometry = new THREE.CylinderGeometry(1, 1, dim.height, 32);
                     geometry.rotateX(Math.PI / 2);
                     geometry.scale(dim.semi_major_axis, dim.semi_minor_axis, 1);
+                }} else if (dim.shape === "ISHAPE" || dim.shape === "I" || dim.shape === "H") {{
+                    const w = dim.overall_width || dim.width || 0.2;
+                    const d = dim.overall_depth || dim.depth || 0.2;
+                    const tw = dim.web_thickness || 0.008;
+                    const tf = dim.flange_thickness || 0.012;
+                    const s = new THREE.Shape();
+                    const x1 = -w/2, x2 = -tw/2, x3 = tw/2, x4 = w/2;
+                    const y1 = -d/2, y2 = -d/2 + tf, y3 = d/2 - tf, y4 = d/2;
+                    s.moveTo(x1, y1); s.lineTo(x4, y1); s.lineTo(x4, y2); s.lineTo(x3, y2);
+                    s.lineTo(x3, y3); s.lineTo(x4, y3); s.lineTo(x4, y4); s.lineTo(x1, y4);
+                    s.lineTo(x1, y3); s.lineTo(x2, y3); s.lineTo(x2, y2); s.lineTo(x1, y2);
+                    s.closePath();
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.height, bevelEnabled: false }});
+                    geometry.center();
+                }} else if (dim.shape === "LSHAPE" || dim.shape === "L") {{
+                    const d = dim.depth || 0.05, w = dim.width || 0.05, t = dim.thickness || 0.005;
+                    const s = new THREE.Shape();
+                    s.moveTo(-w/2, -d/2); s.lineTo(w/2, -d/2); s.lineTo(w/2, -d/2 + t);
+                    s.lineTo(-w/2 + t, -d/2 + t); s.lineTo(-w/2 + t, d/2); s.lineTo(-w/2, d/2);
+                    s.closePath();
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.height, bevelEnabled: false }});
+                    geometry.center();
+                }} else if (dim.shape === "USHAPE" || dim.shape === "U" || dim.shape === "CSHAPE" || dim.shape === "C") {{
+                    const d = dim.depth || 0.15, bf = dim.flange_width || dim.width || 0.075;
+                    const tw = dim.web_thickness || 0.0065, tf = dim.flange_thickness || 0.01;
+                    const s = new THREE.Shape();
+                    s.moveTo(-bf/2, -d/2); s.lineTo(bf/2, -d/2); s.lineTo(bf/2, -d/2 + tf);
+                    s.lineTo(-bf/2 + tw, -d/2 + tf); s.lineTo(-bf/2 + tw, d/2 - tf); s.lineTo(bf/2, d/2 - tf);
+                    s.lineTo(bf/2, d/2); s.lineTo(-bf/2, d/2);
+                    s.closePath();
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.height, bevelEnabled: false }});
+                    geometry.center();
+                }} else if (dim.shape === "TSHAPE" || dim.shape === "T") {{
+                    const d = dim.depth || 0.15, bf = dim.flange_width || dim.width || 0.15;
+                    const tw = dim.web_thickness || 0.006, tf = dim.flange_thickness || 0.009;
+                    const s = new THREE.Shape();
+                    s.moveTo(-bf/2, d/2); s.lineTo(bf/2, d/2); s.lineTo(bf/2, d/2 - tf);
+                    s.lineTo(tw/2, d/2 - tf); s.lineTo(tw/2, -d/2); s.lineTo(-tw/2, -d/2);
+                    s.lineTo(-tw/2, d/2 - tf); s.lineTo(-bf/2, d/2 - tf);
+                    s.closePath();
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.height, bevelEnabled: false }});
+                    geometry.center();
                 }} else {{
                     geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
                 }}
             }} else if (data.class === "IfcBeam") {{
-                if (dim.shape === "CIRCULAR") {{
+                if (dim.shape === "CIRCULAR" || dim.shape === "CHS") {{
                     geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
                 }} else if (dim.shape === "ELLIPSE") {{
                     geometry = new THREE.CylinderGeometry(1, 1, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
                     geometry.scale(1, dim.semi_major_axis, dim.semi_minor_axis);
+                }} else if (dim.shape === "ISHAPE" || dim.shape === "I" || dim.shape === "H") {{
+                    const w = dim.overall_width || dim.width || 0.2;
+                    const d = dim.overall_depth || dim.depth || 0.2;
+                    const tw = dim.web_thickness || 0.008;
+                    const tf = dim.flange_thickness || 0.012;
+                    const s = new THREE.Shape();
+                    const x1 = -w/2, x2 = -tw/2, x3 = tw/2, x4 = w/2;
+                    const y1 = -d/2, y2 = -d/2 + tf, y3 = d/2 - tf, y4 = d/2;
+                    s.moveTo(x1, y1); s.lineTo(x4, y1); s.lineTo(x4, y2); s.lineTo(x3, y2);
+                    s.lineTo(x3, y3); s.lineTo(x4, y3); s.lineTo(x4, y4); s.lineTo(x1, y4);
+                    s.lineTo(x1, y3); s.lineTo(x2, y3); s.lineTo(x2, y2); s.lineTo(x1, y2);
+                    s.closePath();
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
+                    geometry.center();
+                    geometry.rotateY(Math.PI / 2);
+                }} else if (dim.shape === "LSHAPE" || dim.shape === "L") {{
+                    const d = dim.depth || 0.05, w = dim.width || 0.05, t = dim.thickness || 0.005;
+                    const s = new THREE.Shape();
+                    s.moveTo(-w/2, -d/2); s.lineTo(w/2, -d/2); s.lineTo(w/2, -d/2 + t);
+                    s.lineTo(-w/2 + t, -d/2 + t); s.lineTo(-w/2 + t, d/2); s.lineTo(-w/2, d/2);
+                    s.closePath();
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
+                    geometry.center();
+                    geometry.rotateY(Math.PI / 2);
+                }} else if (dim.shape === "USHAPE" || dim.shape === "U" || dim.shape === "CSHAPE" || dim.shape === "C") {{
+                    const d = dim.depth || 0.15, bf = dim.flange_width || dim.width || 0.075;
+                    const tw = dim.web_thickness || 0.0065, tf = dim.flange_thickness || 0.01;
+                    const s = new THREE.Shape();
+                    s.moveTo(-bf/2, -d/2); s.lineTo(bf/2, -d/2); s.lineTo(bf/2, -d/2 + tf);
+                    s.lineTo(-bf/2 + tw, -d/2 + tf); s.lineTo(-bf/2 + tw, d/2 - tf); s.lineTo(bf/2, d/2 - tf);
+                    s.lineTo(bf/2, d/2); s.lineTo(-bf/2, d/2);
+                    s.closePath();
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
+                    geometry.center();
+                    geometry.rotateY(Math.PI / 2);
+                }} else if (dim.shape === "TSHAPE" || dim.shape === "T") {{
+                    const d = dim.depth || 0.15, bf = dim.flange_width || dim.width || 0.15;
+                    const tw = dim.web_thickness || 0.006, tf = dim.flange_thickness || 0.009;
+                    const s = new THREE.Shape();
+                    s.moveTo(-bf/2, d/2); s.lineTo(bf/2, d/2); s.lineTo(bf/2, d/2 - tf);
+                    s.lineTo(tw/2, d/2 - tf); s.lineTo(tw/2, -d/2); s.lineTo(-tw/2, -d/2);
+                    s.lineTo(-tw/2, d/2 - tf); s.lineTo(-bf/2, d/2 - tf);
+                    s.closePath();
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
+                    geometry.center();
+                    geometry.rotateY(Math.PI / 2);
                 }} else {{
                     geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
                 }}
@@ -2485,10 +2584,20 @@ def generate_viewer_html(
 
             let dimText = '-';
             if (data.dimensions) {{
-                if (data.dimensions.shape === "CIRCULAR") {{
+                if (data.dimensions.shape === "CIRCULAR" || data.dimensions.shape === "CHS") {{
                     dimText = 'Ø ' + (data.dimensions.diameter || data.dimensions.radius * 2).toFixed(2) + 'm (Circular)';
                 }} else if (data.dimensions.shape === "ELLIPSE") {{
                     dimText = (data.dimensions.semi_major_axis * 2).toFixed(2) + 'm × ' + (data.dimensions.semi_minor_axis * 2).toFixed(2) + 'm (Ellipse)';
+                }} else if (data.dimensions.shape === "ISHAPE" || data.dimensions.shape === "I" || data.dimensions.shape === "H") {{
+                    dimText = `${{((data.dimensions.overall_depth || data.dimensions.depth || 0) * 1000).toFixed(0)}}×${{((data.dimensions.overall_width || data.dimensions.width || 0) * 1000).toFixed(0)}}×${{((data.dimensions.web_thickness || 0) * 1000).toFixed(1)}}×${{((data.dimensions.flange_thickness || 0) * 1000).toFixed(1)}} mm (I-Shape)`;
+                }} else if (data.dimensions.shape === "LSHAPE" || data.dimensions.shape === "L") {{
+                    dimText = `L ${{((data.dimensions.depth || 0) * 1000).toFixed(0)}}×${{((data.dimensions.width || 0) * 1000).toFixed(0)}}×${{((data.dimensions.thickness || 0) * 1000).toFixed(1)}} mm (Angle)`;
+                }} else if (data.dimensions.shape === "USHAPE" || data.dimensions.shape === "U" || data.dimensions.shape === "CSHAPE" || data.dimensions.shape === "C") {{
+                    dimText = `[ ${{((data.dimensions.depth || 0) * 1000).toFixed(0)}}×${{((data.dimensions.flange_width || data.dimensions.width || 0) * 1000).toFixed(0)}}×${{((data.dimensions.web_thickness || 0) * 1000).toFixed(1)}}×${{((data.dimensions.flange_thickness || 0) * 1000).toFixed(1)}} mm (Channel)`;
+                }} else if (data.dimensions.shape === "TSHAPE" || data.dimensions.shape === "T") {{
+                    dimText = `T ${{((data.dimensions.depth || 0) * 1000).toFixed(0)}}×${{((data.dimensions.flange_width || data.dimensions.width || 0) * 1000).toFixed(0)}} mm (Tee)`;
+                }} else if (data.dimensions.shape === "RHS" || data.dimensions.shape === "RECTANGLE_HOLLOW" || data.dimensions.shape === "BOX_HOLLOW") {{
+                    dimText = `RHS ${{((data.dimensions.depth || 0) * 1000).toFixed(0)}}×${{((data.dimensions.width || 0) * 1000).toFixed(0)}}×${{((data.dimensions.wall_thickness || 0) * 1000).toFixed(1)}} mm (Hollow Box)`;
                 }} else if (data.dimensions.area !== undefined) {{
                     dimText = `${{data.dimensions.area.toFixed(2)}} m² (Slope: ${{data.dimensions.slope_degrees || 0}}°)`;
                 }} else if (data.dimensions.length !== undefined) {{

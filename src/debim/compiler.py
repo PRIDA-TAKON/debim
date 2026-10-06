@@ -7,7 +7,7 @@ import os
 import uuid
 import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from debim.resolver import (
     ResolvedBeam,
@@ -172,6 +172,29 @@ class StepSerializer:
             inner = ",".join(self._format_arg(item) for item in arg)
             return f"({inner})"
         return str(arg)
+
+    def create_ifc_profile_def(self, prof: Any, tag: str, axis2d: str) -> str:
+        shape = getattr(prof, "shape", "BOX")
+        prof_name = f"{tag}_Profile"
+        if shape == "CIRCULAR":
+            return self.create_entity("IfcCircleProfileDef", ".AREA.", prof_name, axis2d, float(prof.radius))
+        elif shape == "ELLIPSE":
+            return self.create_entity("IfcEllipseProfileDef", ".AREA.", prof_name, axis2d, float(prof.semi_major_axis), float(prof.semi_minor_axis))
+        elif shape in ("ISHAPE", "I", "H"):
+            fillet = float(prof.fillet_radius) if getattr(prof, "fillet_radius", None) is not None else None
+            return self.create_entity("IfcIShapeProfileDef", ".AREA.", prof_name, axis2d, float(prof.overall_width), float(prof.overall_depth), float(prof.web_thickness), float(prof.flange_thickness), fillet)
+        elif shape in ("LSHAPE", "L"):
+            return self.create_entity("IfcLShapeProfileDef", ".AREA.", prof_name, axis2d, float(prof.depth), float(prof.width), float(prof.thickness))
+        elif shape in ("USHAPE", "U", "CSHAPE", "C"):
+            return self.create_entity("IfcUShapeProfileDef", ".AREA.", prof_name, axis2d, float(prof.depth), float(prof.flange_width), float(prof.web_thickness), float(prof.flange_thickness))
+        elif shape in ("TSHAPE", "T"):
+            return self.create_entity("IfcTShapeProfileDef", ".AREA.", prof_name, axis2d, float(prof.depth), float(prof.flange_width), float(prof.web_thickness), float(prof.flange_thickness))
+        elif shape in ("RHS", "RECTANGLE_HOLLOW", "BOX_HOLLOW"):
+            return self.create_entity("IfcRectangleHollowProfileDef", ".AREA.", prof_name, axis2d, float(prof.width), float(prof.depth), float(prof.wall_thickness))
+        elif shape in ("CHS", "CIRCLE_HOLLOW", "PIPE_HOLLOW"):
+            return self.create_entity("IfcCircleHollowProfileDef", ".AREA.", prof_name, axis2d, float(prof.radius), float(prof.wall_thickness))
+        else:
+            return self.create_entity("IfcRectangleProfileDef", ".AREA.", prof_name, axis2d, float(prof.width), float(prof.depth))
 
     def serialize(
         self,
@@ -394,12 +417,7 @@ class StepSerializer:
             prof = col.element.profile
             pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
             axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
-            if prof.shape == "CIRCULAR":
-                ifc_prof = self.create_entity("IfcCircleProfileDef", ".AREA.", f"{col.tag}_Profile", axis2d, float(prof.radius))
-            elif prof.shape == "ELLIPSE":
-                ifc_prof = self.create_entity("IfcEllipseProfileDef", ".AREA.", f"{col.tag}_Profile", axis2d, float(prof.semi_major_axis), float(prof.semi_minor_axis))
-            else:
-                ifc_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", f"{col.tag}_Profile", axis2d, float(prof.width), float(prof.depth))
+            ifc_prof = self.create_ifc_profile_def(prof, col.tag, axis2d)
 
             pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
             axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
@@ -450,12 +468,7 @@ class StepSerializer:
             prof = beam.element.profile
             pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
             axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
-            if prof.shape == "CIRCULAR":
-                ifc_prof = self.create_entity("IfcCircleProfileDef", ".AREA.", f"{beam.tag}_Profile", axis2d, float(prof.radius))
-            elif prof.shape == "ELLIPSE":
-                ifc_prof = self.create_entity("IfcEllipseProfileDef", ".AREA.", f"{beam.tag}_Profile", axis2d, float(prof.semi_major_axis), float(prof.semi_minor_axis))
-            else:
-                ifc_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", f"{beam.tag}_Profile", axis2d, float(prof.width), float(prof.depth))
+            ifc_prof = self.create_ifc_profile_def(prof, beam.tag, axis2d)
 
             pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
             axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
@@ -1018,6 +1031,31 @@ class StepSerializer:
         return "\n".join(header + self.lines + footer) + "\n"
 
 
+def _create_ifcopenshell_profile(model: Any, prof: Any, tag: str, pos2d: Any) -> Any:
+    shape = getattr(prof, "shape", "BOX")
+    prof_name = f"{tag}_Profile"
+    try:
+        if shape == "CIRCULAR":
+            return model.createIfcCircleProfileDef("AREA", prof_name, pos2d, float(prof.radius))
+        elif shape == "ELLIPSE":
+            return model.createIfcEllipseProfileDef("AREA", prof_name, pos2d, float(prof.semi_major_axis), float(prof.semi_minor_axis))
+        elif shape in ("ISHAPE", "I", "H"):
+            return model.createIfcIShapeProfileDef("AREA", prof_name, pos2d, float(prof.overall_width), float(prof.overall_depth), float(prof.web_thickness), float(prof.flange_thickness))
+        elif shape in ("LSHAPE", "L"):
+            return model.createIfcLShapeProfileDef("AREA", prof_name, pos2d, float(prof.depth), float(prof.width), float(prof.thickness))
+        elif shape in ("USHAPE", "U", "CSHAPE", "C"):
+            return model.createIfcUShapeProfileDef("AREA", prof_name, pos2d, float(prof.depth), float(prof.flange_width), float(prof.web_thickness), float(prof.flange_thickness))
+        elif shape in ("TSHAPE", "T"):
+            return model.createIfcTShapeProfileDef("AREA", prof_name, pos2d, float(prof.depth), float(prof.flange_width), float(prof.web_thickness), float(prof.flange_thickness))
+        elif shape in ("RHS", "RECTANGLE_HOLLOW", "BOX_HOLLOW"):
+            return model.createIfcRectangleHollowProfileDef("AREA", prof_name, pos2d, float(prof.width), float(prof.depth), float(prof.wall_thickness))
+        elif shape in ("CHS", "CIRCLE_HOLLOW", "PIPE_HOLLOW"):
+            return model.createIfcCircleHollowProfileDef("AREA", prof_name, pos2d, float(prof.radius), float(prof.wall_thickness))
+    except Exception:
+        pass
+    return model.createIfcRectangleProfileDef("AREA", prof_name, pos2d, float(getattr(prof, "width", 0.3)), float(getattr(prof, "depth", 0.3)))
+
+
 def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) -> Path:
     """Compile model using ifcopenshell library."""
     import ifcopenshell
@@ -1152,12 +1190,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
 
         prof = col.element.profile
         pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
-        if prof.shape == "CIRCULAR":
-            ifc_prof = model.createIfcCircleProfileDef("AREA", f"{col.tag}_Profile", pos2d, float(prof.radius))
-        elif prof.shape == "ELLIPSE":
-            ifc_prof = model.createIfcEllipseProfileDef("AREA", f"{col.tag}_Profile", pos2d, float(prof.semi_major_axis), float(prof.semi_minor_axis))
-        else:
-            ifc_prof = model.createIfcRectangleProfileDef("AREA", f"{col.tag}_Profile", pos2d, float(prof.width), float(prof.depth))
+        ifc_prof = _create_ifcopenshell_profile(model, prof, col.tag, pos2d)
 
         solid = model.createIfcExtrudedAreaSolid(
             ifc_prof,
@@ -1226,12 +1259,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
 
         prof = beam.element.profile
         pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
-        if prof.shape == "CIRCULAR":
-            ifc_prof = model.createIfcCircleProfileDef("AREA", f"{beam.tag}_Profile", pos2d, float(prof.radius))
-        elif prof.shape == "ELLIPSE":
-            ifc_prof = model.createIfcEllipseProfileDef("AREA", f"{beam.tag}_Profile", pos2d, float(prof.semi_major_axis), float(prof.semi_minor_axis))
-        else:
-            ifc_prof = model.createIfcRectangleProfileDef("AREA", f"{beam.tag}_Profile", pos2d, float(prof.width), float(prof.depth))
+        ifc_prof = _create_ifcopenshell_profile(model, prof, beam.tag, pos2d)
 
         solid = model.createIfcExtrudedAreaSolid(
             ifc_prof,

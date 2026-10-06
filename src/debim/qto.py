@@ -6,7 +6,7 @@ Calculates concrete volume, formwork area, and reinforcement (rebar) schedules/w
 import math
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 
 from debim.resolver import (
@@ -263,12 +263,23 @@ def is_steel_element(
     material_id: Optional[str],
     material_category: Optional[str],
     material_name: Optional[str],
+    profile_shape: Optional[str] = None,
 ) -> bool:
-    """Check if element is structural steel/metal based on category, material, or section tag."""
+    """Check if element is structural steel/metal based on category, material, section tag, or profile shape."""
     if material_category in ("concrete", "masonry", "timber", "wood"):
         return False
 
     if material_category in ("steel", "metal"):
+        return True
+
+    if profile_shape and str(profile_shape).upper() in (
+        "ISHAPE", "I", "H",
+        "LSHAPE", "L",
+        "USHAPE", "U", "CSHAPE", "C",
+        "TSHAPE", "T",
+        "RHS", "RECTANGLE_HOLLOW", "BOX_HOLLOW",
+        "CHS", "CIRCLE_HOLLOW", "PIPE_HOLLOW",
+    ):
         return True
 
     combined = f"{tag} {material_id or ''} {material_name or ''}".upper()
@@ -474,6 +485,86 @@ class ProjectQTO(BaseModel):
         return None
 
 
+def compute_profile_geometry(profile: Any) -> Tuple[float, float, float, float]:
+    """
+    Compute (cross_section_area, surface_perimeter, bounding_width, bounding_depth)
+    for any supported profile (Box, Circular, Ellipse, I, L, U, T, RHS, CHS).
+    """
+    shape = getattr(profile, "shape", "BOX")
+
+    if shape == "CIRCULAR":
+        r = profile.radius
+        d = profile.diameter
+        area = math.pi * (r ** 2)
+        perimeter = math.pi * d
+        return area, perimeter, d, d
+
+    elif shape == "ELLIPSE":
+        a = profile.semi_major_axis
+        b = profile.semi_minor_axis
+        area = math.pi * a * b
+        perimeter = math.pi * (3.0 * (a + b) - math.sqrt((3.0 * a + b) * (a + 3.0 * b)))
+        return area, perimeter, 2.0 * a, 2.0 * b
+
+    elif shape in ("ISHAPE", "I", "H"):
+        h = profile.overall_depth
+        b = profile.overall_width
+        tw = profile.web_thickness
+        tf = profile.flange_thickness
+        area = 2.0 * b * tf + (h - 2.0 * tf) * tw
+        perimeter = 4.0 * b + 2.0 * h - 2.0 * tw
+        return area, perimeter, b, h
+
+    elif shape in ("LSHAPE", "L"):
+        d = profile.depth
+        w = profile.width
+        t = profile.thickness
+        area = (d + w - t) * t
+        perimeter = 2.0 * (d + w)
+        return area, perimeter, w, d
+
+    elif shape in ("USHAPE", "U", "CSHAPE", "C"):
+        d = profile.depth
+        bf = profile.flange_width
+        tw = profile.web_thickness
+        tf = profile.flange_thickness
+        area = 2.0 * bf * tf + (d - 2.0 * tf) * tw
+        perimeter = 2.0 * d + 4.0 * bf - 2.0 * tw
+        return area, perimeter, bf, d
+
+    elif shape in ("TSHAPE", "T"):
+        d = profile.depth
+        bf = profile.flange_width
+        tw = profile.web_thickness
+        tf = profile.flange_thickness
+        area = bf * tf + (d - tf) * tw
+        perimeter = 2.0 * bf + 2.0 * d
+        return area, perimeter, bf, d
+
+    elif shape in ("RHS", "RECTANGLE_HOLLOW", "BOX_HOLLOW"):
+        w = profile.width
+        d = profile.depth
+        t = profile.wall_thickness
+        area = w * d - max(0.0, w - 2.0 * t) * max(0.0, d - 2.0 * t)
+        perimeter = 2.0 * (w + d)
+        return area, perimeter, w, d
+
+    elif shape in ("CHS", "CIRCLE_HOLLOW", "PIPE_HOLLOW"):
+        r = profile.radius
+        d = profile.diameter
+        t = profile.wall_thickness
+        area = math.pi * (r ** 2 - max(0.0, r - t) ** 2)
+        perimeter = math.pi * d
+        return area, perimeter, d, d
+
+    else:  # Default BOX
+        w = profile.width
+        d = profile.depth
+        area = w * d
+        perimeter = 2.0 * (w + d)
+        return area, perimeter, w, d
+
+
 def calculate_element_qto(
     resolved: ResolvedElement,
     manifest: Optional[ProjectManifest] = None,
@@ -574,39 +665,25 @@ def calculate_element_qto(
         profile = elem.profile
         h = resolved.height
 
-        shape = profile.shape
-        if shape == "CIRCULAR":
-            r = profile.radius
-            d = profile.diameter
-            vol = math.pi * (r ** 2) * h
-            perimeter = math.pi * d
-            formwork = perimeter * h
-            w = d
-            depth_val = d
-        elif shape == "ELLIPSE":
-            a = profile.semi_major_axis
-            b = profile.semi_minor_axis
-            vol = math.pi * a * b * h
-            perimeter = math.pi * (3.0 * (a + b) - math.sqrt((3.0 * a + b) * (a + 3.0 * b)))
-            formwork = perimeter * h
-            w = 2.0 * a
-            depth_val = 2.0 * b
-        else:
-            w = profile.width
-            depth_val = profile.depth
-            vol = w * depth_val * h
-            perimeter = 2.0 * (w + depth_val)
-            formwork = perimeter * h
+        area, perimeter, w, depth_val = compute_profile_geometry(profile)
+        vol = area * h
+        formwork = perimeter * h
 
-        is_steel = is_steel_element(elem.class_, tag, elem.material, mat_cat, mat_name)
+        is_steel = is_steel_element(elem.class_, tag, elem.material, mat_cat, mat_name, profile_shape=profile.shape)
         is_timber = is_timber_element(elem.class_, tag, elem.material, mat_cat, mat_name)
 
         if is_steel:
-            linear_mass = parse_steel_linear_mass(tag) or parse_steel_linear_mass(mat_name or "") or parse_steel_linear_mass(elem.material or "")
+            linear_mass = (
+                getattr(profile, "linear_mass", None)
+                or parse_steel_linear_mass(getattr(profile, "section", None) or "")
+                or parse_steel_linear_mass(tag)
+                or parse_steel_linear_mass(mat_name or "")
+                or parse_steel_linear_mass(elem.material or "")
+            )
             if linear_mass is not None:
                 steel_wt = linear_mass * h
             else:
-                steel_wt = vol * 7850.0
+                steel_wt = area * 7850.0 * h
 
             paint_area = perimeter * h
             weld_area = paint_area * 0.10
@@ -669,39 +746,28 @@ def calculate_element_qto(
         profile = elem.profile
         length = resolved.span_length
 
-        shape = profile.shape
-        if shape == "CIRCULAR":
-            r = profile.radius
-            d = profile.diameter
-            vol = math.pi * (r ** 2) * length
-            perimeter = math.pi * d
+        area, perimeter, w, depth_val = compute_profile_geometry(profile)
+        vol = area * length
+        if profile.shape in ("CIRCULAR", "ELLIPSE"):
             formwork = perimeter * length
-            w = d
-            depth_val = d
-        elif shape == "ELLIPSE":
-            a = profile.semi_major_axis
-            b = profile.semi_minor_axis
-            vol = math.pi * a * b * length
-            perimeter = math.pi * (3.0 * (a + b) - math.sqrt((3.0 * a + b) * (a + 3.0 * b)))
-            formwork = perimeter * length
-            w = 2.0 * a
-            depth_val = 2.0 * b
         else:
-            w = profile.width
-            depth_val = profile.depth
-            vol = w * depth_val * length
-            perimeter = 2.0 * (w + depth_val)
             formwork = (2.0 * depth_val + w) * length
 
-        is_steel = is_steel_element(elem.class_, tag, elem.material, mat_cat, mat_name)
+        is_steel = is_steel_element(elem.class_, tag, elem.material, mat_cat, mat_name, profile_shape=profile.shape)
         is_timber = is_timber_element(elem.class_, tag, elem.material, mat_cat, mat_name)
 
         if is_steel:
-            linear_mass = parse_steel_linear_mass(tag) or parse_steel_linear_mass(mat_name or "") or parse_steel_linear_mass(elem.material or "")
+            linear_mass = (
+                getattr(profile, "linear_mass", None)
+                or parse_steel_linear_mass(getattr(profile, "section", None) or "")
+                or parse_steel_linear_mass(tag)
+                or parse_steel_linear_mass(mat_name or "")
+                or parse_steel_linear_mass(elem.material or "")
+            )
             if linear_mass is not None:
                 steel_wt = linear_mass * length
             else:
-                steel_wt = vol * 7850.0
+                steel_wt = area * 7850.0 * length
 
             paint_area = perimeter * length
             weld_area = paint_area * 0.10

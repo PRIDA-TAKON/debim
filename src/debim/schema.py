@@ -3,6 +3,7 @@ Pydantic v2 data models for project.yaml schema and manifest validation logic.
 """
 
 from pathlib import Path
+import re
 from typing import Annotated, Any, Dict, List, Literal, Optional, Tuple, Union
 import yaml
 from pydantic import BaseModel, Field, RootModel, field_validator, model_validator
@@ -64,6 +65,14 @@ class CircularProfile(BaseModel):
             self.diameter = self.radius * 2.0
         return self
 
+    @property
+    def width(self) -> float:
+        return self.diameter or (self.radius * 2.0 if self.radius else 0.0)
+
+    @property
+    def depth(self) -> float:
+        return self.diameter or (self.radius * 2.0 if self.radius else 0.0)
+
 
 class EllipseProfile(BaseModel):
     shape: Literal["ELLIPSE"] = "ELLIPSE"
@@ -91,9 +100,330 @@ class EllipseProfile(BaseModel):
 
         return self
 
+    @property
+    def width(self) -> float:
+        return self.major_diameter or (self.semi_major_axis * 2.0 if self.semi_major_axis else 0.0)
+
+    @property
+    def depth(self) -> float:
+        return self.minor_diameter or (self.semi_minor_axis * 2.0 if self.semi_minor_axis else 0.0)
+
+
+def parse_steel_section_spec(section: str) -> dict:
+    """Parse standard steel section text into geometric dimensions in meters."""
+    s = section.strip().upper().replace(" ", "").replace("-", "")
+    # H or I: e.g. H200X200X8X12, I300X150X6.5X9, W310X60 (if 4 params)
+    m = re.match(r"^[HIW]([0-9.]+)[X*]([0-9.]+)[X*]([0-9.]+)[X*]([0-9.]+)$", s)
+    if m:
+        h, b, tw, tf = map(float, m.groups())
+        return {
+            "overall_depth": h / 1000.0,
+            "overall_width": b / 1000.0,
+            "web_thickness": tw / 1000.0,
+            "flange_thickness": tf / 1000.0,
+        }
+
+    # C or Channel: e.g. C150X75X6.5X10 or C150X75X9X12.5 or C75X40X5X7
+    m = re.match(r"^[CU]([0-9.]+)[X*]([0-9.]+)[X*]([0-9.]+)[X*]([0-9.]+)$", s)
+    if m:
+        d, bf, tw, tf = map(float, m.groups())
+        return {
+            "depth": d / 1000.0,
+            "flange_width": bf / 1000.0,
+            "web_thickness": tw / 1000.0,
+            "flange_thickness": tf / 1000.0,
+        }
+
+    # L or Angle: e.g. L50X50X5 or L100X75X8
+    m = re.match(r"^L([0-9.]+)[X*]([0-9.]+)[X*]([0-9.]+)$", s)
+    if m:
+        d, w, t = map(float, m.groups())
+        return {
+            "depth": d / 1000.0,
+            "width": w / 1000.0,
+            "thickness": t / 1000.0,
+        }
+
+    # T: e.g. T150X150X6X9
+    m = re.match(r"^T([0-9.]+)[X*]([0-9.]+)[X*]([0-9.]+)[X*]([0-9.]+)$", s)
+    if m:
+        d, bf, tw, tf = map(float, m.groups())
+        return {
+            "depth": d / 1000.0,
+            "flange_width": bf / 1000.0,
+            "web_thickness": tw / 1000.0,
+            "flange_thickness": tf / 1000.0,
+        }
+
+    # RHS / SHS / Box: e.g. RHS100X50X3.2 or SHS100X100X4.5 or BOX150X150X6
+    m = re.match(r"^(?:RHS|SHS|BOX)?([0-9.]+)[X*]([0-9.]+)[X*]([0-9.]+)$", s)
+    if m:
+        d, w, t = map(float, m.groups())
+        return {
+            "depth": d / 1000.0,
+            "width": w / 1000.0,
+            "wall_thickness": t / 1000.0,
+        }
+
+    # CHS / Pipe: e.g. CHS114.3X4.5 or PIPE100X4
+    m = re.match(r"^(?:CHS|PIPE)?([0-9.]+)[X*]([0-9.]+)$", s)
+    if m:
+        dia, t = map(float, m.groups())
+        return {
+            "diameter": dia / 1000.0,
+            "radius": dia / 2000.0,
+            "wall_thickness": t / 1000.0,
+        }
+
+    return {}
+
+
+class IShapeProfile(BaseModel):
+    shape: Literal["ISHAPE", "I", "H"] = "ISHAPE"
+    overall_depth: Optional[float] = None
+    overall_width: Optional[float] = None
+    web_thickness: Optional[float] = None
+    flange_thickness: Optional[float] = None
+    fillet_radius: Optional[float] = None
+    section: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_ishape_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "width" in data and "overall_width" not in data:
+                data["overall_width"] = data["width"]
+            if "depth" in data and "overall_depth" not in data:
+                data["overall_depth"] = data["depth"]
+            sec = data.get("section")
+            if sec:
+                parsed = parse_steel_section_spec(sec)
+                for k, v in parsed.items():
+                    if k not in data or data[k] is None:
+                        data[k] = v
+        return data
+
+    @model_validator(mode="after")
+    def validate_ishape(self) -> "IShapeProfile":
+        if (
+            self.overall_depth is None
+            or self.overall_width is None
+            or self.web_thickness is None
+            or self.flange_thickness is None
+        ):
+            raise ValueError(
+                "IShapeProfile requires 'overall_depth', 'overall_width', 'web_thickness', and 'flange_thickness' (or a valid 'section' spec e.g. H200X200X8X12)."
+            )
+        return self
+
+    @property
+    def width(self) -> float:
+        return self.overall_width or 0.0
+
+    @property
+    def depth(self) -> float:
+        return self.overall_depth or 0.0
+
+
+class LShapeProfile(BaseModel):
+    shape: Literal["LSHAPE", "L"] = "LSHAPE"
+    depth: Optional[float] = None
+    width: Optional[float] = None
+    thickness: Optional[float] = None
+    fillet_radius: Optional[float] = None
+    edge_radius: Optional[float] = None
+    section: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_lshape_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            sec = data.get("section")
+            if sec:
+                parsed = parse_steel_section_spec(sec)
+                for k, v in parsed.items():
+                    if k not in data or data[k] is None:
+                        data[k] = v
+            if "depth" in data and ("width" not in data or data["width"] is None):
+                data["width"] = data["depth"]
+        return data
+
+    @model_validator(mode="after")
+    def validate_lshape(self) -> "LShapeProfile":
+        if self.depth is None or self.width is None or self.thickness is None:
+            raise ValueError(
+                "LShapeProfile requires 'depth', 'width', and 'thickness' (or a valid 'section' spec e.g. L50X50X5)."
+            )
+        return self
+
+
+class UShapeProfile(BaseModel):
+    shape: Literal["USHAPE", "U", "CSHAPE", "C"] = "USHAPE"
+    depth: Optional[float] = None
+    flange_width: Optional[float] = None
+    web_thickness: Optional[float] = None
+    flange_thickness: Optional[float] = None
+    fillet_radius: Optional[float] = None
+    edge_radius: Optional[float] = None
+    section: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_ushape_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "width" in data and "flange_width" not in data:
+                data["flange_width"] = data["width"]
+            sec = data.get("section")
+            if sec:
+                parsed = parse_steel_section_spec(sec)
+                for k, v in parsed.items():
+                    if k not in data or data[k] is None:
+                        data[k] = v
+        return data
+
+    @model_validator(mode="after")
+    def validate_ushape(self) -> "UShapeProfile":
+        if (
+            self.depth is None
+            or self.flange_width is None
+            or self.web_thickness is None
+            or self.flange_thickness is None
+        ):
+            raise ValueError(
+                "UShapeProfile requires 'depth', 'flange_width', 'web_thickness', and 'flange_thickness' (or a valid 'section' spec e.g. C150X75X6.5X10)."
+            )
+        return self
+
+    @property
+    def width(self) -> float:
+        return self.flange_width or 0.0
+
+
+class TShapeProfile(BaseModel):
+    shape: Literal["TSHAPE", "T"] = "TSHAPE"
+    depth: Optional[float] = None
+    flange_width: Optional[float] = None
+    web_thickness: Optional[float] = None
+    flange_thickness: Optional[float] = None
+    fillet_radius: Optional[float] = None
+    section: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_tshape_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "width" in data and "flange_width" not in data:
+                data["flange_width"] = data["width"]
+            sec = data.get("section")
+            if sec:
+                parsed = parse_steel_section_spec(sec)
+                for k, v in parsed.items():
+                    if k not in data or data[k] is None:
+                        data[k] = v
+        return data
+
+    @model_validator(mode="after")
+    def validate_tshape(self) -> "TShapeProfile":
+        if (
+            self.depth is None
+            or self.flange_width is None
+            or self.web_thickness is None
+            or self.flange_thickness is None
+        ):
+            raise ValueError(
+                "TShapeProfile requires 'depth', 'flange_width', 'web_thickness', and 'flange_thickness' (or a valid 'section' spec e.g. T150X150X6X9)."
+            )
+        return self
+
+    @property
+    def width(self) -> float:
+        return self.flange_width or 0.0
+
+
+class RectangleHollowProfile(BaseModel):
+    shape: Literal["RHS", "RECTANGLE_HOLLOW", "BOX_HOLLOW"] = "RHS"
+    width: Optional[float] = None
+    depth: Optional[float] = None
+    wall_thickness: Optional[float] = None
+    inner_fillet_radius: Optional[float] = None
+    outer_fillet_radius: Optional[float] = None
+    section: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_rhs_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            sec = data.get("section")
+            if sec:
+                parsed = parse_steel_section_spec(sec)
+                for k, v in parsed.items():
+                    if k not in data or data[k] is None:
+                        data[k] = v
+        return data
+
+    @model_validator(mode="after")
+    def validate_rhs(self) -> "RectangleHollowProfile":
+        if self.width is None or self.depth is None or self.wall_thickness is None:
+            raise ValueError(
+                "RectangleHollowProfile requires 'width', 'depth', and 'wall_thickness' (or a valid 'section' spec e.g. RHS100X50X3.2)."
+            )
+        return self
+
+
+class CircleHollowProfile(BaseModel):
+    shape: Literal["CHS", "CIRCLE_HOLLOW", "PIPE_HOLLOW"] = "CHS"
+    radius: Optional[float] = None
+    diameter: Optional[float] = None
+    wall_thickness: Optional[float] = None
+    section: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_chs_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            sec = data.get("section")
+            if sec:
+                parsed = parse_steel_section_spec(sec)
+                for k, v in parsed.items():
+                    if k not in data or data[k] is None:
+                        data[k] = v
+        return data
+
+    @model_validator(mode="after")
+    def compute_chs_dimensions(self) -> "CircleHollowProfile":
+        if self.diameter is None and self.radius is None:
+            raise ValueError(
+                "Either 'diameter' or 'radius' must be provided for CircleHollowProfile (or a valid 'section' spec e.g. CHS114.3X4.5)."
+            )
+        if self.wall_thickness is None:
+            raise ValueError("CircleHollowProfile requires 'wall_thickness'.")
+        if self.diameter is not None and self.radius is None:
+            self.radius = self.diameter / 2.0
+        elif self.radius is not None and self.diameter is None:
+            self.diameter = self.radius * 2.0
+        return self
+
+    @property
+    def width(self) -> float:
+        return self.diameter or (self.radius * 2.0 if self.radius else 0.0)
+
+    @property
+    def depth(self) -> float:
+        return self.diameter or (self.radius * 2.0 if self.radius else 0.0)
+
 
 Profile = Annotated[
-    Union[BoxProfile, CircularProfile, EllipseProfile],
+    Union[
+        BoxProfile,
+        CircularProfile,
+        EllipseProfile,
+        IShapeProfile,
+        LShapeProfile,
+        UShapeProfile,
+        TShapeProfile,
+        RectangleHollowProfile,
+        CircleHollowProfile,
+    ],
     Field(discriminator="shape"),
 ]
 

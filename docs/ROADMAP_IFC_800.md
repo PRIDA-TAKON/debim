@@ -82,12 +82,12 @@ flowchart TD
 ### 🔴 Phase 0: Modular Manifest Architecture (มาตรการสำคัญที่สุด - ทำก่อนเพื่อน)
 > **เป้าหมาย:** ทำให้นางแบบอาคารขนาดใหญ่สามารถแยกย่อยเป็นหลายไฟล์ได้ เช่น แยกตามชั้น (storeys/), ระบบ (structure/, mep/), หรือโซน (zones/) ป้องกัน Context Window ล้น
 
-- [ ] **Task 0.1:** `feat(loader): Support multi-file modular manifest via 'includes' pattern in project.yaml`
+- [x] **Task 0.1:** `feat(loader): Support multi-file modular manifest via 'includes' pattern in project.yaml` *(เสร็จสิ้น: Issue #70, PR #71)*
   - **Scope:** `src/debim/schema.py`, `src/debim/resolver.py`, `src/debim/cli.py`
   - **Description:** เพิ่มคีย์ `includes: ["models/**/*.yaml"]` ให้กับ `project.yaml` โดย resolver จะทำการ merge entity lists (columns, beams, walls, pipes ฯลฯ) เข้าด้วยกันอย่างราบรื่นก่อนรัน spatial resolution
   - **Benefits:** AI (รวมถึง Jules) สามารถเปิดอ่านและแก้ไขไฟล์ย่อย (เช่น `models/first_floor/columns.yaml`) ที่มีขนาดเพียง 10-20 บรรทัดได้ โดยไม่ต้องโหลดทั้งตึก
-- [ ] **Task 0.2:** `feat(cli): Add 'debim split' and 'debim bundle' commands`
-  - **Scope:** `src/debim/cli.py`
+- [x] **Task 0.2:** `feat(cli): Add 'debim split' and 'debim bundle' commands` *(เสร็จสิ้น)*
+  - **Scope:** `src/debim/cli.py`, `src/debim/modular.py`
   - **Description:** คำสั่งแยกไฟล์ `project.yaml` ก้อนใหญ่ ออกเป็นโครงสร้างไดเรกทอรีมาตรฐานตาม storey/system และคำสั่งรวมกลับเป็น single-file artifact
 
 #### ตัวอย่างโครงสร้าง Modular Directory ที่รองรับ:
@@ -114,9 +114,9 @@ my_project/
 ### 🟡 Phase 1: Geometric Primitives & 2D Profiles
 > **เป้าหมาย:** สร้าง "ไวยากรณ์เรขาคณิต" ให้ครอบคลุมรูปทรงหน้าตัดทุกแบบในมาตรฐาน buildingSMART เพื่อให้ทุก Entity ในระยะถัดไปนำไปประกอบร่างได้
 
-- [ ] **Task 1.1:** `feat: Support Circular and Elliptical profiles (IfcCircleProfileDef, IfcEllipseProfileDef)` — *(กำลังดำเนินการ: Issue #68)*
+- [x] **Task 1.1:** `feat: Support Circular and Elliptical profiles (IfcCircleProfileDef, IfcEllipseProfileDef)` *(เสร็จสิ้น: Issue #68, PR #69)*
   - **DoD:** รองรับหน้าตัดวงกลมและวงรี, คำนวณ QTO (Area/Volume), เรนเดอร์กระบอกสูบ/ท่อโค้งใน Three.js, ส่งออก IFC4
-- [ ] **Task 1.2:** `feat: Support Standard Structural Steel Profiles (I, H, L, C, T, RHS, CHS)`
+- [x] **Task 1.2:** `feat: Support Standard Structural Steel Profiles (I, H, L, C, T, RHS, CHS)` *(เสร็จสิ้น)*
   - **Scope:** `IfcIShapeProfileDef`, `IfcLShapeProfileDef`, `IfcUShapeProfileDef`, `IfcTShapeProfileDef`, `IfcRectangleHollowProfileDef`
   - **DoD:** สเปกเหล็กรูปพรรณ มอก./AISC, คำนวณน้ำหนักเหล็กตามตาราง QTO, เรนเดอร์ Three.js ExtrudeGeometry
 - [ ] **Task 1.3:** `feat: Support Arbitrary Closed Profile with Voids`

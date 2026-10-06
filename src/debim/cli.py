@@ -29,6 +29,7 @@ from debim.qto import calculate_qto
 from debim.resolver import resolve_manifest
 from debim.schema import ProjectManifest, load_manifest
 from debim.viewer import generate_viewer_html, serve_viewer
+from debim.modular import bundle_manifest, split_manifest
 
 app = typer.Typer(
     name="debim",
@@ -109,6 +110,111 @@ def validate(
     except (ValidationError, ValueError, Exception) as e:
         console.print(f"[bold red]Validation Error:[/bold red]\n{e}")
         raise typer.Exit(code=1)
+
+
+@app.command()
+def split(
+    manifest: Path = typer.Option(
+        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest to split"
+    ),
+    output_dir: Optional[Path] = typer.Option(
+        None, "--output-dir", "-o", help="Target output directory (defaults to manifest directory)"
+    ),
+    by: str = typer.Option(
+        "system", "--by", "-b", help="Decomposition strategy: 'system' (subsystem/category) or 'storey' (by level)"
+    ),
+    backup: bool = typer.Option(
+        True, "--backup/--no-backup", help="Create backup of original manifest if overwriting (project.yaml.bak)"
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Preview decomposition without writing files to disk"
+    ),
+):
+    """Split a monolithic project.yaml manifest into modular files under models/"""
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        raise typer.Exit(code=1)
+
+    try:
+        summary_info = split_manifest(
+            manifest_path=manifest,
+            output_dir=output_dir,
+            by=by,
+            backup=backup,
+            dry_run=dry_run,
+        )
+    except Exception as e:
+        console.print(f"[bold red]Error during split:[/bold red] {e}")
+        raise typer.Exit(code=1)
+
+    title = "[bold cyan]debim Split (Preview / Dry Run)[/bold cyan]" if dry_run else "[bold green]debim Split Complete[/bold green]"
+    table = Table(title=title, show_header=True, header_style="bold cyan")
+    table.add_column("Module File", style="yellow")
+    table.add_column("Elements", justify="right", style="green")
+
+    for rel_path, count in summary_info["modules"].items():
+        table.add_row(rel_path, str(count))
+
+    console.print(table)
+    total_elements = summary_info["total_elements"]
+    num_modules = len(summary_info["modules"])
+
+    if dry_run:
+        console.print(
+            Panel(
+                f"[bold yellow]Dry-run preview:[/bold yellow] {total_elements} elements across {num_modules} modules.\n"
+                f"Strategy: [cyan]{by}[/cyan]\n"
+                "Run without [cyan]--dry-run[/cyan] to write modular manifest files to disk.",
+                style="yellow",
+            )
+        )
+    else:
+        console.print(
+            Panel(
+                f"[bold green]Successfully decomposed[/bold green] [cyan]{manifest}[/cyan] into [yellow]{num_modules}[/yellow] modular files!\n"
+                f"Total Elements: [green]{total_elements}[/green] | Strategy: [cyan]{by}[/cyan]\n"
+                f"Root Manifest Updated: [cyan]{summary_info['root_file']}[/cyan] (with includes: [\"models/**/*.yaml\"])",
+                style="green",
+            )
+        )
+
+
+@app.command()
+def bundle(
+    manifest: Path = typer.Option(
+        Path("project.yaml"), "--manifest", "-m", help="Path to modular project manifest to bundle"
+    ),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Output path for bundled single-file manifest (default: stdout)"
+    ),
+):
+    """Bundle a modular project manifest (with includes:) into a single self-contained project.yaml"""
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        raise typer.Exit(code=1)
+
+    try:
+        bundled = bundle_manifest(manifest_path=manifest, output_path=output)
+    except Exception as e:
+        console.print(f"[bold red]Error during bundle:[/bold red] {e}")
+        raise typer.Exit(code=1)
+
+    elem_count = len(bundled.get("elements", []))
+    storey_count = len(bundled.get("spatial_structure", {}).get("storeys", []))
+    mat_count = len(bundled.get("materials", []))
+
+    if output is not None:
+        console.print(
+            Panel(
+                f"[bold green]Successfully bundled modular manifest into:[/bold green] [cyan]{output}[/cyan]\n"
+                f"Aggregated: [green]{elem_count}[/green] elements, [green]{storey_count}[/green] storeys, [green]{mat_count}[/green] materials.",
+                title="[bold green]debim Bundle Complete[/bold green]",
+                style="green",
+            )
+        )
+    else:
+        yaml_str = yaml.safe_dump(bundled, sort_keys=False, allow_unicode=True)
+        print(yaml_str, end="")
 
 
 @app.command()
