@@ -110,16 +110,15 @@ def generate_viewer_html(
                 "height": col.height,
             }
 
+        cx = (col.start_point[0] + col.end_point[0]) / 2.0
+        cy = (col.start_point[1] + col.end_point[1]) / 2.0
+        cz = (col.start_point[2] + col.end_point[2]) / 2.0
         elements_data.append({
             "tag": col.tag,
             "class": "IfcColumn",
             "material": col.element.material,
-            "position": [
-                col.start_point[0],
-                col.start_point[1],
-                col.start_point[2] + col.height / 2.0,
-            ],
-            "rotation": [0, 0, 0],
+            "position": [cx, cy, cz],
+            "direction_vector_3d": col.direction_vector_3d,
             "dimensions": dim,
             "color": "#808080",
             "layer": col.layer,
@@ -127,11 +126,8 @@ def generate_viewer_html(
 
     # Beams
     for beam in resolved.beams:
-        cx = (beam.start_point[0] + beam.end_point[0]) / 2.0
-        cy = (beam.start_point[1] + beam.end_point[1]) / 2.0
         prof = beam.element.profile
         if prof.shape == "CIRCULAR":
-            cz = beam.start_point[2] - prof.radius
             dim = {
                 "shape": "CIRCULAR",
                 "length": beam.span_length,
@@ -139,7 +135,6 @@ def generate_viewer_html(
                 "diameter": prof.diameter,
             }
         elif prof.shape == "ELLIPSE":
-            cz = beam.start_point[2] - prof.semi_minor_axis
             dim = {
                 "shape": "ELLIPSE",
                 "length": beam.span_length,
@@ -147,7 +142,6 @@ def generate_viewer_html(
                 "semi_minor_axis": prof.semi_minor_axis,
             }
         else:
-            cz = beam.start_point[2] - prof.depth / 2.0
             dim = {
                 "shape": "BOX",
                 "length": beam.span_length,
@@ -155,16 +149,33 @@ def generate_viewer_html(
                 "depth": prof.depth,
             }
 
-        elements_data.append({
-            "tag": beam.tag,
-            "class": "IfcBeam",
-            "material": beam.element.material,
-            "position": [cx, cy, cz],
-            "rotation": [0, 0, beam.rotation_angle],
-            "dimensions": dim,
-            "color": "#9A9A9A",
-            "layer": beam.layer,
-        })
+        if beam.waypoints and len(beam.waypoints) > 2:
+            elements_data.append({
+                "tag": beam.tag,
+                "class": "IfcBeam",
+                "geometry_type": "line",
+                "points": beam.waypoints,
+                "color": "#9A9A9A",
+                "linewidth": 4,
+                "layer": beam.layer,
+                "material": beam.element.material,
+                "dimensions": dim,
+            })
+        else:
+            cx = (beam.start_point[0] + beam.end_point[0]) / 2.0
+            cy = (beam.start_point[1] + beam.end_point[1]) / 2.0
+            cz = (beam.start_point[2] + beam.end_point[2]) / 2.0
+            elements_data.append({
+                "tag": beam.tag,
+                "class": "IfcBeam",
+                "material": beam.element.material,
+                "position": [cx, cy, cz],
+                "direction_vector_3d": beam.direction_vector_3d,
+                "rotation": [0, 0, beam.rotation_angle],
+                "dimensions": dim,
+                "color": "#9A9A9A",
+                "layer": beam.layer,
+            })
 
     # Slabs
     for slab in resolved.slabs:
@@ -1782,7 +1793,21 @@ def generate_viewer_html(
             const mesh = new THREE.Mesh(geometry, material);
 
             if (data.position) mesh.position.set(...data.position);
-            if (data.rotation) mesh.rotation.set(...data.rotation);
+            if (data.direction_vector_3d) {{
+                const d = data.direction_vector_3d;
+                const dir = new THREE.Vector3(d[0], d[1], d[2]).normalize();
+                if (data.class === "IfcColumn") {{
+                    const defaultDir = new THREE.Vector3(0, 0, 1);
+                    const q = new THREE.Quaternion().setFromUnitVectors(defaultDir, dir);
+                    mesh.quaternion.copy(q);
+                }} else if (data.class === "IfcBeam") {{
+                    const defaultDir = new THREE.Vector3(1, 0, 0);
+                    const q = new THREE.Quaternion().setFromUnitVectors(defaultDir, dir);
+                    mesh.quaternion.copy(q);
+                }}
+            }} else if (data.rotation) {{
+                mesh.rotation.set(data.rotation[0], data.rotation[1], data.rotation[2]);
+            }}
 
             const edges = new THREE.EdgesGeometry(geometry);
             const line = new THREE.LineSegments(

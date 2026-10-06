@@ -3,7 +3,7 @@ Pydantic v2 data models for project.yaml schema and manifest validation logic.
 """
 
 from pathlib import Path
-from typing import Annotated, Dict, List, Literal, Optional, Tuple, Union
+from typing import Annotated, Any, Dict, List, Literal, Optional, Tuple, Union
 import yaml
 from pydantic import BaseModel, Field, RootModel, field_validator, model_validator
 
@@ -103,12 +103,23 @@ class ColumnPlacement(BaseModel):
     grid: Tuple[str, str]
     base_storey: str
     top_storey: str
+    top_grid: Optional[Tuple[str, str]] = None
+    offset_base: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    offset_top: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    inclination_angle: Optional[float] = None
 
-    @field_validator("grid", mode="before")
+    @field_validator("grid", "top_grid", mode="before")
     @classmethod
     def convert_grid_items_to_str(cls, v):
         if isinstance(v, (list, tuple)):
             return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("offset_base", "offset_top", mode="before")
+    @classmethod
+    def convert_offset_tuple(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(float(x) for x in v)
         return v
 
 
@@ -193,12 +204,33 @@ class IfcFooting(BaseModel):
     layer: Optional[str] = None
 
 
+class BeamWaypoint(BaseModel):
+    grid: Optional[Tuple[str, str]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    x: Optional[float] = None
+    y: Optional[float] = None
+    z: Optional[float] = None
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
 # Beam placement & element
 class BeamPlacement(BaseModel):
     from_grid: Tuple[str, str]
     to_grid: Tuple[str, str]
     storey: str
     offset_z: float = 0.00
+    to_storey: Optional[str] = None
+    to_offset_z: Optional[float] = None
+    waypoints: Optional[List[BeamWaypoint]] = None
+    curve: Optional[Dict[str, Any]] = None
 
     @field_validator("from_grid", "to_grid", mode="before")
     @classmethod
@@ -839,11 +871,25 @@ class ProjectManifest(BaseModel):
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown Y grid '{gy}'"
                     )
+                if elem.placement.top_grid:
+                    tgx, tgy = elem.placement.top_grid
+                    if tgx not in grid_x_ids:
+                        raise ValueError(
+                            f"Element '{elem.tag}' top_grid references unknown X grid '{tgx}'"
+                        )
+                    if tgy not in grid_y_ids:
+                        raise ValueError(
+                            f"Element '{elem.tag}' top_grid references unknown Y grid '{tgy}'"
+                        )
 
             elif isinstance(elem, IfcBeam):
                 if elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                if elem.placement.to_storey and elem.placement.to_storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown to_storey '{elem.placement.to_storey}'"
                     )
                 fgx, fgy = elem.placement.from_grid
                 tgx, tgy = elem.placement.to_grid

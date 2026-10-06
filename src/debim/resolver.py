@@ -126,7 +126,10 @@ class ResolvedColumn(BaseModel):
     element: IfcColumn
     start_point: Tuple[float, float, float]
     end_point: Tuple[float, float, float]
-    height: float
+    height: float  # True 3D Euclidean spatial length L = sqrt(dx^2 + dy^2 + dz^2)
+    direction_vector_3d: Tuple[float, float, float] = (0.0, 0.0, 1.0)
+    pitch_angle: float = 0.0
+    yaw_angle: float = 0.0
     layer: str = "structure/framing/columns"
 
 
@@ -137,9 +140,13 @@ class ResolvedBeam(BaseModel):
     element: IfcBeam
     start_point: Tuple[float, float, float]
     end_point: Tuple[float, float, float]
-    span_length: float
-    direction_vector: Tuple[float, float]
-    rotation_angle: float
+    span_length: float  # True 3D Euclidean spatial length L
+    direction_vector: Tuple[float, float] = (1.0, 0.0)
+    direction_vector_3d: Tuple[float, float, float] = (1.0, 0.0, 0.0)
+    rotation_angle: float = 0.0
+    pitch_angle: float = 0.0
+    yaw_angle: float = 0.0
+    waypoints: List[Tuple[float, float, float]] = []
     layer: str = "structure/framing/beams"
 
 
@@ -828,54 +835,149 @@ class SpatialResolver:
         return self.storeys[storey_id]
 
     def resolve_column(self, col: IfcColumn) -> ResolvedColumn:
-        gx, gy = self.get_grid_xy(col.placement.grid)
+        gx1, gy1 = self.get_grid_xy(col.placement.grid)
         base_s = self.get_storey(col.placement.base_storey)
         top_s = self.get_storey(col.placement.top_storey)
 
-        z_start = base_s.elevation
-        z_end = top_s.elevation
-        height = z_end - z_start
+        ob = col.placement.offset_base
+        ot = col.placement.offset_top
 
-        start_point = (gx, gy, z_start)
-        end_point = (gx, gy, z_end)
+        x1 = gx1 + ob[0]
+        y1 = gy1 + ob[1]
+        z1 = base_s.elevation + ob[2]
+
+        if col.placement.top_grid:
+            gx2, gy2 = self.get_grid_xy(col.placement.top_grid)
+            x2 = gx2 + ot[0]
+            y2 = gy2 + ot[1]
+        else:
+            x2 = gx1 + ot[0]
+            y2 = gy1 + ot[1]
+
+        z2 = top_s.elevation + ot[2]
+
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1
+
+        euclidean_length = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+        if euclidean_length > 0:
+            dir_3d = (dx / euclidean_length, dy / euclidean_length, dz / euclidean_length)
+            pitch_angle = math.asin(dz / euclidean_length)
+            yaw_angle = math.atan2(dy, dx)
+        else:
+            dir_3d = (0.0, 0.0, 1.0)
+            pitch_angle = math.pi / 2.0
+            yaw_angle = 0.0
+
+        start_point = (x1, y1, z1)
+        end_point = (x2, y2, z2)
 
         return ResolvedColumn(
             tag=col.tag,
             element=col,
             start_point=start_point,
             end_point=end_point,
-            height=height,
+            height=euclidean_length,
+            direction_vector_3d=dir_3d,
+            pitch_angle=pitch_angle,
+            yaw_angle=yaw_angle,
             layer=derive_default_layer(col),
         )
 
     def resolve_beam(self, beam: IfcBeam) -> ResolvedBeam:
         x1, y1 = self.get_grid_xy(beam.placement.from_grid)
         x2, y2 = self.get_grid_xy(beam.placement.to_grid)
-        storey = self.get_storey(beam.placement.storey)
+        from_st = self.get_storey(beam.placement.storey)
 
-        z = storey.elevation + beam.placement.offset_z
+        z1 = from_st.elevation + beam.placement.offset_z
+
+        if beam.placement.to_storey:
+            to_st = self.get_storey(beam.placement.to_storey)
+        else:
+            to_st = from_st
+
+        to_off_z = (
+            beam.placement.to_offset_z
+            if beam.placement.to_offset_z is not None
+            else beam.placement.offset_z
+        )
+        z2 = to_st.elevation + to_off_z
+
+        start_point = (x1, y1, z1)
+        end_point = (x2, y2, z2)
+
+        waypoints_3d: List[Tuple[float, float, float]] = []
+
+        if beam.placement.waypoints and len(beam.placement.waypoints) >= 2:
+            for wpt in beam.placement.waypoints:
+                if wpt.x is not None and wpt.y is not None:
+                    wx = float(wpt.x)
+                    wy = float(wpt.y)
+                    wz = float(wpt.z) if wpt.z is not None else (from_st.elevation + wpt.offset_z)
+                elif wpt.grid:
+                    wgx, wgy = wpt.grid
+                    wx = self.axes_x[wgx] + wpt.offset_x
+                    wy = self.axes_y[wgy] + wpt.offset_y
+                    wz = from_st.elevation + wpt.offset_z
+                else:
+                    wx, wy, wz = (0.0, 0.0, from_st.elevation + wpt.offset_z)
+                waypoints_3d.append((wx, wy, wz))
+        elif beam.placement.curve:
+            curve = beam.placement.curve
+            c_height = float(curve.get("arch_height", curve.get("height", curve.get("apex_offset_z", 1.0))))
+            n_segs = int(curve.get("segments", 16))
+
+            waypoints_3d = []
+            for i in range(n_segs + 1):
+                t = i / float(n_segs)
+                px = x1 + t * (x2 - x1)
+                py = y1 + t * (y2 - y1)
+                pz = z1 + t * (z2 - z1) + 4.0 * c_height * t * (1.0 - t)
+                waypoints_3d.append((px, py, pz))
+        else:
+            waypoints_3d = [start_point, end_point]
+
+        total_length = sum(
+            math.dist(waypoints_3d[i], waypoints_3d[i + 1])
+            for i in range(len(waypoints_3d) - 1)
+        )
+
         dx = x2 - x1
         dy = y2 - y1
-        span_length = math.hypot(dx, dy)
+        dz = z2 - z1
+        euclidean_dist = math.sqrt(dx * dx + dy * dy + dz * dz)
 
-        if span_length > 0:
-            direction_vector = (dx / span_length, dy / span_length)
+        if euclidean_dist > 0:
+            dir_3d = (dx / euclidean_dist, dy / euclidean_dist, dz / euclidean_dist)
+            pitch_angle = math.asin(dz / euclidean_dist)
+            yaw_angle = math.atan2(dy, dx)
         else:
-            direction_vector = (0.0, 0.0)
+            dir_3d = (1.0, 0.0, 0.0)
+            pitch_angle = 0.0
+            yaw_angle = 0.0
 
-        rotation_angle = math.atan2(dy, dx)
+        span_2d = math.hypot(dx, dy)
+        if span_2d > 0:
+            dir_2d = (dx / span_2d, dy / span_2d)
+        else:
+            dir_2d = (1.0, 0.0)
 
-        start_point = (x1, y1, z)
-        end_point = (x2, y2, z)
+        rotation_angle = yaw_angle
 
         return ResolvedBeam(
             tag=beam.tag,
             element=beam,
             start_point=start_point,
             end_point=end_point,
-            span_length=span_length,
-            direction_vector=direction_vector,
+            span_length=total_length,
+            direction_vector=dir_2d,
+            direction_vector_3d=dir_3d,
             rotation_angle=rotation_angle,
+            pitch_angle=pitch_angle,
+            yaw_angle=yaw_angle,
+            waypoints=waypoints_3d,
             layer=derive_default_layer(beam),
         )
 
