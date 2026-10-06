@@ -12,6 +12,8 @@ import webbrowser
 from debim.resolver import (
     ResolvedDoor,
     ResolvedManifest,
+    ResolvedRevolvedArea,
+    ResolvedSweptDisk,
     ResolvedWindow,
     resolve_manifest,
 )
@@ -495,6 +497,43 @@ def generate_viewer_html(
         tag_lower = custom.tag.lower()
         layer_lower = (custom.layer or "").lower()
         rot = list(custom.rotation) if custom.rotation else [0.0, 0.0, 0.0]
+
+        if custom.resolved_solid:
+            s = custom.resolved_solid
+            if isinstance(s, ResolvedSweptDisk):
+                elem_dict = {
+                    "tag": custom.tag,
+                    "class": "IfcCustomElement",
+                    "geometry_type": "swept_disk",
+                    "material": "Swept Disk Asset",
+                    "position": list(s.centroid),
+                    "points": list(s.directrix),
+                    "radius": s.radius,
+                    "inner_radius": s.inner_radius,
+                    "color": "#38BDF8",
+                    "layer": custom.layer,
+                    "dimensions": s.bounding_box,
+                }
+                elements_data.append(elem_dict)
+                continue
+            elif isinstance(s, ResolvedRevolvedArea):
+                prof_dim = extract_profile_viewer_dim(s.profile, 1.0, is_column=True)
+                elem_dict = {
+                    "tag": custom.tag,
+                    "class": "IfcCustomElement",
+                    "geometry_type": "revolved_area",
+                    "material": "Revolved Asset",
+                    "position": list(custom.position),
+                    "profile": prof_dim,
+                    "axis_point": list(s.axis_point),
+                    "axis_direction": list(s.axis_direction),
+                    "revolution_angle": s.revolution_angle,
+                    "color": "#A855F7",
+                    "layer": custom.layer,
+                    "dimensions": s.bounding_box,
+                }
+                elements_data.append(elem_dict)
+                continue
 
         if custom.dimensions:
             w = custom.dimensions.width
@@ -2049,7 +2088,40 @@ def generate_viewer_html(
                 return;
             }}
 
-            if (data.geometry_type === "line" || data.geometry_type === "line_loop") {{
+            if (data.geometry_type === "swept_disk") {{
+                const points = data.points.map(p => new THREE.Vector3(...p));
+                const curve = new THREE.CatmullRomCurve3(points);
+                const tubeGeom = new THREE.TubeGeometry(curve, 64, data.radius, 16, false);
+                const mat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color(data.color || "#38bdf8"),
+                    roughness: 0.4,
+                    metalness: 0.2
+                }});
+                object3D = new THREE.Mesh(tubeGeom, mat);
+            }} else if (data.geometry_type === "revolved_area") {{
+                const prof = data.profile || {{}};
+                const w = prof.width || 0.4;
+                const d = prof.depth || 0.4;
+                const shape = new THREE.Shape();
+                shape.moveTo(-w/2, -d/2);
+                shape.lineTo(w/2, -d/2);
+                shape.lineTo(w/2, d/2);
+                shape.lineTo(-w/2, d/2);
+                shape.closePath();
+                const pts2d = shape.getPoints(12);
+                const points = pts2d.map(p => new THREE.Vector2(p.x, p.y));
+                const segments = Math.max(12, Math.round((data.revolution_angle / 360) * 32));
+                const phiLength = (data.revolution_angle / 360) * Math.PI * 2;
+                const latheGeom = new THREE.LatheGeometry(points, segments, 0, phiLength);
+                const mat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color(data.color || "#a855f7"),
+                    roughness: 0.5,
+                    metalness: 0.1,
+                    side: THREE.DoubleSide
+                }});
+                object3D = new THREE.Mesh(latheGeom, mat);
+                if (data.position) object3D.position.set(...data.position);
+            }} else if (data.geometry_type === "line" || data.geometry_type === "line_loop") {{
                 const points = data.points.map(p => new THREE.Vector3(...p));
                 const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
                 const lineMat = new THREE.LineBasicMaterial({{
