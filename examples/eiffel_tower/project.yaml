@@ -154,6 +154,9 @@ elements:
     grid:
     - W_OUT
     - S_OUT
+    top_grid:
+    - P2_W
+    - P2_S
     base_storey: Ground
     top_storey: Platform_1
 - class: IfcColumn
@@ -167,6 +170,9 @@ elements:
     grid:
     - W_CTR
     - S_CTR
+    top_grid:
+    - P2_W
+    - P2_S
     base_storey: Ground
     top_storey: Platform_1
 - class: IfcColumn
@@ -180,6 +186,9 @@ elements:
     grid:
     - W_INN
     - S_INN
+    top_grid:
+    - P2_W
+    - P2_S
     base_storey: Ground
     top_storey: Platform_1
 - class: IfcColumn
@@ -193,6 +202,9 @@ elements:
     grid:
     - E_OUT
     - S_OUT
+    top_grid:
+    - P2_E
+    - P2_S
     base_storey: Ground
     top_storey: Platform_1
 - class: IfcColumn
@@ -206,6 +218,9 @@ elements:
     grid:
     - E_CTR
     - S_CTR
+    top_grid:
+    - P2_E
+    - P2_S
     base_storey: Ground
     top_storey: Platform_1
 - class: IfcColumn
@@ -219,6 +234,9 @@ elements:
     grid:
     - E_INN
     - S_INN
+    top_grid:
+    - P2_E
+    - P2_S
     base_storey: Ground
     top_storey: Platform_1
 - class: IfcColumn
@@ -232,6 +250,9 @@ elements:
     grid:
     - W_OUT
     - N_OUT
+    top_grid:
+    - P2_W
+    - P2_N
     base_storey: Ground
     top_storey: Platform_1
 - class: IfcColumn
@@ -245,6 +266,9 @@ elements:
     grid:
     - W_CTR
     - N_CTR
+    top_grid:
+    - P2_W
+    - P2_N
     base_storey: Ground
     top_storey: Platform_1
 - class: IfcColumn
@@ -258,6 +282,9 @@ elements:
     grid:
     - W_INN
     - N_INN
+    top_grid:
+    - P2_W
+    - P2_N
     base_storey: Ground
     top_storey: Platform_1
 - class: IfcColumn
@@ -271,6 +298,9 @@ elements:
     grid:
     - E_OUT
     - N_OUT
+    top_grid:
+    - P2_E
+    - P2_N
     base_storey: Ground
     top_storey: Platform_1
 - class: IfcColumn
@@ -284,6 +314,9 @@ elements:
     grid:
     - E_CTR
     - N_CTR
+    top_grid:
+    - P2_E
+    - P2_N
     base_storey: Ground
     top_storey: Platform_1
 - class: IfcColumn
@@ -297,6 +330,9 @@ elements:
     grid:
     - E_INN
     - N_INN
+    top_grid:
+    - P2_E
+    - P2_N
     base_storey: Ground
     top_storey: Platform_1
 - class: IfcBeam
@@ -314,7 +350,10 @@ elements:
     - E_INN
     - S_INN
     storey: Ground
-    offset_z: 39.0
+    offset_z: 0.0
+    curve:
+      arch_height: 39.0
+      segments: 20
 - class: IfcBeam
   tag: ARCH-NORTH
   material: PUDDLE_IRON_PAINTED
@@ -330,7 +369,10 @@ elements:
     - E_INN
     - N_INN
     storey: Ground
-    offset_z: 39.0
+    offset_z: 0.0
+    curve:
+      arch_height: 39.0
+      segments: 20
 - class: IfcBeam
   tag: ARCH-WEST
   material: PUDDLE_IRON_PAINTED
@@ -346,7 +388,10 @@ elements:
     - W_INN
     - N_INN
     storey: Ground
-    offset_z: 39.0
+    offset_z: 0.0
+    curve:
+      arch_height: 39.0
+      segments: 20
 - class: IfcBeam
   tag: ARCH-EAST
   material: PUDDLE_IRON_PAINTED
@@ -362,7 +407,10 @@ elements:
     - E_INN
     - N_INN
     storey: Ground
-    offset_z: 39.0
+    offset_z: 0.0
+    curve:
+      arch_height: 39.0
+      segments: 20
 - class: IfcBeam
   tag: TRUSS-P1-SOUTH
   material: PUDDLE_IRON_PAINTED
