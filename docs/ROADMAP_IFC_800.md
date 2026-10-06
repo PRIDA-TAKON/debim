@@ -143,7 +143,7 @@ my_project/
 - [ ] **Task 2.4 (HVAC Distribution):** `feat: Support IfcAirTerminal, IfcDamper, and IfcFlowController`
   - หัวจ่ายลม (Diffuser), แดมเปอร์กันควัน/ลม, พัดลมระบายอากาศ
   - QTO: นับจำนวน, พื้นที่หน้าตัดท่อลม
-- [ ] **Task 2.5 (Electrical Distribution):** `feat: Support IfcLightFixture, IfcOutlet, and IfcElectricDistributionBoard`
+- [x] **Task 2.5 (Electrical Distribution):** `feat: Support IfcLightFixture, IfcOutlet, and IfcElectricDistributionBoard` *(เสร็จสิ้น: Issue #75, PR #79)*
   - โคมไฟ LED, เต้ารับไฟฟ้า, ตู้โหลดเซ็นเตอร์ (MDB/DB)
   - QTO: นับจำนวน, ความยาวรางสายไฟและท่อร้อยสาย
 
