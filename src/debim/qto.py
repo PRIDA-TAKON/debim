@@ -3,6 +3,7 @@ Quantitative Take-Off (QTO) Engine for debim.
 Calculates concrete volume, formwork area, and reinforcement (rebar) schedules/weights.
 """
 
+import math
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
@@ -94,11 +95,11 @@ def parse_main_bars(
 
 
 def parse_stirrups(
-    stirrups_str: Optional[str], element_length: float, width: float, depth: float
+    stirrups_str: Optional[str], element_length: float, width: float = 0.0, depth: float = 0.0, perimeter: Optional[float] = None
 ) -> Tuple[Dict[str, float], float]:
     """
     Parse stirrups specification (e.g. 'RB6 @ 0.15m' or 'RB9 @ 0.15m').
-    Perimeter = 2 * (width + depth)
+    Perimeter = 2 * (width + depth) if perimeter is None else perimeter
     Number = int(element_length / spacing) + 1
     Total weight = number * perimeter * unit_weight
     Returns (dict_by_bar_type, total_weight).
@@ -116,10 +117,10 @@ def parse_stirrups(
     if spacing <= 0:
         return {}, 0.0
 
-    perimeter = 2.0 * (width + depth)
+    p = perimeter if perimeter is not None else 2.0 * (width + depth)
     num_stirrups = int(element_length / spacing) + 1
     unit_weight = get_bar_unit_weight(bar_type)
-    weight = num_stirrups * perimeter * unit_weight
+    weight = num_stirrups * p * unit_weight
 
     return {bar_type: weight}, weight
 
@@ -570,9 +571,32 @@ def calculate_element_qto(
 
     elif isinstance(resolved, ResolvedColumn):
         elem = resolved.element
-        w = elem.profile.width
-        d = elem.profile.depth
+        profile = elem.profile
         h = resolved.height
+
+        shape = profile.shape
+        if shape == "CIRCULAR":
+            r = profile.radius
+            d = profile.diameter
+            vol = math.pi * (r ** 2) * h
+            perimeter = math.pi * d
+            formwork = perimeter * h
+            w = d
+            depth_val = d
+        elif shape == "ELLIPSE":
+            a = profile.semi_major_axis
+            b = profile.semi_minor_axis
+            vol = math.pi * a * b * h
+            perimeter = math.pi * (3.0 * (a + b) - math.sqrt((3.0 * a + b) * (a + 3.0 * b)))
+            formwork = perimeter * h
+            w = 2.0 * a
+            depth_val = 2.0 * b
+        else:
+            w = profile.width
+            depth_val = profile.depth
+            vol = w * depth_val * h
+            perimeter = 2.0 * (w + depth_val)
+            formwork = perimeter * h
 
         is_steel = is_steel_element(elem.class_, tag, elem.material, mat_cat, mat_name)
         is_timber = is_timber_element(elem.class_, tag, elem.material, mat_cat, mat_name)
@@ -582,9 +606,8 @@ def calculate_element_qto(
             if linear_mass is not None:
                 steel_wt = linear_mass * h
             else:
-                steel_wt = (w * d * h) * 7850.0
+                steel_wt = vol * 7850.0
 
-            perimeter = 2.0 * (w + d)
             paint_area = perimeter * h
             weld_area = paint_area * 0.10
 
@@ -603,8 +626,7 @@ def calculate_element_qto(
             )
 
         elif is_timber:
-            timber_vol = w * d * h
-            perimeter = 2.0 * (w + d)
+            timber_vol = vol
             paint_area = perimeter * h
 
             return ElementQTO(
@@ -621,12 +643,9 @@ def calculate_element_qto(
             )
 
         else:
-            vol = w * d * h
-            formwork = 2.0 * (w + d) * h
-
             if elem.reinforcement:
                 m_dict, m_wt = parse_main_bars(elem.reinforcement.main, h)
-                s_dict, s_wt = parse_stirrups(elem.reinforcement.stirrups, h, w, d)
+                s_dict, s_wt = parse_stirrups(elem.reinforcement.stirrups, h, w, depth_val, perimeter=perimeter)
 
                 for btype, wt in m_dict.items():
                     rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
@@ -647,9 +666,32 @@ def calculate_element_qto(
 
     elif isinstance(resolved, ResolvedBeam):
         elem = resolved.element
-        w = elem.profile.width
-        d = elem.profile.depth
+        profile = elem.profile
         length = resolved.span_length
+
+        shape = profile.shape
+        if shape == "CIRCULAR":
+            r = profile.radius
+            d = profile.diameter
+            vol = math.pi * (r ** 2) * length
+            perimeter = math.pi * d
+            formwork = perimeter * length
+            w = d
+            depth_val = d
+        elif shape == "ELLIPSE":
+            a = profile.semi_major_axis
+            b = profile.semi_minor_axis
+            vol = math.pi * a * b * length
+            perimeter = math.pi * (3.0 * (a + b) - math.sqrt((3.0 * a + b) * (a + 3.0 * b)))
+            formwork = perimeter * length
+            w = 2.0 * a
+            depth_val = 2.0 * b
+        else:
+            w = profile.width
+            depth_val = profile.depth
+            vol = w * depth_val * length
+            perimeter = 2.0 * (w + depth_val)
+            formwork = (2.0 * depth_val + w) * length
 
         is_steel = is_steel_element(elem.class_, tag, elem.material, mat_cat, mat_name)
         is_timber = is_timber_element(elem.class_, tag, elem.material, mat_cat, mat_name)
@@ -659,9 +701,8 @@ def calculate_element_qto(
             if linear_mass is not None:
                 steel_wt = linear_mass * length
             else:
-                steel_wt = (w * d * length) * 7850.0
+                steel_wt = vol * 7850.0
 
-            perimeter = 2.0 * (w + d)
             paint_area = perimeter * length
             weld_area = paint_area * 0.10
 
@@ -680,8 +721,7 @@ def calculate_element_qto(
             )
 
         elif is_timber:
-            timber_vol = w * d * length
-            perimeter = 2.0 * (w + d)
+            timber_vol = vol
             paint_area = perimeter * length
 
             return ElementQTO(
@@ -698,16 +738,13 @@ def calculate_element_qto(
             )
 
         else:
-            vol = w * d * length
-            formwork = (2.0 * d + w) * length
-
             if elem.reinforcement:
                 m_top_dict, m_top_wt = parse_main_bars(elem.reinforcement.main_top, length)
                 m_bot_dict, m_bot_wt = parse_main_bars(
                     elem.reinforcement.main_bottom, length
                 )
                 s_dict, s_wt = parse_stirrups(
-                    elem.reinforcement.stirrups, length, w, d
+                    elem.reinforcement.stirrups, length, w, depth_val, perimeter=perimeter
                 )
 
                 for btype, wt in m_top_dict.items():

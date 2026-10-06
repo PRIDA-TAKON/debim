@@ -87,6 +87,29 @@ def generate_viewer_html(
 
     # Columns
     for col in resolved.columns:
+        prof = col.element.profile
+        if prof.shape == "CIRCULAR":
+            dim = {
+                "shape": "CIRCULAR",
+                "radius": prof.radius,
+                "diameter": prof.diameter,
+                "height": col.height,
+            }
+        elif prof.shape == "ELLIPSE":
+            dim = {
+                "shape": "ELLIPSE",
+                "semi_major_axis": prof.semi_major_axis,
+                "semi_minor_axis": prof.semi_minor_axis,
+                "height": col.height,
+            }
+        else:
+            dim = {
+                "shape": "BOX",
+                "width": prof.width,
+                "depth": prof.depth,
+                "height": col.height,
+            }
+
         cx = (col.start_point[0] + col.end_point[0]) / 2.0
         cy = (col.start_point[1] + col.end_point[1]) / 2.0
         cz = (col.start_point[2] + col.end_point[2]) / 2.0
@@ -96,17 +119,36 @@ def generate_viewer_html(
             "material": col.element.material,
             "position": [cx, cy, cz],
             "direction_vector_3d": col.direction_vector_3d,
-            "dimensions": {
-                "width": col.element.profile.width,
-                "depth": col.element.profile.depth,
-                "height": col.height,
-            },
+            "dimensions": dim,
             "color": "#808080",
             "layer": col.layer,
         })
 
     # Beams
     for beam in resolved.beams:
+        prof = beam.element.profile
+        if prof.shape == "CIRCULAR":
+            dim = {
+                "shape": "CIRCULAR",
+                "length": beam.span_length,
+                "radius": prof.radius,
+                "diameter": prof.diameter,
+            }
+        elif prof.shape == "ELLIPSE":
+            dim = {
+                "shape": "ELLIPSE",
+                "length": beam.span_length,
+                "semi_major_axis": prof.semi_major_axis,
+                "semi_minor_axis": prof.semi_minor_axis,
+            }
+        else:
+            dim = {
+                "shape": "BOX",
+                "length": beam.span_length,
+                "width": prof.width,
+                "depth": prof.depth,
+            }
+
         if beam.waypoints and len(beam.waypoints) > 2:
             elements_data.append({
                 "tag": beam.tag,
@@ -117,11 +159,7 @@ def generate_viewer_html(
                 "linewidth": 4,
                 "layer": beam.layer,
                 "material": beam.element.material,
-                "dimensions": {
-                    "length": beam.span_length,
-                    "width": beam.element.profile.width,
-                    "depth": beam.element.profile.depth,
-                },
+                "dimensions": dim,
             })
         else:
             cx = (beam.start_point[0] + beam.end_point[0]) / 2.0
@@ -134,11 +172,7 @@ def generate_viewer_html(
                 "position": [cx, cy, cz],
                 "direction_vector_3d": beam.direction_vector_3d,
                 "rotation": [0, 0, beam.rotation_angle],
-                "dimensions": {
-                    "length": beam.span_length,
-                    "width": beam.element.profile.width,
-                    "depth": beam.element.profile.depth,
-                },
+                "dimensions": dim,
                 "color": "#9A9A9A",
                 "layer": beam.layer,
             })
@@ -1716,9 +1750,27 @@ def generate_viewer_html(
             let geometry;
             const dim = data.dimensions || {{ width: 1, depth: 1, height: 1 }};
             if (data.class === "IfcColumn") {{
-                geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
+                if (dim.shape === "CIRCULAR") {{
+                    geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.height, 32);
+                    geometry.rotateX(Math.PI / 2);
+                }} else if (dim.shape === "ELLIPSE") {{
+                    geometry = new THREE.CylinderGeometry(1, 1, dim.height, 32);
+                    geometry.rotateX(Math.PI / 2);
+                    geometry.scale(dim.semi_major_axis, dim.semi_minor_axis, 1);
+                }} else {{
+                    geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
+                }}
             }} else if (data.class === "IfcBeam") {{
-                geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
+                if (dim.shape === "CIRCULAR") {{
+                    geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.length, 32);
+                    geometry.rotateZ(-Math.PI / 2);
+                }} else if (dim.shape === "ELLIPSE") {{
+                    geometry = new THREE.CylinderGeometry(1, 1, dim.length, 32);
+                    geometry.rotateZ(-Math.PI / 2);
+                    geometry.scale(1, dim.semi_major_axis, dim.semi_minor_axis);
+                }} else {{
+                    geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
+                }}
             }} else if (data.class === "IfcWall") {{
                 geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
             }} else if (data.class === "IfcDoor" || data.class === "IfcWindow") {{
@@ -2433,7 +2485,11 @@ def generate_viewer_html(
 
             let dimText = '-';
             if (data.dimensions) {{
-                if (data.dimensions.area !== undefined) {{
+                if (data.dimensions.shape === "CIRCULAR") {{
+                    dimText = 'Ø ' + (data.dimensions.diameter || data.dimensions.radius * 2).toFixed(2) + 'm (Circular)';
+                }} else if (data.dimensions.shape === "ELLIPSE") {{
+                    dimText = (data.dimensions.semi_major_axis * 2).toFixed(2) + 'm × ' + (data.dimensions.semi_minor_axis * 2).toFixed(2) + 'm (Ellipse)';
+                }} else if (data.dimensions.area !== undefined) {{
                     dimText = `${{data.dimensions.area.toFixed(2)}} m² (Slope: ${{data.dimensions.slope_degrees || 0}}°)`;
                 }} else if (data.dimensions.length !== undefined) {{
                     dimText = `${{data.dimensions.length.toFixed(2)}}m (L)`;

@@ -390,6 +390,33 @@ class StepSerializer:
         # 1. Columns
         for col in resolved.columns:
             st_id = col.element.placement.base_storey
+
+            prof = col.element.profile
+            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+            if prof.shape == "CIRCULAR":
+                ifc_prof = self.create_entity("IfcCircleProfileDef", ".AREA.", f"{col.tag}_Profile", axis2d, float(prof.radius))
+            elif prof.shape == "ELLIPSE":
+                ifc_prof = self.create_entity("IfcEllipseProfileDef", ".AREA.", f"{col.tag}_Profile", axis2d, float(prof.semi_major_axis), float(prof.semi_minor_axis))
+            else:
+                ifc_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", f"{col.tag}_Profile", axis2d, float(prof.width), float(prof.depth))
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", ifc_prof, axis3d, ext_dir, float(col.height))
+
+            shape_rep = self.create_entity(
+                "IfcShapeRepresentation",
+                body_context_ref,
+                "Body",
+                "SweptSolid",
+                [solid],
+            )
+            prod_shape_ref = self.create_entity(
+                "IfcProductDefinitionShape", None, None, [shape_rep]
+            )
+
             st_pl_ref = storey_pl_refs.get(st_id)
             st_elev = storey_elevations.get(st_id, 0.0)
 
@@ -410,7 +437,7 @@ class StepSerializer:
                 None,
                 None,
                 elem_pl,
-                None,
+                prod_shape_ref,
                 None,
             )
             if st_id in storey_elements:
@@ -419,6 +446,33 @@ class StepSerializer:
         # 2. Beams
         for beam in resolved.beams:
             st_id = beam.element.placement.storey
+
+            prof = beam.element.profile
+            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+            if prof.shape == "CIRCULAR":
+                ifc_prof = self.create_entity("IfcCircleProfileDef", ".AREA.", f"{beam.tag}_Profile", axis2d, float(prof.radius))
+            elif prof.shape == "ELLIPSE":
+                ifc_prof = self.create_entity("IfcEllipseProfileDef", ".AREA.", f"{beam.tag}_Profile", axis2d, float(prof.semi_major_axis), float(prof.semi_minor_axis))
+            else:
+                ifc_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", f"{beam.tag}_Profile", axis2d, float(prof.width), float(prof.depth))
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (1.0, 0.0, 0.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", ifc_prof, axis3d, ext_dir, float(beam.span_length))
+
+            shape_rep = self.create_entity(
+                "IfcShapeRepresentation",
+                body_context_ref,
+                "Body",
+                "SweptSolid",
+                [solid],
+            )
+            prod_shape_ref = self.create_entity(
+                "IfcProductDefinitionShape", None, None, [shape_rep]
+            )
+
             st_pl_ref = storey_pl_refs.get(st_id)
             st_elev = storey_elevations.get(st_id, 0.0)
 
@@ -439,7 +493,7 @@ class StepSerializer:
                 None,
                 None,
                 elem_pl,
-                None,
+                prod_shape_ref,
                 None,
             )
             if st_id in storey_elements:
@@ -1096,6 +1150,28 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             matrix=mat,
         )
 
+        prof = col.element.profile
+        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+        if prof.shape == "CIRCULAR":
+            ifc_prof = model.createIfcCircleProfileDef("AREA", f"{col.tag}_Profile", pos2d, float(prof.radius))
+        elif prof.shape == "ELLIPSE":
+            ifc_prof = model.createIfcEllipseProfileDef("AREA", f"{col.tag}_Profile", pos2d, float(prof.semi_major_axis), float(prof.semi_minor_axis))
+        else:
+            ifc_prof = model.createIfcRectangleProfileDef("AREA", f"{col.tag}_Profile", pos2d, float(prof.width), float(prof.depth))
+
+        solid = model.createIfcExtrudedAreaSolid(
+            ifc_prof,
+            model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            ),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            float(col.height),
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=col_obj, representation=rep)
+
     # 2. Beams
     for beam in resolved.beams:
         beam_obj = ifcopenshell.api.run(
@@ -1147,6 +1223,28 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             product=beam_obj,
             matrix=mat,
         )
+
+        prof = beam.element.profile
+        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+        if prof.shape == "CIRCULAR":
+            ifc_prof = model.createIfcCircleProfileDef("AREA", f"{beam.tag}_Profile", pos2d, float(prof.radius))
+        elif prof.shape == "ELLIPSE":
+            ifc_prof = model.createIfcEllipseProfileDef("AREA", f"{beam.tag}_Profile", pos2d, float(prof.semi_major_axis), float(prof.semi_minor_axis))
+        else:
+            ifc_prof = model.createIfcRectangleProfileDef("AREA", f"{beam.tag}_Profile", pos2d, float(prof.width), float(prof.depth))
+
+        solid = model.createIfcExtrudedAreaSolid(
+            ifc_prof,
+            model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            ),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+            float(beam.span_length),
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=beam_obj, representation=rep)
 
     # 3. Slabs
     for slab in resolved.slabs:
