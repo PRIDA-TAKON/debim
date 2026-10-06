@@ -25,6 +25,7 @@ from debim.schema import (
     IfcPipeSegment,
     IfcRoof,
     IfcSanitaryTerminal,
+    IfcWasteTerminal,
     IfcSlab,
     IfcStair,
     IfcSwitchingDevice,
@@ -38,6 +39,7 @@ from debim.schema import (
 
 TerminalElement = Union[
     IfcSanitaryTerminal,
+    IfcWasteTerminal,
     IfcDistributionBoard,
     IfcLightFixture,
     IfcSwitchingDevice,
@@ -527,11 +529,22 @@ MEP_DUCT_COLORS: Dict[str, str] = {
 
 DEFAULT_TERMINAL_DIMENSIONS: Dict[str, Tuple[float, float, float]] = {
     "WATER_CLOSET": (0.40, 0.70, 0.75),
+    "WATERCLOSET": (0.40, 0.70, 0.75),
     "LAVATORY": (0.50, 0.45, 0.80),
+    "WASHHANDBASIN": (0.50, 0.45, 0.80),
+    "URINAL": (0.35, 0.35, 0.75),
     "SHOWER": (0.20, 0.20, 0.90),
+    "BATH": (0.75, 1.70, 0.55),
+    "BIDET": (0.40, 0.60, 0.40),
     "KITCHEN_SINK": (0.60, 1.00, 0.85),
+    "SINK": (0.60, 1.00, 0.85),
     "FLOOR_DRAIN": (0.15, 0.15, 0.05),
+    "FLOORDRAIN": (0.15, 0.15, 0.05),
+    "FLOORTRAP": (0.20, 0.20, 0.15),
+    "GULLYSUMP": (0.30, 0.30, 0.30),
     "GREASE_TRAP": (0.40, 0.50, 0.40),
+    "GREASEINTERCEPTOR": (0.40, 0.50, 0.40),
+    "ROOFDRAIN": (0.20, 0.20, 0.10),
     "SEPTIC_TANK": (1.20, 1.20, 1.50),
     "WATER_TANK": (1.00, 1.00, 1.60),
     "WATER_PUMP": (0.35, 0.35, 0.35),
@@ -563,11 +576,22 @@ DEFAULT_TERMINAL_DIMENSIONS: Dict[str, Tuple[float, float, float]] = {
 
 DEFAULT_TERMINAL_COLORS: Dict[str, str] = {
     "WATER_CLOSET": "#F8FAFC",
+    "WATERCLOSET": "#F8FAFC",
     "LAVATORY": "#F1F5F9",
+    "WASHHANDBASIN": "#F1F5F9",
+    "URINAL": "#F8FAFC",
     "SHOWER": "#CBD5E1",
+    "BATH": "#FFFFFF",
+    "BIDET": "#F8FAFC",
     "KITCHEN_SINK": "#94A3B8",
+    "SINK": "#94A3B8",
     "FLOOR_DRAIN": "#64748B",
+    "FLOORDRAIN": "#64748B",
+    "FLOORTRAP": "#475569",
+    "GULLYSUMP": "#334155",
     "GREASE_TRAP": "#0D9488",  # Teal
+    "GREASEINTERCEPTOR": "#0D9488",
+    "ROOFDRAIN": "#64748B",
     "SEPTIC_TANK": "#1E293B",  # Dark Slate
     "WATER_TANK": "#0284C7",   # Blue
     "WATER_PUMP": "#2563EB",   # Royal Blue
@@ -637,12 +661,28 @@ class ResolvedSanitaryTerminal(BaseModel):
     tag: str
     element: IfcSanitaryTerminal
     terminal_type: str
+    predefined_type: str = "USERDEFINED"
     position: Tuple[float, float, float]
     rotation: float = 0.0
     rotation_angle: float = 0.0
     dimensions: Tuple[float, float, float]  # width, depth, height
     color: str
     layer: str = "mep/plumbing/fixtures"
+
+
+class ResolvedWasteTerminal(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcWasteTerminal
+    terminal_type: str
+    predefined_type: str = "USERDEFINED"
+    position: Tuple[float, float, float]
+    rotation: float = 0.0
+    rotation_angle: float = 0.0
+    dimensions: Tuple[float, float, float]  # width, depth, height
+    color: str
+    layer: str = "mep/plumbing/drainage"
 
 
 class ResolvedDistributionBoard(BaseModel):
@@ -764,6 +804,7 @@ ResolvedElement = Union[
     ResolvedCableCarrierSegment,
     ResolvedDuctSegment,
     ResolvedSanitaryTerminal,
+    ResolvedWasteTerminal,
     ResolvedDistributionBoard,
     ResolvedLightFixture,
     ResolvedSwitchingDevice,
@@ -795,6 +836,7 @@ class ResolvedManifest(BaseModel):
     conduits: List[ResolvedCableCarrierSegment] = []
     ducts: List[ResolvedDuctSegment] = []
     sanitary_terminals: List[ResolvedSanitaryTerminal] = []
+    waste_terminals: List[ResolvedWasteTerminal] = []
     distribution_boards: List[ResolvedDistributionBoard] = []
     light_fixtures: List[ResolvedLightFixture] = []
     switches: List[ResolvedSwitchingDevice] = []
@@ -2837,6 +2879,30 @@ class SpatialResolver:
             tag=term.tag,
             element=term,
             terminal_type=term.terminal_type,
+            predefined_type=term.predefined_type or "USERDEFINED",
+            position=r_term.position,
+            rotation=r_term.rotation_angle,
+            rotation_angle=r_term.rotation_angle,
+            dimensions=dims,
+            color=color,
+            layer=derive_default_layer(term),
+        )
+
+    def resolve_waste_terminal(self, term: IfcWasteTerminal) -> ResolvedWasteTerminal:
+        r_term = self.resolve_terminal(term)
+        dims = (
+            (term.dimensions.width, term.dimensions.depth, term.dimensions.height)
+            if term.dimensions
+            else (term.width, term.depth, term.height)
+            if (term.width or term.depth or term.height)
+            else DEFAULT_TERMINAL_DIMENSIONS.get(term.terminal_type, (0.20, 0.20, 0.10))
+        )
+        color = DEFAULT_TERMINAL_COLORS.get(term.terminal_type, "#64748B")
+        return ResolvedWasteTerminal(
+            tag=term.tag,
+            element=term,
+            terminal_type=term.terminal_type,
+            predefined_type=term.predefined_type or "USERDEFINED",
             position=r_term.position,
             rotation=r_term.rotation_angle,
             rotation_angle=r_term.rotation_angle,
@@ -3107,6 +3173,11 @@ class SpatialResolver:
             elif isinstance(elem, IfcSanitaryTerminal):
                 r_term = self.resolve_sanitary_terminal(elem)
                 resolved_manifest.sanitary_terminals.append(r_term)
+                resolved_manifest.elements.append(r_term)
+                resolved_manifest.terminals.append(self.resolve_terminal(elem))
+            elif isinstance(elem, IfcWasteTerminal):
+                r_term = self.resolve_waste_terminal(elem)
+                resolved_manifest.waste_terminals.append(r_term)
                 resolved_manifest.elements.append(r_term)
                 resolved_manifest.terminals.append(self.resolve_terminal(elem))
             elif isinstance(elem, IfcDistributionBoard):

@@ -455,7 +455,8 @@ def generate_cost_template(
         (float(qto.total_lighting_fixtures_count), "MEP-LIGHT-FIXTURE", "Lighting Fixture", "set", "26 51 00", "D50"),
         (float(qto.total_switches_count), "MEP-SWITCH", "Wall Switch", "set", "26 27 26", "D50"),
         (float(qto.total_outlets_count), "MEP-OUTLET", "Power Wall Outlet", "set", "26 27 26", "D50"),
-        (float(qto.total_sanitary_terminals_count), "MEP-SANITARY-FIXTURE", "Sanitary Plumbing Fixture", "set", "22 40 00", "D20"),
+        (float(qto.total_sanitary_terminals_count), "SAN-TOILET", "Sanitary Plumbing Fixture", "set", "22 40 00", "D20"),
+        (float(qto.total_waste_terminals_count), "PLUMB-FLOORDRAIN", "Drainage Waste Terminal", "set", "22 40 00", "D20"),
         (float(qto.total_air_terminals_count), "MEP-AIR-TERMINAL", "Ventilation Fan / Diffuser", "set", "23 37 13", "D30"),
         (float(qto.total_unitary_equipment_count), "MEP-HVAC-UNITARY", "Air Conditioner Unit", "set", "23 81 00", "D30"),
     ]
@@ -836,7 +837,7 @@ def estimate_cost(
                 )
                 break
 
-    # 7. Map MEP system totals (Cold Water, Soil, Waste, Vent, Conduits, Terminals, HVAC)
+    # 7. Map MEP system totals (Cold Water, Soil, Waste, Vent, Conduits, Terminals, HVAC, Sanitary & Waste Fixtures)
     mep_maps = [
         (qto.total_cold_water_pipe_length, ["pipe-cold", "pipe-water", "ppr", "ท่อน้ำดี"]),
         (qto.total_soil_pipe_length, ["pipe-soil", "ท่อโสโครก", "pvc-soil"]),
@@ -860,6 +861,51 @@ def estimate_cost(
                             quantities_by_code.get(code, 0.0) + amount
                         )
                         break
+
+    # Itemized mapping for individual sanitary and waste terminal elements against catalog items
+    for eqto in qto.elements:
+        if not eqto.mep or eqto.mep.count <= 0:
+            continue
+        code_candidates = []
+        if eqto.element_class == "IfcSanitaryTerminal":
+            tt = eqto.mep.fixture_type.upper() if eqto.mep.fixture_type else ""
+            if "CLOSET" in tt or "TOILET" in tt:
+                code_candidates = ["SAN-TOILET", "SAN-WC", "MEP-SANITARY-FIXTURE"]
+            elif "BASIN" in tt or "LAVATORY" in tt:
+                code_candidates = ["SAN-BASIN", "SAN-LAVATORY", "MEP-SANITARY-FIXTURE"]
+            elif "URINAL" in tt:
+                code_candidates = ["SAN-URINAL", "MEP-SANITARY-FIXTURE"]
+            elif "SHOWER" in tt:
+                code_candidates = ["SAN-SHOWER", "MEP-SANITARY-FIXTURE"]
+            elif "BATH" in tt:
+                code_candidates = ["SAN-BATH", "MEP-SANITARY-FIXTURE"]
+            elif "SINK" in tt:
+                code_candidates = ["SAN-SINK", "MEP-SANITARY-FIXTURE"]
+            else:
+                code_candidates = ["MEP-SANITARY-FIXTURE"]
+        elif eqto.element_class == "IfcWasteTerminal":
+            tt = eqto.mep.fixture_type.upper() if eqto.mep.fixture_type else ""
+            if "GREASE" in tt or "INTERCEPTOR" in tt:
+                code_candidates = ["PLUMB-GREASETRAP", "PLUMB-FLOORDRAIN"]
+            elif "DRAIN" in tt or "TRAP" in tt or "GULLY" in tt or "SUMP" in tt:
+                code_candidates = ["PLUMB-FLOORDRAIN", "PLUMB-DRAIN"]
+            else:
+                code_candidates = ["PLUMB-FLOORDRAIN"]
+
+        matched_code = None
+        for cand in code_candidates:
+            if cand in catalog.items:
+                matched_code = cand
+                break
+        if not matched_code and code_candidates:
+            # Fallback search by keyword in item codes
+            for code in catalog.items:
+                if any(cand.lower() in code.lower() for cand in code_candidates):
+                    matched_code = code
+                    break
+
+        if matched_code:
+            quantities_by_code[matched_code] = quantities_by_code.get(matched_code, 0.0) + float(eqto.mep.count)
 
     # 8. Map Earth excavation
     if qto.total_excavation_volume > 0:

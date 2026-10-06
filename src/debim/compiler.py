@@ -91,6 +91,10 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcDuctSegment"
     if "pipe" in l:
         return "IfcPipeSegment"
+    if "waste" in l or "drainage" in l:
+        return "IfcWasteTerminal"
+    if "sanitary" in l:
+        return "IfcSanitaryTerminal"
     if "terminal" in l or "air_terminal" in l:
         return "IfcAirTerminal"
     if "fitting" in l:
@@ -416,6 +420,8 @@ class StepSerializer:
                 term.hosting_wall.element.placement.storey if term.hosting_wall else None
             )
             ifc_cls = term.element.class_
+            raw_pred_type = getattr(term, "predefined_type", None) or getattr(term.element, "predefined_type", None)
+            pred_type = f".{raw_pred_type.upper()}." if raw_pred_type else None
             elem_ref = self.create_entity(
                 ifc_cls,
                 generate_ifc_guid(),
@@ -425,7 +431,7 @@ class StepSerializer:
                 None,
                 None,
                 None,
-                None,
+                pred_type,
             )
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
@@ -1537,6 +1543,19 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             model,
             ifc_class="IfcSanitaryTerminal",
             name=term.tag,
+            predefined_type=term.predefined_type or "USERDEFINED",
+        )
+        st_id = term.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(term_obj)
+
+    for term in resolved.waste_terminals:
+        term_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcWasteTerminal",
+            name=term.tag,
+            predefined_type=term.predefined_type or "USERDEFINED",
         )
         st_id = term.element.placement.storey
         if st_id in storey_products:

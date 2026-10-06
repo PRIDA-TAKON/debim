@@ -931,9 +931,15 @@ def generate_viewer_html(
     for term in resolved.sanitary_terminals:
         type_th = {
             "WATER_CLOSET": "Water Closet (WC)",
-            "LAVATORY": "Lavatory",
+            "WATERCLOSET": "Water Closet (WC)",
+            "LAVATORY": "Lavatory / Basin",
+            "WASHHANDBASIN": "Wash Hand Basin",
+            "URINAL": "Urinal",
             "SHOWER": "Shower",
+            "BATH": "Bathtub",
+            "BIDET": "Bidet",
             "KITCHEN_SINK": "Kitchen Sink",
+            "SINK": "Sink",
             "FLOOR_DRAIN": "Floor Drain",
             "GREASE_TRAP": "Grease Trap",
             "SEPTIC_TANK": "Septic Tank",
@@ -941,7 +947,7 @@ def generate_viewer_html(
             "WATER_PUMP": "Water Booster Pump",
         }.get(term.terminal_type, term.terminal_type)
 
-        elements_data.append({
+        elem_dict = {
             "tag": term.tag,
             "class": "IfcSanitaryTerminal",
             "material": term.element.material or "Sanitary Ware",
@@ -959,8 +965,55 @@ def generate_viewer_html(
             "color": term.color,
             "layer": term.layer,
             "fixture_type": term.terminal_type,
+            "predefined_type": term.predefined_type,
             "fixture_name_th": type_th,
-        })
+        }
+        if term.element.cold_water_inlet_diameter or term.element.hot_water_inlet_diameter or term.element.waste_outlet_diameter:
+            elem_dict["ports"] = {
+                "cold_water_in": term.element.cold_water_inlet_diameter,
+                "hot_water_in": term.element.hot_water_inlet_diameter,
+                "waste_out": term.element.waste_outlet_diameter,
+            }
+        elements_data.append(elem_dict)
+
+    # MEP Elements: Waste Terminals
+    for term in resolved.waste_terminals:
+        type_th = {
+            "FLOORDRAIN": "Floor Drain",
+            "FLOOR_DRAIN": "Floor Drain",
+            "FLOORTRAP": "Floor Trap",
+            "GULLYSUMP": "Gully Sump",
+            "GREASEINTERCEPTOR": "Grease Interceptor / Trap",
+            "GREASE_TRAP": "Grease Trap",
+            "ROOFDRAIN": "Roof Drain",
+        }.get(term.terminal_type, term.terminal_type)
+
+        elem_dict = {
+            "tag": term.tag,
+            "class": "IfcWasteTerminal",
+            "material": term.element.material or "Drainage Fixture",
+            "position": [
+                term.position[0],
+                term.position[1],
+                term.position[2] + term.dimensions[2] / 2.0,
+            ],
+            "rotation": [0, 0, math.radians(term.rotation)],
+            "dimensions": {
+                "width": term.dimensions[0],
+                "depth": term.dimensions[1],
+                "height": term.dimensions[2],
+            },
+            "color": term.color,
+            "layer": term.layer,
+            "fixture_type": term.terminal_type,
+            "predefined_type": term.predefined_type,
+            "fixture_name_th": type_th,
+        }
+        if term.element.waste_outlet_diameter:
+            elem_dict["ports"] = {
+                "waste_out": term.element.waste_outlet_diameter,
+            }
+        elements_data.append(elem_dict)
 
     # MEP Elements: Distribution Boards
     for board in resolved.distribution_boards:
@@ -2726,6 +2779,20 @@ def generate_viewer_html(
             if (data.fixture_name_th) {{
                 const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${{data.color}};margin-right:6px;"></span>` : '';
                 mepRow += `<div class="data-row"><span class="data-label">Fixture</span><span class="data-value">${{colorDot}}${{data.fixture_name_th}}</span></div>`;
+            }}
+            if (data.predefined_type) {{
+                mepRow += `<div class="data-row"><span class="data-label">PredefinedType</span><span class="data-value">${{data.predefined_type}}</span></div>`;
+            }}
+            if (data.ports) {{
+                if (data.ports.cold_water_in) {{
+                    mepRow += `<div class="data-row"><span class="data-label">CW Inlet</span><span class="data-value">Ø ${{ (data.ports.cold_water_in * 1000).toFixed(0) }} mm</span></div>`;
+                }}
+                if (data.ports.hot_water_in) {{
+                    mepRow += `<div class="data-row"><span class="data-label">HW Inlet</span><span class="data-value">Ø ${{ (data.ports.hot_water_in * 1000).toFixed(0) }} mm</span></div>`;
+                }}
+                if (data.ports.waste_out) {{
+                    mepRow += `<div class="data-row"><span class="data-label">Waste Outlet</span><span class="data-value">Ø ${{ (data.ports.waste_out * 1000).toFixed(0) }} mm</span></div>`;
+                }}
             }}
             if (data.dimensions && data.dimensions.diameter !== undefined) {{
                 const dia_mm = (data.dimensions.diameter * 1000).toFixed(0);
