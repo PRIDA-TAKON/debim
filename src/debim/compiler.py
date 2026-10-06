@@ -567,7 +567,7 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
-        # 4. Stairs
+        # 4. Stairs, Stair Flights, Ramps, Railings
         for stair in resolved.stairs:
             st_id = stair.element.placement.from_storey
             elem_ref = self.create_entity(
@@ -580,6 +580,59 @@ class StepSerializer:
                 None,
                 None,
                 None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for flight in resolved.stair_flights:
+            st_id = flight.element.placement.from_storey if flight.element else None
+            elem_ref = self.create_entity(
+                "IfcStairFlight",
+                generate_ifc_guid(),
+                None,
+                flight.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+                flight.n_risers,
+                int(flight.n_risers - 1) if flight.n_risers > 1 else 1,
+                float(flight.riser),
+                float(flight.tread),
+            )
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for ramp in resolved.ramps:
+            st_id = ramp.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcRamp",
+                generate_ifc_guid(),
+                None,
+                ramp.tag,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for railing in resolved.railings:
+            st_id = railing.element.placement.storey
+            ptype = railing.predefined_type if railing.predefined_type in ("HANDRAIL", "GUARDRAIL", "BALUSTRADE", "USERDEFINED") else "HANDRAIL"
+            elem_ref = self.create_entity(
+                "IfcRailing",
+                generate_ifc_guid(),
+                None,
+                railing.tag,
+                None,
+                None,
+                None,
+                None,
+                f".{ptype}.",
             )
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
@@ -1332,7 +1385,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id in storey_products:
             storey_products[st_id].append(cov_obj)
 
-    # 4. Stairs
+    # 4. Stairs, Stair Flights, Ramps, Railings
     for stair in resolved.stairs:
         stair_obj = ifcopenshell.api.run(
             "root.create_entity", model, ifc_class="IfcStair", name=stair.tag
@@ -1340,6 +1393,31 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = stair.element.placement.from_storey
         if st_id in storey_products:
             storey_products[st_id].append(stair_obj)
+
+    for flight in resolved.stair_flights:
+        flight_obj = ifcopenshell.api.run(
+            "root.create_entity", model, ifc_class="IfcStairFlight", name=flight.tag
+        )
+        st_id = flight.element.placement.from_storey if flight.element else None
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(flight_obj)
+
+    for ramp in resolved.ramps:
+        ramp_obj = ifcopenshell.api.run(
+            "root.create_entity", model, ifc_class="IfcRamp", name=ramp.tag
+        )
+        st_id = ramp.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(ramp_obj)
+
+    for railing in resolved.railings:
+        ptype = railing.predefined_type if railing.predefined_type in ("HANDRAIL", "GUARDRAIL", "BALUSTRADE", "USERDEFINED") else "HANDRAIL"
+        railing_obj = ifcopenshell.api.run(
+            "root.create_entity", model, ifc_class="IfcRailing", name=railing.tag, predefined_type=ptype
+        )
+        st_id = railing.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(railing_obj)
 
     # 5. Walls & Children
     for wall in resolved.walls:

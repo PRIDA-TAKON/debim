@@ -25,10 +25,13 @@ from debim.resolver import (
     ResolvedManifest,
     ResolvedOutlet,
     ResolvedPipeSegment,
+    ResolvedRailing,
+    ResolvedRamp,
     ResolvedRoof,
     ResolvedSanitaryTerminal,
     ResolvedSlab,
     ResolvedStair,
+    ResolvedStairFlight,
     ResolvedSwitchingDevice,
     ResolvedUnitaryEquipment,
     ResolvedTerminal,
@@ -1098,6 +1101,81 @@ def calculate_element_qto(
             stair_assembly=stair_qto,
         )
 
+    elif isinstance(resolved, ResolvedStairFlight):
+        elem = resolved.element or IfcStairFlight(
+            tag=resolved.tag,
+            material="MAT_CONC",
+            flight_width=resolved.width,
+            waist_thickness=resolved.waist_thickness,
+            riser_height=resolved.riser,
+            tread_length=resolved.tread,
+            placement=None,  # Not accessed directly for qto
+        )
+        vol = (resolved.slope_length * resolved.width * resolved.waist_thickness) + (
+            resolved.n_risers * 0.5 * resolved.tread * resolved.riser * resolved.width
+        )
+        formwork = (resolved.slope_length * resolved.width) + (
+            resolved.n_risers * resolved.riser * resolved.width
+        ) + (resolved.slope_length * resolved.waist_thickness * 2.0)
+
+        tread_finish = resolved.n_risers * resolved.width * resolved.tread
+        riser_finish = resolved.n_risers * resolved.width * resolved.riser
+        nosing_len = resolved.n_risers * resolved.width if (elem and elem.finishes and elem.finishes.nosing) else 0.0
+
+        stair_qto = StairQTO(
+            total_steps=resolved.n_risers,
+            tread_finish_area=tread_finish,
+            riser_finish_area=riser_finish,
+            nosing_length=nosing_len,
+        )
+
+        return ElementQTO(
+            tag=tag,
+            element_class="IfcStairFlight",
+            material=elem.material if elem else None,
+            length=resolved.slope_length,
+            concrete_volume=vol,
+            formwork_area=formwork,
+            stair_assembly=stair_qto,
+        )
+
+    elif isinstance(resolved, ResolvedRamp):
+        elem = resolved.element
+        vol = resolved.concrete_volume
+        formwork = resolved.formwork_area
+
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.slope_length,
+            concrete_volume=vol,
+            formwork_area=formwork,
+        )
+
+    elif isinstance(resolved, ResolvedRailing):
+        elem = resolved.element
+        linear_m = resolved.total_length
+
+        # Estimate steel/handrail weight based on profile or standard rate (~8.5 kg/m)
+        steel_wt = 0.0
+        if elem.handrail_profile:
+            area, perimeter, w, d = compute_profile_geometry(elem.handrail_profile)
+            steel_wt = area * 7850.0 * linear_m
+        else:
+            steel_wt = linear_m * 8.50
+
+        paint_area = linear_m * math.pi * 0.05 * 2.0
+
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=linear_m,
+            structural_steel_weight=steel_wt,
+            painting_area=paint_area,
+        )
+
     elif isinstance(resolved, ResolvedCustomElement):
         elem = resolved.element
         vol = 0.0
@@ -1620,6 +1698,9 @@ def calculate_qto(
         if eqto.stair_assembly:
             total_nosing_len += eqto.stair_assembly.nosing_length
             total_railing_len += eqto.stair_assembly.railing_length
+
+        if eqto.element_class == "IfcRailing":
+            total_railing_len += eqto.length
 
         if eqto.roof:
             total_roof_covering += eqto.roof.sloped_area
