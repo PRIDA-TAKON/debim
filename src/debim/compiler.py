@@ -15,12 +15,14 @@ from debim.resolver import (
     ResolvedCustomElement,
     ResolvedDoor,
     ResolvedManifest,
+    ResolvedRevolvedArea,
+    ResolvedSweptDisk,
     ResolvedTerminal,
     ResolvedWall,
     ResolvedWindow,
     resolve_manifest,
 )
-from debim.schema import ProjectManifest, load_manifest
+from debim.schema import ProjectManifest, RevolvedAreaSolid, SweptDiskSolid, load_manifest
 
 
 def _build_transform_matrix(
@@ -723,31 +725,65 @@ class StepSerializer:
 
             # Shape representation
             prod_shape_ref = None
-            dims = custom.dimensions or custom.element.dimensions
-            if dims:
-                w = float(dims.width)
-                d = float(dims.depth if dims.depth is not None else dims.width)
-                h = float(dims.height)
+            solid_ref = None
 
-                pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
-                axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
-                rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, w, d)
+            if custom.element.solid or custom.resolved_solid:
+                c_solid = custom.element.solid or custom.resolved_solid
+                if isinstance(c_solid, (SweptDiskSolid, ResolvedSweptDisk)):
+                    directrix_pts = c_solid.directrix
+                    pt_refs = [self.create_entity("IfcCartesianPoint", (float(p[0]), float(p[1]), float(p[2]))) for p in directrix_pts]
+                    polyline_ref = self.create_entity("IfcPolyline", pt_refs)
+                    r = float(c_solid.radius)
+                    inner_r = float(c_solid.inner_radius) if c_solid.inner_radius is not None else None
+                    solid_ref = self.create_entity("IfcSweptDiskSolid", polyline_ref, r, inner_r, None, None)
+                elif isinstance(c_solid, (RevolvedAreaSolid, ResolvedRevolvedArea)):
+                    import math
+                    pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                    axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                    prof_ref = self.create_ifc_profile_def(c_solid.profile, custom.tag, axis2d)
+                    ax_pt_ref = self.create_entity("IfcCartesianPoint", (float(x) for x in c_solid.axis_point))
+                    ax_dir_ref = self.create_entity("IfcDirection", (float(x) for x in c_solid.axis_direction))
+                    axis1_ref = self.create_entity("IfcAxis1Placement", ax_pt_ref, ax_dir_ref)
+                    angle_rad = float(c_solid.revolution_angle) * math.pi / 180.0
+                    solid_ref = self.create_entity("IfcRevolvedAreaSolid", prof_ref, None, axis1_ref, angle_rad)
 
-                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
-                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
-                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
-                solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, h)
-
+            if solid_ref:
                 shape_rep = self.create_entity(
                     "IfcShapeRepresentation",
                     body_context_ref,
                     "Body",
                     "SweptSolid",
-                    [solid],
+                    [solid_ref],
                 )
                 prod_shape_ref = self.create_entity(
                     "IfcProductDefinitionShape", None, None, [shape_rep]
                 )
+            else:
+                dims = custom.dimensions or custom.element.dimensions
+                if dims:
+                    w = float(dims.width)
+                    d = float(dims.depth if dims.depth is not None else dims.width)
+                    h = float(dims.height)
+
+                    pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                    axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                    rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, w, d)
+
+                    pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                    axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                    ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                    solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, h)
+
+                    shape_rep = self.create_entity(
+                        "IfcShapeRepresentation",
+                        body_context_ref,
+                        "Body",
+                        "SweptSolid",
+                        [solid],
+                    )
+                    prod_shape_ref = self.create_entity(
+                        "IfcProductDefinitionShape", None, None, [shape_rep]
+                    )
 
             elem_ref = self.create_entity(
                 ifc_cls,
@@ -1420,33 +1456,29 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             matrix=mat,
         )
 
-        dims = custom.dimensions or custom.element.dimensions
-        if dims:
-            w = float(dims.width)
-            d = float(dims.depth if dims.depth is not None else dims.width)
-            h = float(dims.height)
+        solid_entity = None
+        if custom.element.solid or custom.resolved_solid:
+            c_solid = custom.element.solid or custom.resolved_solid
+            if isinstance(c_solid, (SweptDiskSolid, ResolvedSweptDisk)):
+                directrix_pts = c_solid.directrix
+                pt_objs = [model.createIfcCartesianPoint((float(p[0]), float(p[1]), float(p[2]))) for p in directrix_pts]
+                directrix_curve = model.createIfcPolyline(pt_objs)
+                r = float(c_solid.radius)
+                inner_r = float(c_solid.inner_radius) if c_solid.inner_radius is not None else None
+                solid_entity = model.createIfcSweptDiskSolid(directrix_curve, r, inner_r, None, None)
+            elif isinstance(c_solid, (RevolvedAreaSolid, ResolvedRevolvedArea)):
+                import math
+                pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+                prof_def = _create_ifcopenshell_profile(model, c_solid.profile, custom.tag, pos2d)
+                axis_pt = model.createIfcCartesianPoint((float(x) for x in c_solid.axis_point))
+                axis_dir = model.createIfcDirection((float(x) for x in c_solid.axis_direction))
+                axis1 = model.createIfcAxis1Placement(axis_pt, axis_dir)
+                angle_rad = float(c_solid.revolution_angle) * math.pi / 180.0
+                solid_entity = model.createIfcRevolvedAreaSolid(prof_def, None, axis1, angle_rad)
 
-            profile = model.createIfcRectangleProfileDef(
-                "AREA",
-                None,
-                model.createIfcAxis2Placement2D(
-                    model.createIfcCartesianPoint((0.0, 0.0))
-                ),
-                w,
-                d,
-            )
-            solid = model.createIfcExtrudedAreaSolid(
-                profile,
-                model.createIfcAxis2Placement3D(
-                    model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
-                    model.createIfcDirection((0.0, 0.0, 1.0)),
-                    model.createIfcDirection((1.0, 0.0, 0.0)),
-                ),
-                model.createIfcDirection((0.0, 0.0, 1.0)),
-                h,
-            )
+        if solid_entity:
             rep = model.createIfcShapeRepresentation(
-                body_context, "Body", "SweptSolid", [solid]
+                body_context, "Body", "SweptSolid", [solid_entity]
             )
             ifcopenshell.api.run(
                 "geometry.assign_representation",
@@ -1454,6 +1486,41 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 product=custom_obj,
                 representation=rep,
             )
+        else:
+            dims = custom.dimensions or custom.element.dimensions
+            if dims:
+                w = float(dims.width)
+                d = float(dims.depth if dims.depth is not None else dims.width)
+                h = float(dims.height)
+
+                profile = model.createIfcRectangleProfileDef(
+                    "AREA",
+                    None,
+                    model.createIfcAxis2Placement2D(
+                        model.createIfcCartesianPoint((0.0, 0.0))
+                    ),
+                    w,
+                    d,
+                )
+                solid = model.createIfcExtrudedAreaSolid(
+                    profile,
+                    model.createIfcAxis2Placement3D(
+                        model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                        model.createIfcDirection((0.0, 0.0, 1.0)),
+                        model.createIfcDirection((1.0, 0.0, 0.0)),
+                    ),
+                    model.createIfcDirection((0.0, 0.0, 1.0)),
+                    h,
+                )
+                rep = model.createIfcShapeRepresentation(
+                    body_context, "Body", "SweptSolid", [solid]
+                )
+                ifcopenshell.api.run(
+                    "geometry.assign_representation",
+                    model,
+                    product=custom_obj,
+                    representation=rep,
+                )
 
     # 6. Roofs & Roof Openings / Skylights
     for roof in resolved.roofs:

@@ -2,6 +2,7 @@
 Pydantic v2 data models for project.yaml schema and manifest validation logic.
 """
 
+import math
 from pathlib import Path
 import re
 from typing import Annotated, Any, Dict, List, Literal, Optional, Tuple, Union
@@ -503,6 +504,75 @@ Profile = Annotated[
 ]
 
 
+class SweptDiskSolid(BaseModel):
+    type: Literal["SWEPT_DISK"] = "SWEPT_DISK"
+    directrix: List[List[float]]
+    radius: float
+    inner_radius: Optional[float] = None
+
+    @field_validator("directrix", mode="before")
+    @classmethod
+    def convert_directrix_points(cls, v):
+        if isinstance(v, (list, tuple)):
+            res = []
+            for pt in v:
+                if isinstance(pt, (list, tuple)):
+                    res.append([float(x) for x in pt])
+                else:
+                    res.append(pt)
+            return res
+        return v
+
+    @model_validator(mode="after")
+    def validate_swept_disk(self) -> "SweptDiskSolid":
+        if self.radius <= 0:
+            raise ValueError("Radius must be positive for SweptDiskSolid.")
+        if self.inner_radius is not None:
+            if self.inner_radius < 0:
+                raise ValueError("Inner radius cannot be negative.")
+            if self.inner_radius >= self.radius:
+                raise ValueError("Inner radius must be strictly less than outer radius.")
+        if not self.directrix or len(self.directrix) < 2:
+            raise ValueError("Directrix must contain at least 2 3D points.")
+        for pt in self.directrix:
+            if len(pt) < 3:
+                raise ValueError("Directrix points must be 3D coordinates [x, y, z].")
+        return self
+
+
+class RevolvedAreaSolid(BaseModel):
+    type: Literal["REVOLVED_AREA"] = "REVOLVED_AREA"
+    profile: Profile
+    axis_point: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    axis_direction: Tuple[float, float, float] = (0.0, 0.0, 1.0)
+    revolution_angle: float = 360.0
+
+    @field_validator("axis_point", "axis_direction", mode="before")
+    @classmethod
+    def convert_tuple_3d(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(float(x) for x in v)
+        return v
+
+    @model_validator(mode="after")
+    def validate_revolved_area(self) -> "RevolvedAreaSolid":
+        if self.revolution_angle <= 0 or self.revolution_angle > 360.0:
+            raise ValueError("Revolution angle must be between 0 and 360 degrees.")
+        dir_len = math.sqrt(sum(x * x for x in self.axis_direction))
+        if dir_len < 1e-9:
+            raise ValueError("Axis direction vector cannot be zero.")
+        return self
+
+
+Solid = Annotated[
+    Union[
+        SweptDiskSolid,
+        RevolvedAreaSolid,
+    ],
+    Field(discriminator="type"),
+]
+
+
 
 # Column placement & element
 class ColumnPlacement(BaseModel):
@@ -897,12 +967,13 @@ class CustomElementPlacement(BaseModel):
 
 
 class IfcCustomElement(BaseModel):
-    class_: Literal["IfcCustomElement"] = Field(alias="class")
+    class_: Literal["IfcCustomElement"] = Field(alias="class", default="IfcCustomElement")
     tag: str
     name: str
-    source: str
+    source: str = "procedural"
     placement: CustomElementPlacement
     dimensions: Optional[Dimensions] = None
+    solid: Optional[Union[SweptDiskSolid, RevolvedAreaSolid]] = None
     layer: Optional[str] = None
 
 
