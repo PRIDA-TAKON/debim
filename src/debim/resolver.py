@@ -17,6 +17,7 @@ from debim.schema import (
     IfcCovering,
     IfcCustomElement,
     IfcDistributionBoard,
+    IfcElectricDistributionBoard,
     IfcDoor,
     IfcDuctSegment,
     IfcFooting,
@@ -39,6 +40,7 @@ from debim.schema import (
 TerminalElement = Union[
     IfcSanitaryTerminal,
     IfcDistributionBoard,
+    IfcElectricDistributionBoard,
     IfcLightFixture,
     IfcSwitchingDevice,
     IfcOutlet,
@@ -649,7 +651,7 @@ class ResolvedDistributionBoard(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     tag: str
-    element: IfcDistributionBoard
+    element: Union[IfcDistributionBoard, IfcElectricDistributionBoard]
     board_type: str
     position: Tuple[float, float, float]
     rotation: float = 0.0
@@ -657,7 +659,12 @@ class ResolvedDistributionBoard(BaseModel):
     dimensions: Tuple[float, float, float]
     color: str
     circuits_count: int
-    layer: str = "mep/electrical/distribution"
+    voltage: Optional[float] = None
+    phases: Optional[Union[int, str]] = None
+    main_breaker_rating_amperes: Optional[float] = None
+    poles_count: Optional[int] = None
+    predefined_type: str = "CONSUMERUNIT"
+    layer: str = "mep/electrical/panels"
 
 
 class ResolvedLightFixture(BaseModel):
@@ -672,6 +679,10 @@ class ResolvedLightFixture(BaseModel):
     dimensions: Tuple[float, float, float]
     color: str
     wattage: float
+    power_watts: float = 12.0
+    luminous_flux_lumens: Optional[float] = None
+    color_temperature_kelvin: Optional[float] = None
+    predefined_type: str = "POINTSOURCE"
     layer: str = "mep/electrical/lighting"
 
 
@@ -687,7 +698,7 @@ class ResolvedSwitchingDevice(BaseModel):
     dimensions: Tuple[float, float, float]
     color: str
     gangs: int
-    layer: str = "mep/electrical/switches"
+    layer: str = "mep/electrical/power"
 
 
 class ResolvedOutlet(BaseModel):
@@ -701,7 +712,8 @@ class ResolvedOutlet(BaseModel):
     rotation_angle: float = 0.0
     dimensions: Tuple[float, float, float]
     color: str
-    layer: str = "mep/electrical/outlets"
+    predefined_type: str = "POWEROUTLET"
+    layer: str = "mep/electrical/power"
 
 
 class ResolvedDuctSegment(BaseModel):
@@ -2845,7 +2857,9 @@ class SpatialResolver:
             layer=derive_default_layer(term),
         )
 
-    def resolve_distribution_board(self, board: IfcDistributionBoard) -> ResolvedDistributionBoard:
+    def resolve_distribution_board(
+        self, board: Union[IfcDistributionBoard, IfcElectricDistributionBoard]
+    ) -> ResolvedDistributionBoard:
         r_term = self.resolve_terminal(board)
         dims = (
             (board.dimensions.width, board.dimensions.depth, board.dimensions.height)
@@ -2865,6 +2879,11 @@ class SpatialResolver:
             dimensions=dims,
             color=color,
             circuits_count=board.circuits_count,
+            voltage=board.voltage,
+            phases=board.phases,
+            main_breaker_rating_amperes=board.main_breaker_rating_amperes,
+            poles_count=board.poles_count or board.circuits_count,
+            predefined_type=board.predefined_type or "CONSUMERUNIT",
             layer=derive_default_layer(board),
         )
 
@@ -2878,6 +2897,7 @@ class SpatialResolver:
             else DEFAULT_TERMINAL_DIMENSIONS.get(fixture.fixture_type, (0.15, 0.15, 0.05))
         )
         color = DEFAULT_TERMINAL_COLORS.get(fixture.fixture_type, "#FEF08A")
+        watt_val = fixture.power_watts or fixture.wattage or 12.0
         return ResolvedLightFixture(
             tag=fixture.tag,
             element=fixture,
@@ -2887,7 +2907,11 @@ class SpatialResolver:
             rotation_angle=r_term.rotation_angle,
             dimensions=dims,
             color=color,
-            wattage=fixture.wattage or 12.0,
+            wattage=watt_val,
+            power_watts=watt_val,
+            luminous_flux_lumens=fixture.luminous_flux_lumens,
+            color_temperature_kelvin=fixture.color_temperature_kelvin,
+            predefined_type=fixture.predefined_type or "POINTSOURCE",
             layer=derive_default_layer(fixture),
         )
 
@@ -2933,6 +2957,7 @@ class SpatialResolver:
             rotation_angle=r_term.rotation_angle,
             dimensions=dims,
             color=color,
+            predefined_type=out.predefined_type or "POWEROUTLET",
             layer=derive_default_layer(out),
         )
 
@@ -3109,7 +3134,7 @@ class SpatialResolver:
                 resolved_manifest.sanitary_terminals.append(r_term)
                 resolved_manifest.elements.append(r_term)
                 resolved_manifest.terminals.append(self.resolve_terminal(elem))
-            elif isinstance(elem, IfcDistributionBoard):
+            elif isinstance(elem, (IfcDistributionBoard, IfcElectricDistributionBoard)):
                 r_board = self.resolve_distribution_board(elem)
                 resolved_manifest.distribution_boards.append(r_board)
                 resolved_manifest.elements.append(r_board)

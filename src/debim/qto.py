@@ -390,6 +390,11 @@ class MepQTO(BaseModel):
     count: int = 1                         # จำนวนชิ้น / ชุด
     dimensions: Optional[Tuple[float, float, float]] = None
     capacity: Optional[float] = None       # CFM หรือ BTU
+    power_watts: Optional[float] = None
+    voltage: Optional[float] = None
+    phases: Optional[Union[int, str]] = None
+    main_breaker_rating_amperes: Optional[float] = None
+    predefined_type: Optional[str] = None
 
 
 class ElementQTO(BaseModel):
@@ -1308,6 +1313,10 @@ def calculate_element_qto(
                 fixture_type=resolved.board_type,
                 count=1,
                 dimensions=resolved.dimensions,
+                voltage=resolved.voltage,
+                phases=resolved.phases,
+                main_breaker_rating_amperes=resolved.main_breaker_rating_amperes,
+                predefined_type=resolved.predefined_type,
             ),
         )
 
@@ -1326,6 +1335,8 @@ def calculate_element_qto(
                 fixture_type=resolved.fixture_type,
                 count=1,
                 dimensions=resolved.dimensions,
+                power_watts=resolved.power_watts or resolved.wattage,
+                predefined_type=resolved.predefined_type,
             ),
         )
 
@@ -1362,6 +1373,7 @@ def calculate_element_qto(
                 fixture_type=resolved.outlet_type,
                 count=1,
                 dimensions=resolved.dimensions,
+                predefined_type=resolved.predefined_type,
             ),
         )
 
@@ -1673,7 +1685,7 @@ def calculate_qto(
                 total_duct_fittings += eqto.mep.fittings_count
             elif eqto.element_class == "IfcSanitaryTerminal":
                 total_sanitary_terms += eqto.mep.count
-            elif eqto.element_class == "IfcDistributionBoard":
+            elif eqto.element_class in ("IfcDistributionBoard", "IfcElectricDistributionBoard"):
                 total_dist_boards += eqto.mep.count
             elif eqto.element_class == "IfcLightFixture":
                 total_lights += eqto.mep.count

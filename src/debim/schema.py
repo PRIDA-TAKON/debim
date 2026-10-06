@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 from typing import Annotated, Any, Dict, List, Literal, Optional, Tuple, Union
 import yaml
-from pydantic import BaseModel, Field, RootModel, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
 
 
 class Units(BaseModel):
@@ -973,10 +973,19 @@ SanitaryTerminalType = Literal[
     "WATER_CLOSET", "LAVATORY", "SHOWER", "KITCHEN_SINK",
     "FLOOR_DRAIN", "GREASE_TRAP", "SEPTIC_TANK", "WATER_TANK", "WATER_PUMP"
 ]
-BoardType = Literal["CONSUMER_UNIT", "MDB", "PANELBOARD"]
-LightFixtureType = Literal["DOWNLIGHT", "LED_TUBE", "PENDANT", "WALL_LAMP", "FLOODLIGHT"]
+BoardType = Literal[
+    "CONSUMER_UNIT", "MDB", "PANELBOARD",
+    "CONSUMERUNIT", "DISTRIBUTIONBOARD", "MOTORCONTROLCENTER", "SWITCHBOARD", "USERDEFINED", "NOTDEFINED"
+]
+LightFixtureType = Literal[
+    "DOWNLIGHT", "LED_TUBE", "PENDANT", "WALL_LAMP", "FLOODLIGHT",
+    "POINTSOURCE", "DIRECTIONSOURCE", "SECURITYLIGHTING", "USERDEFINED", "NOTDEFINED"
+]
 SwitchType = Literal["ONE_WAY", "TWO_WAY", "DIMMER"]
-OutletType = Literal["DUPLEX_GROUNDED", "WATERPROOF", "HIGH_POWER"]
+OutletType = Literal[
+    "DUPLEX_GROUNDED", "WATERPROOF", "HIGH_POWER",
+    "POWEROUTLET", "DATAOUTLET", "TELEPHONEOUTLET", "USERDEFINED", "NOTDEFINED"
+]
 
 
 RoutingStrategy = Literal["DIRECT", "ORTHOGONAL", "X_THEN_Y", "Y_THEN_X"]
@@ -1094,31 +1103,90 @@ class IfcSanitaryTerminal(BaseModel):
 
 
 class IfcDistributionBoard(BaseModel):
-    class_: Literal["IfcDistributionBoard"] = Field(alias="class", default="IfcDistributionBoard")
+    model_config = ConfigDict(populate_by_name=True)
+
+    class_: Literal["IfcDistributionBoard"] = Field(
+        alias="class", default="IfcDistributionBoard"
+    )
     tag: str
     board_type: BoardType = "CONSUMER_UNIT"
+    predefined_type: Optional[str] = None
     material: Optional[str] = None
     width: float = 0.0
     depth: float = 0.0
     height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
+    voltage: Optional[float] = None
+    phases: Optional[Union[int, str]] = None
+    main_breaker_rating_amperes: Optional[float] = Field(default=None, alias="main_breaker_rating")
+    poles_count: Optional[int] = None
     circuits_count: int = 12
     layer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def resolve_board_fields(self) -> "IfcDistributionBoard":
+        if self.poles_count is not None and self.circuits_count == 12:
+            self.circuits_count = self.poles_count
+        elif self.poles_count is None and self.circuits_count != 12:
+            self.poles_count = self.circuits_count
+
+        if not self.predefined_type:
+            bt = str(self.board_type).upper()
+            if bt in ("CONSUMER_UNIT", "CONSUMERUNIT"):
+                self.predefined_type = "CONSUMERUNIT"
+            elif bt in ("MDB", "PANELBOARD", "DISTRIBUTIONBOARD"):
+                self.predefined_type = "DISTRIBUTIONBOARD"
+            elif bt in ("MOTORCONTROLCENTER", "SWITCHBOARD", "USERDEFINED", "NOTDEFINED"):
+                self.predefined_type = bt
+            else:
+                self.predefined_type = "DISTRIBUTIONBOARD"
+        return self
+
+
+class IfcElectricDistributionBoard(IfcDistributionBoard):
+    class_: Literal["IfcElectricDistributionBoard"] = Field(
+        alias="class", default="IfcElectricDistributionBoard"
+    )
 
 
 class IfcLightFixture(BaseModel):
     class_: Literal["IfcLightFixture"] = Field(alias="class", default="IfcLightFixture")
     tag: str
     fixture_type: LightFixtureType = "DOWNLIGHT"
+    predefined_type: Optional[str] = None
     material: Optional[str] = None
     width: float = 0.0
     depth: float = 0.0
     height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
+    power_watts: Optional[float] = None
     wattage: Optional[float] = 12.0
+    luminous_flux_lumens: Optional[float] = None
+    color_temperature_kelvin: Optional[float] = None
     layer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def resolve_light_fields(self) -> "IfcLightFixture":
+        if self.power_watts is not None and self.wattage in (12.0, None):
+            self.wattage = self.power_watts
+        elif self.wattage is not None and self.power_watts is None:
+            self.power_watts = self.wattage
+
+        if not self.predefined_type:
+            ft = str(self.fixture_type).upper()
+            if ft in ("DOWNLIGHT", "BULB", "POINTSOURCE"):
+                self.predefined_type = "POINTSOURCE"
+            elif ft in ("SPOTLIGHT", "FLOODLIGHT", "DIRECTIONSOURCE"):
+                self.predefined_type = "DIRECTIONSOURCE"
+            elif ft in ("EMERGENCY", "SECURITYLIGHTING"):
+                self.predefined_type = "SECURITYLIGHTING"
+            elif ft in ("LED_TUBE", "PENDANT", "WALL_LAMP", "USERDEFINED", "NOTDEFINED"):
+                self.predefined_type = ft
+            else:
+                self.predefined_type = "POINTSOURCE"
+        return self
 
 
 class IfcSwitchingDevice(BaseModel):
@@ -1139,6 +1207,7 @@ class IfcOutlet(BaseModel):
     class_: Literal["IfcOutlet"] = Field(alias="class", default="IfcOutlet")
     tag: str
     outlet_type: OutletType = "DUPLEX_GROUNDED"
+    predefined_type: Optional[str] = None
     material: Optional[str] = None
     width: float = 0.0
     depth: float = 0.0
@@ -1146,6 +1215,18 @@ class IfcOutlet(BaseModel):
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     layer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def resolve_outlet_fields(self) -> "IfcOutlet":
+        if not self.predefined_type:
+            ot = str(self.outlet_type).upper()
+            if ot in ("DUPLEX_GROUNDED", "WATERPROOF", "HIGH_POWER", "POWEROUTLET"):
+                self.predefined_type = "POWEROUTLET"
+            elif ot in ("DATAOUTLET", "TELEPHONEOUTLET", "USERDEFINED", "NOTDEFINED"):
+                self.predefined_type = ot
+            else:
+                self.predefined_type = "POWEROUTLET"
+        return self
 
 
 class IfcDuctSegment(BaseModel):
@@ -1230,6 +1311,7 @@ Element = Annotated[
         IfcDuctSegment,
         IfcSanitaryTerminal,
         IfcDistributionBoard,
+        IfcElectricDistributionBoard,
         IfcLightFixture,
         IfcSwitchingDevice,
         IfcOutlet,
@@ -1471,7 +1553,7 @@ class ProjectManifest(BaseModel):
                             if gy not in grid_y_ids:
                                 raise ValueError(f"Element '{elem.tag}' path references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, (IfcSanitaryTerminal, IfcDistributionBoard, IfcLightFixture, IfcSwitchingDevice, IfcOutlet, IfcAirTerminal, IfcUnitaryEquipment)):
+            elif isinstance(elem, (IfcSanitaryTerminal, IfcDistributionBoard, IfcElectricDistributionBoard, IfcLightFixture, IfcSwitchingDevice, IfcOutlet, IfcAirTerminal, IfcUnitaryEquipment)):
                 if elem.placement.storey and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -1639,14 +1721,14 @@ def derive_default_layer(elem) -> str:
         return f"mep/hvac/{sys_type}"
     elif cls == "IfcSanitaryTerminal":
         return "mep/plumbing/fixtures"
-    elif cls == "IfcDistributionBoard":
-        return "mep/electrical/distribution"
+    elif cls in ("IfcDistributionBoard", "IfcElectricDistributionBoard"):
+        return "mep/electrical/panels"
     elif cls == "IfcLightFixture":
         return "mep/electrical/lighting"
     elif cls == "IfcSwitchingDevice":
-        return "mep/electrical/switches"
+        return "mep/electrical/power"
     elif cls == "IfcOutlet":
-        return "mep/electrical/outlets"
+        return "mep/electrical/power"
     elif cls == "IfcAirTerminal":
         return "mep/hvac/terminals"
     elif cls == "IfcUnitaryEquipment":
