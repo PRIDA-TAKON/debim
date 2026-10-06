@@ -87,6 +87,29 @@ def generate_viewer_html(
 
     # Columns
     for col in resolved.columns:
+        prof = col.element.profile
+        if prof.shape == "CIRCULAR":
+            dim = {
+                "shape": "CIRCULAR",
+                "radius": prof.radius,
+                "diameter": prof.diameter,
+                "height": col.height,
+            }
+        elif prof.shape == "ELLIPSE":
+            dim = {
+                "shape": "ELLIPSE",
+                "semi_major_axis": prof.semi_major_axis,
+                "semi_minor_axis": prof.semi_minor_axis,
+                "height": col.height,
+            }
+        else:
+            dim = {
+                "shape": "BOX",
+                "width": prof.width,
+                "depth": prof.depth,
+                "height": col.height,
+            }
+
         elements_data.append({
             "tag": col.tag,
             "class": "IfcColumn",
@@ -97,11 +120,7 @@ def generate_viewer_html(
                 col.start_point[2] + col.height / 2.0,
             ],
             "rotation": [0, 0, 0],
-            "dimensions": {
-                "width": col.element.profile.width,
-                "depth": col.element.profile.depth,
-                "height": col.height,
-            },
+            "dimensions": dim,
             "color": "#808080",
             "layer": col.layer,
         })
@@ -110,18 +129,39 @@ def generate_viewer_html(
     for beam in resolved.beams:
         cx = (beam.start_point[0] + beam.end_point[0]) / 2.0
         cy = (beam.start_point[1] + beam.end_point[1]) / 2.0
-        cz = beam.start_point[2] - beam.element.profile.depth / 2.0
+        prof = beam.element.profile
+        if prof.shape == "CIRCULAR":
+            cz = beam.start_point[2] - prof.radius
+            dim = {
+                "shape": "CIRCULAR",
+                "length": beam.span_length,
+                "radius": prof.radius,
+                "diameter": prof.diameter,
+            }
+        elif prof.shape == "ELLIPSE":
+            cz = beam.start_point[2] - prof.semi_minor_axis
+            dim = {
+                "shape": "ELLIPSE",
+                "length": beam.span_length,
+                "semi_major_axis": prof.semi_major_axis,
+                "semi_minor_axis": prof.semi_minor_axis,
+            }
+        else:
+            cz = beam.start_point[2] - prof.depth / 2.0
+            dim = {
+                "shape": "BOX",
+                "length": beam.span_length,
+                "width": prof.width,
+                "depth": prof.depth,
+            }
+
         elements_data.append({
             "tag": beam.tag,
             "class": "IfcBeam",
             "material": beam.element.material,
             "position": [cx, cy, cz],
             "rotation": [0, 0, beam.rotation_angle],
-            "dimensions": {
-                "length": beam.span_length,
-                "width": beam.element.profile.width,
-                "depth": beam.element.profile.depth,
-            },
+            "dimensions": dim,
             "color": "#9A9A9A",
             "layer": beam.layer,
         })
@@ -1699,9 +1739,27 @@ def generate_viewer_html(
             let geometry;
             const dim = data.dimensions || {{ width: 1, depth: 1, height: 1 }};
             if (data.class === "IfcColumn") {{
-                geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
+                if (dim.shape === "CIRCULAR") {{
+                    geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.height, 32);
+                    geometry.rotateX(Math.PI / 2);
+                }} else if (dim.shape === "ELLIPSE") {{
+                    geometry = new THREE.CylinderGeometry(1, 1, dim.height, 32);
+                    geometry.rotateX(Math.PI / 2);
+                    geometry.scale(dim.semi_major_axis, dim.semi_minor_axis, 1);
+                }} else {{
+                    geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
+                }}
             }} else if (data.class === "IfcBeam") {{
-                geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
+                if (dim.shape === "CIRCULAR") {{
+                    geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.length, 32);
+                    geometry.rotateZ(-Math.PI / 2);
+                }} else if (dim.shape === "ELLIPSE") {{
+                    geometry = new THREE.CylinderGeometry(1, 1, dim.length, 32);
+                    geometry.rotateZ(-Math.PI / 2);
+                    geometry.scale(1, dim.semi_major_axis, dim.semi_minor_axis);
+                }} else {{
+                    geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
+                }}
             }} else if (data.class === "IfcWall") {{
                 geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
             }} else if (data.class === "IfcDoor" || data.class === "IfcWindow") {{
@@ -2402,7 +2460,11 @@ def generate_viewer_html(
 
             let dimText = '-';
             if (data.dimensions) {{
-                if (data.dimensions.area !== undefined) {{
+                if (data.dimensions.shape === "CIRCULAR") {{
+                    dimText = 'Ø ' + (data.dimensions.diameter || data.dimensions.radius * 2).toFixed(2) + 'm (Circular)';
+                }} else if (data.dimensions.shape === "ELLIPSE") {{
+                    dimText = (data.dimensions.semi_major_axis * 2).toFixed(2) + 'm × ' + (data.dimensions.semi_minor_axis * 2).toFixed(2) + 'm (Ellipse)';
+                }} else if (data.dimensions.area !== undefined) {{
                     dimText = `${{data.dimensions.area.toFixed(2)}} m² (Slope: ${{data.dimensions.slope_degrees || 0}}°)`;
                 }} else if (data.dimensions.length !== undefined) {{
                     dimText = `${{data.dimensions.length.toFixed(2)}}m (L)`;

@@ -44,9 +44,58 @@ class Grids(BaseModel):
 
 
 class BoxProfile(BaseModel):
-    shape: Literal["BOX"]
+    shape: Literal["BOX"] = "BOX"
     width: float
     depth: float
+
+
+class CircularProfile(BaseModel):
+    shape: Literal["CIRCULAR"] = "CIRCULAR"
+    radius: Optional[float] = None
+    diameter: Optional[float] = None
+
+    @model_validator(mode="after")
+    def compute_radius_diameter(self) -> "CircularProfile":
+        if self.diameter is None and self.radius is None:
+            raise ValueError("Either 'diameter' or 'radius' must be provided for CircularProfile.")
+        if self.diameter is not None and self.radius is None:
+            self.radius = self.diameter / 2.0
+        elif self.radius is not None and self.diameter is None:
+            self.diameter = self.radius * 2.0
+        return self
+
+
+class EllipseProfile(BaseModel):
+    shape: Literal["ELLIPSE"] = "ELLIPSE"
+    semi_major_axis: Optional[float] = None
+    semi_minor_axis: Optional[float] = None
+    major_diameter: Optional[float] = None
+    minor_diameter: Optional[float] = None
+
+    @model_validator(mode="after")
+    def compute_semi_axes(self) -> "EllipseProfile":
+        if self.semi_major_axis is None and self.major_diameter is None:
+            raise ValueError("Either 'semi_major_axis' or 'major_diameter' must be provided for EllipseProfile.")
+        if self.semi_minor_axis is None and self.minor_diameter is None:
+            raise ValueError("Either 'semi_minor_axis' or 'minor_diameter' must be provided for EllipseProfile.")
+
+        if self.semi_major_axis is None and self.major_diameter is not None:
+            self.semi_major_axis = self.major_diameter / 2.0
+        elif self.major_diameter is None and self.semi_major_axis is not None:
+            self.major_diameter = self.semi_major_axis * 2.0
+
+        if self.semi_minor_axis is None and self.minor_diameter is not None:
+            self.semi_minor_axis = self.minor_diameter / 2.0
+        elif self.minor_diameter is None and self.semi_minor_axis is not None:
+            self.minor_diameter = self.semi_minor_axis * 2.0
+
+        return self
+
+
+Profile = Annotated[
+    Union[BoxProfile, CircularProfile, EllipseProfile],
+    Field(discriminator="shape"),
+]
 
 
 # Column placement & element
@@ -72,7 +121,7 @@ class IfcColumn(BaseModel):
     class_: Literal["IfcColumn"] = Field(alias="class")
     tag: str
     material: str
-    profile: BoxProfile
+    profile: Profile
     placement: ColumnPlacement
     reinforcement: Optional[ColumnReinforcement] = None
     layer: Optional[str] = None
@@ -104,13 +153,19 @@ class FootingReinforcement(BaseModel):
 
 
 class PileProfile(BaseModel):
-    shape: Literal["HEXAGONAL", "I_SHAPE", "CIRCULAR", "SQUARE"] = "HEXAGONAL"
-    dimension: float  # Diameter, width, or depth (m)
+    shape: Literal["HEXAGONAL", "I_SHAPE", "CIRCULAR", "SQUARE", "BOX", "ELLIPSE"] = "HEXAGONAL"
+    dimension: Optional[float] = None  # Diameter, width, or depth (m)
+    width: Optional[float] = None
+    depth: Optional[float] = None
+    radius: Optional[float] = None
+    diameter: Optional[float] = None
+    semi_major_axis: Optional[float] = None
+    semi_minor_axis: Optional[float] = None
 
 
 class FootingPiles(BaseModel):
     count: int
-    profile: Optional[PileProfile] = None
+    profile: Optional[Union[PileProfile, BoxProfile, CircularProfile, EllipseProfile]] = None
     length: float  # Length per pile (m)
     material: Optional[str] = None
     spacing: Optional[float] = None  # Spacing between piles if applicable (m)
@@ -163,7 +218,7 @@ class IfcBeam(BaseModel):
     class_: Literal["IfcBeam"] = Field(alias="class")
     tag: str
     material: str
-    profile: BoxProfile
+    profile: Profile
     placement: BeamPlacement
     reinforcement: Optional[BeamReinforcement] = None
     layer: Optional[str] = None
