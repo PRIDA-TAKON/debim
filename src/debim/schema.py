@@ -412,6 +412,80 @@ class CircleHollowProfile(BaseModel):
         return self.diameter or (self.radius * 2.0 if self.radius else 0.0)
 
 
+class ArbitraryProfile(BaseModel):
+    shape: Literal[
+        "ARBITRARY",
+        "ARBITRARY_CLOSED",
+        "POLYGON",
+        "ARBITRARY_WITH_VOIDS",
+    ] = "ARBITRARY"
+    points: Optional[List[List[float]]] = None
+    outer_curve: Optional[List[List[float]]] = None
+    voids: Optional[List[List[List[float]]]] = None
+    inner_curves: Optional[List[List[List[float]]]] = None
+    linear_mass: Optional[float] = None
+    section: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_arbitrary_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            pts = data.get("points") or data.get("outer_curve")
+            if pts:
+                normalized_pts = []
+                for pt in pts:
+                    if isinstance(pt, (list, tuple)) and len(pt) >= 2:
+                        normalized_pts.append([float(pt[0]), float(pt[1])])
+                data["points"] = normalized_pts
+                data["outer_curve"] = normalized_pts
+
+            vds = data.get("voids") or data.get("inner_curves")
+            if vds:
+                normalized_vds = []
+                for loop in vds:
+                    if isinstance(loop, (list, tuple)):
+                        normalized_loop = []
+                        for pt in loop:
+                            if isinstance(pt, (list, tuple)) and len(pt) >= 2:
+                                normalized_loop.append([float(pt[0]), float(pt[1])])
+                        normalized_vds.append(normalized_loop)
+                data["voids"] = normalized_vds
+                data["inner_curves"] = normalized_vds
+        return data
+
+    @model_validator(mode="after")
+    def validate_arbitrary(self) -> "ArbitraryProfile":
+        pts = self.points or self.outer_curve
+        if not pts or len(pts) < 3:
+            raise ValueError(
+                "ArbitraryProfile requires 'points' or 'outer_curve' with at least 3 2D points."
+            )
+        vds = self.voids or self.inner_curves
+        if vds:
+            for i, v in enumerate(vds):
+                if len(v) < 3:
+                    raise ValueError(
+                        f"ArbitraryProfile void loop at index {i} must have at least 3 2D points."
+                    )
+        return self
+
+    @property
+    def width(self) -> float:
+        pts = self.points or self.outer_curve
+        if not pts:
+            return 0.0
+        xs = [p[0] for p in pts]
+        return max(xs) - min(xs)
+
+    @property
+    def depth(self) -> float:
+        pts = self.points or self.outer_curve
+        if not pts:
+            return 0.0
+        ys = [p[1] for p in pts]
+        return max(ys) - min(ys)
+
+
 Profile = Annotated[
     Union[
         BoxProfile,
@@ -423,9 +497,11 @@ Profile = Annotated[
         TShapeProfile,
         RectangleHollowProfile,
         CircleHollowProfile,
+        ArbitraryProfile,
     ],
     Field(discriminator="shape"),
 ]
+
 
 
 # Column placement & element
@@ -664,12 +740,26 @@ class SlabPlacement(BaseModel):
     boundary: List[Tuple[str, str]]  # List of grid intersections forming polygon, e.g. [["1", "A"], ["2", "A"], ["2", "B"], ["1", "B"]]
     storey: str
     offset_z: float = 0.00
+    voids: Optional[List[List[Tuple[str, str]]]] = None
 
     @field_validator("boundary", mode="before")
     @classmethod
     def convert_boundary_to_str(cls, v):
         if isinstance(v, list):
             return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+    @field_validator("voids", mode="before")
+    @classmethod
+    def convert_voids_to_str(cls, v):
+        if isinstance(v, list):
+            res = []
+            for loop in v:
+                if isinstance(loop, list):
+                    res.append([tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in loop])
+                else:
+                    res.append(loop)
+            return res
         return v
 
 

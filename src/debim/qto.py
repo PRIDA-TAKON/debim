@@ -557,6 +557,50 @@ def compute_profile_geometry(profile: Any) -> Tuple[float, float, float, float]:
         perimeter = math.pi * d
         return area, perimeter, d, d
 
+    elif shape in ("ARBITRARY", "ARBITRARY_CLOSED", "POLYGON", "ARBITRARY_WITH_VOIDS"):
+        pts = getattr(profile, "outer_curve", None) or getattr(profile, "points", None) or []
+        if not pts or len(pts) < 3:
+            return 0.0, 0.0, getattr(profile, "width", 0.0), getattr(profile, "depth", 0.0)
+
+        def _poly_area(p_list):
+            n = len(p_list)
+            if n < 3:
+                return 0.0
+            a = 0.0
+            for i in range(n):
+                j = (i + 1) % n
+                a += p_list[i][0] * p_list[j][1] - p_list[j][0] * p_list[i][1]
+            return abs(a) / 2.0
+
+        def _poly_perimeter(p_list):
+            n = len(p_list)
+            if n < 2:
+                return 0.0
+            perim = 0.0
+            for i in range(n):
+                j = (i + 1) % n
+                dx = p_list[j][0] - p_list[i][0]
+                dy = p_list[j][1] - p_list[i][1]
+                perim += math.hypot(dx, dy)
+            return perim
+
+        outer_area = _poly_area(pts)
+        outer_perimeter = _poly_perimeter(pts)
+
+        voids = getattr(profile, "inner_curves", None) or getattr(profile, "voids", None) or []
+        voids_area = 0.0
+        voids_perimeter = 0.0
+        for v in voids:
+            if v and len(v) >= 3:
+                voids_area += _poly_area(v)
+                voids_perimeter += _poly_perimeter(v)
+
+        net_area = max(0.0, outer_area - voids_area)
+        total_perimeter = outer_perimeter + voids_perimeter
+        w = profile.width
+        d = profile.depth
+        return net_area, total_perimeter, w, d
+
     else:  # Default BOX
         w = profile.width
         d = profile.depth

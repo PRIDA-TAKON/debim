@@ -6,7 +6,7 @@ and geometric dimensions.
 
 import math
 from typing import Dict, List, Literal, Optional, Tuple, Union
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from debim.schema import (
     Dimensions,
@@ -310,6 +310,7 @@ class ResolvedSlab(BaseModel):
     area: float  # Top surface area (m2)
     center: Tuple[float, float, float]  # Centroid (cx, cy, cz)
     layer: str = "structure/slabs"
+    voids: List[List[Tuple[float, float, float]]] = Field(default_factory=list)
 
 
 class ResolvedCovering(BaseModel):
@@ -1204,14 +1205,38 @@ class SpatialResolver:
         else:
             cx, cy = 0.0, 0.0
 
+        # Resolve voids if present
+        resolved_voids_3d: List[List[Tuple[float, float, float]]] = []
+        voids_area_total = 0.0
+        if getattr(slab.placement, "voids", None):
+            for vloop in slab.placement.voids:
+                vpts_2d: List[Tuple[float, float]] = []
+                vpts_3d: List[Tuple[float, float, float]] = []
+                for grid_pt in vloop:
+                    vx, vy = self.get_grid_xy(grid_pt)
+                    vpts_2d.append((vx, vy))
+                    vpts_3d.append((vx, vy, z))
+                nv = len(vpts_2d)
+                if nv >= 3:
+                    va = 0.0
+                    for i in range(nv):
+                        j = (i + 1) % nv
+                        va += vpts_2d[i][0] * vpts_2d[j][1]
+                        va -= vpts_2d[j][0] * vpts_2d[i][1]
+                    voids_area_total += abs(va) / 2.0
+                    resolved_voids_3d.append(vpts_3d)
+
+        net_area = max(0.0, area - voids_area_total)
+
         return ResolvedSlab(
             tag=slab.tag,
             element=slab,
             polygon=poly_3d,
             thickness=slab.thickness,
-            area=area,
+            area=net_area,
             center=(cx, cy, z),
             layer=derive_default_layer(slab),
+            voids=resolved_voids_3d,
         )
 
     def resolve_covering(self, covering: IfcCovering) -> ResolvedCovering:

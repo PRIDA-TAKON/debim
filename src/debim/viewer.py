@@ -66,6 +66,11 @@ def extract_profile_viewer_dim(prof: Any, length_or_height: float, is_column: bo
         dim["wall_thickness"] = prof.wall_thickness
         dim["width"] = prof.diameter
         dim["depth"] = prof.diameter
+    elif shape in ("ARBITRARY", "ARBITRARY_CLOSED", "POLYGON", "ARBITRARY_WITH_VOIDS"):
+        dim["points"] = getattr(prof, "outer_curve", None) or getattr(prof, "points", None) or []
+        dim["voids"] = getattr(prof, "inner_curves", None) or getattr(prof, "voids", None) or []
+        dim["width"] = getattr(prof, "width", 0.3)
+        dim["depth"] = getattr(prof, "depth", 0.3)
     return dim
 
 
@@ -211,6 +216,9 @@ def generate_viewer_html(
                 "width": w,
                 "depth": d,
                 "height": h,
+                "polygon": [[pt[0], pt[1]] for pt in slab.polygon],
+                "voids": [[[pt[0], pt[1]] for pt in vloop] for vloop in getattr(slab, "voids", [])],
+                "area": slab.area,
             },
             "color": "#A8B2C1",
             "transparent": True,
@@ -1810,6 +1818,33 @@ def generate_viewer_html(
                     s.closePath();
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.height, bevelEnabled: false }});
                     geometry.center();
+                }} else if (dim.shape === "ARBITRARY" || dim.shape === "ARBITRARY_CLOSED" || dim.shape === "POLYGON" || dim.shape === "ARBITRARY_WITH_VOIDS") {{
+                    const pts = dim.points || [];
+                    if (pts.length >= 3) {{
+                        const s = new THREE.Shape();
+                        s.moveTo(pts[0][0], pts[0][1]);
+                        for (let i = 1; i < pts.length; i++) {{
+                            s.lineTo(pts[i][0], pts[i][1]);
+                        }}
+                        s.closePath();
+                        const voids = dim.voids || [];
+                        for (let v = 0; v < voids.length; v++) {{
+                            const vpts = voids[v];
+                            if (vpts && vpts.length >= 3) {{
+                                const hole = new THREE.Path();
+                                hole.moveTo(vpts[0][0], vpts[0][1]);
+                                for (let j = 1; j < vpts.length; j++) {{
+                                    hole.lineTo(vpts[j][0], vpts[j][1]);
+                                }}
+                                hole.closePath();
+                                s.holes.push(hole);
+                            }}
+                        }}
+                        geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.height, bevelEnabled: false }});
+                        geometry.center();
+                    }} else {{
+                        geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
+                    }}
                 }} else {{
                     geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
                 }}
@@ -1867,8 +1902,63 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                }} else if (dim.shape === "ARBITRARY" || dim.shape === "ARBITRARY_CLOSED" || dim.shape === "POLYGON" || dim.shape === "ARBITRARY_WITH_VOIDS") {{
+                    const pts = dim.points || [];
+                    if (pts.length >= 3) {{
+                        const s = new THREE.Shape();
+                        s.moveTo(pts[0][0], pts[0][1]);
+                        for (let i = 1; i < pts.length; i++) {{
+                            s.lineTo(pts[i][0], pts[i][1]);
+                        }}
+                        s.closePath();
+                        const voids = dim.voids || [];
+                        for (let v = 0; v < voids.length; v++) {{
+                            const vpts = voids[v];
+                            if (vpts && vpts.length >= 3) {{
+                                const hole = new THREE.Path();
+                                hole.moveTo(vpts[0][0], vpts[0][1]);
+                                for (let j = 1; j < vpts.length; j++) {{
+                                    hole.lineTo(vpts[j][0], vpts[j][1]);
+                                }}
+                                hole.closePath();
+                                s.holes.push(hole);
+                            }}
+                        }}
+                        geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
+                        geometry.center();
+                        geometry.rotateY(Math.PI / 2);
+                    }} else {{
+                        geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
+                    }}
                 }} else {{
                     geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
+                }}
+            }} else if (data.class === "IfcSlab") {{
+                if (dim.polygon && dim.polygon.length >= 3) {{
+                    const s = new THREE.Shape();
+                    s.moveTo(dim.polygon[0][0] - data.position[0], dim.polygon[0][1] - data.position[1]);
+                    for (let i = 1; i < dim.polygon.length; i++) {{
+                        s.lineTo(dim.polygon[i][0] - data.position[0], dim.polygon[i][1] - data.position[1]);
+                    }}
+                    s.closePath();
+                    if (dim.voids && dim.voids.length > 0) {{
+                        for (let v = 0; v < dim.voids.length; v++) {{
+                            const vpts = dim.voids[v];
+                            if (vpts && vpts.length >= 3) {{
+                                const hole = new THREE.Path();
+                                hole.moveTo(vpts[0][0] - data.position[0], vpts[0][1] - data.position[1]);
+                                for (let j = 1; j < vpts.length; j++) {{
+                                    hole.lineTo(vpts[j][0] - data.position[0], vpts[j][1] - data.position[1]);
+                                }}
+                                hole.closePath();
+                                s.holes.push(hole);
+                            }}
+                        }}
+                    }}
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.height, bevelEnabled: false }});
+                    geometry.center();
+                }} else {{
+                    geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
                 }}
             }} else if (data.class === "IfcWall") {{
                 geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
@@ -2598,6 +2688,10 @@ def generate_viewer_html(
                     dimText = `T ${{((data.dimensions.depth || 0) * 1000).toFixed(0)}}×${{((data.dimensions.flange_width || data.dimensions.width || 0) * 1000).toFixed(0)}} mm (Tee)`;
                 }} else if (data.dimensions.shape === "RHS" || data.dimensions.shape === "RECTANGLE_HOLLOW" || data.dimensions.shape === "BOX_HOLLOW") {{
                     dimText = `RHS ${{((data.dimensions.depth || 0) * 1000).toFixed(0)}}×${{((data.dimensions.width || 0) * 1000).toFixed(0)}}×${{((data.dimensions.wall_thickness || 0) * 1000).toFixed(1)}} mm (Hollow Box)`;
+                }} else if (data.dimensions.shape === "ARBITRARY" || data.dimensions.shape === "ARBITRARY_CLOSED" || data.dimensions.shape === "POLYGON" || data.dimensions.shape === "ARBITRARY_WITH_VOIDS") {{
+                    const ptsCount = data.dimensions.points ? data.dimensions.points.length : 0;
+                    const voidsCount = data.dimensions.voids ? data.dimensions.voids.length : 0;
+                    dimText = `Arbitrary (${{ptsCount}} pts, ${{voidsCount}} voids, ${{((data.dimensions.width || 0) * 1000).toFixed(0)}}×${{((data.dimensions.depth || 0) * 1000).toFixed(0)}} mm)`;
                 }} else if (data.dimensions.area !== undefined) {{
                     dimText = `${{data.dimensions.area.toFixed(2)}} m² (Slope: ${{data.dimensions.slope_degrees || 0}}°)`;
                 }} else if (data.dimensions.length !== undefined) {{

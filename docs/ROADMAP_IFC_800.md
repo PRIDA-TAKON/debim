@@ -119,7 +119,7 @@ my_project/
 - [x] **Task 1.2:** `feat: Support Standard Structural Steel Profiles (I, H, L, C, T, RHS, CHS)` *(เสร็จสิ้น)*
   - **Scope:** `IfcIShapeProfileDef`, `IfcLShapeProfileDef`, `IfcUShapeProfileDef`, `IfcTShapeProfileDef`, `IfcRectangleHollowProfileDef`
   - **DoD:** สเปกเหล็กรูปพรรณ มอก./AISC, คำนวณน้ำหนักเหล็กตามตาราง QTO, เรนเดอร์ Three.js ExtrudeGeometry
-- [ ] **Task 1.3:** `feat: Support Arbitrary Closed Profile with Voids`
+- [x] **Task 1.3:** `feat: Support Arbitrary Closed Profile with Voids` *(เสร็จสิ้น)*
   - **Scope:** `IfcArbitraryClosedProfileDefWithVoids`
   - **DoD:** เจาะรูหน้าตัดเสา/คาน/พื้นหลายเหลี่ยม, คำนวณพื้นที่สุทธิหักรูกลวง
 - [ ] **Task 1.4:** `feat: Support Swept Disk & Revolved Area Solids`

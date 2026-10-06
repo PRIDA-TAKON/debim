@@ -173,6 +173,17 @@ class StepSerializer:
             return f"({inner})"
         return str(arg)
 
+    def create_cartesian_point_2d(self, x: float, y: float) -> str:
+        return self.create_entity("IfcCartesianPoint", (float(x), float(y)))
+
+    def create_polyline_2d(self, points: List[Any]) -> str:
+        pt_refs = []
+        for p in points:
+            pt_refs.append(self.create_cartesian_point_2d(float(p[0]), float(p[1])))
+        if points and (points[0][0] != points[-1][0] or points[0][1] != points[-1][1]):
+            pt_refs.append(pt_refs[0])
+        return self.create_entity("IfcPolyline", pt_refs)
+
     def create_ifc_profile_def(self, prof: Any, tag: str, axis2d: str) -> str:
         shape = getattr(prof, "shape", "BOX")
         prof_name = f"{tag}_Profile"
@@ -193,6 +204,15 @@ class StepSerializer:
             return self.create_entity("IfcRectangleHollowProfileDef", ".AREA.", prof_name, axis2d, float(prof.width), float(prof.depth), float(prof.wall_thickness))
         elif shape in ("CHS", "CIRCLE_HOLLOW", "PIPE_HOLLOW"):
             return self.create_entity("IfcCircleHollowProfileDef", ".AREA.", prof_name, axis2d, float(prof.radius), float(prof.wall_thickness))
+        elif shape in ("ARBITRARY", "ARBITRARY_CLOSED", "POLYGON", "ARBITRARY_WITH_VOIDS"):
+            pts = getattr(prof, "outer_curve", None) or getattr(prof, "points", None) or []
+            outer_poly = self.create_polyline_2d(pts)
+            voids = getattr(prof, "inner_curves", None) or getattr(prof, "voids", None) or []
+            if voids:
+                inner_polys = [self.create_polyline_2d(v) for v in voids if v]
+                return self.create_entity("IfcArbitraryProfileDefWithVoids", ".AREA.", prof_name, outer_poly, inner_polys)
+            else:
+                return self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", prof_name, outer_poly)
         else:
             return self.create_entity("IfcRectangleProfileDef", ".AREA.", prof_name, axis2d, float(prof.width), float(prof.depth))
 
@@ -1051,6 +1071,25 @@ def _create_ifcopenshell_profile(model: Any, prof: Any, tag: str, pos2d: Any) ->
             return model.createIfcRectangleHollowProfileDef("AREA", prof_name, pos2d, float(prof.width), float(prof.depth), float(prof.wall_thickness))
         elif shape in ("CHS", "CIRCLE_HOLLOW", "PIPE_HOLLOW"):
             return model.createIfcCircleHollowProfileDef("AREA", prof_name, pos2d, float(prof.radius), float(prof.wall_thickness))
+        elif shape in ("ARBITRARY", "ARBITRARY_CLOSED", "POLYGON", "ARBITRARY_WITH_VOIDS"):
+            pts = getattr(prof, "outer_curve", None) or getattr(prof, "points", None) or []
+            if pts:
+                pt_objs = [model.createIfcCartesianPoint((float(p[0]), float(p[1]))) for p in pts]
+                if pts[0][0] != pts[-1][0] or pts[0][1] != pts[-1][1]:
+                    pt_objs.append(pt_objs[0])
+                outer_poly = model.createIfcPolyline(pt_objs)
+                voids = getattr(prof, "inner_curves", None) or getattr(prof, "voids", None) or []
+                if voids:
+                    inner_polys = []
+                    for v in voids:
+                        if v and len(v) >= 3:
+                            v_objs = [model.createIfcCartesianPoint((float(p[0]), float(p[1]))) for p in v]
+                            if v[0][0] != v[-1][0] or v[0][1] != v[-1][1]:
+                                v_objs.append(v_objs[0])
+                            inner_polys.append(model.createIfcPolyline(v_objs))
+                    if inner_polys:
+                        return model.createIfcArbitraryProfileDefWithVoids("AREA", prof_name, outer_poly, inner_polys)
+                return model.createIfcArbitraryClosedProfileDef("AREA", prof_name, outer_poly)
     except Exception:
         pass
     return model.createIfcRectangleProfileDef("AREA", prof_name, pos2d, float(getattr(prof, "width", 0.3)), float(getattr(prof, "depth", 0.3)))
