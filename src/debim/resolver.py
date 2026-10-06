@@ -23,10 +23,13 @@ from debim.schema import (
     IfcLightFixture,
     IfcOutlet,
     IfcPipeSegment,
+    IfcRailing,
+    IfcRamp,
     IfcRoof,
     IfcSanitaryTerminal,
     IfcSlab,
     IfcStair,
+    IfcStairFlight,
     IfcSwitchingDevice,
     IfcUnitaryEquipment,
     IfcWall,
@@ -415,6 +418,47 @@ class ResolvedStairFlight(BaseModel):
     tread: float
     riser: float
     steps: List[ResolvedStairStep] = []
+    element: Optional[IfcStairFlight] = None
+    layer: str = "architecture/stairs/flights"
+
+
+class ResolvedRamp(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcRamp
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    width: float
+    slab_thickness: float
+    run_length: float       # Horizontal length (m)
+    rise_height: float      # Vertical rise (m)
+    slope_length: float     # True 3D sloped length (m)
+    slope_percentage: float # Slope in % (e.g. 8.33)
+    direction_vector_3d: Tuple[float, float, float] = (1.0, 0.0, 0.0)
+    pitch_angle: float = 0.0
+    yaw_angle: float = 0.0
+    waypoints: List[Tuple[float, float, float]] = []
+    landing_length: Optional[float] = None
+    concrete_volume: float = 0.0
+    formwork_area: float = 0.0
+    layer: str = "architecture/ramps"
+
+
+class ResolvedRailing(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcRailing
+    predefined_type: str = "HANDRAIL"
+    height: float = 1.00
+    post_spacing: float = 1.50
+    waypoints: List[Tuple[float, float, float]] = []
+    posts: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []
+    rails: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []
+    total_length: float = 0.0
+    post_count: int = 0
+    layer: str = "architecture/railings"
 
 
 class ResolvedLandingEdgeBeam(BaseModel):
@@ -790,6 +834,9 @@ ResolvedElement = Union[
     ResolvedSlab,
     ResolvedCovering,
     ResolvedStair,
+    ResolvedStairFlight,
+    ResolvedRamp,
+    ResolvedRailing,
     ResolvedRoof,
     ResolvedPipeSegment,
     ResolvedCableCarrierSegment,
@@ -819,6 +866,9 @@ class ResolvedManifest(BaseModel):
     slabs: List[ResolvedSlab] = []
     coverings: List[ResolvedCovering] = []
     stairs: List[ResolvedStair] = []
+    stair_flights: List[ResolvedStairFlight] = []
+    ramps: List[ResolvedRamp] = []
+    railings: List[ResolvedRailing] = []
     roofs: List[ResolvedRoof] = []
     doors: List[ResolvedDoor] = []
     windows: List[ResolvedWindow] = []
@@ -1438,6 +1488,222 @@ class SpatialResolver:
             perimeter=perimeter,
             center=(cx, cy, z),
             layer=derive_default_layer(covering),
+        )
+
+    def resolve_stair_flight(self, flight: IfcStairFlight) -> ResolvedStairFlight:
+        from_st = self.get_storey(flight.placement.from_storey)
+        to_st = self.get_storey(flight.placement.to_storey)
+
+        z_bottom = from_st.elevation + flight.placement.offset_z
+        z_top = to_st.elevation
+        rise_height = z_top - z_bottom
+
+        gx, gy = self.get_grid_xy(flight.placement.grid_anchor)
+        base_x = gx + flight.placement.offset_x
+        base_y = gy + flight.placement.offset_y
+
+        w = flight.flight_width
+        waist_t = flight.waist_thickness
+
+        riser = flight.riser_height
+        tread = flight.tread_length
+
+        n_risers = flight.number_of_risers or max(1, int(round(rise_height / riser)))
+        run_length = (n_risers - 1) * tread if flight.number_of_treads is None else flight.number_of_treads * tread
+        if run_length == 0:
+            run_length = n_risers * tread
+
+        actual_riser = rise_height / n_risers
+        slope_length = math.hypot(run_length, rise_height)
+
+        orient = flight.placement.orientation
+        if orient == "+Y":
+            p_start = (base_x, base_y, z_bottom)
+            p_end = (base_x, base_y + run_length, z_top)
+        elif orient == "-Y":
+            p_start = (base_x, base_y, z_bottom)
+            p_end = (base_x, base_y - run_length, z_top)
+        elif orient == "-X":
+            p_start = (base_x, base_y, z_bottom)
+            p_end = (base_x - run_length, base_y, z_top)
+        else:  # +X
+            p_start = (base_x, base_y, z_bottom)
+            p_end = (base_x + run_length, base_y, z_top)
+
+        f_steps: List[ResolvedStairStep] = []
+        for i in range(n_risers):
+            if orient == "+Y":
+                scx = base_x + w / 2.0
+                scy = base_y + i * tread + tread / 2.0
+            elif orient == "-Y":
+                scx = base_x + w / 2.0
+                scy = base_y - (i * tread + tread / 2.0)
+            elif orient == "-X":
+                scx = base_x - (i * tread + tread / 2.0)
+                scy = base_y + w / 2.0
+            else:  # +X
+                scx = base_x + i * tread + tread / 2.0
+                scy = base_y + w / 2.0
+            scz = z_bottom + i * actual_riser + actual_riser / 2.0
+
+            step = ResolvedStairStep(
+                step_index=i + 1,
+                flight_tag=flight.tag,
+                position=(scx, scy, scz),
+                width=w,
+                tread=tread,
+                riser=actual_riser,
+            )
+            f_steps.append(step)
+
+        return ResolvedStairFlight(
+            tag=flight.tag,
+            start_point=p_start,
+            end_point=p_end,
+            width=w,
+            waist_thickness=waist_t,
+            run_length=run_length,
+            rise_height=rise_height,
+            slope_length=slope_length,
+            n_risers=n_risers,
+            tread=tread,
+            riser=actual_riser,
+            steps=f_steps,
+            element=flight,
+            layer=derive_default_layer(flight),
+        )
+
+    def resolve_ramp(self, ramp: IfcRamp) -> ResolvedRamp:
+        x1, y1 = self.get_grid_xy(ramp.placement.from_grid)
+        x2, y2 = self.get_grid_xy(ramp.placement.to_grid)
+        from_st = self.get_storey(ramp.placement.storey)
+        to_st = self.get_storey(ramp.placement.to_storey) if ramp.placement.to_storey else from_st
+
+        z1 = from_st.elevation + ramp.placement.offset_z
+        to_off_z = ramp.placement.to_offset_z if ramp.placement.to_offset_z is not None else ramp.placement.offset_z
+        z2 = to_st.elevation + to_off_z
+
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1
+        run_length_calc = math.hypot(dx, dy)
+
+        if abs(dz) < 1e-4 and ramp.slope_percentage > 0 and run_length_calc > 0:
+            dz = run_length_calc * (ramp.slope_percentage / 100.0)
+            z2 = z1 + dz
+
+        start_point = (x1, y1, z1)
+        end_point = (x2, y2, z2)
+
+        rise_height = dz
+        run_length = ramp.ramp_length if ramp.ramp_length is not None else run_length_calc
+        slope_length = math.sqrt(run_length_calc * run_length_calc + rise_height * rise_height)
+        slope_pct = (abs(rise_height) / run_length_calc * 100.0) if run_length_calc > 0 else ramp.slope_percentage
+
+        if slope_length > 0:
+            dir_3d = (dx / slope_length, dy / slope_length, dz / slope_length)
+            pitch_angle = math.asin(dz / slope_length)
+            yaw_angle = math.atan2(dy, dx)
+        else:
+            dir_3d = (1.0, 0.0, 0.0)
+            pitch_angle = 0.0
+            yaw_angle = 0.0
+
+        w = ramp.ramp_width
+        t = ramp.slab_thickness
+        conc_vol = w * slope_length * t
+        formwork = (w * slope_length) + (2.0 * slope_length * t)
+
+        waypoints = [start_point, end_point]
+
+        return ResolvedRamp(
+            tag=ramp.tag,
+            element=ramp,
+            start_point=start_point,
+            end_point=end_point,
+            width=w,
+            slab_thickness=t,
+            run_length=run_length_calc,
+            rise_height=rise_height,
+            slope_length=slope_length,
+            slope_percentage=slope_pct,
+            direction_vector_3d=dir_3d,
+            pitch_angle=pitch_angle,
+            yaw_angle=yaw_angle,
+            waypoints=waypoints,
+            landing_length=ramp.landing_length,
+            concrete_volume=conc_vol,
+            formwork_area=formwork,
+            layer=derive_default_layer(ramp),
+        )
+
+    def resolve_railing(self, railing: IfcRailing) -> ResolvedRailing:
+        z_base = self.get_storey(railing.placement.storey).elevation
+
+        waypoints: List[Tuple[float, float, float]] = []
+
+        if railing.placement.path and len(railing.placement.path) >= 2:
+            for pt in railing.placement.path:
+                if pt.x is not None and pt.y is not None:
+                    x = float(pt.x)
+                    y = float(pt.y)
+                    z = float(pt.z) if pt.z is not None else (z_base + pt.offset_z)
+                elif pt.grid:
+                    gx, gy = pt.grid
+                    x = self.axes_x[gx] + pt.offset_x
+                    y = self.axes_y[gy] + pt.offset_y
+                    z = z_base + pt.offset_z
+                else:
+                    x, y, z = (0.0, 0.0, z_base + pt.offset_z)
+                waypoints.append((x, y, z))
+        else:
+            gx1, gy1 = railing.placement.from_grid or ("1", "A")
+            gx2, gy2 = railing.placement.to_grid or ("1", "A")
+            fo = railing.placement.from_offset
+            to = railing.placement.to_offset
+            p1 = (self.axes_x[gx1] + fo[0], self.axes_y[gy1] + fo[1], z_base + fo[2])
+            p2 = (self.axes_x[gx2] + to[0], self.axes_y[gy2] + to[1], z_base + to[2])
+            waypoints = [p1, p2]
+
+        rh = railing.height
+        post_sp = railing.post_spacing if railing.post_spacing > 0 else 1.50
+
+        posts: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []
+        rails: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []
+
+        total_path_len = 0.0
+        for i in range(len(waypoints) - 1):
+            wp1 = waypoints[i]
+            wp2 = waypoints[i + 1]
+            seg_len = math.dist(wp1, wp2)
+            total_path_len += seg_len
+
+            r_start = (wp1[0], wp1[1], wp1[2] + rh)
+            r_end = (wp2[0], wp2[1], wp2[2] + rh)
+            rails.append((r_start, r_end))
+
+            n_posts = max(1, int(round(seg_len / post_sp)))
+            for k in range(n_posts if i < len(waypoints) - 2 else n_posts + 1):
+                t_val = k / float(n_posts) if n_posts > 0 else 0.0
+                px = wp1[0] + t_val * (wp2[0] - wp1[0])
+                py = wp1[1] + t_val * (wp2[1] - wp1[1])
+                pz = wp1[2] + t_val * (wp2[2] - wp1[2])
+                p_base = (px, py, pz)
+                p_top = (px, py, pz + rh)
+                posts.append((p_base, p_top))
+
+        return ResolvedRailing(
+            tag=railing.tag,
+            element=railing,
+            predefined_type=railing.predefined_type,
+            height=rh,
+            post_spacing=post_sp,
+            waypoints=waypoints,
+            posts=posts,
+            rails=rails,
+            total_length=total_path_len,
+            post_count=len(posts),
+            layer=derive_default_layer(railing),
         )
 
     def resolve_stair(self, stair: IfcStair) -> ResolvedStair:
@@ -3199,6 +3465,18 @@ class SpatialResolver:
                 r_stair = self.resolve_stair(elem)
                 resolved_manifest.stairs.append(r_stair)
                 resolved_manifest.elements.append(r_stair)
+            elif isinstance(elem, IfcStairFlight):
+                r_flight = self.resolve_stair_flight(elem)
+                resolved_manifest.stair_flights.append(r_flight)
+                resolved_manifest.elements.append(r_flight)
+            elif isinstance(elem, IfcRamp):
+                r_ramp = self.resolve_ramp(elem)
+                resolved_manifest.ramps.append(r_ramp)
+                resolved_manifest.elements.append(r_ramp)
+            elif isinstance(elem, IfcRailing):
+                r_railing = self.resolve_railing(elem)
+                resolved_manifest.railings.append(r_railing)
+                resolved_manifest.elements.append(r_railing)
             elif isinstance(elem, IfcRoof):
                 r_roof = self.resolve_roof(elem)
                 resolved_manifest.roofs.append(r_roof)

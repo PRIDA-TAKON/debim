@@ -373,6 +373,68 @@ def generate_viewer_html(
                     "layer": f"{stair.layer}/railing",
                 })
 
+    # Standalone Stair Flights
+    for flight in resolved.stair_flights:
+        for step in flight.steps:
+            elements_data.append({
+                "tag": f"{flight.tag}-Step-{step.step_index}",
+                "class": "IfcStairStep",
+                "material": flight.element.material if flight.element else "MAT_CONC",
+                "position": [step.position[0], step.position[1], step.position[2]],
+                "rotation": [0, 0, getattr(step, "rotation", 0.0)],
+                "dimensions": {
+                    "width": step.width,
+                    "depth": step.tread,
+                    "height": step.riser,
+                },
+                "color": "#D4A373",
+                "layer": f"{flight.layer}/steps",
+            })
+
+    # Ramps
+    for ramp in resolved.ramps:
+        cx = (ramp.start_point[0] + ramp.end_point[0]) / 2.0
+        cy = (ramp.start_point[1] + ramp.end_point[1]) / 2.0
+        cz = (ramp.start_point[2] + ramp.end_point[2]) / 2.0
+        elements_data.append({
+            "tag": ramp.tag,
+            "class": "IfcRamp",
+            "material": ramp.element.material,
+            "position": [cx, cy, cz],
+            "direction_vector_3d": ramp.direction_vector_3d,
+            "dimensions": {
+                "length": ramp.slope_length,
+                "width": ramp.width,
+                "height": ramp.slab_thickness,
+                "slope_percentage": ramp.slope_percentage,
+            },
+            "color": "#78716C",
+            "layer": ramp.layer,
+        })
+
+    # Railings
+    for railing in resolved.railings:
+        for p_idx, (p_base, p_top) in enumerate(railing.posts):
+            elements_data.append({
+                "tag": f"{railing.tag}-Post-{p_idx+1}",
+                "class": "IfcRailing",
+                "geometry_type": "line",
+                "points": [p_base, p_top],
+                "color": "#0F172A",
+                "linewidth": 3,
+                "layer": f"{railing.layer}/posts",
+            })
+        for r_idx, (r_start, r_end) in enumerate(railing.rails):
+            elements_data.append({
+                "tag": f"{railing.tag}-Rail-{r_idx+1}",
+                "class": "IfcRailing",
+                "geometry_type": "line",
+                "points": [r_start, r_end],
+                "color": "#E11D48",
+                "linewidth": 4,
+                "layer": f"{railing.layer}/rails",
+            })
+
     # Walls & Children
     for wall in resolved.walls:
         dx = wall.end_point[0] - wall.start_point[0]
