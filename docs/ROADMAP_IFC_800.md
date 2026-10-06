@@ -131,7 +131,7 @@ my_project/
 ### 🟢 Phase 2: Architectural & MEP Core Entities (Top 50 Entities)
 > **เป้าหมาย:** เพิ่ม Entity พื้นฐานที่พบในอาคารจริงมากกว่า 90% ของงานก่อสร้าง โดยแบ่งงานให้ Jules เป็นชุดๆ ชุดละ 1 โดเมน
 
-- [ ] **Task 2.1 (Circulation):** `feat: Support IfcStair, IfcStairFlight, IfcRamp, and IfcRailing`
+- [x] **Task 2.1 (Circulation):** `feat: Support IfcStair, IfcStairFlight, IfcRamp, and IfcRailing` *(เสร็จสิ้น: Issue #73, PR #76)*
   - บันไดตรง, บันไดวน, ชานพัก, ทางลาดผู้พิการ, และราวกันตก
   - QTO: ปริมาตรคอนกรีตบันได, พื้นผิวไม้/กระเบื้องลูกตั้ง-ลูกนอน, ความยาวราวกันตก
 - [ ] **Task 2.2 (Enclosure):** `feat: Support IfcRoof, IfcCurtainWall, and IfcPlate`
