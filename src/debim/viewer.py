@@ -1118,10 +1118,11 @@ def generate_viewer_html(
 
     # MEP Elements: Distribution Boards
     for board in resolved.distribution_boards:
-        b_th = "Distribution Panel (Consumer Unit / MDB)"
+        b_th = f"Distribution Panel ({board.board_type})"
+        ifc_cls = getattr(board.element, "class_", "IfcDistributionBoard")
         elements_data.append({
             "tag": board.tag,
-            "class": "IfcDistributionBoard",
+            "class": ifc_cls,
             "material": board.element.material or "Enclosure Box",
             "position": [
                 board.position[0],
@@ -1138,6 +1139,11 @@ def generate_viewer_html(
             "layer": board.layer,
             "board_type": board.board_type,
             "circuits_count": board.circuits_count,
+            "voltage": board.voltage,
+            "phases": board.phases,
+            "main_breaker_rating_amperes": board.main_breaker_rating_amperes,
+            "poles_count": board.poles_count or board.circuits_count,
+            "predefined_type": board.predefined_type,
             "fixture_name_th": b_th,
         })
 
@@ -1149,6 +1155,9 @@ def generate_viewer_html(
             "PENDANT": "Pendant Lamp",
             "WALL_LAMP": "Wall Lamp",
             "FLOODLIGHT": "Floodlight",
+            "POINTSOURCE": "Point Source Light",
+            "DIRECTIONSOURCE": "Directional Light",
+            "SECURITYLIGHTING": "Emergency / Security Light",
         }.get(light.fixture_type, light.fixture_type)
 
         elements_data.append({
@@ -1169,7 +1178,11 @@ def generate_viewer_html(
             "color": light.color,
             "layer": light.layer,
             "fixture_type": light.fixture_type,
-            "wattage": light.wattage,
+            "wattage": light.power_watts or light.wattage,
+            "power_watts": light.power_watts or light.wattage,
+            "luminous_flux_lumens": light.luminous_flux_lumens,
+            "color_temperature_kelvin": light.color_temperature_kelvin,
+            "predefined_type": light.predefined_type,
             "fixture_name_th": l_th,
         })
 
@@ -1219,6 +1232,7 @@ def generate_viewer_html(
             "color": out.color,
             "layer": out.layer,
             "outlet_type": out.outlet_type,
+            "predefined_type": out.predefined_type,
             "fixture_name_th": o_th,
         })
 
@@ -2936,11 +2950,29 @@ def generate_viewer_html(
                 const slope_pct = (data.dimensions.slope * 100).toFixed(1);
                 mepRow += `<div class="data-row"><span class="data-label">Slope</span><span class="data-value">${{slope_pct}}% (1:${{Math.round(1/data.dimensions.slope)}})</span></div>`;
             }}
-            if (data.wattage) {{
-                mepRow += `<div class="data-row"><span class="data-label">Power</span><span class="data-value">${{data.wattage}} W</span></div>`;
+            if (data.predefined_type) {{
+                mepRow += `<div class="data-row"><span class="data-label">Type</span><span class="data-value">${{data.predefined_type}}</span></div>`;
             }}
-            if (data.circuits_count) {{
-                mepRow += `<div class="data-row"><span class="data-label">Circuits</span><span class="data-value">${{data.circuits_count}} circuits</span></div>`;
+            if (data.wattage || data.power_watts) {{
+                mepRow += `<div class="data-row"><span class="data-label">Power</span><span class="data-value">${{data.power_watts || data.wattage}} W</span></div>`;
+            }}
+            if (data.luminous_flux_lumens) {{
+                mepRow += `<div class="data-row"><span class="data-label">Luminous Flux</span><span class="data-value">${{data.luminous_flux_lumens}} lm</span></div>`;
+            }}
+            if (data.color_temperature_kelvin) {{
+                mepRow += `<div class="data-row"><span class="data-label">Color Temp</span><span class="data-value">${{data.color_temperature_kelvin}} K</span></div>`;
+            }}
+            if (data.voltage) {{
+                mepRow += `<div class="data-row"><span class="data-label">Voltage</span><span class="data-value">${{data.voltage}} V</span></div>`;
+            }}
+            if (data.phases) {{
+                mepRow += `<div class="data-row"><span class="data-label">Phases</span><span class="data-value">${{data.phases}}</span></div>`;
+            }}
+            if (data.main_breaker_rating_amperes) {{
+                mepRow += `<div class="data-row"><span class="data-label">Main Breaker</span><span class="data-value">${{data.main_breaker_rating_amperes}} A</span></div>`;
+            }}
+            if (data.circuits_count || data.poles_count) {{
+                mepRow += `<div class="data-row"><span class="data-label">Poles/Circuits</span><span class="data-value">${{data.poles_count || data.circuits_count}} poles</span></div>`;
             }}
             if (data.cooling_capacity_btu) {{
                 mepRow += `<div class="data-row"><span class="data-label">Cooling</span><span class="data-value">${{data.cooling_capacity_btu.toLocaleString()}} BTU/hr</span></div>`;

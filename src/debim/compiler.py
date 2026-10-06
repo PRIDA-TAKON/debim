@@ -1019,8 +1019,15 @@ class StepSerializer:
 
         for board in resolved.distribution_boards:
             st_id = board.element.placement.storey
+            if not st_id and getattr(board.element.placement, "wall", None):
+                for w in resolved.walls:
+                    if w.tag == board.element.placement.wall:
+                        st_id = w.element.placement.storey
+                        break
+            ifc_cls = "IfcElectricDistributionBoard" if getattr(board.element, "class_", "") == "IfcElectricDistributionBoard" else "IfcDistributionBoard"
+            ptype = f".{board.predefined_type}." if board.predefined_type else ".CONSUMERUNIT."
             elem_ref = self.create_entity(
-                "IfcDistributionBoard",
+                ifc_cls,
                 generate_ifc_guid(),
                 None,
                 board.tag,
@@ -1029,12 +1036,19 @@ class StepSerializer:
                 None,
                 None,
                 None,
+                ptype,
             )
-            if st_id in storey_elements:
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         for light in resolved.light_fixtures:
             st_id = light.element.placement.storey
+            if not st_id and getattr(light.element.placement, "wall", None):
+                for w in resolved.walls:
+                    if w.tag == light.element.placement.wall:
+                        st_id = w.element.placement.storey
+                        break
+            ptype = f".{light.predefined_type}." if light.predefined_type else ".POINTSOURCE."
             elem_ref = self.create_entity(
                 "IfcLightFixture",
                 generate_ifc_guid(),
@@ -1045,12 +1059,18 @@ class StepSerializer:
                 None,
                 None,
                 None,
+                ptype,
             )
-            if st_id in storey_elements:
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         for sw in resolved.switches:
             st_id = sw.element.placement.storey
+            if not st_id and getattr(sw.element.placement, "wall", None):
+                for w in resolved.walls:
+                    if w.tag == sw.element.placement.wall:
+                        st_id = w.element.placement.storey
+                        break
             elem_ref = self.create_entity(
                 "IfcSwitchingDevice",
                 generate_ifc_guid(),
@@ -1062,11 +1082,17 @@ class StepSerializer:
                 None,
                 None,
             )
-            if st_id in storey_elements:
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         for out in resolved.outlets:
             st_id = out.element.placement.storey
+            if not st_id and getattr(out.element.placement, "wall", None):
+                for w in resolved.walls:
+                    if w.tag == out.element.placement.wall:
+                        st_id = w.element.placement.storey
+                        break
+            ptype = f".{out.predefined_type}." if out.predefined_type else ".POWEROUTLET."
             elem_ref = self.create_entity(
                 "IfcOutlet",
                 generate_ifc_guid(),
@@ -1077,8 +1103,9 @@ class StepSerializer:
                 None,
                 None,
                 None,
+                ptype,
             )
-            if st_id in storey_elements:
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         for duct in resolved.ducts:
@@ -1707,25 +1734,40 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             storey_products[st_id].append(term_obj)
 
     for board in resolved.distribution_boards:
+        board_cls = "IfcElectricDistributionBoard" if getattr(board.element, "class_", "") == "IfcElectricDistributionBoard" else "IfcDistributionBoard"
+        ptype = getattr(board, "predefined_type", "CONSUMERUNIT")
         board_obj = ifcopenshell.api.run(
             "root.create_entity",
             model,
-            ifc_class="IfcDistributionBoard",
+            ifc_class=board_cls,
             name=board.tag,
+            predefined_type=ptype,
         )
         st_id = board.element.placement.storey
-        if st_id in storey_products:
+        if not st_id and getattr(board.element.placement, "wall", None):
+            for w in resolved.walls:
+                if w.tag == board.element.placement.wall:
+                    st_id = w.element.placement.storey
+                    break
+        if st_id and st_id in storey_products:
             storey_products[st_id].append(board_obj)
 
     for light in resolved.light_fixtures:
+        ptype = getattr(light, "predefined_type", "POINTSOURCE")
         light_obj = ifcopenshell.api.run(
             "root.create_entity",
             model,
             ifc_class="IfcLightFixture",
             name=light.tag,
+            predefined_type=ptype,
         )
         st_id = light.element.placement.storey
-        if st_id in storey_products:
+        if not st_id and getattr(light.element.placement, "wall", None):
+            for w in resolved.walls:
+                if w.tag == light.element.placement.wall:
+                    st_id = w.element.placement.storey
+                    break
+        if st_id and st_id in storey_products:
             storey_products[st_id].append(light_obj)
 
     for sw in resolved.switches:
@@ -1736,18 +1778,30 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             name=sw.tag,
         )
         st_id = sw.element.placement.storey
-        if st_id in storey_products:
+        if not st_id and getattr(sw.element.placement, "wall", None):
+            for w in resolved.walls:
+                if w.tag == sw.element.placement.wall:
+                    st_id = w.element.placement.storey
+                    break
+        if st_id and st_id in storey_products:
             storey_products[st_id].append(sw_obj)
 
     for out in resolved.outlets:
+        ptype = getattr(out, "predefined_type", "POWEROUTLET")
         out_obj = ifcopenshell.api.run(
             "root.create_entity",
             model,
             ifc_class="IfcOutlet",
             name=out.tag,
+            predefined_type=ptype,
         )
         st_id = out.element.placement.storey
-        if st_id in storey_products:
+        if not st_id and getattr(out.element.placement, "wall", None):
+            for w in resolved.walls:
+                if w.tag == out.element.placement.wall:
+                    st_id = w.element.placement.storey
+                    break
+        if st_id and st_id in storey_products:
             storey_products[st_id].append(out_obj)
 
     for duct in resolved.ducts:
