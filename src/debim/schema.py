@@ -1022,12 +1022,21 @@ class ProjectManifest(BaseModel):
 
 
 def _process_includes(
-    includes: List[str], base_dir: Path, visited: set, mat_ids: set
-) -> Tuple[List[dict], List[dict]]:
+    includes: List[str],
+    base_dir: Path,
+    visited: set,
+    mat_ids: set,
+    storey_ids: set,
+    merged_axes_x: Dict[str, float],
+    merged_axes_y: Dict[str, float],
+) -> Tuple[List[dict], List[dict], List[dict]]:
     included_materials = []
     included_elements = []
+    included_storeys = []
 
     for pattern in includes:
+        if not pattern or not pattern.strip():
+            continue
         is_glob = any(char in pattern for char in ["*", "?", "["])
         if is_glob:
             matching_paths = sorted(base_dir.glob(pattern))
@@ -1048,14 +1057,33 @@ def _process_includes(
             sub_visited.add(inc_canonical)
 
             with open(inc_canonical, "r", encoding="utf-8") as f:
-                content = yaml.safe_load(f) or []
+                content = yaml.safe_load(f)
+
+            if content is None:
+                content = []
 
             if isinstance(content, list):
                 included_elements.extend(content)
             elif isinstance(content, dict):
                 sub_mats = list(content.get("materials", []) or [])
                 sub_elems = list(content.get("elements", []) or [])
-                sub_includes = content.get("includes", [])
+
+                sub_storeys = []
+                if "spatial_structure" in content and isinstance(content["spatial_structure"], dict):
+                    sub_storeys.extend(content["spatial_structure"].get("storeys", []) or [])
+                if "storeys" in content and isinstance(content["storeys"], list):
+                    sub_storeys.extend(content["storeys"] or [])
+
+                if "grids" in content and isinstance(content["grids"], dict):
+                    sub_grids = content["grids"]
+                    sub_x = sub_grids.get("axes_x", {}) or {}
+                    sub_y = sub_grids.get("axes_y", {}) or {}
+                    if isinstance(sub_x, dict):
+                        for k, v in sub_x.items():
+                            merged_axes_x[str(k)] = float(v)
+                    if isinstance(sub_y, dict):
+                        for k, v in sub_y.items():
+                            merged_axes_y[str(k)] = float(v)
 
                 for m in sub_mats:
                     if isinstance(m, dict) and "id" in m:
@@ -1067,18 +1095,34 @@ def _process_includes(
 
                 included_elements.extend(sub_elems)
 
+                for s in sub_storeys:
+                    if isinstance(s, dict) and "id" in s:
+                        if s["id"] not in storey_ids:
+                            storey_ids.add(s["id"])
+                            included_storeys.append(s)
+                    else:
+                        included_storeys.append(s)
+
+                sub_includes = content.get("includes", []) or []
                 if sub_includes:
-                    nested_mats, nested_elems = _process_includes(
-                        sub_includes, inc_canonical.parent, sub_visited, mat_ids
+                    nested_mats, nested_elems, nested_storeys = _process_includes(
+                        sub_includes,
+                        inc_canonical.parent,
+                        sub_visited,
+                        mat_ids,
+                        storey_ids,
+                        merged_axes_x,
+                        merged_axes_y,
                     )
                     included_materials.extend(nested_mats)
                     included_elements.extend(nested_elems)
+                    included_storeys.extend(nested_storeys)
             else:
                 raise ValueError(
                     f"Invalid YAML content in {inc_path}: expected list or dictionary"
                 )
 
-    return included_materials, included_elements
+    return included_materials, included_elements, included_storeys
 
 
 def derive_default_layer(elem) -> str:
@@ -1153,20 +1197,38 @@ def load_manifest(path: Path | str) -> ProjectManifest:
     visited = {canonical_path}
     base_dir = canonical_path.parent
 
-    includes = data.get("includes", [])
-    merged_materials = list(data.get("materials", []) or [])
-    merged_elements = list(data.get("elements", []) or [])
+    includes = data.get("includes", []) or []
 
+    spatial_structure = data.get("spatial_structure", {}) or {}
+    merged_storeys = list(spatial_structure.get("storeys", []) or [])
+    storey_ids = {s["id"] for s in merged_storeys if isinstance(s, dict) and "id" in s}
+
+    grids_data = data.get("grids", {}) or {}
+    merged_axes_x = {str(k): float(v) for k, v in (grids_data.get("axes_x", {}) or {}).items()}
+    merged_axes_y = {str(k): float(v) for k, v in (grids_data.get("axes_y", {}) or {}).items()}
+
+    merged_materials = list(data.get("materials", []) or [])
     mat_ids = {m["id"] for m in merged_materials if isinstance(m, dict) and "id" in m}
 
+    merged_elements = list(data.get("elements", []) or [])
+
     if includes:
-        inc_materials, inc_elements = _process_includes(
-            includes, base_dir, visited, mat_ids
+        inc_materials, inc_elements, inc_storeys = _process_includes(
+            includes,
+            base_dir,
+            visited,
+            mat_ids,
+            storey_ids,
+            merged_axes_x,
+            merged_axes_y,
         )
         merged_materials.extend(inc_materials)
         merged_elements.extend(inc_elements)
+        merged_storeys.extend(inc_storeys)
 
     data["materials"] = merged_materials
     data["elements"] = merged_elements
+    data["spatial_structure"] = {"storeys": merged_storeys}
+    data["grids"] = {"axes_x": merged_axes_x, "axes_y": merged_axes_y}
 
     return ProjectManifest.model_validate(data)
