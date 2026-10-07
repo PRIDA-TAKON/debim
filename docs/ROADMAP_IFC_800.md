@@ -154,7 +154,7 @@ my_project/
 
 - [x] **Task 3.1:** `feat: Port-based System Topology (IfcDistributionPort & Connection Graphs)` *(เสร็จสิ้น: Issue #87, PR #90)*
   - เชื่อมโยงท่อและสายไฟจากต้นทางสู่ปลายทาง (Flow Direction, Pressure Drop calculation)
-- [ ] **Task 3.2:** `feat(civil): Support IFC4.3 Alignment & Road Entities (IfcAlignment, IfcRoad, IfcBridge)`
+- [x] **Task 3.2:** `feat(civil): Support IFC4.3 Alignment & Road Entities (IfcAlignment, IfcRoad, IfcBridge)` *(เสร็จสิ้น: Issue #89, PR #92)*
   - แนวเส้นทางตามแนวราบ-แนวดิ่ง (Horizontal & Vertical Alignment)
   - องค์ประกอบสะพานและถนน
 - [x] **Task 3.3:** `feat(civil): Support Earthworks & Retaining Structures (IfcEarthworksFill, IfcRetainingWall)` *(เสร็จสิ้น: Issue #84, PR #86)*
