@@ -21,6 +21,10 @@ from debim.draw.renderer import (
     render_sheet,
     render_sheet_set,
 )
+from debim.draw.viewer_2d import (
+    export_2d_viewer,
+    generate_2d_viewer_html,
+)
 
 __all__ = [
     "CutElement",
@@ -38,4 +42,6 @@ __all__ = [
     "render_sheet",
     "render_sheet_set",
     "export_2d_dxf",
+    "generate_2d_viewer_html",
+    "export_2d_viewer",
 ]
