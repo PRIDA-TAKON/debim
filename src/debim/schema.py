@@ -1958,6 +1958,152 @@ class IfcCovering(BaseModel):
     layer: Optional[str] = None
 
 
+# Civil Infrastructure (IFC4.3) Entities: Alignment, Road, Bridge
+
+RoadType = Literal["HIGHWAY", "CARRIAGEWAY", "ROUNDABOUT", "SERVICE_ROAD", "USERDEFINED"]
+BridgeType = Literal["GIRDER", "SLAB", "ARCH", "CABLE_STAYED", "USERDEFINED"]
+
+
+class AlignmentPoint(BaseModel):
+    x: float
+    y: float
+    z: float = 0.0
+    station: Optional[float] = None
+    segment_type: Literal["LINE", "ARC", "CLOTHOID", "PARABOLA"] = "LINE"
+
+    @model_validator(mode="before")
+    @classmethod
+    def convert_point_list(cls, data: Any) -> Any:
+        if isinstance(data, (list, tuple)):
+            if len(data) == 2:
+                return {"x": float(data[0]), "y": float(data[1]), "z": 0.0}
+            elif len(data) >= 3:
+                return {"x": float(data[0]), "y": float(data[1]), "z": float(data[2])}
+        return data
+
+
+class AlignmentPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    points: List[AlignmentPoint] = Field(default_factory=list)
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcAlignment(BaseModel):
+    class_: Literal["IfcAlignment"] = Field(alias="class", default="IfcAlignment")
+    tag: str
+    name: Optional[str] = None
+    predefined_type: Literal["USERDEFINED", "NOTDEFINED"] = "USERDEFINED"
+    start_chainage: float = 0.0
+    end_chainage: Optional[float] = None
+    design_speed_kmh: Optional[float] = None
+    placement: AlignmentPlacement
+    layer: Optional[str] = None
+
+
+class RoadPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    alignment: Optional[str] = None  # Reference to IfcAlignment tag
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    points: Optional[List[AlignmentPoint]] = None
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcRoad(BaseModel):
+    class_: Literal["IfcRoad"] = Field(alias="class", default="IfcRoad")
+    tag: str
+    material: Optional[str] = None
+    predefined_type: RoadType = "CARRIAGEWAY"
+    road_width: float = 7.00             # Total roadway / carriageway width (m)
+    corridor_length: Optional[float] = None # Road corridor length (m)
+    lanes_count: int = 2
+    pavement_surface_thickness: float = 0.05  # Asphalt wearing course thickness (m)
+    pavement_base_thickness: float = 0.15     # Aggregate base course thickness (m)
+    pavement_subbase_thickness: float = 0.20  # Compacted subbase thickness (m)
+    placement: RoadPlacement
+    layer: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_road_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "width" in data and "road_width" not in data:
+                data["road_width"] = data["width"]
+            if "length" in data and "corridor_length" not in data:
+                data["corridor_length"] = data["length"]
+        return data
+
+    @property
+    def width(self) -> float:
+        return self.road_width
+
+
+class BridgePlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    alignment: Optional[str] = None  # Reference to IfcAlignment tag
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcBridge(BaseModel):
+    class_: Literal["IfcBridge"] = Field(alias="class", default="IfcBridge")
+    tag: str
+    material: Optional[str] = None
+    predefined_type: BridgeType = "GIRDER"
+    span_length: float = 20.0        # Total bridge span length (m)
+    deck_width: float = 10.0         # Bridge deck slab width (m)
+    deck_thickness: float = 0.30     # Bridge deck slab thickness (m)
+    pier_height: float = 6.0         # Pier height (m)
+    pier_count: int = 2              # Number of support piers
+    pier_shape: Literal["CYLINDRICAL", "RECTANGULAR"] = "CYLINDRICAL"
+    pier_diameter: float = 1.0       # Pier diameter or width (m)
+    pier_width: Optional[float] = None
+    pier_depth: Optional[float] = None
+    placement: BridgePlacement
+    layer: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_bridge_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "length" in data and "span_length" not in data:
+                data["span_length"] = data["length"]
+            if "width" in data and "deck_width" not in data:
+                data["deck_width"] = data["width"]
+        return data
+
+
 # Civil Earthworks & Retaining Structures
 
 EarthworksCutType = Literal["TRENCH", "DREDGING", "CUT", "BASEMENT_EXCAVATION", "USERDEFINED"]
@@ -2093,6 +2239,9 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcEarthworksCut",
     "IfcEarthworksFill",
     "IfcRetainingWall",
+    "IfcAlignment",
+    "IfcRoad",
+    "IfcBridge",
     "IfcCustomElement",
 }
 
@@ -2147,6 +2296,9 @@ Element = Annotated[
         Annotated[IfcEarthworksCut, Tag("IfcEarthworksCut")],
         Annotated[IfcEarthworksFill, Tag("IfcEarthworksFill")],
         Annotated[IfcRetainingWall, Tag("IfcRetainingWall")],
+        Annotated[IfcAlignment, Tag("IfcAlignment")],
+        Annotated[IfcRoad, Tag("IfcRoad")],
+        Annotated[IfcBridge, Tag("IfcBridge")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -2373,20 +2525,30 @@ class ProjectManifest(BaseModel):
                         raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
                     if gy not in grid_y_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
-                if elem.placement.to_grid:
+
+            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge)):
+                if elem.placement.storey and elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                if getattr(elem.placement, "from_grid", None):
+                    gx, gy = elem.placement.from_grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' from_grid references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' from_grid references unknown Y grid '{gy}'")
+                if getattr(elem.placement, "to_grid", None):
                     gx, gy = elem.placement.to_grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' to_grid references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' to_grid references unknown Y grid '{gy}'")
+                if getattr(elem.placement, "grid", None):
+                    gx, gy = elem.placement.grid
                     if gx not in grid_x_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
                     if gy not in grid_y_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
-                if elem.placement.path:
-                    for pt in elem.placement.path:
-                        if pt.grid:
-                            gx, gy = pt.grid
-                            if gx not in grid_x_ids:
-                                raise ValueError(f"Element '{elem.tag}' path references unknown X grid '{gx}'")
-                            if gy not in grid_y_ids:
-                                raise ValueError(f"Element '{elem.tag}' path references unknown Y grid '{gy}'")
 
             elif isinstance(elem, IfcRoof):
                 if elem.placement.storey not in storey_ids:
@@ -2737,6 +2899,12 @@ def derive_default_layer(elem) -> str:
         return "civil/earthworks/fill"
     elif cls == "IfcRetainingWall":
         return "civil/structures/retaining_walls"
+    elif cls == "IfcAlignment":
+        return "civil/infrastructure/alignment"
+    elif cls == "IfcRoad":
+        return "civil/infrastructure/roads"
+    elif cls == "IfcBridge":
+        return "civil/infrastructure/bridges"
     elif cls == "IfcCustomElement":
         return "general/custom"
     elif cls == "IfcBuildingElementProxy" or isinstance(elem, IfcBuildingElementProxy):
