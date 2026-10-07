@@ -152,7 +152,7 @@ my_project/
 ### 🔵 Phase 3: MEP Topology & Infrastructure (IFC4.3)
 > **เป้าหมาย:** รองรับงานระบบที่เชื่อมโยงกันเป็นร่างแห (Graph Network) และงานโครงสร้างพื้นฐานโยธา (Civil/Infrastructure)
 
-- [ ] **Task 3.1:** `feat: Port-based System Topology (IfcDistributionPort & Connection Graphs)`
+- [x] **Task 3.1:** `feat: Port-based System Topology (IfcDistributionPort & Connection Graphs)` *(เสร็จสิ้น: Issue #87, PR #90)*
   - เชื่อมโยงท่อและสายไฟจากต้นทางสู่ปลายทาง (Flow Direction, Pressure Drop calculation)
 - [ ] **Task 3.2:** `feat(civil): Support IFC4.3 Alignment & Road Entities (IfcAlignment, IfcRoad, IfcBridge)`
   - แนวเส้นทางตามแนวราบ-แนวดิ่ง (Horizontal & Vertical Alignment)
