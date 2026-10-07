@@ -15,6 +15,7 @@ from debim.resolver import (
     ResolvedCableCarrierSegment,
     ResolvedColumn,
     ResolvedCovering,
+    ResolvedCurtainWall,
     ResolvedCustomElement,
     ResolvedDistributionBoard,
     ResolvedDoor,
@@ -25,6 +26,7 @@ from debim.resolver import (
     ResolvedManifest,
     ResolvedOutlet,
     ResolvedPipeSegment,
+    ResolvedPlate,
     ResolvedRailing,
     ResolvedRamp,
     ResolvedRevolvedArea,
@@ -385,6 +387,21 @@ class RoofQTO(BaseModel):
     insulation_area: float = 0.0         # Under-tile insulation area (m²)
 
 
+class CurtainWallQTO(BaseModel):
+    facade_area: float = 0.0             # Gross facade area (m2)
+    net_glass_area: float = 0.0          # Net glass panel area (m2)
+    mullion_length: float = 0.0          # Linear meters of mullions / transoms (m)
+    mullion_weight: float = 0.0          # Frame / mullion steel/aluminum weight (kg)
+    glass_panels_count: int = 0          # Number of glass panel infills
+
+
+class PlateQTO(BaseModel):
+    area: float = 0.0                    # Plate surface area (m2)
+    thickness: float = 0.0               # Thickness (m)
+    volume: float = 0.0                  # Volume (m3)
+    weight: float = 0.0                  # Weight (kg)
+
+
 class MepQTO(BaseModel):
     system_type: str = ""
     length: float = 0.0                    # ท่อ / สายไฟ / ท่อลม (linear meters)
@@ -420,6 +437,8 @@ class ElementQTO(BaseModel):
     stair_assembly: Optional[StairQTO] = None
     wall_finishes: Optional[WallFinishesQTO] = None
     roof: Optional[RoofQTO] = None
+    curtain_wall: Optional[CurtainWallQTO] = None
+    plate: Optional[PlateQTO] = None
     covering: Optional[CoveringQTO] = None
     slab_finishes: Optional[SlabFinishesQTO] = None
     mep: Optional[MepQTO] = None
@@ -456,6 +475,12 @@ class ProjectQTO(BaseModel):
     total_roof_hip_length: float = 0.0
     total_roof_eaves_length: float = 0.0
     total_roof_insulation_area: float = 0.0
+    # Curtain Wall & Plate Totals
+    total_curtain_wall_facade_area: float = 0.0
+    total_curtain_wall_mullion_length: float = 0.0
+    total_curtain_wall_glass_panels_count: int = 0
+    total_plate_area: float = 0.0
+    total_plate_weight: float = 0.0
     # Ceilings & Floor Finishes Totals
     total_ceiling_gypsum_area: float = 0.0
     total_ceiling_tbar_area: float = 0.0
@@ -1320,6 +1345,62 @@ def calculate_element_qto(
             roof=roof_qto,
         )
 
+    elif isinstance(resolved, ResolvedCurtainWall):
+        elem = resolved.element
+        mw = elem.mullion_width
+        md = elem.mullion_depth
+        m_cross_area = mw * md
+        mullion_vol = resolved.mullion_length * m_cross_area
+        # Estimate aluminum/steel mullion weight (2700 kg/m3 for aluminum)
+        mullion_wt = mullion_vol * 2700.0
+
+        cw_qto = CurtainWallQTO(
+            facade_area=resolved.gross_facade_area,
+            net_glass_area=resolved.net_glass_area,
+            mullion_length=resolved.mullion_length,
+            mullion_weight=mullion_wt,
+            glass_panels_count=resolved.glass_panels_count,
+        )
+
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            structural_steel_weight=mullion_wt,
+            curtain_wall=cw_qto,
+        )
+
+    elif isinstance(resolved, ResolvedPlate):
+        elem = resolved.element
+        pl_qto = PlateQTO(
+            area=resolved.area,
+            thickness=resolved.thickness,
+            volume=resolved.volume,
+            weight=resolved.weight,
+        )
+
+        is_steel = is_steel_element(
+            elem.class_, tag, elem.material, mat_cat, mat_name
+        ) or elem.predefined_type in ("FLANGE_PLATE", "BASE_PLATE")
+
+        steel_wt = resolved.weight if is_steel else 0.0
+
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            structural_steel_weight=steel_wt,
+            plate=pl_qto,
+        )
+
     elif isinstance(resolved, ResolvedTerminal):
         elem = resolved.element
         return ElementQTO(
@@ -1634,6 +1715,14 @@ def calculate_qto(
     total_roof_hip = 0.0
     total_roof_eaves = 0.0
     total_roof_insul = 0.0
+
+    # Curtain Wall & Plate Totals
+    total_cw_facade_area = 0.0
+    total_cw_mullion_len = 0.0
+    total_cw_glass_panels = 0
+    total_plate_area_val = 0.0
+    total_plate_weight_val = 0.0
+
     total_ceil_gypsum = 0.0
     total_ceil_tbar = 0.0
     total_ceil_eaves = 0.0
@@ -1759,6 +1848,15 @@ def calculate_qto(
             total_roof_eaves += eqto.roof.eaves_length
             total_roof_insul += eqto.roof.insulation_area
 
+        if eqto.curtain_wall:
+            total_cw_facade_area += eqto.curtain_wall.facade_area
+            total_cw_mullion_len += eqto.curtain_wall.mullion_length
+            total_cw_glass_panels += eqto.curtain_wall.glass_panels_count
+
+        if eqto.plate:
+            total_plate_area_val += eqto.plate.area
+            total_plate_weight_val += eqto.plate.weight
+
         if eqto.element_class == "IfcWall":
             if hasattr(elem, "thickness") and elem.thickness > 0:
                 total_wall_masonry += eqto.concrete_volume / elem.thickness
@@ -1847,6 +1945,11 @@ def calculate_qto(
         total_roof_hip_length=total_roof_hip,
         total_roof_eaves_length=total_roof_eaves,
         total_roof_insulation_area=total_roof_insul,
+        total_curtain_wall_facade_area=total_cw_facade_area,
+        total_curtain_wall_mullion_length=total_cw_mullion_len,
+        total_curtain_wall_glass_panels_count=total_cw_glass_panels,
+        total_plate_area=total_plate_area_val,
+        total_plate_weight=total_plate_weight_val,
         total_ceiling_gypsum_area=total_ceil_gypsum,
         total_ceiling_tbar_area=total_ceil_tbar,
         total_ceiling_eaves_area=total_ceil_eaves,

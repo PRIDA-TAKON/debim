@@ -15,6 +15,7 @@ from debim.schema import (
     IfcCableCarrierSegment,
     IfcColumn,
     IfcCovering,
+    IfcCurtainWall,
     IfcCustomElement,
     IfcDistributionBoard,
     IfcElectricDistributionBoard,
@@ -24,6 +25,7 @@ from debim.schema import (
     IfcLightFixture,
     IfcOutlet,
     IfcPipeSegment,
+    IfcPlate,
     IfcRailing,
     IfcRamp,
     IfcRoof,
@@ -577,6 +579,40 @@ class ResolvedRoof(BaseModel):
     layer: str = "architecture/roofs"
 
 
+class ResolvedCurtainWall(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcCurtainWall
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    length: float
+    height: float
+    gross_facade_area: float  # m2
+    net_glass_area: float     # m2
+    mullion_length: float     # linear meters of mullions / transoms
+    glass_panels_count: int
+    mullion_grid_lines: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = Field(default_factory=list)
+    layer: str = "architecture/facades/curtain_walls"
+
+
+class ResolvedPlate(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcPlate
+    position: Tuple[float, float, float]
+    width: float
+    depth: float
+    thickness: float
+    area: float      # m2
+    volume: float    # m3
+    weight: float    # kg
+    polygon: List[Tuple[float, float, float]] = Field(default_factory=list)
+    rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "architecture/cladding"
+
+
 # MEP Colors & Defaults
 MEP_PIPE_COLORS: Dict[str, str] = {
     "COLD_WATER": "#0284C7",  # Sky Blue (น้ำดี ท่อ PVC ฟ้า / PPR)
@@ -890,6 +926,8 @@ ResolvedElement = Union[
     ResolvedRamp,
     ResolvedRailing,
     ResolvedRoof,
+    ResolvedCurtainWall,
+    ResolvedPlate,
     ResolvedPipeSegment,
     ResolvedCableCarrierSegment,
     ResolvedDuctSegment,
@@ -923,6 +961,8 @@ class ResolvedManifest(BaseModel):
     ramps: List[ResolvedRamp] = []
     railings: List[ResolvedRailing] = []
     roofs: List[ResolvedRoof] = []
+    curtain_walls: List[ResolvedCurtainWall] = []
+    plates: List[ResolvedPlate] = []
     doors: List[ResolvedDoor] = []
     windows: List[ResolvedWindow] = []
     pipes: List[ResolvedPipeSegment] = []
@@ -3172,6 +3212,176 @@ class SpatialResolver:
             layer=derive_default_layer(roof),
         )
 
+    def resolve_curtain_wall(self, cw: IfcCurtainWall) -> ResolvedCurtainWall:
+        x1, y1 = self.get_grid_xy(cw.placement.from_grid)
+        x2, y2 = self.get_grid_xy(cw.placement.to_grid)
+        storey = self.get_storey(cw.placement.storey)
+
+        z = storey.elevation + cw.placement.offset_z
+        dx = x2 - x1
+        dy = y2 - y1
+        length = math.hypot(dx, dy)
+        height = cw.height
+
+        start_point = (x1, y1, z)
+        end_point = (x2, y2, z)
+
+        gross_area = length * height
+
+        # Mullion grid resolution
+        sp_h = cw.mullion_spacing_h if cw.mullion_spacing_h > 0 else 1.20
+        sp_v = cw.mullion_spacing_v if cw.mullion_spacing_v > 0 else 1.50
+        mw = cw.mullion_width
+
+        n_bays_h = max(1, int(round(length / sp_h))) if length > 0 else 1
+        n_bays_v = max(1, int(round(height / sp_v))) if height > 0 else 1
+
+        ux = dx / length if length > 0 else 1.0
+        uy = dy / length if length > 0 else 0.0
+
+        grid_lines: List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]] = []
+        mullion_len = 0.0
+
+        # Vertical mullions (along length)
+        for i in range(n_bays_h + 1):
+            dist = i * (length / n_bays_h) if n_bays_h > 0 else 0.0
+            mx = x1 + ux * dist
+            my = y1 + uy * dist
+            p_bot = (mx, my, z)
+            p_top = (mx, my, z + height)
+            grid_lines.append((p_bot, p_top))
+            mullion_len += height
+
+        # Horizontal transoms
+        for j in range(n_bays_v + 1):
+            hz = z + j * (height / n_bays_v) if n_bays_v > 0 else z
+            p_s = (x1, y1, hz)
+            p_e = (x2, y2, hz)
+            grid_lines.append((p_s, p_e))
+            mullion_len += length
+
+        panel_count = n_bays_h * n_bays_v
+        # Net glass area deducting mullion widths
+        effective_w = max(0.01, (length / n_bays_h) - mw)
+        effective_h = max(0.01, (height / n_bays_v) - mw)
+        net_glass = panel_count * (effective_w * effective_h)
+
+        return ResolvedCurtainWall(
+            tag=cw.tag,
+            element=cw,
+            start_point=start_point,
+            end_point=end_point,
+            length=length,
+            height=height,
+            gross_facade_area=gross_area,
+            net_glass_area=net_glass,
+            mullion_length=mullion_len,
+            glass_panels_count=panel_count,
+            mullion_grid_lines=grid_lines,
+            layer=derive_default_layer(cw),
+        )
+
+    def resolve_plate(self, plate: IfcPlate) -> ResolvedPlate:
+        storey = self.get_storey(plate.placement.storey)
+        z_base = storey.elevation + plate.placement.offset_z
+
+        poly_3d: List[Tuple[float, float, float]] = []
+        area = 0.0
+        width = plate.width or 1.0
+        depth = plate.depth or 1.0
+        thick = plate.thickness
+
+        if plate.placement.boundary:
+            pts_2d: List[Tuple[float, float]] = []
+            for grid_pt in plate.placement.boundary:
+                x, y = self.get_grid_xy(grid_pt)
+                pts_2d.append((x, y))
+                poly_3d.append((x, y, z_base))
+
+            n = len(pts_2d)
+            if n >= 3:
+                for i in range(n):
+                    j = (i + 1) % n
+                    area += pts_2d[i][0] * pts_2d[j][1]
+                    area -= pts_2d[j][0] * pts_2d[i][1]
+                area = abs(area) / 2.0
+                xs = [p[0] for p in pts_2d]
+                ys = [p[1] for p in pts_2d]
+                width = max(xs) - min(xs)
+                depth = max(ys) - min(ys)
+                cx = sum(xs) / n
+                cy = sum(ys) / n
+                cz = z_base
+            else:
+                cx, cy, cz = 0.0, 0.0, z_base
+        elif plate.placement.boundary_points:
+            bpts = plate.placement.boundary_points
+            gx, gy = (0.0, 0.0)
+            if plate.placement.grid:
+                gx, gy = self.get_grid_xy(plate.placement.grid)
+            gx += plate.placement.offset_x
+            gy += plate.placement.offset_y
+
+            for lx, ly in bpts:
+                poly_3d.append((gx + lx, gy + ly, z_base))
+
+            n = len(bpts)
+            if n >= 3:
+                for i in range(n):
+                    j = (i + 1) % n
+                    area += bpts[i][0] * bpts[j][1]
+                    area -= bpts[j][0] * bpts[i][1]
+                area = abs(area) / 2.0
+                xs = [p[0] for p in bpts]
+                ys = [p[1] for p in bpts]
+                width = max(xs) - min(xs)
+                depth = max(ys) - min(ys)
+                cx = gx + sum(xs) / n
+                cy = gy + sum(ys) / n
+                cz = z_base
+            else:
+                cx, cy, cz = gx, gy, z_base
+        else:
+            gx, gy = (0.0, 0.0)
+            if plate.placement.grid:
+                gx, gy = self.get_grid_xy(plate.placement.grid)
+            cx = gx + plate.placement.offset_x
+            cy = gy + plate.placement.offset_y
+            cz = z_base
+            area = width * depth
+
+        volume = area * thick
+        density = plate.density_kg_m3
+        if density is None:
+            # Default material density if omitted
+            mat_low = (plate.material or "").lower()
+            if any(k in mat_low for k in ["steel", "ss400", "metal", "iron"]):
+                density = 7850.0
+            elif "aluminum" in mat_low or "aluminium" in mat_low:
+                density = 2700.0
+            elif "glass" in mat_low:
+                density = 2500.0
+            else:
+                density = 7850.0 if plate.predefined_type in ("FLANGE_PLATE", "BASE_PLATE") else 2500.0
+
+        weight = volume * density
+        rot = plate.placement.rotation if plate.placement.rotation else (0.0, 0.0, 0.0)
+
+        return ResolvedPlate(
+            tag=plate.tag,
+            element=plate,
+            position=(cx, cy, cz),
+            width=width,
+            depth=depth,
+            thickness=thick,
+            area=area,
+            volume=volume,
+            weight=weight,
+            polygon=poly_3d,
+            rotation=rot,
+            layer=derive_default_layer(plate),
+        )
+
     def resolve_pipe(self, pipe: IfcPipeSegment) -> ResolvedPipeSegment:
         z_base = self.storeys[pipe.placement.storey].elevation
         waypoints: List[Tuple[float, float, float]] = []
@@ -3579,6 +3789,14 @@ class SpatialResolver:
                         resolved_manifest.windows.append(child)
                         resolved_manifest.elements.append(child)
                 resolved_manifest.elements.append(r_roof)
+            elif isinstance(elem, IfcCurtainWall):
+                r_cw = self.resolve_curtain_wall(elem)
+                resolved_manifest.curtain_walls.append(r_cw)
+                resolved_manifest.elements.append(r_cw)
+            elif isinstance(elem, IfcPlate):
+                r_plate = self.resolve_plate(elem)
+                resolved_manifest.plates.append(r_plate)
+                resolved_manifest.elements.append(r_plate)
             elif isinstance(elem, IfcColumn):
                 r_col = self.resolve_column(elem)
                 resolved_manifest.columns.append(r_col)

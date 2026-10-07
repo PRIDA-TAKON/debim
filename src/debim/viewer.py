@@ -553,6 +553,99 @@ def generate_viewer_html(
                 },
             })
 
+    # Curtain Walls
+    for cw in resolved.curtain_walls:
+        dx = cw.end_point[0] - cw.start_point[0]
+        dy = cw.end_point[1] - cw.start_point[1]
+        angle = math.atan2(dy, dx)
+        cx = (cw.start_point[0] + cw.end_point[0]) / 2.0
+        cy = (cw.start_point[1] + cw.end_point[1]) / 2.0
+        cz = cw.start_point[2] + cw.height / 2.0
+
+        # Facade Glass Panel
+        elements_data.append({
+            "tag": cw.tag,
+            "class": "IfcCurtainWall",
+            "material": cw.element.material,
+            "position": [cx, cy, cz],
+            "rotation": [0, 0, angle],
+            "dimensions": {
+                "length": cw.length,
+                "thickness": cw.element.glass_thickness,
+                "height": cw.height,
+                "facade_area": cw.gross_facade_area,
+                "glass_panels_count": cw.glass_panels_count,
+            },
+            "color": "#38BDF8",
+            "transparent": True,
+            "opacity": 0.45,
+            "layer": cw.layer,
+        })
+
+        # Mullion Grid Lines
+        for g_idx, (p1, p2) in enumerate(cw.mullion_grid_lines):
+            elements_data.append({
+                "tag": f"{cw.tag}-Mullion-{g_idx+1}",
+                "class": "IfcCurtainWallMullion",
+                "geometry_type": "line",
+                "points": [p1, p2],
+                "color": "#1E293B",
+                "linewidth": 3,
+                "layer": f"{cw.layer}/mullions",
+                "dimensions": {
+                    "mullion_width": cw.element.mullion_width,
+                    "mullion_depth": cw.element.mullion_depth,
+                },
+            })
+
+    # Plates
+    for plate in resolved.plates:
+        rot = [0.0, 0.0, 0.0]
+        if plate.rotation:
+            rot = [math.radians(plate.rotation[0]), math.radians(plate.rotation[1]), math.radians(plate.rotation[2])]
+
+        p_type = plate.element.predefined_type
+        is_glass = p_type == "CURTAIN_PANEL" or "glass" in (plate.element.material or "").lower()
+        color = "#00FFFF" if is_glass else ("#94A3B8" if p_type in ("FLANGE_PLATE", "BASE_PLATE") else "#E2E8F0")
+
+        if plate.polygon and len(plate.polygon) >= 3:
+            elements_data.append({
+                "tag": plate.tag,
+                "class": "IfcPlate",
+                "material": plate.element.material,
+                "geometry_type": "polygon",
+                "points": plate.polygon,
+                "color": color,
+                "layer": plate.layer,
+                "transparent": is_glass,
+                "opacity": 0.55 if is_glass else 1.0,
+                "dimensions": {
+                    "area": plate.area,
+                    "thickness": plate.thickness,
+                    "weight": plate.weight,
+                },
+            })
+        else:
+            cz = plate.position[2] + plate.thickness / 2.0
+            elements_data.append({
+                "tag": plate.tag,
+                "class": "IfcPlate",
+                "material": plate.element.material,
+                "position": [plate.position[0], plate.position[1], cz],
+                "rotation": rot,
+                "dimensions": {
+                    "width": plate.width,
+                    "depth": plate.depth,
+                    "height": plate.thickness,
+                    "area": plate.area,
+                    "weight": plate.weight,
+                },
+                "color": color,
+                "transparent": is_glass,
+                "opacity": 0.55 if is_glass else 1.0,
+                "layer": plate.layer,
+            })
+
     # Custom Elements
     for custom in resolved.custom_elements:
         tag_upper = custom.tag.upper()
