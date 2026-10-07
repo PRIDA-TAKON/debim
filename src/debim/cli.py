@@ -1065,6 +1065,84 @@ spec_app = typer.Typer(
 app.add_typer(spec_app, name="spec")
 
 
+@spec_app.command(name="build")
+def spec_build_cmd(
+    manifest: Path = typer.Option(
+        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest (project.yaml)"
+    ),
+    specs: Optional[Path] = typer.Option(
+        None, "--specs", "-s", help="Path to material specifications manifest file or directory"
+    ),
+    output: Path = typer.Option(
+        Path("dist/specifications.md"), "--output", "-o", help="Output destination file path (.md or .html)"
+    ),
+    format: Optional[str] = typer.Option(
+        None, "--format", "-f", help="Output format override ('markdown' or 'html')"
+    ),
+    title: str = typer.Option(
+        "ARCHITECTURAL MATERIAL SPECIFICATIONS BOOK", "--title", "-t", help="Title of the Specification Book"
+    ),
+):
+    """Scan active project materials, resolve installed specifications, and compile a Specification Book."""
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        raise typer.Exit(code=1)
+
+    console.print(f"[bold blue]Compiling Specification Book for:[/bold blue] {manifest}")
+    if specs:
+        console.print(f"[bold blue]Using Specs Path:[/bold blue] {specs}")
+
+    try:
+        from debim.spec.builder import build_specification_book
+
+        book = build_specification_book(
+            project_manifest=manifest,
+            spec_manifest=specs,
+            title=title,
+        )
+
+        saved_path = book.save(output_path=output, format=format)
+        file_size = saved_path.stat().st_size
+
+        table = Table(
+            title="Specification Book Summary",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        table.add_column("MasterFormat Division", style="bold yellow")
+        table.add_column("Division Title", style="white")
+        table.add_column("Specs Count", justify="right", style="green")
+
+        for div_code, div_data in book.divisions.items():
+            table.add_row(
+                f"Division {div_code}",
+                div_data["title"],
+                str(len(div_data["specs"])),
+            )
+
+        console.print(table)
+
+        summary_text = (
+            f"[bold cyan]Project Name:[/bold cyan] {book.project_name} ({book.project_id})\n"
+            f"[bold cyan]Active Specifications Included:[/bold cyan] {len(book.included_specs)} (zero unreferenced bloat)\n"
+            f"[bold cyan]MasterFormat Divisions Covered:[/bold cyan] {len(book.divisions)}\n"
+            f"[bold green]Output Specification Book:[/bold green] [cyan]{saved_path}[/cyan] ({file_size:,} bytes)"
+        )
+        console.print(
+            Panel(
+                summary_text,
+                title="[bold green]debim Spec Book Build Complete[/bold green]",
+                style="green",
+            )
+        )
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        console.print(f"[bold red]Specification Book Build Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
 @spec_app.command(name="audit")
 def spec_audit_cmd(
     manifest: Path = typer.Option(
