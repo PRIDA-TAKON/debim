@@ -20,9 +20,11 @@ from debim.schema import (
     IfcCustomElement,
     IfcDamper,
     IfcDistributionBoard,
-    IfcElectricDistributionBoard,
     IfcDoor,
     IfcDuctSegment,
+    IfcEarthworksCut,
+    IfcEarthworksFill,
+    IfcElectricDistributionBoard,
     IfcFlowController,
     IfcFooting,
     IfcLightFixture,
@@ -31,15 +33,16 @@ from debim.schema import (
     IfcPlate,
     IfcRailing,
     IfcRamp,
+    IfcRetainingWall,
     IfcRoof,
     IfcSanitaryTerminal,
-    IfcWasteTerminal,
     IfcSlab,
     IfcStair,
     IfcStairFlight,
     IfcSwitchingDevice,
     IfcUnitaryEquipment,
     IfcWall,
+    IfcWasteTerminal,
     IfcWindow,
     Profile,
     ProjectManifest,
@@ -1008,6 +1011,61 @@ class ResolvedProxy(BaseModel):
     layer: str = "equipment/proxy"
 
 
+class ResolvedEarthworksCut(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcEarthworksCut
+    predefined_type: str = "CUT"
+    position: Tuple[float, float, float]
+    width: float
+    length: float
+    depth: float  # Average depth (m)
+    cut_volume: float  # m3
+    footprint_area: float  # m2
+    polygon: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/earthworks/cut"
+
+
+class ResolvedEarthworksFill(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcEarthworksFill
+    predefined_type: str = "EMBANKMENT"
+    material_type: str = "soil"
+    compaction_ratio: float = 0.95
+    position: Tuple[float, float, float]
+    width: float
+    length: float
+    depth: float  # Height/depth of fill layer (m)
+    fill_volume: float  # Baseline fill volume (m3)
+    compacted_volume: float  # Compacted volume (m3)
+    surface_area: float  # Surface area (m2)
+    polygon: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/earthworks/fill"
+
+
+class ResolvedRetainingWall(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcRetainingWall
+    predefined_type: str = "CANTILEVER_WALL"
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    length: float
+    stem_height: float
+    stem_thickness: float
+    footing_base_width: float
+    toe_length: float
+    heel_length: float
+    footing_thickness: float
+    concrete_volume: float  # m3
+    formwork_area: float  # m2
+    layer: str = "civil/structures/retaining_walls"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1035,6 +1093,9 @@ ResolvedElement = Union[
     ResolvedDamper,
     ResolvedFlowController,
     ResolvedUnitaryEquipment,
+    ResolvedEarthworksCut,
+    ResolvedEarthworksFill,
+    ResolvedRetainingWall,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1075,6 +1136,9 @@ class ResolvedManifest(BaseModel):
     dampers: List[ResolvedDamper] = []
     flow_controllers: List[ResolvedFlowController] = []
     unitary_equipments: List[ResolvedUnitaryEquipment] = []
+    earthworks_cuts: List[ResolvedEarthworksCut] = []
+    earthworks_fills: List[ResolvedEarthworksFill] = []
+    retaining_walls: List[ResolvedRetainingWall] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -3900,6 +3964,246 @@ class SpatialResolver:
             layer=derive_default_layer(equip),
         )
 
+    def resolve_earthworks_cut(self, cut: IfcEarthworksCut) -> ResolvedEarthworksCut:
+        storey = self.get_storey(cut.placement.storey)
+        z_base = storey.elevation + cut.placement.offset_z
+
+        poly_3d: List[Tuple[float, float, float]] = []
+        area = 0.0
+        width = cut.width or 10.0
+        length = cut.length or 10.0
+        depth = cut.depth or 2.0
+
+        if cut.placement.boundary:
+            pts_2d: List[Tuple[float, float]] = []
+            for grid_pt in cut.placement.boundary:
+                x, y = self.get_grid_xy(grid_pt)
+                pts_2d.append((x, y))
+                poly_3d.append((x, y, z_base))
+
+            n = len(pts_2d)
+            if n >= 3:
+                for i in range(n):
+                    j = (i + 1) % n
+                    area += pts_2d[i][0] * pts_2d[j][1]
+                    area -= pts_2d[j][0] * pts_2d[i][1]
+                area = abs(area) / 2.0
+                xs = [p[0] for p in pts_2d]
+                ys = [p[1] for p in pts_2d]
+                width = max(xs) - min(xs)
+                length = max(ys) - min(ys)
+                cx = sum(xs) / n
+                cy = sum(ys) / n
+                cz = z_base
+            else:
+                cx, cy, cz = 0.0, 0.0, z_base
+        elif cut.placement.boundary_points:
+            bpts = cut.placement.boundary_points
+            gx, gy = (0.0, 0.0)
+            if cut.placement.grid:
+                gx, gy = self.get_grid_xy(cut.placement.grid)
+            gx += cut.placement.offset_x
+            gy += cut.placement.offset_y
+
+            for lx, ly in bpts:
+                poly_3d.append((gx + lx, gy + ly, z_base))
+
+            n = len(bpts)
+            if n >= 3:
+                for i in range(n):
+                    j = (i + 1) % n
+                    area += bpts[i][0] * bpts[j][1]
+                    area -= bpts[j][0] * bpts[i][1]
+                area = abs(area) / 2.0
+                xs = [p[0] for p in bpts]
+                ys = [p[1] for p in bpts]
+                width = max(xs) - min(xs)
+                length = max(ys) - min(ys)
+                cx = gx + sum(xs) / n
+                cy = gy + sum(ys) / n
+                cz = z_base
+            else:
+                cx, cy, cz = gx, gy, z_base
+        else:
+            gx, gy = (0.0, 0.0)
+            if cut.placement.grid:
+                gx, gy = self.get_grid_xy(cut.placement.grid)
+            cx = gx + cut.placement.offset_x
+            cy = gy + cut.placement.offset_y
+            cz = z_base
+            area = width * length
+
+        footprint_area = cut.footprint_area if cut.footprint_area is not None else area
+        cut_volume = cut.cut_volume if cut.cut_volume is not None else (footprint_area * depth)
+
+        return ResolvedEarthworksCut(
+            tag=cut.tag,
+            element=cut,
+            predefined_type=cut.predefined_type,
+            position=(cx, cy, cz),
+            width=width,
+            length=length,
+            depth=depth,
+            cut_volume=cut_volume,
+            footprint_area=footprint_area,
+            polygon=poly_3d,
+            layer=derive_default_layer(cut),
+        )
+
+    def resolve_earthworks_fill(self, fill: IfcEarthworksFill) -> ResolvedEarthworksFill:
+        storey = self.get_storey(fill.placement.storey)
+        z_base = storey.elevation + fill.placement.offset_z
+
+        poly_3d: List[Tuple[float, float, float]] = []
+        area = 0.0
+        width = fill.width or 10.0
+        length = fill.length or 10.0
+        depth = fill.depth or 1.0
+
+        if fill.placement.boundary:
+            pts_2d: List[Tuple[float, float]] = []
+            for grid_pt in fill.placement.boundary:
+                x, y = self.get_grid_xy(grid_pt)
+                pts_2d.append((x, y))
+                poly_3d.append((x, y, z_base))
+
+            n = len(pts_2d)
+            if n >= 3:
+                for i in range(n):
+                    j = (i + 1) % n
+                    area += pts_2d[i][0] * pts_2d[j][1]
+                    area -= pts_2d[j][0] * pts_2d[i][1]
+                area = abs(area) / 2.0
+                xs = [p[0] for p in pts_2d]
+                ys = [p[1] for p in pts_2d]
+                width = max(xs) - min(xs)
+                length = max(ys) - min(ys)
+                cx = sum(xs) / n
+                cy = sum(ys) / n
+                cz = z_base
+            else:
+                cx, cy, cz = 0.0, 0.0, z_base
+        elif fill.placement.boundary_points:
+            bpts = fill.placement.boundary_points
+            gx, gy = (0.0, 0.0)
+            if fill.placement.grid:
+                gx, gy = self.get_grid_xy(fill.placement.grid)
+            gx += fill.placement.offset_x
+            gy += fill.placement.offset_y
+
+            for lx, ly in bpts:
+                poly_3d.append((gx + lx, gy + ly, z_base))
+
+            n = len(bpts)
+            if n >= 3:
+                for i in range(n):
+                    j = (i + 1) % n
+                    area += bpts[i][0] * bpts[j][1]
+                    area -= bpts[j][0] * bpts[i][1]
+                area = abs(area) / 2.0
+                xs = [p[0] for p in bpts]
+                ys = [p[1] for p in bpts]
+                width = max(xs) - min(xs)
+                length = max(ys) - min(ys)
+                cx = gx + sum(xs) / n
+                cy = gy + sum(ys) / n
+                cz = z_base
+            else:
+                cx, cy, cz = gx, gy, z_base
+        else:
+            gx, gy = (0.0, 0.0)
+            if fill.placement.grid:
+                gx, gy = self.get_grid_xy(fill.placement.grid)
+            cx = gx + fill.placement.offset_x
+            cy = gy + fill.placement.offset_y
+            cz = z_base
+            area = width * length
+
+        surf_area = fill.surface_area if fill.surface_area is not None else area
+        baseline_vol = fill.fill_volume if fill.fill_volume is not None else (surf_area * depth)
+        compacted_vol = fill.compacted_volume if fill.compacted_volume is not None else (baseline_vol * fill.compaction_ratio)
+
+        return ResolvedEarthworksFill(
+            tag=fill.tag,
+            element=fill,
+            predefined_type=fill.predefined_type,
+            material_type=fill.material_type or "soil",
+            compaction_ratio=fill.compaction_ratio,
+            position=(cx, cy, cz),
+            width=width,
+            length=length,
+            depth=depth,
+            fill_volume=baseline_vol,
+            compacted_volume=compacted_vol,
+            surface_area=surf_area,
+            polygon=poly_3d,
+            layer=derive_default_layer(fill),
+        )
+
+    def resolve_retaining_wall(self, rw: IfcRetainingWall) -> ResolvedRetainingWall:
+        storey = self.get_storey(rw.placement.storey)
+        z = storey.elevation + rw.placement.offset_z
+
+        if rw.placement.from_grid and rw.placement.to_grid:
+            x1, y1 = self.get_grid_xy(rw.placement.from_grid)
+            x2, y2 = self.get_grid_xy(rw.placement.to_grid)
+            x1 += rw.placement.offset_x
+            y1 += rw.placement.offset_y
+            x2 += rw.placement.offset_x
+            y2 += rw.placement.offset_y
+            dx = x2 - x1
+            dy = y2 - y1
+            calc_len = math.hypot(dx, dy)
+            wall_len = calc_len if calc_len > 0 else rw.length
+        elif rw.placement.grid:
+            x1, y1 = self.get_grid_xy(rw.placement.grid)
+            x1 += rw.placement.offset_x
+            y1 += rw.placement.offset_y
+            wall_len = rw.length
+            x2 = x1 + wall_len
+            y2 = y1
+        else:
+            x1 = rw.placement.offset_x
+            y1 = rw.placement.offset_y
+            wall_len = rw.length
+            x2 = x1 + wall_len
+            y2 = y1
+
+        start_point = (x1, y1, z)
+        end_point = (x2, y2, z)
+
+        # Geometry calculations
+        # Stem volume: stem_thickness * stem_height * wall_len
+        # Footing slab volume: footing_base_width * footing_thickness * wall_len
+        stem_vol = rw.stem_thickness * rw.stem_height * wall_len
+        footing_vol = rw.footing_base_width * rw.footing_thickness * wall_len
+        total_conc_vol = stem_vol + footing_vol
+
+        # Formwork area:
+        # Stem formwork: 2 vertical sides (stem_height * wall_len * 2) + 2 end faces (stem_height * stem_thickness * 2)
+        # Footing formwork: 2 side faces (footing_thickness * wall_len * 2) + 2 end faces (footing_thickness * footing_base_width * 2)
+        stem_formwork = (2.0 * rw.stem_height * wall_len) + (2.0 * rw.stem_height * rw.stem_thickness)
+        footing_formwork = (2.0 * rw.footing_thickness * wall_len) + (2.0 * rw.footing_thickness * rw.footing_base_width)
+        total_formwork = stem_formwork + footing_formwork
+
+        return ResolvedRetainingWall(
+            tag=rw.tag,
+            element=rw,
+            predefined_type=rw.predefined_type,
+            start_point=start_point,
+            end_point=end_point,
+            length=wall_len,
+            stem_height=rw.stem_height,
+            stem_thickness=rw.stem_thickness,
+            footing_base_width=rw.footing_base_width,
+            toe_length=rw.toe_length,
+            heel_length=rw.heel_length,
+            footing_thickness=rw.footing_thickness,
+            concrete_volume=total_conc_vol,
+            formwork_area=total_formwork,
+            layer=derive_default_layer(rw),
+        )
+
     def resolve(self) -> ResolvedManifest:
         resolved_manifest = ResolvedManifest(manifest=self.manifest)
 
@@ -4039,6 +4343,18 @@ class SpatialResolver:
                 resolved_manifest.unitary_equipments.append(r_eq)
                 resolved_manifest.elements.append(r_eq)
                 resolved_manifest.terminals.append(self.resolve_terminal(elem))
+            elif isinstance(elem, IfcEarthworksCut):
+                r_cut = self.resolve_earthworks_cut(elem)
+                resolved_manifest.earthworks_cuts.append(r_cut)
+                resolved_manifest.elements.append(r_cut)
+            elif isinstance(elem, IfcEarthworksFill):
+                r_fill = self.resolve_earthworks_fill(elem)
+                resolved_manifest.earthworks_fills.append(r_fill)
+                resolved_manifest.elements.append(r_fill)
+            elif isinstance(elem, IfcRetainingWall):
+                r_rw = self.resolve_retaining_wall(elem)
+                resolved_manifest.retaining_walls.append(r_rw)
+                resolved_manifest.elements.append(r_rw)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

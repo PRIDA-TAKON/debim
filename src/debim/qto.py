@@ -21,6 +21,8 @@ from debim.resolver import (
     ResolvedDistributionBoard,
     ResolvedDoor,
     ResolvedDuctSegment,
+    ResolvedEarthworksCut,
+    ResolvedEarthworksFill,
     ResolvedElement,
     ResolvedFlowController,
     ResolvedFooting,
@@ -32,10 +34,10 @@ from debim.resolver import (
     ResolvedProxy,
     ResolvedRailing,
     ResolvedRamp,
+    ResolvedRetainingWall,
     ResolvedRevolvedArea,
     ResolvedRoof,
     ResolvedSanitaryTerminal,
-    ResolvedWasteTerminal,
     ResolvedSlab,
     ResolvedStair,
     ResolvedStairFlight,
@@ -44,6 +46,7 @@ from debim.resolver import (
     ResolvedTerminal,
     ResolvedUnitaryEquipment,
     ResolvedWall,
+    ResolvedWasteTerminal,
     ResolvedWindow,
     resolve_manifest,
 )
@@ -405,6 +408,24 @@ class PlateQTO(BaseModel):
     weight: float = 0.0                  # Weight (kg)
 
 
+class EarthworksQTO(BaseModel):
+    type: str = "CUT"                    # CUT or FILL
+    volume: float = 0.0                  # Baseline volume (m3)
+    compacted_volume: float = 0.0        # Compacted volume for fill (m3)
+    footprint_area: float = 0.0          # Bottom footprint area for cut (m2)
+    surface_area: float = 0.0            # Top surface area for fill (m2)
+    depth: float = 0.0                   # Average depth/height (m)
+    compaction_ratio: float = 0.95
+
+
+class RetainingWallQTO(BaseModel):
+    length: float = 0.0                  # Wall length (m)
+    concrete_volume: float = 0.0         # Concrete volume (m3)
+    formwork_area: float = 0.0           # Formwork area (m2)
+    stem_height: float = 0.0             # Stem height (m)
+    footing_width: float = 0.0           # Footing base width (m)
+
+
 class MepQTO(BaseModel):
     system_type: str = ""
     length: float = 0.0                    # ท่อ / สายไฟ / ท่อลม (linear meters)
@@ -444,6 +465,8 @@ class ElementQTO(BaseModel):
     plate: Optional[PlateQTO] = None
     covering: Optional[CoveringQTO] = None
     slab_finishes: Optional[SlabFinishesQTO] = None
+    earthworks: Optional[EarthworksQTO] = None
+    retaining_wall: Optional[RetainingWallQTO] = None
     mep: Optional[MepQTO] = None
 
 
@@ -484,6 +507,12 @@ class ProjectQTO(BaseModel):
     total_curtain_wall_glass_panels_count: int = 0
     total_plate_area: float = 0.0
     total_plate_weight: float = 0.0
+    # Earthworks & Retaining Wall Totals
+    total_cut_volume: float = 0.0
+    total_fill_volume: float = 0.0
+    total_compacted_fill_volume: float = 0.0
+    total_retaining_wall_concrete_volume: float = 0.0
+    total_retaining_wall_formwork_area: float = 0.0
     # Ceilings & Floor Finishes Totals
     total_ceiling_gypsum_area: float = 0.0
     total_ceiling_tbar_area: float = 0.0
@@ -1410,6 +1439,85 @@ def calculate_element_qto(
             plate=pl_qto,
         )
 
+    elif isinstance(resolved, ResolvedEarthworksCut):
+        elem = resolved.element
+        ew_qto = EarthworksQTO(
+            type="CUT",
+            volume=resolved.cut_volume,
+            footprint_area=resolved.footprint_area,
+            depth=resolved.depth,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            earthworks=ew_qto,
+        )
+
+    elif isinstance(resolved, ResolvedEarthworksFill):
+        elem = resolved.element
+        ew_qto = EarthworksQTO(
+            type="FILL",
+            volume=resolved.fill_volume,
+            compacted_volume=resolved.compacted_volume,
+            surface_area=resolved.surface_area,
+            depth=resolved.depth,
+            compaction_ratio=resolved.compaction_ratio,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            earthworks=ew_qto,
+        )
+
+    elif isinstance(resolved, ResolvedRetainingWall):
+        elem = resolved.element
+        vol = resolved.concrete_volume
+        formwork = resolved.formwork_area
+
+        rebar_dict: Dict[str, float] = {}
+        total_rebar = 0.0
+
+        if elem.reinforcement:
+            if elem.reinforcement.stem_main:
+                m_dict, m_wt = parse_stirrups(elem.reinforcement.stem_main, resolved.length, resolved.stem_thickness, resolved.stem_height)
+                for btype, wt in m_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                total_rebar += m_wt
+
+            if elem.reinforcement.stem_distribution:
+                d_dict, d_wt = parse_stirrups(elem.reinforcement.stem_distribution, resolved.stem_height, resolved.length, resolved.stem_thickness)
+                for btype, wt in d_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                total_rebar += d_wt
+
+            if elem.reinforcement.footing_mesh:
+                f_dict, f_wt = parse_footing_mesh(elem.reinforcement.footing_mesh, bar_length=resolved.footing_base_width, distribution_length=resolved.length)
+                for btype, wt in f_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                total_rebar += f_wt
+
+        rw_qto = RetainingWallQTO(
+            length=resolved.length,
+            concrete_volume=vol,
+            formwork_area=formwork,
+            stem_height=resolved.stem_height,
+            footing_width=resolved.footing_base_width,
+        )
+
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.length,
+            concrete_volume=vol,
+            formwork_area=formwork,
+            rebar_weights=rebar_dict,
+            total_rebar_weight=total_rebar,
+            retaining_wall=rw_qto,
+        )
+
     elif isinstance(resolved, ResolvedTerminal):
         elem = resolved.element
         return ElementQTO(
@@ -1800,6 +1908,13 @@ def calculate_qto(
     total_plate_area_val = 0.0
     total_plate_weight_val = 0.0
 
+    # Earthworks & Retaining Wall Totals
+    total_cut_vol = 0.0
+    total_fill_vol = 0.0
+    total_compacted_fill_vol = 0.0
+    total_rw_conc_vol = 0.0
+    total_rw_formwork = 0.0
+
     total_ceil_gypsum = 0.0
     total_ceil_tbar = 0.0
     total_ceil_eaves = 0.0
@@ -1941,6 +2056,17 @@ def calculate_qto(
             total_plate_area_val += eqto.plate.area
             total_plate_weight_val += eqto.plate.weight
 
+        if eqto.earthworks:
+            if eqto.earthworks.type == "CUT":
+                total_cut_vol += eqto.earthworks.volume
+            elif eqto.earthworks.type == "FILL":
+                total_fill_vol += eqto.earthworks.volume
+                total_compacted_fill_vol += eqto.earthworks.compacted_volume
+
+        if eqto.retaining_wall:
+            total_rw_conc_vol += eqto.retaining_wall.concrete_volume
+            total_rw_formwork += eqto.retaining_wall.formwork_area
+
         if eqto.element_class == "IfcWall":
             if hasattr(elem, "thickness") and elem.thickness > 0:
                 total_wall_masonry += eqto.concrete_volume / elem.thickness
@@ -2042,6 +2168,11 @@ def calculate_qto(
         total_curtain_wall_glass_panels_count=total_cw_glass_panels,
         total_plate_area=total_plate_area_val,
         total_plate_weight=total_plate_weight_val,
+        total_cut_volume=total_cut_vol,
+        total_fill_volume=total_fill_vol,
+        total_compacted_fill_volume=total_compacted_fill_vol,
+        total_retaining_wall_concrete_volume=total_rw_conc_vol,
+        total_retaining_wall_formwork_area=total_rw_formwork,
         total_ceiling_gypsum_area=total_ceil_gypsum,
         total_ceiling_tbar_area=total_ceil_tbar,
         total_ceiling_eaves_area=total_ceil_eaves,

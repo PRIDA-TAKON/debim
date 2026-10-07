@@ -157,7 +157,7 @@ my_project/
 - [ ] **Task 3.2:** `feat(civil): Support IFC4.3 Alignment & Road Entities (IfcAlignment, IfcRoad, IfcBridge)`
   - แนวเส้นทางตามแนวราบ-แนวดิ่ง (Horizontal & Vertical Alignment)
   - องค์ประกอบสะพานและถนน
-- [ ] **Task 3.3:** `feat(civil): Support Earthworks & Retaining Structures (IfcEarthworksFill, IfcRetainingWall)`
+- [x] **Task 3.3:** `feat(civil): Support Earthworks & Retaining Structures (IfcEarthworksFill, IfcRetainingWall)` *(เสร็จสิ้น: Issue #84, PR #86)*
   - งานขุดดิน-ถมดิน, กำแพงกันดิน, ปริมาตรดินตัดดินถม (Cut & Fill Volume QTO)
 
 ---

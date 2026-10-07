@@ -214,6 +214,36 @@ def generate_cost_template(
         )
         item_disciplines["EARTH-EXCAVATION"] = "substructure"
 
+    if qto.total_cut_volume > 0 and "EARTH-CUT-EXCAVATION" not in required_items:
+        required_items["EARTH-CUT-EXCAVATION"] = PriceItem(
+            name="Earthworks Cut Excavation",
+            unit="m3",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="31 23 16", uniformat="A1010"),
+        )
+        item_disciplines["EARTH-CUT-EXCAVATION"] = "civil"
+
+    if (qto.total_fill_volume > 0 or qto.total_compacted_fill_volume > 0) and "EARTH-FILL-COMPACTED" not in required_items:
+        required_items["EARTH-FILL-COMPACTED"] = PriceItem(
+            name="Compacted Earth / Soil Embankment Fill",
+            unit="m3",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="31 23 23", uniformat="A1010"),
+        )
+        item_disciplines["EARTH-FILL-COMPACTED"] = "civil"
+
+    if qto.total_retaining_wall_concrete_volume > 0 and "RC-RETAINING-WALL" not in required_items:
+        required_items["RC-RETAINING-WALL"] = PriceItem(
+            name="Reinforced Concrete Retaining Wall",
+            unit="m3",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="32 32 00", uniformat="C1010"),
+        )
+        item_disciplines["RC-RETAINING-WALL"] = "civil"
+
     if qto.total_lean_concrete_volume > 0 and "MAT-LEAN-CONC" not in required_items:
         required_items["MAT-LEAN-CONC"] = PriceItem(
             name="Lean Concrete Bedding (1:3:6)",
@@ -618,7 +648,10 @@ def estimate_cost(
             unit = price_item.unit.lower()
 
             if unit in ("m3", "cubic_meter"):
-                qty = eqto.concrete_volume
+                if eqto.earthworks:
+                    qty = eqto.earthworks.volume
+                else:
+                    qty = eqto.concrete_volume
             elif unit in ("m2", "square_meter"):
                 if eqto.roof:
                     qty = eqto.roof.sloped_area
@@ -919,14 +952,13 @@ def estimate_cost(
 
         if matched_code:
             quantities_by_code[matched_code] = quantities_by_code.get(matched_code, 0.0) + float(eqto.mep.count)
-
         # Check direct match for element_class or tag in catalog.items
         if eqto.element_class in catalog.items:
             quantities_by_code[eqto.element_class] = quantities_by_code.get(eqto.element_class, 0.0) + (float(eqto.mep.count) if eqto.mep else 1.0)
         elif eqto.tag in catalog.items:
             quantities_by_code[eqto.tag] = quantities_by_code.get(eqto.tag, 0.0) + (float(eqto.mep.count) if eqto.mep else 1.0)
 
-    # 8. Map Earth excavation
+    # 8. Map Earth excavation & Earthworks cut/fill
     if qto.total_excavation_volume > 0:
         has_excav = any("excav" in c.lower() or "ขุด" in c.lower() for c in quantities_by_code.keys())
         if not has_excav:
@@ -934,6 +966,25 @@ def estimate_cost(
                 if "excav" in code.lower() or "ขุด" in item.name:
                     quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_excavation_volume
                     break
+
+    if qto.total_cut_volume > 0:
+        for code, item in catalog.items.items():
+            if "cut" in code.lower() or "earth-cut" in code.lower() or "ขุดดิน" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_cut_volume
+                break
+
+    fill_qty = qto.total_compacted_fill_volume or qto.total_fill_volume
+    if fill_qty > 0:
+        for code, item in catalog.items.items():
+            if "fill" in code.lower() or "earth-fill" in code.lower() or "ถมดิน" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + fill_qty
+                break
+
+    if qto.total_retaining_wall_concrete_volume > 0:
+        for code, item in catalog.items.items():
+            if "retaining" in code.lower() or "retaining-wall" in code.lower() or "กำแพงกันดิน" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_retaining_wall_concrete_volume
+                break
 
     # 9. Map Ceilings (Gypsum, T-Bar, Eaves) if not already mapped via material ref
     if qto.total_ceiling_gypsum_area > 0:
