@@ -140,7 +140,7 @@ my_project/
 - [x] **Task 2.3 (Plumbing & Sanitation):** `feat: Support IfcSanitaryTerminal and IfcWasteTerminal` *(เสร็จสิ้น: Issue #74, PR #78)*
   - สุขภัณฑ์, อ่างล้างหน้า, โถปัสสาวะ, Floor Drain, ถังดักไขมัน
   - QTO: นับจำนวนชิ้น, จับคู่กับราคาอุปกรณ์สุขภัณฑ์ใน `prices.yaml`
-- [ ] **Task 2.4 (HVAC Distribution):** `feat: Support IfcAirTerminal, IfcDamper, and IfcFlowController`
+- [x] **Task 2.4 (HVAC Distribution):** `feat: Support IfcAirTerminal, IfcDamper, and IfcFlowController` *(เสร็จสิ้น: Issue #81, PR #83)*
   - หัวจ่ายลม (Diffuser), แดมเปอร์กันควัน/ลม, พัดลมระบายอากาศ
   - QTO: นับจำนวน, พื้นที่หน้าตัดท่อลม
 - [x] **Task 2.5 (Electrical Distribution):** `feat: Support IfcLightFixture, IfcOutlet, and IfcElectricDistributionBoard` *(เสร็จสิ้น: Issue #75, PR #79)*
