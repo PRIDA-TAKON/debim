@@ -12,6 +12,11 @@ from debim.spec.audit import (
     audit_project_specs,
     extract_project_materials,
 )
+from debim.spec.builder import (
+    SpecificationBook,
+    build_specification_book,
+    get_masterformat_division,
+)
 from debim.spec.registry import (
     MaterialSpecPackage,
     SpecRegistryClient,
@@ -28,6 +33,9 @@ __all__ = [
     "SpecAuditResult",
     "audit_project_specs",
     "extract_project_materials",
+    "SpecificationBook",
+    "build_specification_book",
+    "get_masterformat_division",
     "MaterialSpecPackage",
     "SpecRegistryClient",
     "resolve_package_urls",
