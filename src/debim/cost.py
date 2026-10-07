@@ -458,6 +458,8 @@ def generate_cost_template(
         (float(qto.total_sanitary_terminals_count), "SAN-TOILET", "Sanitary Plumbing Fixture", "set", "22 40 00", "D20"),
         (float(qto.total_waste_terminals_count), "PLUMB-FLOORDRAIN", "Drainage Waste Terminal", "set", "22 40 00", "D20"),
         (float(qto.total_air_terminals_count), "MEP-AIR-TERMINAL", "Ventilation Fan / Diffuser", "set", "23 37 13", "D30"),
+        (float(qto.total_dampers_count), "MEP-DAMPER", "HVAC Duct Damper", "set", "23 33 00", "D30"),
+        (float(qto.total_flow_controllers_count), "MEP-FLOW-CONTROLLER", "VAV / Air Flow Regulation Unit", "set", "23 36 00", "D30"),
         (float(qto.total_unitary_equipment_count), "MEP-HVAC-UNITARY", "Air Conditioner Unit", "set", "23 81 00", "D30"),
     ]
     for amt, code, name, unit, mf, uf in mep_specs:
@@ -862,12 +864,23 @@ def estimate_cost(
                         )
                         break
 
-    # Itemized mapping for individual sanitary and waste terminal elements against catalog items
+    # Itemized mapping for individual terminal/HVAC elements against catalog items
     for eqto in qto.elements:
         if not eqto.mep or eqto.mep.count <= 0:
             continue
         code_candidates = []
-        if eqto.element_class == "IfcSanitaryTerminal":
+        if eqto.element_class == "IfcAirTerminal":
+            tt = eqto.mep.fixture_type.upper() if eqto.mep.fixture_type else ""
+            code_candidates = ["HVAC-DIFFUSER-600X600", "MEP-AIR-TERMINAL", "HVAC-DIFFUSER", "HVAC-GRILLE"]
+        elif eqto.element_class == "IfcDamper":
+            tt = eqto.mep.fixture_type.upper() if eqto.mep.fixture_type else ""
+            if "FIRE" in tt:
+                code_candidates = ["HVAC-FIRE-DAMPER", "MEP-DAMPER", "HVAC-DAMPER"]
+            else:
+                code_candidates = ["HVAC-VOLUME-DAMPER", "MEP-DAMPER", "HVAC-DAMPER"]
+        elif eqto.element_class == "IfcFlowController":
+            code_candidates = ["HVAC-VAV-UNIT", "MEP-FLOW-CONTROLLER", "HVAC-VAV"]
+        elif eqto.element_class == "IfcSanitaryTerminal":
             tt = eqto.mep.fixture_type.upper() if eqto.mep.fixture_type else ""
             if "CLOSET" in tt or "TOILET" in tt:
                 code_candidates = ["SAN-TOILET", "SAN-WC", "MEP-SANITARY-FIXTURE"]

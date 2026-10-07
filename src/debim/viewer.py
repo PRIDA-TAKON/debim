@@ -1270,6 +1270,10 @@ def generate_viewer_html(
             "EXHAUST_FAN_CEILING": "Ceiling Exhaust Fan",
             "EXHAUST_FAN_WALL": "Wall Exhaust Fan",
             "KITCHEN_HOOD": "Kitchen Range Hood",
+            "DIFFUSER": "Supply Diffuser",
+            "GRILLE": "Return Grille / Bar Grille",
+            "REGISTER": "Air Register",
+            "LOUVRE": "Weather Louvre",
             "SUPPLY_DIFFUSER": "Supply Diffuser",
             "RETURN_GRILLE": "Return Grille",
         }.get(air.terminal_type, air.terminal_type)
@@ -1292,8 +1296,87 @@ def generate_viewer_html(
             "color": air.color,
             "layer": air.layer,
             "terminal_type": air.terminal_type,
+            "predefined_type": air.predefined_type,
             "flow_rate_cfm": air.flow_rate_cfm,
+            "air_flow_rate_m3h": air.air_flow_rate_m3h,
+            "face_area_m2": air.face_area_m2,
+            "neck_width": air.neck_width,
+            "neck_depth": air.neck_depth,
+            "neck_diameter": air.neck_diameter,
+            "throw_distance_m": air.throw_distance_m,
             "fixture_name_th": type_th,
+        })
+
+    # MEP Elements: Dampers
+    for damper in resolved.dampers:
+        d_th = {
+            "FIRE_DAMPER": "Fire Damper",
+            "FIREDAMPER": "Fire Damper",
+            "SMOKE_DAMPER": "Smoke Damper",
+            "SMOKEDAMPER": "Smoke Damper",
+            "FIRESMOKE_DAMPER": "Fire & Smoke Damper",
+            "VOLUME_CONTROL_DAMPER": "Volume Control Damper (VCD)",
+            "CONTROLDAMPER": "Control Damper",
+            "GRAVITY_DAMPER": "Gravity / Backdraft Damper",
+        }.get(damper.damper_type, damper.damper_type)
+
+        elements_data.append({
+            "tag": damper.tag,
+            "class": "IfcDamper",
+            "material": damper.element.material or "Galvanized Steel / Aluminum",
+            "position": [
+                damper.position[0],
+                damper.position[1],
+                damper.position[2] + damper.dimensions[2] / 2.0,
+            ],
+            "rotation": [0, 0, math.radians(damper.rotation)],
+            "dimensions": {
+                "width": damper.dimensions[0],
+                "depth": damper.dimensions[1],
+                "height": damper.dimensions[2],
+            },
+            "color": damper.color,
+            "layer": damper.layer,
+            "damper_type": damper.damper_type,
+            "predefined_type": damper.predefined_type,
+            "duct_width": damper.duct_width,
+            "duct_depth": damper.duct_depth,
+            "duct_diameter": damper.duct_diameter,
+            "actuator_type": damper.actuator_type,
+            "fixture_name_th": d_th,
+        })
+
+    # MEP Elements: Flow Controllers
+    for controller in resolved.flow_controllers:
+        fc_th = {
+            "AIR_CONTROLLER": "VAV Terminal Unit / Air Controller",
+            "PRESSURE_CONTROLLER": "Pressure Controller",
+        }.get(controller.controller_type, controller.controller_type)
+
+        elements_data.append({
+            "tag": controller.tag,
+            "class": "IfcFlowController",
+            "material": controller.element.material or "Metallic Enclosure / Controls",
+            "position": [
+                controller.position[0],
+                controller.position[1],
+                controller.position[2] + controller.dimensions[2] / 2.0,
+            ],
+            "rotation": [0, 0, math.radians(controller.rotation)],
+            "dimensions": {
+                "width": controller.dimensions[0],
+                "depth": controller.dimensions[1],
+                "height": controller.dimensions[2],
+            },
+            "color": controller.color,
+            "layer": controller.layer,
+            "controller_type": controller.controller_type,
+            "predefined_type": controller.predefined_type,
+            "air_flow_rate_m3h": controller.air_flow_rate_m3h,
+            "duct_width": controller.duct_width,
+            "duct_depth": controller.duct_depth,
+            "duct_diameter": controller.duct_diameter,
+            "fixture_name_th": fc_th,
         })
 
     # MEP Elements: Unitary Equipment
@@ -2977,8 +3060,28 @@ def generate_viewer_html(
             if (data.cooling_capacity_btu) {{
                 mepRow += `<div class="data-row"><span class="data-label">Cooling</span><span class="data-value">${{data.cooling_capacity_btu.toLocaleString()}} BTU/hr</span></div>`;
             }}
-            if (data.flow_rate_cfm) {{
-                mepRow += `<div class="data-row"><span class="data-label">Air Flow</span><span class="data-value">${{data.flow_rate_cfm}} CFM</span></div>`;
+            if (data.flow_rate_cfm || data.air_flow_rate_m3h) {{
+                const cfm_val = data.flow_rate_cfm ? `${{data.flow_rate_cfm.toFixed(0)}} CFM` : '';
+                const m3h_val = data.air_flow_rate_m3h ? `${{data.air_flow_rate_m3h.toFixed(0)}} m³/h` : '';
+                const combined_flow = [m3h_val, cfm_val].filter(Boolean).join(' / ');
+                mepRow += `<div class="data-row"><span class="data-label">Air Flow</span><span class="data-value">${{combined_flow}}</span></div>`;
+            }}
+            if (data.face_area_m2) {{
+                mepRow += `<div class="data-row"><span class="data-label">Face Area</span><span class="data-value">${{data.face_area_m2.toFixed(2)}} m²</span></div>`;
+            }}
+            if (data.neck_width || data.neck_depth || data.neck_diameter) {{
+                const neck_str = data.neck_diameter ? `Ø ${{ (data.neck_diameter * 1000).toFixed(0) }} mm` : `${{((data.neck_width||0)*1000).toFixed(0)}}×${{((data.neck_depth||0)*1000).toFixed(0)}} mm`;
+                mepRow += `<div class="data-row"><span class="data-label">Neck Size</span><span class="data-value">${{neck_str}}</span></div>`;
+            }}
+            if (data.duct_width || data.duct_depth || data.duct_diameter) {{
+                const duct_str = data.duct_diameter ? `Ø ${{ (data.duct_diameter * 1000).toFixed(0) }} mm` : `${{((data.duct_width||0)*1000).toFixed(0)}}×${{((data.duct_depth||0)*1000).toFixed(0)}} mm`;
+                mepRow += `<div class="data-row"><span class="data-label">Duct Size</span><span class="data-value">${{duct_str}}</span></div>`;
+            }}
+            if (data.actuator_type) {{
+                mepRow += `<div class="data-row"><span class="data-label">Actuator</span><span class="data-value">${{data.actuator_type}}</span></div>`;
+            }}
+            if (data.throw_distance_m) {{
+                mepRow += `<div class="data-row"><span class="data-label">Throw Dist</span><span class="data-value">${{data.throw_distance_m.toFixed(1)}} m</span></div>`;
             }}
             if (data.covering_type) {{
                 const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${{data.color}};margin-right:6px;"></span>` : '';

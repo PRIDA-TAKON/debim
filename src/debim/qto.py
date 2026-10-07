@@ -16,10 +16,12 @@ from debim.resolver import (
     ResolvedColumn,
     ResolvedCovering,
     ResolvedCustomElement,
+    ResolvedDamper,
     ResolvedDistributionBoard,
     ResolvedDoor,
     ResolvedDuctSegment,
     ResolvedElement,
+    ResolvedFlowController,
     ResolvedFooting,
     ResolvedLightFixture,
     ResolvedManifest,
@@ -487,6 +489,8 @@ class ProjectQTO(BaseModel):
     total_switches_count: int = 0
     total_outlets_count: int = 0
     total_air_terminals_count: int = 0
+    total_dampers_count: int = 0
+    total_flow_controllers_count: int = 0
     total_unitary_equipment_count: int = 0
 
 
@@ -1524,7 +1528,53 @@ def calculate_element_qto(
                 fixture_type=resolved.terminal_type,
                 count=1,
                 dimensions=resolved.dimensions,
-                capacity=resolved.flow_rate_cfm,
+                capacity=resolved.flow_rate_cfm or resolved.air_flow_rate_m3h,
+                predefined_type=resolved.predefined_type,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedDamper):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="HVAC",
+                fixture_type=resolved.damper_type,
+                count=1,
+                dimensions=resolved.dimensions,
+                width=resolved.duct_width or resolved.dimensions[0],
+                height=resolved.duct_depth or resolved.dimensions[1],
+                nominal_diameter=resolved.duct_diameter or 0.0,
+                predefined_type=resolved.predefined_type,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedFlowController):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="HVAC",
+                fixture_type=resolved.controller_type,
+                count=1,
+                dimensions=resolved.dimensions,
+                capacity=resolved.air_flow_rate_m3h,
+                width=resolved.duct_width or resolved.dimensions[0],
+                height=resolved.duct_depth or resolved.dimensions[1],
+                nominal_diameter=resolved.duct_diameter or 0.0,
+                predefined_type=resolved.predefined_type,
             ),
         )
 
@@ -1666,6 +1716,8 @@ def calculate_qto(
     total_switches = 0
     total_outlets = 0
     total_air_terms = 0
+    total_dampers = 0
+    total_flow_controllers = 0
     total_unitary_eqs = 0
 
     # Build material category lookup
@@ -1813,6 +1865,10 @@ def calculate_qto(
                 total_outlets += eqto.mep.count
             elif eqto.element_class == "IfcAirTerminal":
                 total_air_terms += eqto.mep.count
+            elif eqto.element_class == "IfcDamper":
+                total_dampers += eqto.mep.count
+            elif eqto.element_class == "IfcFlowController":
+                total_flow_controllers += eqto.mep.count
             elif eqto.element_class == "IfcUnitaryEquipment":
                 total_unitary_eqs += eqto.mep.count
 
@@ -1875,5 +1931,7 @@ def calculate_qto(
         total_switches_count=total_switches,
         total_outlets_count=total_outlets,
         total_air_terminals_count=total_air_terms,
+        total_dampers_count=total_dampers,
+        total_flow_controllers_count=total_flow_controllers,
         total_unitary_equipment_count=total_unitary_eqs,
     )

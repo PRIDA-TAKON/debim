@@ -1172,7 +1172,20 @@ PipeSystemType = Literal[
 ElectricalSystemType = Literal["POWER", "LIGHTING", "MAIN_FEEDER", "COMMUNICATION", "SOLAR"]
 DuctSystemType = Literal["SUPPLY_AIR", "RETURN_AIR", "EXHAUST_AIR", "FRESH_AIR"]
 AirTerminalType = Literal[
-    "EXHAUST_FAN_CEILING", "EXHAUST_FAN_WALL", "KITCHEN_HOOD", "SUPPLY_DIFFUSER", "RETURN_GRILLE"
+    "DIFFUSER", "GRILLE", "REGISTER", "LOUVRE",
+    "EXHAUST_FAN_CEILING", "EXHAUST_FAN_WALL", "KITCHEN_HOOD", "SUPPLY_DIFFUSER", "RETURN_GRILLE",
+    "USERDEFINED", "NOTDEFINED"
+]
+DamperType = Literal[
+    "FIRE_DAMPER", "SMOKE_DAMPER", "FIRESMOKE_DAMPER", "VOLUME_CONTROL_DAMPER", "GRAVITY_DAMPER",
+    "FIREDAMPER", "SMOKEDAMPER", "FIRESMOKEDAMPER", "CONTROLDAMPER", "BALANCINGDAMPER", "BACKDRAFTDAMPER",
+    "USERDEFINED", "NOTDEFINED"
+]
+FlowControllerType = Literal[
+    "AIR_CONTROLLER", "PRESSURE_CONTROLLER", "USERDEFINED", "NOTDEFINED"
+]
+DamperActuatorType = Literal[
+    "MANUAL", "MOTORIZED", "FUSIBLE_LINK", "PNEUMATIC", "USERDEFINED", "NOTDEFINED"
 ]
 HvacEquipmentType = Literal[
     "AC_INDOOR_WALL", "AC_INDOOR_CASSETTE", "AC_INDOOR_CONCEALED", "AC_OUTDOOR_CONDENSER"
@@ -1517,7 +1530,8 @@ class IfcDuctSegment(BaseModel):
 class IfcAirTerminal(BaseModel):
     class_: Literal["IfcAirTerminal"] = Field(alias="class", default="IfcAirTerminal")
     tag: str
-    terminal_type: AirTerminalType = "EXHAUST_FAN_CEILING"
+    terminal_type: AirTerminalType = "DIFFUSER"
+    predefined_type: Optional[str] = None
     material: Optional[str] = None
     width: float = 0.0
     depth: float = 0.0
@@ -1525,7 +1539,115 @@ class IfcAirTerminal(BaseModel):
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     flow_rate_cfm: Optional[float] = None
+    air_flow_rate_m3h: Optional[float] = None
+    face_area_m2: Optional[float] = None
+    neck_width: Optional[float] = None
+    neck_depth: Optional[float] = None
+    neck_diameter: Optional[float] = None
+    neck_size: Optional[Union[float, Tuple[float, float], List[float]]] = None
+    throw_distance_m: Optional[float] = None
     layer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def resolve_air_terminal_fields(self) -> "IfcAirTerminal":
+        if self.air_flow_rate_m3h is not None and self.flow_rate_cfm is None:
+            self.flow_rate_cfm = self.air_flow_rate_m3h / 1.69901
+        elif self.flow_rate_cfm is not None and self.air_flow_rate_m3h is None:
+            self.air_flow_rate_m3h = self.flow_rate_cfm * 1.69901
+
+        if self.neck_size is not None:
+            if isinstance(self.neck_size, (int, float)):
+                if self.neck_diameter is None:
+                    self.neck_diameter = float(self.neck_size)
+            elif isinstance(self.neck_size, (tuple, list)) and len(self.neck_size) >= 2:
+                if self.neck_width is None:
+                    self.neck_width = float(self.neck_size[0])
+                if self.neck_depth is None:
+                    self.neck_depth = float(self.neck_size[1])
+
+        if not self.predefined_type:
+            tt = str(self.terminal_type).upper()
+            mapping = {
+                "DIFFUSER": "DIFFUSER",
+                "SUPPLY_DIFFUSER": "DIFFUSER",
+                "EXHAUST_FAN_CEILING": "DIFFUSER",
+                "GRILLE": "GRILLE",
+                "RETURN_GRILLE": "GRILLE",
+                "EXHAUST_FAN_WALL": "GRILLE",
+                "KITCHEN_HOOD": "GRILLE",
+                "REGISTER": "REGISTER",
+                "LOUVRE": "LOUVRE",
+            }
+            self.predefined_type = mapping.get(tt, "USERDEFINED")
+        return self
+
+
+class IfcDamper(BaseModel):
+    class_: Literal["IfcDamper"] = Field(alias="class", default="IfcDamper")
+    tag: str
+    damper_type: DamperType = "VOLUME_CONTROL_DAMPER"
+    predefined_type: Optional[str] = None
+    material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
+    placement: TerminalPlacement
+    dimensions: Optional[TerminalDimensions] = None
+    duct_width: Optional[float] = None
+    duct_depth: Optional[float] = None
+    duct_diameter: Optional[float] = None
+    actuator_type: DamperActuatorType = "MANUAL"
+    layer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def resolve_damper_fields(self) -> "IfcDamper":
+        if not self.predefined_type:
+            dt = str(self.damper_type).upper()
+            mapping = {
+                "FIRE_DAMPER": "FIREDAMPER",
+                "FIREDAMPER": "FIREDAMPER",
+                "SMOKE_DAMPER": "SMOKEDAMPER",
+                "SMOKEDAMPER": "SMOKEDAMPER",
+                "FIRESMOKE_DAMPER": "FIRESMOKEDAMPER",
+                "FIRESMOKEDAMPER": "FIRESMOKEDAMPER",
+                "VOLUME_CONTROL_DAMPER": "CONTROLDAMPER",
+                "CONTROLDAMPER": "CONTROLDAMPER",
+                "BALANCINGDAMPER": "BALANCINGDAMPER",
+                "GRAVITY_DAMPER": "GRAVITYDAMPER",
+                "GRAVITYDAMPER": "GRAVITYDAMPER",
+                "GRAVITYRELIEFDAMPER": "GRAVITYRELIEFDAMPER",
+                "BACKDRAFTDAMPER": "BACKDRAFTDAMPER",
+            }
+            self.predefined_type = mapping.get(dt, "USERDEFINED")
+        return self
+
+
+class IfcFlowController(BaseModel):
+    class_: Literal["IfcFlowController"] = Field(alias="class", default="IfcFlowController")
+    tag: str
+    controller_type: FlowControllerType = "AIR_CONTROLLER"
+    predefined_type: Optional[str] = None
+    material: Optional[str] = None
+    width: float = 0.0
+    depth: float = 0.0
+    height: float = 0.0
+    placement: TerminalPlacement
+    dimensions: Optional[TerminalDimensions] = None
+    air_flow_rate_m3h: Optional[float] = None
+    duct_width: Optional[float] = None
+    duct_depth: Optional[float] = None
+    duct_diameter: Optional[float] = None
+    layer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def resolve_flow_controller_fields(self) -> "IfcFlowController":
+        if not self.predefined_type:
+            ct = str(self.controller_type).upper()
+            if ct in ("AIR_CONTROLLER", "PRESSURE_CONTROLLER", "USERDEFINED", "NOTDEFINED"):
+                self.predefined_type = ct
+            else:
+                self.predefined_type = "AIR_CONTROLLER"
+        return self
 
 
 class IfcUnitaryEquipment(BaseModel):
@@ -1594,6 +1716,8 @@ Element = Annotated[
         IfcSwitchingDevice,
         IfcOutlet,
         IfcAirTerminal,
+        IfcDamper,
+        IfcFlowController,
         IfcUnitaryEquipment,
         IfcCustomElement,
     ],
@@ -1877,7 +2001,7 @@ class ProjectManifest(BaseModel):
                             if gy not in grid_y_ids:
                                 raise ValueError(f"Element '{elem.tag}' path references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, (IfcSanitaryTerminal, IfcWasteTerminal, IfcDistributionBoard, IfcElectricDistributionBoard, IfcLightFixture, IfcSwitchingDevice, IfcOutlet, IfcAirTerminal, IfcUnitaryEquipment)):
+            elif isinstance(elem, (IfcSanitaryTerminal, IfcWasteTerminal, IfcDistributionBoard, IfcElectricDistributionBoard, IfcLightFixture, IfcSwitchingDevice, IfcOutlet, IfcAirTerminal, IfcDamper, IfcFlowController, IfcUnitaryEquipment)):
                 if elem.placement.storey and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -2063,6 +2187,10 @@ def derive_default_layer(elem) -> str:
         return "mep/electrical/power"
     elif cls == "IfcAirTerminal":
         return "mep/hvac/terminals"
+    elif cls == "IfcDamper":
+        return "mep/hvac/dampers"
+    elif cls == "IfcFlowController":
+        return "mep/hvac/equipment"
     elif cls == "IfcUnitaryEquipment":
         return "mep/hvac/equipment"
     elif cls == "IfcCustomElement":
