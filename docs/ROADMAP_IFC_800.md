@@ -190,7 +190,7 @@ my_project/
 
 ### ⚪ Phase 5: Verification & Benchmark Certification
 - [x] **Task 5.1:** `test: Implement buildingSMART IFC4 Reference Test Suite in Pytest` *(เสร็จสิ้น: Issue #94, PR #96)*
-- [ ] **Task 5.2:** `benchmark: Measure Token Efficiency and Compilation Speed for 10,000+ Multi-File Elements`
+- [x] **Task 5.2:** `benchmark: Measure Token Efficiency and Compilation Speed for 10,000+ Multi-File Elements` *(เสร็จสิ้น: Issue #95, PR #97)*
 
 ---
 
