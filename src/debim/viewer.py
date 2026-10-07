@@ -1639,6 +1639,41 @@ def generate_viewer_html(
             "fixture_name_th": eq_th,
         })
 
+    # Declarative Proxies (Universal Proxy Engine)
+    for proxy in resolved.proxies:
+        p_class = proxy.ifc_class or "IfcBuildingElementProxy"
+        p_tag = proxy.tag
+        p_layer = proxy.layer
+        p_mat = proxy.element.material or "Proxy Component"
+        p_props = proxy.properties or {}
+        w, d, h = proxy.dimensions
+        p_dims = {
+            "width": w,
+            "depth": d,
+            "height": h,
+        }
+
+        cz = proxy.position[2] + h / 2.0
+
+        color = "#10B981" if any(kw in p_class for kw in ["Energy", "Chiller", "Compressor", "Unitary", "Burner", "Solar"]) else "#8B5CF6"
+
+        elements_data.append({
+            "tag": p_tag,
+            "class": p_class,
+            "predefined_type": proxy.predefined_type,
+            "material": p_mat,
+            "position": [proxy.position[0], proxy.position[1], cz],
+            "rotation": [
+                math.radians(proxy.rotation[0]),
+                math.radians(proxy.rotation[1]),
+                math.radians(proxy.rotation[2]),
+            ],
+            "dimensions": p_dims,
+            "color": color,
+            "layer": p_layer,
+            "properties": p_props,
+        })
+
     scene_json = json.dumps({
         "project": {
             "id": proj.id,
@@ -2444,6 +2479,11 @@ def generate_viewer_html(
                 geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
             }} else if (data.class === "IfcDoor" || data.class === "IfcWindow") {{
                 geometry = new THREE.BoxGeometry(dim.width, dim.thickness, dim.height);
+            }} else if (dim.shape === "CYLINDER") {{
+                const r = dim.radius || 0.5;
+                const h = dim.height || 1.0;
+                geometry = new THREE.CylinderGeometry(r, r, h, 32);
+                geometry.rotateX(Math.PI / 2);
             }} else {{
                 geometry = new THREE.BoxGeometry(dim.width || 1, dim.depth || 1, dim.height || 1);
             }}
@@ -3315,6 +3355,18 @@ def generate_viewer_html(
             if (data.covering_type) {{
                 const colorDot = data.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${{data.color}};margin-right:6px;"></span>` : '';
                 mepRow += `<div class="data-row"><span class="data-label">Finish Type</span><span class="data-value">${{colorDot}}${{data.covering_type}}</span></div>`;
+            }}
+
+            if (data.properties && Object.keys(data.properties).length > 0) {{
+                mepRow += `<div class="section-title">Property Sets</div>`;
+                for (const [psetName, psetVals] of Object.entries(data.properties)) {{
+                    if (psetVals && typeof psetVals === 'object') {{
+                        mepRow += `<div style="font-size: 0.78rem; font-weight: 600; color: #a78bfa; margin-top: 4px; margin-bottom: 2px;">${{psetName}}</div>`;
+                        for (const [propKey, propVal] of Object.entries(psetVals)) {{
+                            mepRow += `<div class="data-row"><span class="data-label">${{propKey}}</span><span class="data-value">${{propVal}}</span></div>`;
+                        }}
+                    }}
+                }}
             }}
 
 

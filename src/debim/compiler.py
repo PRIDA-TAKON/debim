@@ -17,6 +17,7 @@ from debim.resolver import (
     ResolvedDoor,
     ResolvedManifest,
     ResolvedPlate,
+    ResolvedProxy,
     ResolvedRevolvedArea,
     ResolvedSweptDisk,
     ResolvedTerminal,
@@ -1282,6 +1283,119 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        # 8. Universal Proxies
+        for proxy in resolved.proxies:
+            st_id = proxy.element.placement.storey
+            ifc_cls = proxy.ifc_class or "IfcBuildingElementProxy"
+
+            st_pl_ref = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+
+            px, py, pz = proxy.position
+            rel_z = float(pz - st_elev)
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            rx, ry, rz = proxy.rotation
+            if abs(rz) > 1e-4 or abs(rx) > 1e-4 or abs(ry) > 1e-4:
+                import math
+                rz_r = math.radians(float(rz))
+                ref_dir = self.create_entity("IfcDirection", (round(math.cos(rz_r), 6), round(math.sin(rz_r), 6), 0.0))
+                axis_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, axis_dir, ref_dir)
+            else:
+                elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
+            w, d, h = proxy.dimensions
+            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+            rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(w), float(d))
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(h))
+
+            shape_rep = self.create_entity(
+                "IfcShapeRepresentation",
+                body_context_ref,
+                "Body",
+                "SweptSolid",
+                [solid],
+            )
+            prod_shape_ref = self.create_entity(
+                "IfcProductDefinitionShape", None, None, [shape_rep]
+            )
+
+            std_classes = {
+                "IFCBUILDINGELEMENTPROXY", "IFCCHILLER", "IFCBURNER", "IFCSOLARDEVICE",
+                "IFCCOMPRESSOR", "IFCUNITARYEQUIPMENT", "IFCINTERCEPTOR", "IFCENERGYCONVERSIONDEVICE",
+                "IFCENGINE", "IFCPUMP", "IFCFAN", "IFCTANK", "IFCBOILER"
+            }
+            target_entity = ifc_cls if ifc_cls.upper() in std_classes else "IfcBuildingElementProxy"
+            obj_type = ifc_cls if target_entity == "IfcBuildingElementProxy" else None
+            pred_type = f".{proxy.predefined_type.upper()}." if proxy.predefined_type else None
+
+            if pred_type:
+                proxy_ref = self.create_entity(
+                    target_entity,
+                    generate_ifc_guid(),
+                    None,
+                    proxy.tag,
+                    None,
+                    obj_type,
+                    elem_pl,
+                    prod_shape_ref,
+                    None,
+                    pred_type,
+                )
+            else:
+                proxy_ref = self.create_entity(
+                    target_entity,
+                    generate_ifc_guid(),
+                    None,
+                    proxy.tag,
+                    None,
+                    obj_type,
+                    elem_pl,
+                    prod_shape_ref,
+                    None,
+                )
+
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(proxy_ref)
+
+            if proxy.properties:
+                for pset_name, pset_props in proxy.properties.items():
+                    prop_refs = []
+                    for p_key, p_val in pset_props.items():
+                        if isinstance(p_val, bool):
+                            v_ref = f".{'T' if p_val else 'F'}."
+                        elif isinstance(p_val, (int, float)):
+                            v_ref = self.create_entity("IfcReal", float(p_val))
+                        else:
+                            v_ref = self.create_entity("IfcLabel", str(p_val))
+                        psv = self.create_entity("IfcPropertySingleValue", p_key, None, v_ref, None)
+                        prop_refs.append(psv)
+
+                    pset_ref = self.create_entity(
+                        "IfcPropertySet",
+                        generate_ifc_guid(),
+                        None,
+                        pset_name,
+                        None,
+                        prop_refs,
+                    )
+                    self.create_entity(
+                        "IfcRelDefinesByProperties",
+                        generate_ifc_guid(),
+                        None,
+                        None,
+                        None,
+                        [proxy_ref],
+                        pset_ref,
+                    )
+
         # Spatial containment (IfcRelContainedInSpatialStructure)
         for st_id, elem_refs in storey_elements.items():
             if elem_refs and st_id in storey_refs:
@@ -2057,6 +2171,90 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = eq.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(eq_obj)
+
+    # Universal Proxies in ifcopenshell
+    for proxy in resolved.proxies:
+        ifc_cls = proxy.ifc_class or "IfcBuildingElementProxy"
+        try:
+            proxy_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class=ifc_cls,
+                name=proxy.tag,
+            )
+        except Exception:
+            proxy_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=proxy.tag,
+            )
+            proxy_obj.ObjectType = ifc_cls
+
+        if proxy.predefined_type:
+            try:
+                proxy_obj.PredefinedType = proxy.predefined_type.upper()
+            except Exception:
+                proxy_obj.ObjectType = proxy.predefined_type
+
+        st_id = proxy.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(proxy_obj)
+
+        px, py, pz = proxy.position
+        rx, ry, rz = proxy.rotation
+        mat = _build_transform_matrix((px, py, pz), (rx, ry, rz))
+        ifcopenshell.api.run(
+            "geometry.edit_object_placement",
+            model,
+            product=proxy_obj,
+            matrix=mat,
+        )
+
+        w, d, h = proxy.dimensions
+        profile = model.createIfcRectangleProfileDef(
+            "AREA",
+            None,
+            model.createIfcAxis2Placement2D(
+                model.createIfcCartesianPoint((0.0, 0.0))
+            ),
+            float(w),
+            float(d),
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            profile,
+            model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            ),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            float(h),
+        )
+        rep = model.createIfcShapeRepresentation(
+            body_context, "Body", "SweptSolid", [solid]
+        )
+        ifcopenshell.api.run(
+            "geometry.assign_representation",
+            model,
+            product=proxy_obj,
+            representation=rep,
+        )
+
+        # Property Sets
+        if proxy.properties:
+            for pset_name, pset_props in proxy.properties.items():
+                try:
+                    ifcopenshell.api.run(
+                        "pset.add_pset",
+                        model,
+                        product=proxy_obj,
+                        name=pset_name,
+                        properties=pset_props,
+                    )
+                except Exception:
+                    pass
+
     # Assign containment
     for st_id, products in storey_products.items():
         if products and st_id in storey_objs:
