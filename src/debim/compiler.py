@@ -2445,13 +2445,19 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if proxy.properties:
             for pset_name, pset_props in proxy.properties.items():
                 try:
-                    ifcopenshell.api.run(
+                    pset_obj = ifcopenshell.api.run(
                         "pset.add_pset",
                         model,
                         product=proxy_obj,
                         name=pset_name,
-                        properties=pset_props,
                     )
+                    if pset_props:
+                        ifcopenshell.api.run(
+                            "pset.edit_pset",
+                            model,
+                            pset=pset_obj,
+                            properties=pset_props,
+                        )
                 except Exception:
                     pass
 
