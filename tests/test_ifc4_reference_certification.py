@@ -435,7 +435,7 @@ def test_ifc4_reference_certification_schema_and_spatial_containment(
 
     # Civil Infrastructure (Earthworks as IfcGeographicElement + Road/Bridge as proxies or entities)
     civil_entities = (
-        model.by_type("IfcGeographicElement")
+        list(model.by_type("IfcGeographicElement"))
         + [
             p for p in model.by_type("IfcBuildingElementProxy")
             if any(k in getattr(p, "Name", "").upper() or k in getattr(p, "ObjectType", "").upper() for k in ["ROAD", "BRIDGE", "ALIGNMENT"])
@@ -444,7 +444,7 @@ def test_ifc4_reference_certification_schema_and_spatial_containment(
     assert len(civil_entities) >= 3
 
     # Generic Long-Tail Equipment & Property Sets
-    chillers = model.by_type("IfcChiller") + [
+    chillers = list(model.by_type("IfcChiller")) + [
         p for p in model.by_type("IfcBuildingElementProxy") if "CHILLER" in getattr(p, "Name", "").upper()
     ]
     assert len(chillers) == 1
