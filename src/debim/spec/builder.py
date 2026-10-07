@@ -542,19 +542,22 @@ def _generate_specification_html(
             app_sys = _format_clause_content(clauses.application_system)
 
             if gen_prop:
+                gen_prop_html = gen_prop.replace("\n", "<br>")
                 html_lines.append("      <div class='clause-block'>")
                 html_lines.append("        <div class='clause-title'>General Properties</div>")
-                html_lines.append(f"        <div>{gen_prop.replace('\n', '<br>')}</div>")
+                html_lines.append(f"        <div>{gen_prop_html}</div>")
                 html_lines.append("      </div>")
             if surf_prep:
+                surf_prep_html = surf_prep.replace("\n", "<br>")
                 html_lines.append("      <div class='clause-block'>")
                 html_lines.append("        <div class='clause-title'>Surface Preparation</div>")
-                html_lines.append(f"        <div>{surf_prep.replace('\n', '<br>')}</div>")
+                html_lines.append(f"        <div>{surf_prep_html}</div>")
                 html_lines.append("      </div>")
             if app_sys:
+                app_sys_html = app_sys.replace("\n", "<br>")
                 html_lines.append("      <div class='clause-block'>")
                 html_lines.append("        <div class='clause-title'>Application System</div>")
-                html_lines.append(f"        <div>{app_sys.replace('\n', '<br>')}</div>")
+                html_lines.append(f"        <div>{app_sys_html}</div>")
                 html_lines.append("      </div>")
 
             html_lines.append("    </div>")
