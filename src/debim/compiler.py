@@ -418,6 +418,55 @@ class StepSerializer:
                 if st_id in storey_elements:
                     storey_elements[st_id].append(p_ref)
 
+        # 5.3 Civil Earthworks & Retaining Walls
+        for cut in resolved.earthworks_cuts:
+            st_id = cut.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcGeographicElement",
+                generate_ifc_guid(),
+                None,
+                cut.tag,
+                None,
+                f"IfcEarthworksCut.{cut.predefined_type}",
+                None,
+                None,
+                ".USERDEFINED.",
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for fill in resolved.earthworks_fills:
+            st_id = fill.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcGeographicElement",
+                generate_ifc_guid(),
+                None,
+                fill.tag,
+                None,
+                f"IfcEarthworksFill.{fill.predefined_type}",
+                None,
+                None,
+                ".USERDEFINED.",
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for rw in resolved.retaining_walls:
+            st_id = rw.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcWall",
+                generate_ifc_guid(),
+                None,
+                rw.tag,
+                None,
+                None,
+                None,
+                None,
+                ".RETAINING.",
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
         # 6. MEP Terminals
         for term in resolved.terminals:
             st_id = term.element.placement.storey or (
@@ -1737,6 +1786,45 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = plate.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(plate_obj)
+
+    # 5.3 Civil Earthworks & Retaining Walls
+    for cut in resolved.earthworks_cuts:
+        cut_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcGeographicElement",
+            name=cut.tag,
+            predefined_type="USERDEFINED",
+        )
+        cut_obj.ObjectType = f"IfcEarthworksCut.{cut.predefined_type}"
+        st_id = cut.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(cut_obj)
+
+    for fill in resolved.earthworks_fills:
+        fill_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcGeographicElement",
+            name=fill.tag,
+            predefined_type="USERDEFINED",
+        )
+        fill_obj.ObjectType = f"IfcEarthworksFill.{fill.predefined_type}"
+        st_id = fill.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(fill_obj)
+
+    for rw in resolved.retaining_walls:
+        rw_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcWall",
+            name=rw.tag,
+            predefined_type="RETAINING",
+        )
+        st_id = rw.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(rw_obj)
 
     # 6. Roofs & Roof Openings / Skylights
     for roof in resolved.roofs:

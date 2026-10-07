@@ -598,6 +598,142 @@ def generate_viewer_html(
                 },
             })
 
+    # Civil Earthworks Cut
+    for cut in resolved.earthworks_cuts:
+        cz = cut.position[2] - cut.depth / 2.0
+        if cut.polygon and len(cut.polygon) >= 3:
+            elements_data.append({
+                "tag": cut.tag,
+                "class": "IfcEarthworksCut",
+                "predefined_type": cut.predefined_type,
+                "material": cut.element.material or "Excavated Earth",
+                "geometry_type": "polygon",
+                "points": cut.polygon,
+                "color": "#D97706",
+                "transparent": True,
+                "opacity": 0.50,
+                "layer": cut.layer,
+                "dimensions": {
+                    "width": cut.width,
+                    "length": cut.length,
+                    "depth": cut.depth,
+                    "cut_volume": cut.cut_volume,
+                    "footprint_area": cut.footprint_area,
+                },
+            })
+        else:
+            elements_data.append({
+                "tag": cut.tag,
+                "class": "IfcEarthworksCut",
+                "predefined_type": cut.predefined_type,
+                "material": cut.element.material or "Excavated Earth",
+                "position": [cut.position[0], cut.position[1], cz],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": cut.width,
+                    "depth": cut.length,
+                    "height": cut.depth,
+                    "cut_volume": cut.cut_volume,
+                    "footprint_area": cut.footprint_area,
+                },
+                "color": "#D97706",
+                "transparent": True,
+                "opacity": 0.50,
+                "layer": cut.layer,
+            })
+
+    # Civil Earthworks Fill
+    for fill in resolved.earthworks_fills:
+        cz = fill.position[2] + fill.depth / 2.0
+        if fill.polygon and len(fill.polygon) >= 3:
+            elements_data.append({
+                "tag": fill.tag,
+                "class": "IfcEarthworksFill",
+                "predefined_type": fill.predefined_type,
+                "material": fill.element.material or "Compacted Soil",
+                "geometry_type": "polygon",
+                "points": fill.polygon,
+                "color": "#8B5A2B",
+                "transparent": True,
+                "opacity": 0.85,
+                "layer": fill.layer,
+                "dimensions": {
+                    "width": fill.width,
+                    "length": fill.length,
+                    "depth": fill.depth,
+                    "fill_volume": fill.fill_volume,
+                    "compacted_volume": fill.compacted_volume,
+                    "surface_area": fill.surface_area,
+                },
+            })
+        else:
+            elements_data.append({
+                "tag": fill.tag,
+                "class": "IfcEarthworksFill",
+                "predefined_type": fill.predefined_type,
+                "material": fill.element.material or "Compacted Soil",
+                "position": [fill.position[0], fill.position[1], cz],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": fill.width,
+                    "depth": fill.length,
+                    "height": fill.depth,
+                    "fill_volume": fill.fill_volume,
+                    "compacted_volume": fill.compacted_volume,
+                    "surface_area": fill.surface_area,
+                },
+                "color": "#8B5A2B",
+                "transparent": True,
+                "opacity": 0.85,
+                "layer": fill.layer,
+            })
+
+    # Civil Retaining Walls
+    for rw in resolved.retaining_walls:
+        dx = rw.end_point[0] - rw.start_point[0]
+        dy = rw.end_point[1] - rw.start_point[1]
+        angle = math.atan2(dy, dx)
+        cx = (rw.start_point[0] + rw.end_point[0]) / 2.0
+        cy = (rw.start_point[1] + rw.end_point[1]) / 2.0
+        cz_stem = rw.start_point[2] + rw.footing_thickness + rw.stem_height / 2.0
+        cz_footing = rw.start_point[2] + rw.footing_thickness / 2.0
+
+        # Stem Mesh
+        elements_data.append({
+            "tag": f"{rw.tag}-Stem",
+            "class": "IfcRetainingWall",
+            "predefined_type": rw.predefined_type,
+            "material": rw.element.material,
+            "position": [cx, cy, cz_stem],
+            "rotation": [0, 0, angle],
+            "dimensions": {
+                "length": rw.length,
+                "thickness": rw.stem_thickness,
+                "height": rw.stem_height,
+                "concrete_volume": rw.concrete_volume,
+                "formwork_area": rw.formwork_area,
+            },
+            "color": "#64748B",
+            "layer": rw.layer,
+        })
+
+        # Base Footing Slab Mesh
+        elements_data.append({
+            "tag": f"{rw.tag}-Footing",
+            "class": "IfcRetainingWall",
+            "predefined_type": rw.predefined_type,
+            "material": rw.element.material,
+            "position": [cx, cy, cz_footing],
+            "rotation": [0, 0, angle],
+            "dimensions": {
+                "length": rw.length,
+                "thickness": rw.footing_base_width,
+                "height": rw.footing_thickness,
+            },
+            "color": "#475569",
+            "layer": rw.layer,
+        })
+
     # Plates
     for plate in resolved.plates:
         rot = [0.0, 0.0, 0.0]

@@ -1786,6 +1786,108 @@ class IfcCovering(BaseModel):
     layer: Optional[str] = None
 
 
+# Civil Earthworks & Retaining Structures
+
+EarthworksCutType = Literal["TRENCH", "DREDGING", "CUT", "BASEMENT_EXCAVATION", "USERDEFINED"]
+EarthworksFillType = Literal["EMBANKMENT", "BACKFILL", "SLOPE_FILL", "SUBGRADE", "USERDEFINED"]
+RetainingWallType = Literal["CANTILEVER_WALL", "GRAVITY_WALL", "SHEET_PILE_WALL", "DIAPHRAGM_WALL", "USERDEFINED"]
+
+
+class EarthworksPlacement(BaseModel):
+    storey: str
+    grid: Optional[Tuple[str, str]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    boundary: Optional[List[Tuple[str, str]]] = None  # Grid intersection polygon
+    boundary_points: Optional[List[Tuple[float, float]]] = None  # Local 2D points (x, y)
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("boundary", mode="before")
+    @classmethod
+    def convert_boundary_to_str(cls, v):
+        if isinstance(v, list):
+            return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+
+class IfcEarthworksCut(BaseModel):
+    class_: Literal["IfcEarthworksCut"] = Field(alias="class", default="IfcEarthworksCut")
+    tag: str
+    predefined_type: EarthworksCutType = "CUT"
+    material: Optional[str] = None
+    width: Optional[float] = None
+    depth: Optional[float] = None  # Average depth (m)
+    length: Optional[float] = None
+    cut_volume: Optional[float] = None  # Explicit volume (m3)
+    footprint_area: Optional[float] = None  # Explicit bottom footprint area (m2)
+    placement: EarthworksPlacement
+    layer: Optional[str] = None
+
+
+class IfcEarthworksFill(BaseModel):
+    class_: Literal["IfcEarthworksFill"] = Field(alias="class", default="IfcEarthworksFill")
+    tag: str
+    predefined_type: EarthworksFillType = "EMBANKMENT"
+    material: Optional[str] = None
+    material_type: Optional[str] = "soil"  # soil, gravel, sand, lean_concrete
+    compaction_ratio: float = 0.95  # e.g. 0.95 (95% compaction ratio)
+    width: Optional[float] = None
+    depth: Optional[float] = None  # Height/depth of fill layer (m)
+    length: Optional[float] = None
+    fill_volume: Optional[float] = None  # Loose or baseline volume (m3)
+    compacted_volume: Optional[float] = None  # Compacted volume (m3)
+    surface_area: Optional[float] = None  # Surface area (m2)
+    placement: EarthworksPlacement
+    layer: Optional[str] = None
+
+
+class RetainingWallPlacement(BaseModel):
+    storey: str
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    grid: Optional[Tuple[str, str]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+
+    @field_validator("from_grid", "to_grid", "grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class RetainingWallReinforcement(BaseModel):
+    stem_main: Optional[str] = None  # e.g. "DB16 @ 0.15m"
+    stem_distribution: Optional[str] = None  # e.g. "DB12 @ 0.20m"
+    footing_mesh: Optional[str] = None  # e.g. "DB16 @ 0.15m"
+
+
+class IfcRetainingWall(BaseModel):
+    class_: Literal["IfcRetainingWall"] = Field(alias="class", default="IfcRetainingWall")
+    tag: str
+    material: str
+    predefined_type: RetainingWallType = "CANTILEVER_WALL"
+    length: float = 10.0  # Wall length along alignment (m)
+    stem_height: float = 3.0  # Height of vertical stem (m)
+    stem_thickness: float = 0.30  # Thickness of vertical stem (m)
+    footing_base_width: float = 2.0  # Total base width of footing slab (m)
+    toe_length: float = 0.60  # Length of front toe projection (m)
+    heel_length: float = 1.10  # Length of rear heel projection (m)
+    footing_thickness: float = 0.40  # Thickness of base footing slab (m)
+    placement: RetainingWallPlacement
+    reinforcement: Optional[RetainingWallReinforcement] = None
+    layer: Optional[str] = None
+
+
 Element = Annotated[
     Union[
         IfcColumn,
@@ -1815,6 +1917,9 @@ Element = Annotated[
         IfcDamper,
         IfcFlowController,
         IfcUnitaryEquipment,
+        IfcEarthworksCut,
+        IfcEarthworksFill,
+        IfcRetainingWall,
         IfcCustomElement,
     ],
     Field(discriminator="class_"),
@@ -2152,6 +2257,49 @@ class ProjectManifest(BaseModel):
                             f"Element '{elem.tag}' references unknown Y grid '{gy}'"
                         )
 
+            elif isinstance(elem, (IfcEarthworksCut, IfcEarthworksFill)):
+                if elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                if elem.placement.grid:
+                    gx, gy = elem.placement.grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
+                if elem.placement.boundary:
+                    for pt in elem.placement.boundary:
+                        gx, gy = pt
+                        if gx not in grid_x_ids:
+                            raise ValueError(f"Element '{elem.tag}' boundary references unknown X grid '{gx}'")
+                        if gy not in grid_y_ids:
+                            raise ValueError(f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'")
+
+            elif isinstance(elem, IfcRetainingWall):
+                if elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                if elem.placement.from_grid:
+                    gx, gy = elem.placement.from_grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' from_grid references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' from_grid references unknown Y grid '{gy}'")
+                if elem.placement.to_grid:
+                    gx, gy = elem.placement.to_grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' to_grid references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' to_grid references unknown Y grid '{gy}'")
+                if elem.placement.grid:
+                    gx, gy = elem.placement.grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
+
             elif isinstance(elem, IfcCustomElement):
                 if elem.placement.storey not in storey_ids:
                     raise ValueError(
@@ -2335,6 +2483,12 @@ def derive_default_layer(elem) -> str:
         return "mep/hvac/equipment"
     elif cls == "IfcUnitaryEquipment":
         return "mep/hvac/equipment"
+    elif cls == "IfcEarthworksCut":
+        return "civil/earthworks/cut"
+    elif cls == "IfcEarthworksFill":
+        return "civil/earthworks/fill"
+    elif cls == "IfcRetainingWall":
+        return "civil/structures/retaining_walls"
     elif cls == "IfcCustomElement":
         return "general/custom"
     return "general/other"
