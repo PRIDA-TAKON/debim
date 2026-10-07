@@ -11,7 +11,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from debim.schema import (
     Dimensions,
     IfcAirTerminal,
+    IfcAlignment,
     IfcBeam,
+    IfcBridge,
     IfcBuildingElementProxy,
     IfcCableCarrierSegment,
     IfcColumn,
@@ -35,6 +37,7 @@ from debim.schema import (
     IfcRailing,
     IfcRamp,
     IfcRetainingWall,
+    IfcRoad,
     IfcRoof,
     IfcSanitaryTerminal,
     IfcSlab,
@@ -1092,6 +1095,56 @@ class ResolvedRetainingWall(BaseModel):
     layer: str = "civil/structures/retaining_walls"
 
 
+class ResolvedAlignment(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcAlignment
+    predefined_type: str = "USERDEFINED"
+    start_chainage: float = 0.0
+    end_chainage: float = 0.0
+    total_length: float = 0.0
+    points_3d: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/infrastructure/alignment"
+
+
+class ResolvedRoad(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcRoad
+    predefined_type: str = "CARRIAGEWAY"
+    road_width: float = 7.0
+    corridor_length: float = 0.0
+    lanes_count: int = 2
+    surface_area: float = 0.0  # m2
+    asphalt_volume: float = 0.0  # m3
+    base_volume: float = 0.0  # m3
+    subbase_volume: float = 0.0  # m3
+    centerline_points: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/infrastructure/roads"
+
+
+class ResolvedBridge(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcBridge
+    predefined_type: str = "GIRDER"
+    span_length: float = 20.0
+    deck_width: float = 10.0
+    deck_thickness: float = 0.30
+    pier_height: float = 6.0
+    pier_count: int = 2
+    deck_concrete_volume: float = 0.0  # m3
+    piers_concrete_volume: float = 0.0  # m3
+    total_concrete_volume: float = 0.0  # m3
+    formwork_area: float = 0.0  # m2
+    deck_position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    pier_positions: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/infrastructure/bridges"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1122,6 +1175,9 @@ ResolvedElement = Union[
     ResolvedEarthworksCut,
     ResolvedEarthworksFill,
     ResolvedRetainingWall,
+    ResolvedAlignment,
+    ResolvedRoad,
+    ResolvedBridge,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1165,6 +1221,9 @@ class ResolvedManifest(BaseModel):
     earthworks_cuts: List[ResolvedEarthworksCut] = []
     earthworks_fills: List[ResolvedEarthworksFill] = []
     retaining_walls: List[ResolvedRetainingWall] = []
+    alignments: List[ResolvedAlignment] = []
+    roads: List[ResolvedRoad] = []
+    bridges: List[ResolvedBridge] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -4232,6 +4291,169 @@ class SpatialResolver:
             layer=derive_default_layer(rw),
         )
 
+    def resolve_alignment(self, align: IfcAlignment) -> ResolvedAlignment:
+        if align.placement.grid:
+            gx, gy = self.get_grid_xy(align.placement.grid)
+        else:
+            gx, gy = 0.0, 0.0
+        gx += align.placement.offset_x
+        gy += align.placement.offset_y
+
+        z_base = self.get_storey(align.placement.storey).elevation if align.placement.storey else align.placement.offset_z
+
+        world_pts: List[Tuple[float, float, float]] = []
+        if align.placement.points:
+            for pt in align.placement.points:
+                world_pts.append((gx + pt.x, gy + pt.y, z_base + pt.z))
+
+        tot_length = sum(
+            math.dist(world_pts[i], world_pts[i + 1])
+            for i in range(len(world_pts) - 1)
+        )
+        st_chain = align.start_chainage
+        end_chain = align.end_chainage if align.end_chainage is not None else (st_chain + tot_length)
+
+        return ResolvedAlignment(
+            tag=align.tag,
+            element=align,
+            predefined_type=align.predefined_type,
+            start_chainage=st_chain,
+            end_chainage=end_chain,
+            total_length=tot_length,
+            points_3d=world_pts,
+            layer=derive_default_layer(align),
+        )
+
+    def resolve_road(self, road: IfcRoad) -> ResolvedRoad:
+        z_base = self.get_storey(road.placement.storey).elevation if road.placement.storey else 0.0
+        pts: List[Tuple[float, float, float]] = []
+
+        if road.placement.points:
+            for pt in road.placement.points:
+                pts.append((pt.x + road.placement.offset_x, pt.y + road.placement.offset_y, z_base + pt.z + road.placement.offset_z))
+        elif road.placement.from_grid and road.placement.to_grid:
+            x1, y1 = self.get_grid_xy(road.placement.from_grid)
+            x2, y2 = self.get_grid_xy(road.placement.to_grid)
+            x1 += road.placement.offset_x
+            y1 += road.placement.offset_y
+            x2 += road.placement.offset_x
+            y2 += road.placement.offset_y
+            z = z_base + road.placement.offset_z
+            pts = [(x1, y1, z), (x2, y2, z)]
+        elif road.placement.grid:
+            gx, gy = self.get_grid_xy(road.placement.grid)
+            gx += road.placement.offset_x
+            gy += road.placement.offset_y
+            z = z_base + road.placement.offset_z
+            len_val = road.corridor_length or 10.0
+            pts = [(gx, gy, z), (gx + len_val, gy, z)]
+        else:
+            z = z_base + road.placement.offset_z
+            len_val = road.corridor_length or 10.0
+            pts = [(road.placement.offset_x, road.placement.offset_y, z), (road.placement.offset_x + len_val, road.placement.offset_y, z)]
+
+        corr_len = sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1))
+        if road.corridor_length is not None and len(pts) <= 2 and corr_len < 1e-4:
+            corr_len = road.corridor_length
+
+        width = road.road_width
+        surf_area = width * corr_len
+        asphalt_vol = surf_area * road.pavement_surface_thickness
+        base_vol = surf_area * road.pavement_base_thickness
+        subbase_vol = surf_area * road.pavement_subbase_thickness
+
+        return ResolvedRoad(
+            tag=road.tag,
+            element=road,
+            predefined_type=road.predefined_type,
+            road_width=width,
+            corridor_length=corr_len,
+            lanes_count=road.lanes_count,
+            surface_area=surf_area,
+            asphalt_volume=asphalt_vol,
+            base_volume=base_vol,
+            subbase_volume=subbase_vol,
+            centerline_points=pts,
+            layer=derive_default_layer(road),
+        )
+
+    def resolve_bridge(self, bridge: IfcBridge) -> ResolvedBridge:
+        z_base = self.get_storey(bridge.placement.storey).elevation if bridge.placement.storey else 0.0
+
+        if bridge.placement.from_grid and bridge.placement.to_grid:
+            x1, y1 = self.get_grid_xy(bridge.placement.from_grid)
+            x2, y2 = self.get_grid_xy(bridge.placement.to_grid)
+            x1 += bridge.placement.offset_x
+            y1 += bridge.placement.offset_y
+            x2 += bridge.placement.offset_x
+            y2 += bridge.placement.offset_y
+            z = z_base + bridge.placement.offset_z
+            span = math.hypot(x2 - x1, y2 - y1)
+            if span <= 0:
+                span = bridge.span_length
+            deck_pos = ((x1 + x2) / 2.0, (y1 + y2) / 2.0, z)
+        elif bridge.placement.grid:
+            gx, gy = self.get_grid_xy(bridge.placement.grid)
+            gx += bridge.placement.offset_x
+            gy += bridge.placement.offset_y
+            z = z_base + bridge.placement.offset_z
+            deck_pos = (gx, gy, z)
+            span = bridge.span_length
+        else:
+            z = z_base + bridge.placement.offset_z
+            deck_pos = (bridge.placement.offset_x, bridge.placement.offset_y, z)
+            span = bridge.span_length
+
+        width = bridge.deck_width
+        thick = bridge.deck_thickness
+        deck_vol = span * width * thick
+
+        pier_cnt = max(1, bridge.pier_count)
+        pier_h = bridge.pier_height
+        pier_dia = bridge.pier_diameter or 1.0
+
+        if bridge.pier_shape == "RECTANGULAR":
+            p_w = bridge.pier_width or pier_dia
+            p_d = bridge.pier_depth or pier_dia
+            vol_per_pier = p_w * p_d * pier_h
+            pier_surf_area = (2.0 * (p_w + p_d)) * pier_h
+        else:
+            vol_per_pier = math.pi * ((pier_dia / 2.0) ** 2) * pier_h
+            pier_surf_area = math.pi * pier_dia * pier_h
+
+        piers_vol = pier_cnt * vol_per_pier
+        total_vol = deck_vol + piers_vol
+
+        deck_formwork = (span * width) + (2.0 * span * thick) + (2.0 * width * thick)
+        piers_formwork = pier_cnt * pier_surf_area
+        total_formwork = deck_formwork + piers_formwork
+
+        pier_positions: List[Tuple[float, float, float]] = []
+        for i in range(pier_cnt):
+            frac = 0.5 if pier_cnt == 1 else i / (pier_cnt - 1)
+            px = deck_pos[0] + (frac - 0.5) * span
+            py = deck_pos[1]
+            pz = deck_pos[2] - thick / 2.0 - pier_h / 2.0
+            pier_positions.append((px, py, pz))
+
+        return ResolvedBridge(
+            tag=bridge.tag,
+            element=bridge,
+            predefined_type=bridge.predefined_type,
+            span_length=span,
+            deck_width=width,
+            deck_thickness=thick,
+            pier_height=pier_h,
+            pier_count=pier_cnt,
+            deck_concrete_volume=deck_vol,
+            piers_concrete_volume=piers_vol,
+            total_concrete_volume=total_vol,
+            formwork_area=total_formwork,
+            deck_position=deck_pos,
+            pier_positions=pier_positions,
+            layer=derive_default_layer(bridge),
+        )
+
 
     def _resolve_element_ports(self, elem, host_pos: Tuple[float, float, float], rot_deg: float = 0.0) -> List[ResolvedPort]:
         resolved_ports = []
@@ -4459,6 +4681,18 @@ class SpatialResolver:
                 r_rw = self.resolve_retaining_wall(elem)
                 resolved_manifest.retaining_walls.append(r_rw)
                 resolved_manifest.elements.append(r_rw)
+            elif isinstance(elem, IfcAlignment):
+                r_align = self.resolve_alignment(elem)
+                resolved_manifest.alignments.append(r_align)
+                resolved_manifest.elements.append(r_align)
+            elif isinstance(elem, IfcRoad):
+                r_road = self.resolve_road(elem)
+                resolved_manifest.roads.append(r_road)
+                resolved_manifest.elements.append(r_road)
+            elif isinstance(elem, IfcBridge):
+                r_bridge = self.resolve_bridge(elem)
+                resolved_manifest.bridges.append(r_bridge)
+                resolved_manifest.elements.append(r_bridge)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

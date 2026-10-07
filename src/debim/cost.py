@@ -244,6 +244,36 @@ def generate_cost_template(
         )
         item_disciplines["RC-RETAINING-WALL"] = "civil"
 
+    if qto.total_road_surface_area > 0 and "ROAD-ASPHALT-PAVEMENT" not in required_items:
+        required_items["ROAD-ASPHALT-PAVEMENT"] = PriceItem(
+            name="Asphalt Concrete Pavement Surface",
+            unit="m2",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="32 12 16", uniformat="G2020"),
+        )
+        item_disciplines["ROAD-ASPHALT-PAVEMENT"] = "civil"
+
+    if (qto.total_road_base_volume > 0 or qto.total_road_subbase_volume > 0) and "ROAD-BASE-CRUSHED-ROCK" not in required_items:
+        required_items["ROAD-BASE-CRUSHED-ROCK"] = PriceItem(
+            name="Crushed Rock Aggregate Base & Subbase",
+            unit="m3",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="32 11 23", uniformat="G2020"),
+        )
+        item_disciplines["ROAD-BASE-CRUSHED-ROCK"] = "civil"
+
+    if qto.total_bridge_concrete_volume > 0 and "BRIDGE-RC-DECK" not in required_items:
+        required_items["BRIDGE-RC-DECK"] = PriceItem(
+            name="Reinforced Concrete Bridge Structure",
+            unit="m3",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="34 70 00", uniformat="G2030"),
+        )
+        item_disciplines["BRIDGE-RC-DECK"] = "civil"
+
     if qto.total_lean_concrete_volume > 0 and "MAT-LEAN-CONC" not in required_items:
         required_items["MAT-LEAN-CONC"] = PriceItem(
             name="Lean Concrete Bedding (1:3:6)",
@@ -984,6 +1014,25 @@ def estimate_cost(
         for code, item in catalog.items.items():
             if "retaining" in code.lower() or "retaining-wall" in code.lower() or "กำแพงกันดิน" in item.name:
                 quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_retaining_wall_concrete_volume
+                break
+
+    if qto.total_road_surface_area > 0:
+        for code, item in catalog.items.items():
+            if "road-asphalt" in code.lower() or "asphalt" in code.lower() or "ลาดยาง" in item.name or "แอสฟัลต์" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_road_surface_area
+                break
+
+    road_base_qty = qto.total_road_base_volume + qto.total_road_subbase_volume
+    if road_base_qty > 0:
+        for code, item in catalog.items.items():
+            if "road-base" in code.lower() or "crushed-rock" in code.lower() or "หินคลุก" in item.name or "ลูกรัง" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + road_base_qty
+                break
+
+    if qto.total_bridge_concrete_volume > 0:
+        for code, item in catalog.items.items():
+            if "bridge" in code.lower() or "bridge-rc" in code.lower() or "สะพาน" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_bridge_concrete_volume
                 break
 
     # 9. Map Ceilings (Gypsum, T-Bar, Eaves) if not already mapped via material ref

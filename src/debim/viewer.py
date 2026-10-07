@@ -598,6 +598,97 @@ def generate_viewer_html(
                 },
             })
 
+    # Civil Infrastructure Alignments (IFC4.3)
+    for align in resolved.alignments:
+        if align.points_3d and len(align.points_3d) >= 2:
+            elements_data.append({
+                "tag": align.tag,
+                "class": "IfcAlignment",
+                "predefined_type": align.predefined_type,
+                "geometry_type": "line",
+                "points": align.points_3d,
+                "color": "#F59E0B",
+                "linewidth": 4,
+                "layer": align.layer,
+                "dimensions": {
+                    "total_length": align.total_length,
+                    "start_chainage": align.start_chainage,
+                    "end_chainage": align.end_chainage,
+                },
+            })
+
+    # Civil Infrastructure Roads (IFC4.3)
+    for road in resolved.roads:
+        pts = road.centerline_points
+        if pts and len(pts) >= 2:
+            elements_data.append({
+                "tag": road.tag,
+                "class": "IfcRoad",
+                "predefined_type": road.predefined_type,
+                "material": road.element.material or "Asphalt Concrete",
+                "geometry_type": "line",
+                "points": pts,
+                "color": "#334155",
+                "linewidth": 6,
+                "layer": road.layer,
+                "dimensions": {
+                    "road_width": road.road_width,
+                    "corridor_length": road.corridor_length,
+                    "surface_area": road.surface_area,
+                    "asphalt_volume": road.asphalt_volume,
+                    "base_volume": road.base_volume,
+                    "subbase_volume": road.subbase_volume,
+                },
+            })
+
+    # Civil Infrastructure Bridges (IFC4.3)
+    for bridge in resolved.bridges:
+        d_pos = bridge.deck_position
+        d_w = bridge.deck_width
+        d_l = bridge.span_length
+        d_h = bridge.deck_thickness
+
+        # Deck Slab Mesh
+        elements_data.append({
+            "tag": f"{bridge.tag}-Deck",
+            "class": "IfcBridge",
+            "predefined_type": bridge.predefined_type,
+            "material": bridge.element.material or "Reinforced Concrete",
+            "position": [d_pos[0], d_pos[1], d_pos[2]],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": d_l,
+                "depth": d_w,
+                "height": d_h,
+                "span_length": bridge.span_length,
+                "deck_concrete_volume": bridge.deck_concrete_volume,
+                "total_concrete_volume": bridge.total_concrete_volume,
+                "formwork_area": bridge.formwork_area,
+            },
+            "color": "#94A3B8",
+            "layer": bridge.layer,
+        })
+
+        # Support Piers
+        for p_idx, p_pos in enumerate(bridge.pier_positions):
+            elements_data.append({
+                "tag": f"{bridge.tag}-Pier-{p_idx+1}",
+                "class": "IfcBridge",
+                "predefined_type": bridge.predefined_type,
+                "material": bridge.element.material or "Reinforced Concrete",
+                "position": [p_pos[0], p_pos[1], p_pos[2]],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "shape": "CYLINDER" if bridge.element.pier_shape == "CYLINDRICAL" else "BOX",
+                    "radius": (bridge.element.pier_diameter or 1.0) / 2.0,
+                    "width": bridge.element.pier_width or bridge.element.pier_diameter or 1.0,
+                    "depth": bridge.element.pier_depth or bridge.element.pier_diameter or 1.0,
+                    "height": bridge.pier_height,
+                },
+                "color": "#64748B",
+                "layer": bridge.layer,
+            })
+
     # Civil Earthworks Cut
     for cut in resolved.earthworks_cuts:
         cz = cut.position[2] - cut.depth / 2.0

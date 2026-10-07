@@ -420,7 +420,7 @@ class StepSerializer:
                 if st_id in storey_elements:
                     storey_elements[st_id].append(p_ref)
 
-        # 5.3 Civil Earthworks & Retaining Walls
+        # 5.3 Civil Earthworks & Retaining Walls & Civil Infrastructure (IFC4.3)
         for cut in resolved.earthworks_cuts:
             st_id = cut.element.placement.storey
             elem_ref = self.create_entity(
@@ -435,6 +435,54 @@ class StepSerializer:
                 ".USERDEFINED.",
             )
             if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for align in resolved.alignments:
+            st_id = align.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcAlignment",
+                generate_ifc_guid(),
+                None,
+                align.tag,
+                None,
+                f"IfcAlignment.{align.predefined_type}",
+                None,
+                None,
+                ".USERDEFINED.",
+            )
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for road in resolved.roads:
+            st_id = road.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcRoad",
+                generate_ifc_guid(),
+                None,
+                road.tag,
+                None,
+                f"IfcRoad.{road.predefined_type}",
+                None,
+                None,
+                f".{road.predefined_type.upper()}.",
+            )
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for bridge in resolved.bridges:
+            st_id = bridge.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcBridge",
+                generate_ifc_guid(),
+                None,
+                bridge.tag,
+                None,
+                f"IfcBridge.{bridge.predefined_type}",
+                None,
+                None,
+                f".{bridge.predefined_type.upper()}.",
+            )
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         for fill in resolved.earthworks_fills:
@@ -1961,7 +2009,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id in storey_products:
             storey_products[st_id].append(plate_obj)
 
-    # 5.3 Civil Earthworks & Retaining Walls
+    # 5.3 Civil Earthworks & Retaining Walls & Civil Infrastructure (IFC4.3)
     for cut in resolved.earthworks_cuts:
         cut_obj = ifcopenshell.api.run(
             "root.create_entity",
@@ -1999,6 +2047,66 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = rw.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(rw_obj)
+
+    for align in resolved.alignments:
+        try:
+            align_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcAlignment",
+                name=align.tag,
+            )
+        except Exception:
+            align_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=align.tag,
+            )
+            align_obj.ObjectType = f"IfcAlignment.{align.predefined_type}"
+        st_id = align.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(align_obj)
+
+    for road in resolved.roads:
+        try:
+            road_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcRoad",
+                name=road.tag,
+            )
+        except Exception:
+            road_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=road.tag,
+            )
+            road_obj.ObjectType = f"IfcRoad.{road.predefined_type}"
+        st_id = road.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(road_obj)
+
+    for bridge in resolved.bridges:
+        try:
+            bridge_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBridge",
+                name=bridge.tag,
+            )
+        except Exception:
+            bridge_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=bridge.tag,
+            )
+            bridge_obj.ObjectType = f"IfcBridge.{bridge.predefined_type}"
+        st_id = bridge.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(bridge_obj)
 
     # 6. Roofs & Roof Openings / Skylights
     for roof in resolved.roofs:
