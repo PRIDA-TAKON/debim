@@ -23,6 +23,7 @@ if sys.platform == "win32":
 
 from debim.version import __version__, check_and_notify_updates
 from debim.compiler import compile_to_ifc
+from debim.bsdd import validate_manifest_psets, PropertyValidationStatus
 from debim.scaffold import scaffold_element
 from debim.cost import estimate_cost, generate_cost_template, load_price_catalog
 from debim.qto import calculate_qto
@@ -98,16 +99,68 @@ def validate(
     manifest: Path = typer.Option(
         Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
     ),
+    bsdd: bool = typer.Option(
+        True, "--bsdd/--no-bsdd", help="Perform buildingSMART bSDD Property Set (Pset_*) validation"
+    ),
+    strict_psets: bool = typer.Option(
+        False, "--strict-psets", help="Fail validation if non-compliant Pset types or values are found"
+    ),
 ):
-    """Validate project.yaml schema, grid alignment, and element placement links"""
+    """Validate project.yaml schema, grid alignment, element placement links, and bSDD Psets"""
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
         raise typer.Exit(code=1)
     console.print(f"[bold green]Validating:[/bold green] {manifest}")
     try:
-        load_manifest(manifest)
-        console.print("[bold green]Validation passed successfully.[/bold green]")
-    except (ValidationError, ValueError, Exception) as e:
+        manifest_obj = load_manifest(manifest)
+        console.print("[bold green]Schema & Topology Validation passed successfully.[/bold green]")
+
+        if bsdd:
+            pset_results = validate_manifest_psets(manifest_obj)
+            if pset_results:
+                table = Table(
+                    title="buildingSMART bSDD Pset Validation Summary",
+                    show_header=True,
+                    header_style="bold cyan",
+                )
+                table.add_column("Tag", style="bold yellow")
+                table.add_column("Property Set", style="magenta")
+                table.add_column("Property", style="white")
+                table.add_column("Expected Type", style="cyan")
+                table.add_column("Status", justify="center")
+                table.add_column("Details", style="dim")
+
+                has_errors = False
+                for r in pset_results:
+                    if r.status in (PropertyValidationStatus.TYPE_MISMATCH, PropertyValidationStatus.VALUE_CONSTRAINT_VIOLATION):
+                        has_errors = True
+                        status_str = f"[bold red]{r.status.value}[/bold red]"
+                    elif r.status in (PropertyValidationStatus.NON_STANDARD_PROPERTY, PropertyValidationStatus.NON_STANDARD_PSET):
+                        status_str = f"[yellow]{r.status.value}[/yellow]"
+                    else:
+                        status_str = f"[green]{r.status.value}[/green]"
+
+                    table.add_row(
+                        r.element_tag,
+                        r.pset_name,
+                        r.property_name,
+                        r.expected_type or "-",
+                        status_str,
+                        r.message,
+                    )
+
+                console.print(table)
+
+                if strict_psets and (has_errors or any(r.status != PropertyValidationStatus.VALID for r in pset_results)):
+                    console.print("[bold red]Strict Pset Validation Failed! Non-compliant Property Sets detected.[/bold red]")
+                    raise typer.Exit(code=1)
+
+    except (ValidationError, ValueError) as e:
+        console.print(f"[bold red]Validation Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+    except typer.Exit:
+        raise
+    except Exception as e:
         console.print(f"[bold red]Validation Error:[/bold red]\n{e}")
         raise typer.Exit(code=1)
 

@@ -1419,8 +1419,10 @@ class StepSerializer:
                     prop_refs = []
                     for p_key, p_val in pset_props.items():
                         if isinstance(p_val, bool):
-                            v_ref = f".{'T' if p_val else 'F'}."
-                        elif isinstance(p_val, (int, float)):
+                            v_ref = self.create_entity("IfcBoolean", p_val)
+                        elif isinstance(p_val, int):
+                            v_ref = self.create_entity("IfcInteger", p_val)
+                        elif isinstance(p_val, float):
                             v_ref = self.create_entity("IfcReal", float(p_val))
                         else:
                             v_ref = self.create_entity("IfcLabel", str(p_val))
