@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 from typing import Annotated, Any, Dict, List, Literal, Optional, Tuple, Union
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, Discriminator, field_validator, model_validator
 
 
 class Units(BaseModel):
@@ -1208,6 +1208,145 @@ class IfcCustomElement(BaseModel):
     layer: Optional[str] = None
 
 
+# Universal Proxy Geometry & Placement
+class ProxyGeometry(BaseModel):
+    box: Optional[Union[List[float], Tuple[float, float, float], Dict[str, float]]] = None
+    cylinder: Optional[Union[List[float], Tuple[float, float], Dict[str, float]]] = None
+    dimensions: Optional[Dimensions] = None
+    profile: Optional[Profile] = None
+    extrusion: Optional[float] = None
+    solid: Optional[Union[SweptDiskSolid, RevolvedAreaSolid]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_proxy_geometry(cls, data: Any) -> Any:
+        if isinstance(data, (list, tuple)):
+            if len(data) == 3:
+                return {"box": [float(x) for x in data]}
+            elif len(data) == 2:
+                return {"cylinder": [float(x) for x in data]}
+        return data
+
+    def to_dimensions(self) -> Dimensions:
+        """Resolve geometry to 3D Dimensions (width, depth, height)."""
+        if self.dimensions:
+            d = self.dimensions.depth if self.dimensions.depth is not None else self.dimensions.width
+            return Dimensions(width=self.dimensions.width, depth=d, height=self.dimensions.height)
+
+        if self.box:
+            if isinstance(self.box, (list, tuple)) and len(self.box) >= 3:
+                return Dimensions(width=float(self.box[0]), depth=float(self.box[1]), height=float(self.box[2]))
+            elif isinstance(self.box, dict):
+                w = float(self.box.get("width", 1.0))
+                d = float(self.box.get("depth", self.box.get("length", w)))
+                h = float(self.box.get("height", 1.0))
+                return Dimensions(width=w, depth=d, height=h)
+
+        if self.cylinder:
+            if isinstance(self.cylinder, (list, tuple)) and len(self.cylinder) >= 2:
+                r_or_d = float(self.cylinder[0])
+                h = float(self.cylinder[1])
+                return Dimensions(width=2.0 * r_or_d, depth=2.0 * r_or_d, height=h)
+            elif isinstance(self.cylinder, dict):
+                r = float(self.cylinder.get("radius", self.cylinder.get("r", 0.5)))
+                h = float(self.cylinder.get("height", self.cylinder.get("h", 1.0)))
+                return Dimensions(width=2.0 * r, depth=2.0 * r, height=h)
+
+        if self.profile:
+            ext = float(self.extrusion or 1.0)
+            return Dimensions(width=self.profile.width, depth=self.profile.depth, height=ext)
+
+        return Dimensions(width=1.0, depth=1.0, height=1.0)
+
+
+class ProxyPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    position: Optional[Tuple[float, float, float]] = None
+    offset: Optional[Tuple[float, float, float]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    rotation: Optional[Union[float, Tuple[float, float, float]]] = None
+    wall: Optional[str] = None
+    distance: float = 0.0
+    side: Literal["INTERIOR", "EXTERIOR", "CENTER"] = "INTERIOR"
+    standoff: float = 0.0
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_proxy_grid(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("offset", "position", mode="before")
+    @classmethod
+    def convert_proxy_tuple(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(float(x) for x in v)
+        return v
+
+    @field_validator("rotation", mode="before")
+    @classmethod
+    def convert_proxy_rotation(cls, v):
+        if isinstance(v, (int, float)):
+            return (0.0, 0.0, float(v))
+        if isinstance(v, (list, tuple)):
+            if len(v) == 1:
+                return (0.0, 0.0, float(v[0]))
+            return tuple(float(x) for x in v)
+        return v
+
+
+class IfcBuildingElementProxy(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    class_: str = Field(alias="class", default="IfcBuildingElementProxy")
+    ifc_class: Optional[str] = None
+    tag: str
+    predefined_type: Optional[str] = None
+    material: Optional[str] = None
+    geometry: Optional[Union[ProxyGeometry, Dict[str, Any], List[float]]] = None
+    dimensions: Optional[Dimensions] = None
+    placement: ProxyPlacement
+    properties: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    layer: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_proxy_input(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            cls_val = data.get("class") or data.get("class_")
+            ifc_cls = data.get("ifc_class")
+            if not ifc_cls and cls_val:
+                data["ifc_class"] = str(cls_val)
+            if not cls_val:
+                data["class"] = "IfcBuildingElementProxy"
+        return data
+
+    @model_validator(mode="after")
+    def validate_proxy_fields(self) -> "IfcBuildingElementProxy":
+        if not self.ifc_class:
+            self.ifc_class = self.class_ or "IfcBuildingElementProxy"
+        return self
+
+    def get_resolved_dimensions(self) -> Dimensions:
+        if self.dimensions:
+            d = self.dimensions.depth if self.dimensions.depth is not None else self.dimensions.width
+            return Dimensions(width=self.dimensions.width, depth=d, height=self.dimensions.height)
+        if self.geometry:
+            if isinstance(self.geometry, ProxyGeometry):
+                return self.geometry.to_dimensions()
+            elif isinstance(self.geometry, dict):
+                pg = ProxyGeometry.model_validate(self.geometry)
+                return pg.to_dimensions()
+            elif isinstance(self.geometry, (list, tuple)):
+                pg = ProxyGeometry.model_validate(self.geometry)
+                return pg.to_dimensions()
+        return Dimensions(width=1.0, depth=1.0, height=1.0)
+
+
 # Roof element definitions
 RoofType = Literal["GABLE", "HIP", "SHED", "FLAT", "MANSARD"]
 RidgeOrientation = Literal["X", "Y", "ALONG_LENGTH", "ALONG_WIDTH"]
@@ -1786,38 +1925,91 @@ class IfcCovering(BaseModel):
     layer: Optional[str] = None
 
 
+KNOWN_ELEMENT_CLASSES = {
+    "IfcColumn",
+    "IfcBeam",
+    "IfcWall",
+    "IfcDoor",
+    "IfcWindow",
+    "IfcFooting",
+    "IfcSlab",
+    "IfcCovering",
+    "IfcStair",
+    "IfcStairFlight",
+    "IfcRamp",
+    "IfcRailing",
+    "IfcRoof",
+    "IfcCurtainWall",
+    "IfcPlate",
+    "IfcPipeSegment",
+    "IfcCableCarrierSegment",
+    "IfcDuctSegment",
+    "IfcSanitaryTerminal",
+    "IfcWasteTerminal",
+    "IfcDistributionBoard",
+    "IfcElectricDistributionBoard",
+    "IfcLightFixture",
+    "IfcSwitchingDevice",
+    "IfcOutlet",
+    "IfcAirTerminal",
+    "IfcDamper",
+    "IfcFlowController",
+    "IfcUnitaryEquipment",
+    "IfcCustomElement",
+}
+
+
+from pydantic import Tag
+
+
+def element_discriminator(v: Any) -> str:
+    """Dynamically route custom/proxy class names to IfcBuildingElementProxy."""
+    if isinstance(v, dict):
+        cls_val = v.get("class") or v.get("class_")
+        if cls_val in KNOWN_ELEMENT_CLASSES:
+            return str(cls_val)
+        return "IfcBuildingElementProxy"
+    elif isinstance(v, BaseModel):
+        cls_val = getattr(v, "class_", None)
+        if cls_val in KNOWN_ELEMENT_CLASSES:
+            return str(cls_val)
+        return "IfcBuildingElementProxy"
+    return "IfcBuildingElementProxy"
+
+
 Element = Annotated[
     Union[
-        IfcColumn,
-        IfcBeam,
-        IfcWall,
-        IfcFooting,
-        IfcSlab,
-        IfcCovering,
-        IfcStair,
-        IfcStairFlight,
-        IfcRamp,
-        IfcRailing,
-        IfcRoof,
-        IfcCurtainWall,
-        IfcPlate,
-        IfcPipeSegment,
-        IfcCableCarrierSegment,
-        IfcDuctSegment,
-        IfcSanitaryTerminal,
-        IfcWasteTerminal,
-        IfcDistributionBoard,
-        IfcElectricDistributionBoard,
-        IfcLightFixture,
-        IfcSwitchingDevice,
-        IfcOutlet,
-        IfcAirTerminal,
-        IfcDamper,
-        IfcFlowController,
-        IfcUnitaryEquipment,
-        IfcCustomElement,
+        Annotated[IfcColumn, Tag("IfcColumn")],
+        Annotated[IfcBeam, Tag("IfcBeam")],
+        Annotated[IfcWall, Tag("IfcWall")],
+        Annotated[IfcFooting, Tag("IfcFooting")],
+        Annotated[IfcSlab, Tag("IfcSlab")],
+        Annotated[IfcCovering, Tag("IfcCovering")],
+        Annotated[IfcStair, Tag("IfcStair")],
+        Annotated[IfcStairFlight, Tag("IfcStairFlight")],
+        Annotated[IfcRamp, Tag("IfcRamp")],
+        Annotated[IfcRailing, Tag("IfcRailing")],
+        Annotated[IfcRoof, Tag("IfcRoof")],
+        Annotated[IfcCurtainWall, Tag("IfcCurtainWall")],
+        Annotated[IfcPlate, Tag("IfcPlate")],
+        Annotated[IfcPipeSegment, Tag("IfcPipeSegment")],
+        Annotated[IfcCableCarrierSegment, Tag("IfcCableCarrierSegment")],
+        Annotated[IfcDuctSegment, Tag("IfcDuctSegment")],
+        Annotated[IfcSanitaryTerminal, Tag("IfcSanitaryTerminal")],
+        Annotated[IfcWasteTerminal, Tag("IfcWasteTerminal")],
+        Annotated[IfcDistributionBoard, Tag("IfcDistributionBoard")],
+        Annotated[IfcElectricDistributionBoard, Tag("IfcElectricDistributionBoard")],
+        Annotated[IfcLightFixture, Tag("IfcLightFixture")],
+        Annotated[IfcSwitchingDevice, Tag("IfcSwitchingDevice")],
+        Annotated[IfcOutlet, Tag("IfcOutlet")],
+        Annotated[IfcAirTerminal, Tag("IfcAirTerminal")],
+        Annotated[IfcDamper, Tag("IfcDamper")],
+        Annotated[IfcFlowController, Tag("IfcFlowController")],
+        Annotated[IfcUnitaryEquipment, Tag("IfcUnitaryEquipment")],
+        Annotated[IfcCustomElement, Tag("IfcCustomElement")],
+        Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
-    Field(discriminator="class_"),
+    Discriminator(element_discriminator),
 ]
 
 
@@ -1835,6 +2027,7 @@ class ProjectManifest(BaseModel):
     grids: Grids
     materials: List[Material]
     elements: List[Element] = Field(default_factory=list)
+    proxies: List[IfcBuildingElementProxy] = Field(default_factory=list)
     includes: List[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
@@ -1844,7 +2037,9 @@ class ProjectManifest(BaseModel):
         grid_y_ids = set(self.grids.axes_y.keys())
         material_ids = {m.id for m in self.materials}
 
-        for elem in self.elements:
+        all_manifest_elements = list(self.elements) + list(self.proxies)
+
+        for elem in all_manifest_elements:
             # Verify material ID reference if applicable
             if hasattr(elem, "material") and elem.material:
                 if elem.material not in material_ids:
@@ -2158,6 +2353,18 @@ class ProjectManifest(BaseModel):
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
                     )
 
+            elif isinstance(elem, IfcBuildingElementProxy):
+                if elem.placement.storey and elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                if elem.placement.grid:
+                    gx, gy = elem.placement.grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
+
         return self
 
 
@@ -2169,10 +2376,11 @@ def _process_includes(
     storey_ids: set,
     merged_axes_x: Dict[str, float],
     merged_axes_y: Dict[str, float],
-) -> Tuple[List[dict], List[dict], List[dict]]:
+) -> Tuple[List[dict], List[dict], List[dict], List[dict]]:
     included_materials = []
     included_elements = []
     included_storeys = []
+    included_proxies = []
 
     for pattern in includes:
         if not pattern or not pattern.strip():
@@ -2207,6 +2415,7 @@ def _process_includes(
             elif isinstance(content, dict):
                 sub_mats = list(content.get("materials", []) or [])
                 sub_elems = list(content.get("elements", []) or [])
+                sub_proxies = list(content.get("proxies", []) or [])
 
                 sub_storeys = []
                 if "spatial_structure" in content and isinstance(content["spatial_structure"], dict):
@@ -2234,6 +2443,7 @@ def _process_includes(
                         included_materials.append(m)
 
                 included_elements.extend(sub_elems)
+                included_proxies.extend(sub_proxies)
 
                 for s in sub_storeys:
                     if isinstance(s, dict) and "id" in s:
@@ -2245,7 +2455,7 @@ def _process_includes(
 
                 sub_includes = content.get("includes", []) or []
                 if sub_includes:
-                    nested_mats, nested_elems, nested_storeys = _process_includes(
+                    nested_mats, nested_elems, nested_storeys, nested_proxies = _process_includes(
                         sub_includes,
                         inc_canonical.parent,
                         sub_visited,
@@ -2257,12 +2467,13 @@ def _process_includes(
                     included_materials.extend(nested_mats)
                     included_elements.extend(nested_elems)
                     included_storeys.extend(nested_storeys)
+                    included_proxies.extend(nested_proxies)
             else:
                 raise ValueError(
                     f"Invalid YAML content in {inc_path}: expected list or dictionary"
                 )
 
-    return included_materials, included_elements, included_storeys
+    return included_materials, included_elements, included_storeys, included_proxies
 
 
 def derive_default_layer(elem) -> str:
@@ -2337,6 +2548,11 @@ def derive_default_layer(elem) -> str:
         return "mep/hvac/equipment"
     elif cls == "IfcCustomElement":
         return "general/custom"
+    elif cls == "IfcBuildingElementProxy" or isinstance(elem, IfcBuildingElementProxy):
+        ifc_cls = getattr(elem, "ifc_class", None) or "IfcBuildingElementProxy"
+        if ifc_cls and ifc_cls != "IfcBuildingElementProxy":
+            return f"equipment/{ifc_cls.lower()}"
+        return f"proxies/{getattr(elem, 'tag', 'element').lower()}"
     return "general/other"
 
 
@@ -2370,9 +2586,10 @@ def load_manifest(path: Path | str) -> ProjectManifest:
     mat_ids = {m["id"] for m in merged_materials if isinstance(m, dict) and "id" in m}
 
     merged_elements = list(data.get("elements", []) or [])
+    merged_proxies = list(data.get("proxies", []) or [])
 
     if includes:
-        inc_materials, inc_elements, inc_storeys = _process_includes(
+        inc_materials, inc_elements, inc_storeys, inc_proxies = _process_includes(
             includes,
             base_dir,
             visited,
@@ -2384,9 +2601,11 @@ def load_manifest(path: Path | str) -> ProjectManifest:
         merged_materials.extend(inc_materials)
         merged_elements.extend(inc_elements)
         merged_storeys.extend(inc_storeys)
+        merged_proxies.extend(inc_proxies)
 
     data["materials"] = merged_materials
     data["elements"] = merged_elements
+    data["proxies"] = merged_proxies
     data["spatial_structure"] = {"storeys": merged_storeys}
     data["grids"] = {"axes_x": merged_axes_x, "axes_y": merged_axes_y}
 

@@ -5,13 +5,14 @@ and geometric dimensions.
 """
 
 import math
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 from pydantic import BaseModel, ConfigDict, Field
 
 from debim.schema import (
     Dimensions,
     IfcAirTerminal,
     IfcBeam,
+    IfcBuildingElementProxy,
     IfcCableCarrierSegment,
     IfcColumn,
     IfcCovering,
@@ -991,6 +992,22 @@ class ResolvedUnitaryEquipment(BaseModel):
     layer: str = "mep/hvac/equipment"
 
 
+class ResolvedProxy(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcBuildingElementProxy
+    ifc_class: str
+    predefined_type: Optional[str] = None
+    position: Tuple[float, float, float]
+    rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    dimensions: Tuple[float, float, float]
+    bounding_box: Dict[str, float]
+    properties: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    color: str = "#8B5CF6"
+    layer: str = "equipment/proxy"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1022,6 +1039,7 @@ ResolvedElement = Union[
     ResolvedTerminal,
     ResolvedDoor,
     ResolvedWindow,
+    ResolvedProxy,
 ]
 
 
@@ -1059,6 +1077,7 @@ class ResolvedManifest(BaseModel):
     unitary_equipments: List[ResolvedUnitaryEquipment] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
+    proxies: List[ResolvedProxy] = []
     elements: List[ResolvedElement] = []
 
     def get_element_by_tag(self, tag: str) -> Union[ResolvedElement, None]:
@@ -4024,8 +4043,75 @@ class SpatialResolver:
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)
                 resolved_manifest.elements.append(r_custom)
+            elif isinstance(elem, IfcBuildingElementProxy):
+                r_proxy = self.resolve_proxy(elem)
+                resolved_manifest.proxies.append(r_proxy)
+                resolved_manifest.elements.append(r_proxy)
+
+        for proxy_elem in self.manifest.proxies:
+            r_proxy = self.resolve_proxy(proxy_elem)
+            resolved_manifest.proxies.append(r_proxy)
+            resolved_manifest.elements.append(r_proxy)
 
         return resolved_manifest
+
+    def resolve_proxy(self, proxy: IfcBuildingElementProxy) -> ResolvedProxy:
+        storey_id = proxy.placement.storey
+        storey = None
+        if storey_id and storey_id in self.storeys:
+            storey = self.storeys[storey_id]
+        elif self.storeys:
+            storey = next(iter(self.storeys.values()))
+
+        st_elev = storey.elevation if storey else 0.0
+
+        px, py, pz = 0.0, 0.0, 0.0
+        if proxy.placement.position:
+            px, py, pz = proxy.placement.position
+        elif proxy.placement.grid:
+            gx, gy = self.get_grid_xy(proxy.placement.grid)
+            off_x = proxy.placement.offset_x + (proxy.placement.offset[0] if proxy.placement.offset else 0.0)
+            off_y = proxy.placement.offset_y + (proxy.placement.offset[1] if proxy.placement.offset else 0.0)
+            off_z = proxy.placement.offset_z + (proxy.placement.offset[2] if proxy.placement.offset else 0.0)
+            px = gx + off_x
+            py = gy + off_y
+            pz = off_z
+        elif proxy.placement.offset:
+            px, py, pz = proxy.placement.offset
+
+        world_pos = (px, py, st_elev + pz)
+
+        dims_obj = proxy.get_resolved_dimensions()
+        w = dims_obj.width
+        d = dims_obj.depth if dims_obj.depth is not None else w
+        h = dims_obj.height
+        vol = w * d * h
+        footprint = w * d
+
+        bbox = {
+            "min_x": world_pos[0] - w / 2.0, "max_x": world_pos[0] + w / 2.0,
+            "min_y": world_pos[1] - d / 2.0, "max_y": world_pos[1] + d / 2.0,
+            "min_z": world_pos[2], "max_z": world_pos[2] + h,
+            "width": w, "depth": d, "height": h,
+            "volume": vol, "footprint_area": footprint,
+        }
+
+        rot = proxy.placement.rotation if proxy.placement.rotation else (0.0, 0.0, 0.0)
+        ifc_cls = proxy.ifc_class or proxy.class_ or "IfcBuildingElementProxy"
+
+        return ResolvedProxy(
+            tag=proxy.tag,
+            element=proxy,
+            ifc_class=ifc_cls,
+            predefined_type=proxy.predefined_type,
+            position=world_pos,
+            rotation=rot,
+            dimensions=(w, d, h),
+            bounding_box=bbox,
+            properties=proxy.properties or {},
+            color="#8B5CF6",
+            layer=derive_default_layer(proxy),
+        )
 
 
 def resolve_manifest(manifest: ProjectManifest) -> ResolvedManifest:

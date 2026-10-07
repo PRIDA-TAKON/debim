@@ -29,6 +29,7 @@ from debim.resolver import (
     ResolvedOutlet,
     ResolvedPipeSegment,
     ResolvedPlate,
+    ResolvedProxy,
     ResolvedRailing,
     ResolvedRamp,
     ResolvedRevolvedArea,
@@ -494,6 +495,10 @@ class ProjectQTO(BaseModel):
     total_doors_count: int = 0
     total_windows_count: int = 0
     total_openings_area: float = 0.0
+    # Universal Proxies Totals
+    total_proxies_count: int = 0
+    total_proxies_volume: float = 0.0
+    total_proxies_footprint_area: float = 0.0
     # MEP Totals
     total_cold_water_pipe_length: float = 0.0
     total_soil_pipe_length: float = 0.0
@@ -1718,6 +1723,28 @@ def calculate_element_qto(
             ),
         )
 
+    elif isinstance(resolved, ResolvedProxy):
+        elem = resolved.element
+        vol = resolved.bounding_box["volume"]
+        w, d, h = resolved.dimensions
+        return ElementQTO(
+            tag=tag,
+            element_class=resolved.ifc_class,
+            material=elem.material or resolved.ifc_class,
+            concrete_volume=vol,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type=resolved.ifc_class,
+                fixture_type=resolved.ifc_class,
+                count=1,
+                width=w,
+                height=h,
+                predefined_type=resolved.predefined_type,
+            ),
+        )
+
     raise TypeError(f"Unsupported resolved element type: {type(resolved)}")
 
 
@@ -1784,6 +1811,11 @@ def calculate_qto(
     total_doors = 0
     total_windows = 0
     total_openings_area = 0.0
+
+    # Proxies Totals
+    total_proxies_cnt = 0
+    total_proxies_vol = 0.0
+    total_proxies_footprint = 0.0
 
     # MEP Totals
     total_cold_water_len = 0.0
@@ -1924,6 +1956,10 @@ def calculate_qto(
         elif isinstance(elem, ResolvedWindow) or eqto.element_class == "IfcWindow":
             total_windows += 1
             total_openings_area += elem.width * elem.height
+        elif isinstance(elem, ResolvedProxy):
+            total_proxies_cnt += 1
+            total_proxies_vol += eqto.concrete_volume
+            total_proxies_footprint += elem.bounding_box["footprint_area"]
 
         if eqto.mep:
             if eqto.element_class == "IfcPipeSegment":
@@ -2012,6 +2048,9 @@ def calculate_qto(
         total_floor_tile_area=total_floor_tile,
         total_floor_polish_area=total_floor_polish,
         total_skirting_length=total_skirting,
+        total_proxies_count=total_proxies_cnt,
+        total_proxies_volume=total_proxies_vol,
+        total_proxies_footprint_area=total_proxies_footprint,
         total_doors_count=total_doors,
         total_windows_count=total_windows,
         total_openings_area=total_openings_area,
