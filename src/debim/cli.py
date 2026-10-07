@@ -31,6 +31,7 @@ from debim.resolver import resolve_manifest
 from debim.schema import ProjectManifest, load_manifest
 from debim.viewer import generate_viewer_html, serve_viewer
 from debim.modular import bundle_manifest, split_manifest
+from debim.spec.registry import SpecRegistryClient
 
 app = typer.Typer(
     name="debim",
@@ -1062,6 +1063,99 @@ def mcp():
     """Start the Model Context Protocol (MCP) server for AI coding agents."""
     from debim.mcp import run_mcp_server
     run_mcp_server()
+
+
+spec_app = typer.Typer(
+    help="Material Specification Package Manager client for fetching and caching material packages",
+    add_completion=False,
+)
+app.add_typer(spec_app, name="spec")
+
+
+@spec_app.command(name="add")
+def spec_add(
+    pkg_name: str = typer.Argument(
+        ..., help="Package identifier (e.g. @toa/supershield-exterior or org/repo)"
+    ),
+    specs_dir: Path = typer.Option(
+        Path("specs"),
+        "--specs-dir",
+        "-s",
+        help="Target project directory to install specification packages into",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Bypass local registry cache and force re-download from remote",
+    ),
+    cache_dir: Optional[Path] = typer.Option(
+        None, "--cache-dir", help="Custom registry cache directory"
+    ),
+):
+    """Install specification package into project local specs/ directory"""
+    console.print(f"[bold cyan]Fetching specification package:[/bold cyan] [yellow]{pkg_name}[/yellow]...")
+    try:
+        client = SpecRegistryClient(cache_dir=cache_dir)
+        installed_path = client.install_package(pkg_name, specs_dir=specs_dir, force=force)
+        pkg = client.fetch_package(pkg_name, force=False)
+
+        console.print(
+            Panel(
+                f"[bold green]Specification Package Installed Successfully![/bold green]\n"
+                f"[bold cyan]Package Name:[/bold cyan] {pkg.name}\n"
+                f"[bold cyan]Version:[/bold cyan] {pkg.version}\n"
+                f"[bold cyan]Manufacturer:[/bold cyan] {pkg.manufacturer or 'N/A'}\n"
+                f"[bold cyan]Installed Path:[/bold cyan] {installed_path}",
+                title="[bold green]debim Spec Package Manager[/bold green]",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Error installing specification package '{pkg_name}':[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
+@spec_app.command(name="list")
+def spec_list(
+    specs_dir: Path = typer.Option(
+        Path("specs"),
+        "--specs-dir",
+        "-s",
+        help="Directory containing installed specification packages",
+    ),
+):
+    """List installed specification packages and versions in local specs/ directory"""
+    client = SpecRegistryClient()
+    installed = client.list_installed_packages(specs_dir=specs_dir)
+
+    if not installed:
+        console.print(
+            f"[yellow]No specification packages installed in '[cyan]{specs_dir}[/cyan]'.[/yellow]"
+        )
+        console.print("[dim]Use 'debim spec add <pkg_name>' to install material specifications.[/dim]")
+        return
+
+    table = Table(
+        title=f"Installed Material Specification Packages ({specs_dir})",
+        show_header=True,
+        header_style="bold cyan",
+    )
+    table.add_column("Package Name", style="bold yellow")
+    table.add_column("Version", justify="center", style="green")
+    table.add_column("Category", style="magenta")
+    table.add_column("Manufacturer", style="white")
+    table.add_column("Path", style="dim")
+
+    for item in installed:
+        table.add_row(
+            item["name"],
+            item["version"],
+            item["category"],
+            item["manufacturer"],
+            item["path"],
+        )
+
+    console.print(table)
 
 
 if __name__ == "__main__":
