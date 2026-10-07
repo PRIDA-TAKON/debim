@@ -36,3 +36,7 @@ dist/
 kaggle_results/
 benchmark_output/
 *.sqlite
+
+# Secrets & Environment variables
+.env
+.env.*
