@@ -1,3 +1,4 @@
+import re
 """
 IFC4 Compiler & STEP Physical File Exporter for debim.
 Compiles ProjectManifest or ResolvedManifest into standard buildingSMART IFC4 file format.
@@ -1409,6 +1410,65 @@ class StepSerializer:
                     storey_refs[st_id],
                 )
 
+
+        # 8. Topological Ports & Connections (IfcDistributionPort, IfcRelConnectsPortToElement, IfcRelConnectsPorts)
+        port_entity_refs: Dict[str, str] = {}
+        element_tag_refs: Dict[str, str] = {}
+
+        # Collect element references mapping tag -> step_ref
+        for elem_resolved in getattr(resolved, "elements", []) or []:
+            tag = elem_resolved.tag
+            for line in self.lines:
+                if f"'{tag}'" in line:
+                    ref = line.split("=")[0]
+                    element_tag_refs[tag] = ref
+                    break
+
+        for port in getattr(resolved, "resolved_ports", []) or []:
+            f_dir = f".{port.flow_direction.upper()}." if port.flow_direction else ".SOURCEANDSINK."
+            port_ref = self.create_entity(
+                "IfcDistributionPort",
+                generate_ifc_guid(),
+                None,
+                port.port_id,
+                None,
+                None,
+                None,
+                None,
+                f_dir,
+                None,
+                None,
+            )
+            port_entity_refs[port.global_port_id] = port_ref
+
+            host_ref = element_tag_refs.get(port.host_tag)
+            if host_ref:
+                self.create_entity(
+                    "IfcRelConnectsPortToElement",
+                    generate_ifc_guid(),
+                    None,
+                    None,
+                    None,
+                    port_ref,
+                    host_ref,
+                )
+
+        if getattr(resolved, "topology_graph", None):
+            for p1_id, p2_id in resolved.topology_graph.connected_edges:
+                p1_ref = port_entity_refs.get(p1_id)
+                p2_ref = port_entity_refs.get(p2_id)
+                if p1_ref and p2_ref:
+                    self.create_entity(
+                        "IfcRelConnectsPorts",
+                        generate_ifc_guid(),
+                        None,
+                        None,
+                        None,
+                        p1_ref,
+                        p2_ref,
+                        None,
+                    )
+
         footer = ["ENDSEC;", "END-ISO-10303-21;"]
         return "\n".join(header + self.lines + footer) + "\n"
 
@@ -2264,6 +2324,48 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 products=products,
                 relating_structure=storey_objs[st_id],
             )
+
+
+    # 8. Topological Ports & Connections
+    ifcopenshell_port_objs: Dict[str, ifcopenshell.entity_instance] = {}
+    ifcopenshell_elem_objs: Dict[str, ifcopenshell.entity_instance] = {}
+
+    for st_prods in storey_products.values():
+        for prod in st_prods:
+            if hasattr(prod, "Name") and prod.Name:
+                ifcopenshell_elem_objs[prod.Name] = prod
+
+    for port in getattr(resolved, "resolved_ports", []) or []:
+        f_dir = port.flow_direction.upper() if port.flow_direction else "SOURCEANDSINK"
+        port_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcDistributionPort",
+            name=port.port_id,
+        )
+        port_obj.FlowDirection = f_dir
+        ifcopenshell_port_objs[port.global_port_id] = port_obj
+
+        host_obj = ifcopenshell_elem_objs.get(port.host_tag)
+        if host_obj:
+            model.create_entity(
+                "IfcRelConnectsPortToElement",
+                GlobalId=generate_ifc_guid(),
+                RelatingPort=port_obj,
+                RelatedElement=host_obj,
+            )
+
+    if getattr(resolved, "topology_graph", None):
+        for p1_id, p2_id in resolved.topology_graph.connected_edges:
+            p1_obj = ifcopenshell_port_objs.get(p1_id)
+            p2_obj = ifcopenshell_port_objs.get(p2_id)
+            if p1_obj and p2_obj:
+                model.create_entity(
+                    "IfcRelConnectsPorts",
+                    GlobalId=generate_ifc_guid(),
+                    RelatingPort=p1_obj,
+                    RelatedPort=p2_obj,
+                )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     model.write(str(output_path))

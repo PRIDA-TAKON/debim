@@ -18,6 +18,7 @@ from debim.schema import (
     IfcCovering,
     IfcCurtainWall,
     IfcCustomElement,
+    IfcDistributionPort,
     IfcDamper,
     IfcDistributionBoard,
     IfcDoor,
@@ -137,6 +138,31 @@ def _generate_orthogonal_waypoints(
         if math.dist(cleaned[-1], pt) > 1e-4:
             cleaned.append(pt)
     return cleaned
+
+
+
+class ResolvedPort(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    port_id: str
+    global_port_id: str  # host_tag:port_id
+    host_tag: str
+    element: IfcDistributionPort
+    world_position: Tuple[float, float, float]
+    flow_direction: Literal["SOURCE", "SINK", "SOURCEANDSINK"] = "SOURCEANDSINK"
+    connection_type: Optional[str] = None
+    nominal_diameter: Optional[float] = None
+
+
+class ResolvedTopologyGraph(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    ports: Dict[str, ResolvedPort] = Field(default_factory=dict)
+    adjacency: Dict[str, List[str]] = Field(default_factory=dict)
+    connected_edges: List[Tuple[str, str]] = Field(default_factory=list)
+    dead_ends: List[str] = Field(default_factory=list)
+    is_valid_continuity: bool = True
+    validation_warnings: List[str] = Field(default_factory=list)
 
 
 class ResolvedColumn(BaseModel):
@@ -1142,6 +1168,8 @@ class ResolvedManifest(BaseModel):
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
+    resolved_ports: List[ResolvedPort] = []
+    topology_graph: Optional[ResolvedTopologyGraph] = None
     elements: List[ResolvedElement] = []
 
     def get_element_by_tag(self, tag: str) -> Union[ResolvedElement, None]:
@@ -4204,6 +4232,82 @@ class SpatialResolver:
             layer=derive_default_layer(rw),
         )
 
+
+    def _resolve_element_ports(self, elem, host_pos: Tuple[float, float, float], rot_deg: float = 0.0) -> List[ResolvedPort]:
+        resolved_ports = []
+        if not hasattr(elem, "ports") or not elem.ports:
+            return resolved_ports
+
+        px, py, pz = host_pos
+        rad = math.radians(rot_deg)
+        cos_a = math.cos(rad)
+        sin_a = math.sin(rad)
+
+        for port in elem.ports:
+            ox, oy, oz = port.offset
+            wx = px + ox * cos_a - oy * sin_a
+            wy = py + ox * sin_a + oy * cos_a
+            wz = pz + oz
+            g_id = f"{elem.tag}:{port.port_id}"
+
+            r_port = ResolvedPort(
+                port_id=port.port_id,
+                global_port_id=g_id,
+                host_tag=elem.tag,
+                element=port,
+                world_position=(round(wx, 6), round(wy, 6), round(wz, 6)),
+                flow_direction=port.flow_direction,
+                connection_type=port.connection_type,
+                nominal_diameter=port.nominal_diameter,
+            )
+            resolved_ports.append(r_port)
+        return resolved_ports
+
+    def _build_topology_graph(self, all_resolved_ports: List[ResolvedPort]) -> ResolvedTopologyGraph:
+        ports_dict: Dict[str, ResolvedPort] = {p.global_port_id: p for p in all_resolved_ports}
+        adj: Dict[str, List[str]] = {p.global_port_id: [] for p in all_resolved_ports}
+        connected_edges: List[Tuple[str, str]] = []
+        warnings: List[str] = []
+
+        raw_connections = getattr(self.manifest, "connections", []) or []
+        for conn in raw_connections:
+            if not isinstance(conn, (list, tuple)) or len(conn) < 2:
+                continue
+            p1_id, p2_id = str(conn[0]), str(conn[1])
+            if p1_id not in ports_dict:
+                warnings.append(f"Connection references unknown port '{p1_id}'")
+                continue
+            if p2_id not in ports_dict:
+                warnings.append(f"Connection references unknown port '{p2_id}'")
+                continue
+
+            p1 = ports_dict[p1_id]
+            p2 = ports_dict[p2_id]
+
+            # Validate flow direction continuity
+            if p1.flow_direction == "SOURCE" and p2.flow_direction == "SOURCE":
+                warnings.append(f"Incompatible flow direction between {p1_id} (SOURCE) and {p2_id} (SOURCE)")
+            elif p1.flow_direction == "SINK" and p2.flow_direction == "SINK":
+                warnings.append(f"Incompatible flow direction between {p1_id} (SINK) and {p2_id} (SINK)")
+
+            if p2_id not in adj[p1_id]:
+                adj[p1_id].append(p2_id)
+            if p1_id not in adj[p2_id]:
+                adj[p2_id].append(p1_id)
+            connected_edges.append((p1_id, p2_id))
+
+        dead_ends = [p_id for p_id, neighbors in adj.items() if len(neighbors) == 0]
+        is_valid = len([w for w in warnings if "Incompatible" in w]) == 0
+
+        return ResolvedTopologyGraph(
+            ports=ports_dict,
+            adjacency=adj,
+            connected_edges=connected_edges,
+            dead_ends=dead_ends,
+            is_valid_continuity=is_valid,
+            validation_warnings=warnings,
+        )
+
     def resolve(self) -> ResolvedManifest:
         resolved_manifest = ResolvedManifest(manifest=self.manifest)
 
@@ -4368,6 +4472,32 @@ class SpatialResolver:
             r_proxy = self.resolve_proxy(proxy_elem)
             resolved_manifest.proxies.append(r_proxy)
             resolved_manifest.elements.append(r_proxy)
+
+        # Resolve ports for all elements
+        all_resolved_ports: List[ResolvedPort] = []
+        for elem in self.manifest.elements:
+            r_elem = resolved_manifest.get_element_by_tag(elem.tag)
+            if not r_elem:
+                continue
+            pos = (0.0, 0.0, 0.0)
+            rot_deg = 0.0
+            if hasattr(r_elem, "position"):
+                pos = r_elem.position
+            elif hasattr(r_elem, "start_point"):
+                pos = r_elem.start_point
+
+            if hasattr(r_elem, "rotation_angle"):
+                rot_deg = r_elem.rotation_angle
+            elif hasattr(r_elem, "rotation") and isinstance(r_elem.rotation, (int, float)):
+                rot_deg = float(r_elem.rotation)
+            elif hasattr(r_elem, "rotation") and isinstance(r_elem.rotation, (list, tuple)) and len(r_elem.rotation) >= 3:
+                rot_deg = float(r_elem.rotation[2])
+
+            elem_ports = self._resolve_element_ports(elem, pos, rot_deg)
+            all_resolved_ports.extend(elem_ports)
+
+        resolved_manifest.resolved_ports = all_resolved_ports
+        resolved_manifest.topology_graph = self._build_topology_graph(all_resolved_ports)
 
         return resolved_manifest
 
