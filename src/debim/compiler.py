@@ -1166,13 +1166,50 @@ class StepSerializer:
 
         for air in resolved.air_terminals:
             st_id = air.element.placement.storey
+            ptype = f".{air.predefined_type}." if air.predefined_type else ".DIFFUSER."
             elem_ref = self.create_entity(
                 "IfcAirTerminal",
+                generate_ifc_guid(),  # 1. GlobalId
+                None,                 # 2. OwnerHistory
+                air.tag,              # 3. Name
+                None,                 # 4. Description
+                None,                 # 5. ObjectType
+                None,                 # 6. ObjectPlacement
+                None,                 # 7. Representation
+                None,                 # 8. Tag
+                ptype,                # 9. PredefinedType
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for damper in resolved.dampers:
+            st_id = damper.element.placement.storey
+            ptype = f".{damper.predefined_type}." if damper.predefined_type else ".FIREDAMPER."
+            elem_ref = self.create_entity(
+                "IfcDamper",
+                generate_ifc_guid(),  # 1. GlobalId
+                None,                 # 2. OwnerHistory
+                damper.tag,           # 3. Name
+                None,                 # 4. Description
+                None,                 # 5. ObjectType
+                None,                 # 6. ObjectPlacement
+                None,                 # 7. Representation
+                None,                 # 8. Tag
+                ptype,                # 9. PredefinedType
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for controller in resolved.flow_controllers:
+            st_id = controller.element.placement.storey
+            obj_type = controller.predefined_type or "AIR_CONTROLLER"
+            elem_ref = self.create_entity(
+                "IfcFlowController",
                 generate_ifc_guid(),
                 None,
-                air.tag,
+                controller.tag,
                 None,
-                None,
+                obj_type,
                 None,
                 None,
                 None,
@@ -1884,15 +1921,43 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             storey_products[st_id].append(duct_obj)
 
     for air in resolved.air_terminals:
+        ptype = getattr(air, "predefined_type", "DIFFUSER")
         air_obj = ifcopenshell.api.run(
             "root.create_entity",
             model,
             ifc_class="IfcAirTerminal",
             name=air.tag,
+            predefined_type=ptype,
         )
         st_id = air.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(air_obj)
+
+    for damper in resolved.dampers:
+        ptype = getattr(damper, "predefined_type", "FIREDAMPER")
+        damper_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcDamper",
+            name=damper.tag,
+            predefined_type=ptype,
+        )
+        st_id = damper.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(damper_obj)
+
+    for controller in resolved.flow_controllers:
+        controller_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcFlowController",
+            name=controller.tag,
+        )
+        if controller.predefined_type:
+            controller_obj.ObjectType = controller.predefined_type
+        st_id = controller.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(controller_obj)
 
     for eq in resolved.unitary_equipments:
         eq_obj = ifcopenshell.api.run(

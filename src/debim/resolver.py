@@ -17,10 +17,12 @@ from debim.schema import (
     IfcCovering,
     IfcCurtainWall,
     IfcCustomElement,
+    IfcDamper,
     IfcDistributionBoard,
     IfcElectricDistributionBoard,
     IfcDoor,
     IfcDuctSegment,
+    IfcFlowController,
     IfcFooting,
     IfcLightFixture,
     IfcOutlet,
@@ -56,6 +58,8 @@ TerminalElement = Union[
     IfcOutlet,
     IfcUnitaryEquipment,
     IfcAirTerminal,
+    IfcDamper,
+    IfcFlowController,
 ]
 
 
@@ -679,12 +683,26 @@ DEFAULT_TERMINAL_DIMENSIONS: Dict[str, Tuple[float, float, float]] = {
     "EXHAUST_FAN_CEILING": (0.30, 0.30, 0.20),
     "EXHAUST_FAN_WALL": (0.30, 0.20, 0.30),
     "KITCHEN_HOOD": (0.90, 0.55, 0.50),
+    "DIFFUSER": (0.60, 0.60, 0.10),
+    "GRILLE": (0.60, 0.60, 0.05),
+    "REGISTER": (0.40, 0.20, 0.05),
+    "LOUVRE": (0.80, 0.60, 0.10),
     "SUPPLY_DIFFUSER": (0.60, 0.60, 0.10),
     "RETURN_GRILLE": (0.60, 0.60, 0.05),
     "AC_INDOOR_WALL": (0.85, 0.22, 0.30),
     "AC_INDOOR_CASSETTE": (0.84, 0.84, 0.28),
     "AC_INDOOR_CONCEALED": (0.90, 0.60, 0.30),
     "AC_OUTDOOR_CONDENSER": (0.85, 0.35, 0.65),
+    # Dampers & Flow Controllers
+    "FIRE_DAMPER": (0.40, 0.40, 0.30),
+    "FIREDAMPER": (0.40, 0.40, 0.30),
+    "SMOKE_DAMPER": (0.40, 0.40, 0.35),
+    "SMOKEDAMPER": (0.40, 0.40, 0.35),
+    "VOLUME_CONTROL_DAMPER": (0.30, 0.30, 0.25),
+    "CONTROLDAMPER": (0.30, 0.30, 0.25),
+    "GRAVITY_DAMPER": (0.30, 0.30, 0.20),
+    "AIR_CONTROLLER": (0.80, 0.50, 0.40),
+    "PRESSURE_CONTROLLER": (0.60, 0.40, 0.35),
 }
 
 DEFAULT_TERMINAL_COLORS: Dict[str, str] = {
@@ -723,15 +741,29 @@ DEFAULT_TERMINAL_COLORS: Dict[str, str] = {
     "WATERPROOF": "#CBD5E1",
     "HIGH_POWER": "#94A3B8",
     # HVAC Terminals & Equipment
-    "EXHAUST_FAN_CEILING": "#F1F5F9",
-    "EXHAUST_FAN_WALL": "#E2E8F0",
+    "EXHAUST_FAN_CEILING": "#D946EF",
+    "EXHAUST_FAN_WALL": "#E11D48",
     "KITCHEN_HOOD": "#94A3B8",
-    "SUPPLY_DIFFUSER": "#F8FAFC",
-    "RETURN_GRILLE": "#E2E8F0",
+    "DIFFUSER": "#0284C7",
+    "GRILLE": "#E11D48",
+    "REGISTER": "#38BDF8",
+    "LOUVRE": "#64748B",
+    "SUPPLY_DIFFUSER": "#0284C7",
+    "RETURN_GRILLE": "#E11D48",
     "AC_INDOOR_WALL": "#FFFFFF",
     "AC_INDOOR_CASSETTE": "#F8FAFC",
     "AC_INDOOR_CONCEALED": "#64748B",
     "AC_OUTDOOR_CONDENSER": "#CBD5E1",
+    # Dampers & Flow Controllers
+    "FIRE_DAMPER": "#EF4444",
+    "FIREDAMPER": "#EF4444",
+    "SMOKE_DAMPER": "#F97316",
+    "SMOKEDAMPER": "#F97316",
+    "VOLUME_CONTROL_DAMPER": "#64748B",
+    "CONTROLDAMPER": "#64748B",
+    "GRAVITY_DAMPER": "#94A3B8",
+    "AIR_CONTROLLER": "#475569",
+    "PRESSURE_CONTROLLER": "#334155",
 }
 
 
@@ -890,13 +922,58 @@ class ResolvedAirTerminal(BaseModel):
     tag: str
     element: IfcAirTerminal
     terminal_type: str
+    predefined_type: str = "DIFFUSER"
     position: Tuple[float, float, float]
     rotation: float = 0.0
     rotation_angle: float = 0.0
     dimensions: Tuple[float, float, float]
     color: str
     flow_rate_cfm: Optional[float] = None
+    air_flow_rate_m3h: Optional[float] = None
+    face_area_m2: Optional[float] = None
+    neck_width: Optional[float] = None
+    neck_depth: Optional[float] = None
+    neck_diameter: Optional[float] = None
+    throw_distance_m: Optional[float] = None
     layer: str = "mep/hvac/terminals"
+
+
+class ResolvedDamper(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcDamper
+    damper_type: str
+    predefined_type: str = "FIREDAMPER"
+    position: Tuple[float, float, float]
+    rotation: float = 0.0
+    rotation_angle: float = 0.0
+    dimensions: Tuple[float, float, float]
+    color: str
+    duct_width: Optional[float] = None
+    duct_depth: Optional[float] = None
+    duct_diameter: Optional[float] = None
+    actuator_type: str = "MANUAL"
+    layer: str = "mep/hvac/dampers"
+
+
+class ResolvedFlowController(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcFlowController
+    controller_type: str
+    predefined_type: str = "AIR_CONTROLLER"
+    position: Tuple[float, float, float]
+    rotation: float = 0.0
+    rotation_angle: float = 0.0
+    dimensions: Tuple[float, float, float]
+    color: str
+    air_flow_rate_m3h: Optional[float] = None
+    duct_width: Optional[float] = None
+    duct_depth: Optional[float] = None
+    duct_diameter: Optional[float] = None
+    layer: str = "mep/hvac/equipment"
 
 
 class ResolvedUnitaryEquipment(BaseModel):
@@ -938,6 +1015,8 @@ ResolvedElement = Union[
     ResolvedSwitchingDevice,
     ResolvedOutlet,
     ResolvedAirTerminal,
+    ResolvedDamper,
+    ResolvedFlowController,
     ResolvedUnitaryEquipment,
     ResolvedCustomElement,
     ResolvedTerminal,
@@ -975,6 +1054,8 @@ class ResolvedManifest(BaseModel):
     switches: List[ResolvedSwitchingDevice] = []
     outlets: List[ResolvedOutlet] = []
     air_terminals: List[ResolvedAirTerminal] = []
+    dampers: List[ResolvedDamper] = []
+    flow_controllers: List[ResolvedFlowController] = []
     unitary_equipments: List[ResolvedUnitaryEquipment] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
@@ -3700,20 +3781,81 @@ class SpatialResolver:
             if term.dimensions
             else (term.width, term.depth, term.height)
             if (term.width or term.depth or term.height)
-            else DEFAULT_TERMINAL_DIMENSIONS.get(term.terminal_type, (0.30, 0.30, 0.20))
+            else DEFAULT_TERMINAL_DIMENSIONS.get(term.terminal_type, (0.60, 0.60, 0.10))
         )
-        color = DEFAULT_TERMINAL_COLORS.get(term.terminal_type, "#F1F5F9")
+        color = DEFAULT_TERMINAL_COLORS.get(term.terminal_type, "#0284C7")
         return ResolvedAirTerminal(
             tag=term.tag,
             element=term,
             terminal_type=term.terminal_type,
+            predefined_type=term.predefined_type or "DIFFUSER",
             position=r_term.position,
             rotation=r_term.rotation_angle,
             rotation_angle=r_term.rotation_angle,
             dimensions=dims,
             color=color,
             flow_rate_cfm=term.flow_rate_cfm,
+            air_flow_rate_m3h=term.air_flow_rate_m3h,
+            face_area_m2=term.face_area_m2 or (dims[0] * dims[1]),
+            neck_width=term.neck_width,
+            neck_depth=term.neck_depth,
+            neck_diameter=term.neck_diameter,
+            throw_distance_m=term.throw_distance_m,
             layer=derive_default_layer(term),
+        )
+
+    def resolve_damper(self, damper: IfcDamper) -> ResolvedDamper:
+        r_term = self.resolve_terminal(damper)
+        dims = (
+            (damper.dimensions.width, damper.dimensions.depth, damper.dimensions.height)
+            if damper.dimensions
+            else (damper.width, damper.depth, damper.height)
+            if (damper.width or damper.depth or damper.height)
+            else DEFAULT_TERMINAL_DIMENSIONS.get(damper.damper_type, (0.40, 0.40, 0.25))
+        )
+        color = DEFAULT_TERMINAL_COLORS.get(damper.damper_type, "#64748B")
+        return ResolvedDamper(
+            tag=damper.tag,
+            element=damper,
+            damper_type=damper.damper_type,
+            predefined_type=damper.predefined_type or "FIREDAMPER",
+            position=r_term.position,
+            rotation=r_term.rotation_angle,
+            rotation_angle=r_term.rotation_angle,
+            dimensions=dims,
+            color=color,
+            duct_width=damper.duct_width or dims[0],
+            duct_depth=damper.duct_depth or dims[1],
+            duct_diameter=damper.duct_diameter,
+            actuator_type=damper.actuator_type,
+            layer=derive_default_layer(damper),
+        )
+
+    def resolve_flow_controller(self, controller: IfcFlowController) -> ResolvedFlowController:
+        r_term = self.resolve_terminal(controller)
+        dims = (
+            (controller.dimensions.width, controller.dimensions.depth, controller.dimensions.height)
+            if controller.dimensions
+            else (controller.width, controller.depth, controller.height)
+            if (controller.width or controller.depth or controller.height)
+            else DEFAULT_TERMINAL_DIMENSIONS.get(controller.controller_type, (0.80, 0.50, 0.40))
+        )
+        color = DEFAULT_TERMINAL_COLORS.get(controller.controller_type, "#475569")
+        return ResolvedFlowController(
+            tag=controller.tag,
+            element=controller,
+            controller_type=controller.controller_type,
+            predefined_type=controller.predefined_type or "AIR_CONTROLLER",
+            position=r_term.position,
+            rotation=r_term.rotation_angle,
+            rotation_angle=r_term.rotation_angle,
+            dimensions=dims,
+            color=color,
+            air_flow_rate_m3h=controller.air_flow_rate_m3h,
+            duct_width=controller.duct_width or dims[0],
+            duct_depth=controller.duct_depth or dims[1],
+            duct_diameter=controller.duct_diameter,
+            layer=derive_default_layer(controller),
         )
 
     def resolve_unitary_equipment(self, equip: IfcUnitaryEquipment) -> ResolvedUnitaryEquipment:
@@ -3862,6 +4004,16 @@ class SpatialResolver:
                 r_air = self.resolve_air_terminal(elem)
                 resolved_manifest.air_terminals.append(r_air)
                 resolved_manifest.elements.append(r_air)
+                resolved_manifest.terminals.append(self.resolve_terminal(elem))
+            elif isinstance(elem, IfcDamper):
+                r_damper = self.resolve_damper(elem)
+                resolved_manifest.dampers.append(r_damper)
+                resolved_manifest.elements.append(r_damper)
+                resolved_manifest.terminals.append(self.resolve_terminal(elem))
+            elif isinstance(elem, IfcFlowController):
+                r_fc = self.resolve_flow_controller(elem)
+                resolved_manifest.flow_controllers.append(r_fc)
+                resolved_manifest.elements.append(r_fc)
                 resolved_manifest.terminals.append(self.resolve_terminal(elem))
             elif isinstance(elem, IfcUnitaryEquipment):
                 r_eq = self.resolve_unitary_equipment(elem)
