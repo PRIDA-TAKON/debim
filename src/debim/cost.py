@@ -952,6 +952,11 @@ def estimate_cost(
 
         if matched_code:
             quantities_by_code[matched_code] = quantities_by_code.get(matched_code, 0.0) + float(eqto.mep.count)
+        # Check direct match for element_class or tag in catalog.items
+        if eqto.element_class in catalog.items:
+            quantities_by_code[eqto.element_class] = quantities_by_code.get(eqto.element_class, 0.0) + (float(eqto.mep.count) if eqto.mep else 1.0)
+        elif eqto.tag in catalog.items:
+            quantities_by_code[eqto.tag] = quantities_by_code.get(eqto.tag, 0.0) + (float(eqto.mep.count) if eqto.mep else 1.0)
 
     # 8. Map Earth excavation & Earthworks cut/fill
     if qto.total_excavation_volume > 0:

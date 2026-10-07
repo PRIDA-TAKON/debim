@@ -165,7 +165,7 @@ my_project/
 ### 🟣 Phase 4: Universal Proxy & Long-Tail Engine (~700 Entities)
 > **เป้าหมาย:** รองรับ Entity นอกสายหลักอีกกว่า 700 ชนิดใน buildingSMART โดยไม่ต้องเขียนโค้ดมือทีละตัว
 
-- [ ] **Task 4.1:** `feat: Universal Declarative Proxy Engine for Any IFC Entity`
+- [x] **Task 4.1:** `feat: Universal Declarative Proxy Engine for Any IFC Entity` *(เสร็จสิ้น: Issue #85, PR #88)*
   - **แนวคิด:** แทนที่จะเขียนคลาสแยกสำหรับ `IfcBurner`, `IfcChiller`, `IfcInterceptor`, ฯลฯ ใช้โมเดลสากล:
     ```yaml
     proxies:
