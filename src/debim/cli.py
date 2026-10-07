@@ -1057,6 +1057,105 @@ def scaffold_element_cmd(
             raise typer.Exit(code=1)
 
 
+spec_app = typer.Typer(
+    help="Declarative material specification management & discrepancy auditing commands",
+    add_completion=False,
+)
+app.add_typer(spec_app, name="spec")
+
+
+@spec_app.command(name="audit")
+def spec_audit_cmd(
+    manifest: Path = typer.Option(
+        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest (project.yaml)"
+    ),
+    specs: Optional[Path] = typer.Option(
+        None, "--specs", "-s", help="Path to material specifications manifest file or directory"
+    ),
+    strict: bool = typer.Option(
+        False, "--strict/--no-strict", help="Exit with code 1 if discrepancies exist"
+    ),
+):
+    """Cross-reference project manifest elements with material specification packages to audit discrepancies."""
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        raise typer.Exit(code=1)
+
+    console.print(f"[bold blue]Auditing Specifications for:[/bold blue] {manifest}")
+    if specs:
+        console.print(f"[bold blue]Using Specs Path:[/bold blue] {specs}")
+
+    try:
+        from debim.spec import audit_project_specs, load_spec_manifest
+
+        specs_manifest_obj = load_spec_manifest(specs) if specs else None
+        res = audit_project_specs(manifest, specs_manifest_obj)
+
+        table = Table(
+            title="Material Specification Discrepancy Audit",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        table.add_column("Material / Spec ID", style="bold white")
+        table.add_column("Status", justify="center")
+        table.add_column("Referenced Element Tags", style="dim")
+
+        # Process missing specs
+        for mat_id in res.missing_specs:
+            tags = ", ".join(res.element_material_map.get(mat_id, [])) or "(manifest declared)"
+            table.add_row(
+                mat_id,
+                "[bold red]MISSING SPEC[/bold red]",
+                tags,
+            )
+
+        # Process unused specs
+        for spec_id in res.unused_specs:
+            table.add_row(
+                spec_id,
+                "[bold yellow]UNUSED / REDUNDANT[/bold yellow]",
+                "(none)",
+            )
+
+        # Process compliant specs
+        compliant_specs = set(res.referenced_materials).intersection(set(res.spec_ids))
+        for mat_id in sorted(compliant_specs):
+            tags = ", ".join(res.element_material_map.get(mat_id, [])) or "(manifest declared)"
+            table.add_row(
+                mat_id,
+                "[bold green]MATCHED / OK[/bold green]",
+                tags,
+            )
+
+        console.print(table)
+
+        summary_text = (
+            f"[bold]Referenced Materials:[/bold] {len(res.referenced_materials)}\n"
+            f"[bold]Specification Packages:[/bold] {len(res.spec_ids)}\n"
+            f"[bold red]Missing Specs:[/bold red] {len(res.missing_specs)}\n"
+            f"[bold yellow]Unused / Redundant Specs:[/bold yellow] {len(res.unused_specs)}\n"
+            f"[bold green]Compliant Specs:[/bold green] {len(compliant_specs)}"
+        )
+
+        title_style = "bold green" if res.is_compliant else "bold red"
+        status_label = "COMPLIANT PASS" if res.is_compliant else "DISCREPANCIES DETECTED"
+        console.print(
+            Panel(
+                summary_text,
+                title=f"[{title_style}]Audit Summary: {status_label}[/{title_style}]",
+            )
+        )
+
+        if strict and not res.is_compliant:
+            raise typer.Exit(code=1)
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        console.print(f"[bold red]Specification Audit Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def mcp():
     """Start the Model Context Protocol (MCP) server for AI coding agents."""
