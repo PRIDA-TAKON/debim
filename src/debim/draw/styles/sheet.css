@@ -19,8 +19,16 @@
 /* Root SVG & Font Settings */
 svg {
   font-family: 'Sarabun', 'Prompt', 'TH Sarabun New', sans-serif;
-  background-color: #ffffff;
   text-rendering: optimizeLegibility;
+}
+
+svg:not(#measurement-layer) {
+  background-color: #ffffff;
+}
+
+#measurement-layer {
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* Lineweights */

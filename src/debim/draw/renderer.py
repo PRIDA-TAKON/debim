@@ -261,9 +261,9 @@ class SheetRenderer:
             '<?xml version="1.0" encoding="UTF-8"?>',
             f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {paper_w:.1f} {paper_h:.1f}" width="{paper_w:.1f}mm" height="{paper_h:.1f}mm">',
             '  <defs>',
-            '    <style type="text/css">',
+            '    <style type="text/css"><![CDATA[',
             f'{embedded_css}',
-            '    </style>',
+            '    ]]></style>',
             '  </defs>',
             '  <!-- Background -->',
             f'  <rect x="0" y="0" width="{paper_w:.1f}" height="{paper_h:.1f}" fill="#ffffff" />',
@@ -549,8 +549,9 @@ class SheetRenderer:
                 f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">PROJECT / โครงการ</text>'
             )
             curr_y += 5.0
+            display_proj = (proj_name[:30] + "...") if len(proj_name) > 32 else proj_name
             svg_lines.append(
-                f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-title">{proj_name}</text>'
+                f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-title">{display_proj}</text>'
             )
             curr_y += 7.0
             svg_lines.append(
