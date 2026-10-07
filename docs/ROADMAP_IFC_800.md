@@ -134,7 +134,7 @@ my_project/
 - [x] **Task 2.1 (Circulation):** `feat: Support IfcStair, IfcStairFlight, IfcRamp, and IfcRailing` *(เสร็จสิ้น: Issue #73, PR #76)*
   - บันไดตรง, บันไดวน, ชานพัก, ทางลาดผู้พิการ, และราวกันตก
   - QTO: ปริมาตรคอนกรีตบันได, พื้นผิวไม้/กระเบื้องลูกตั้ง-ลูกนอน, ความยาวราวกันตก
-- [ ] **Task 2.2 (Enclosure):** `feat: Support IfcRoof, IfcCurtainWall, and IfcPlate`
+- [x] **Task 2.2 (Enclosure):** `feat: Support IfcRoof, IfcCurtainWall, and IfcPlate` *(เสร็จสิ้น: Issue #80, PR #82)*
   - หลังคาจั่ว, หลังคาปั้นหยา, ผนังกระจกเคอร์เทนวอลล์, และแผ่นปิดผิว
   - QTO: พื้นที่หลังคาลาดเอียง, จำนวนแผ่นกระจก, โครงคร่าวอลูมิเนียม
 - [x] **Task 2.3 (Plumbing & Sanitation):** `feat: Support IfcSanitaryTerminal and IfcWasteTerminal` *(เสร็จสิ้น: Issue #74, PR #78)*

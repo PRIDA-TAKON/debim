@@ -12,9 +12,11 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from debim.resolver import (
     ResolvedBeam,
     ResolvedColumn,
+    ResolvedCurtainWall,
     ResolvedCustomElement,
     ResolvedDoor,
     ResolvedManifest,
+    ResolvedPlate,
     ResolvedRevolvedArea,
     ResolvedSweptDisk,
     ResolvedTerminal,
@@ -858,6 +860,44 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        # 5.1 Curtain Walls
+        for cw in resolved.curtain_walls:
+            st_id = cw.element.placement.storey
+            raw_pred_type = cw.element.predefined_type
+            pred_type = f".{raw_pred_type.upper()}." if raw_pred_type else None
+            elem_ref = self.create_entity(
+                "IfcCurtainWall",
+                generate_ifc_guid(),
+                None,
+                cw.tag,
+                None,
+                None,
+                None,
+                None,
+                pred_type,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        # 5.2 Plates
+        for plate in resolved.plates:
+            st_id = plate.element.placement.storey
+            raw_pred_type = plate.element.predefined_type
+            pred_type = f".{raw_pred_type.upper()}." if raw_pred_type else None
+            elem_ref = self.create_entity(
+                "IfcPlate",
+                generate_ifc_guid(),
+                None,
+                plate.tag,
+                None,
+                None,
+                None,
+                None,
+                pred_type,
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
         # 6. Roofs & Roof Openings / Skylights
         for roof in resolved.roofs:
             st_id = roof.element.placement.storey
@@ -1669,6 +1709,34 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                     product=custom_obj,
                     representation=rep,
                 )
+
+    # 5.1 Curtain Walls
+    for cw in resolved.curtain_walls:
+        pred_type = cw.element.predefined_type if cw.element.predefined_type in ("POST_AND_BEAM", "UNITIZED", "USERDEFINED") else "NOTDEFINED"
+        cw_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcCurtainWall",
+            name=cw.tag,
+            predefined_type=pred_type,
+        )
+        st_id = cw.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(cw_obj)
+
+    # 5.2 Plates
+    for plate in resolved.plates:
+        pred_type = plate.element.predefined_type if plate.element.predefined_type in ("CURTAIN_PANEL", "SHEET", "FLANGE_PLATE", "BASE_PLATE", "USERDEFINED") else "NOTDEFINED"
+        plate_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcPlate",
+            name=plate.tag,
+            predefined_type=pred_type,
+        )
+        st_id = plate.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(plate_obj)
 
     # 6. Roofs & Roof Openings / Skylights
     for roof in resolved.roofs:
