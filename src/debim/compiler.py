@@ -387,6 +387,7 @@ class StepSerializer:
 
         # Elements containment buckets
         storey_elements: Dict[str, List[str]] = {s_id: [] for s_id in storey_refs}
+        element_tag_refs: Dict[str, str] = {}
 
         # 0. Footings & Piles
         for footing in resolved.footings:
@@ -402,6 +403,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[footing.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -417,6 +419,7 @@ class StepSerializer:
                     None,
                     None,
                 )
+                element_tag_refs[pile.tag] = p_ref
                 if st_id in storey_elements:
                     storey_elements[st_id].append(p_ref)
 
@@ -434,6 +437,7 @@ class StepSerializer:
                 None,
                 ".USERDEFINED.",
             )
+            element_tag_refs[cut.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -450,6 +454,7 @@ class StepSerializer:
                 None,
                 ".USERDEFINED.",
             )
+            element_tag_refs[align.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -466,6 +471,7 @@ class StepSerializer:
                 None,
                 f".{road.predefined_type.upper()}.",
             )
+            element_tag_refs[road.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -482,6 +488,7 @@ class StepSerializer:
                 None,
                 f".{bridge.predefined_type.upper()}.",
             )
+            element_tag_refs[bridge.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -498,6 +505,7 @@ class StepSerializer:
                 None,
                 ".USERDEFINED.",
             )
+            element_tag_refs[fill.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -514,6 +522,7 @@ class StepSerializer:
                 None,
                 ".RETAINING.",
             )
+            element_tag_refs[rw.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -536,6 +545,7 @@ class StepSerializer:
                 None,
                 pred_type,
             )
+            element_tag_refs[term.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -587,6 +597,7 @@ class StepSerializer:
                 prod_shape_ref,
                 None,
             )
+            element_tag_refs[col.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -638,6 +649,7 @@ class StepSerializer:
                 prod_shape_ref,
                 None,
             )
+            element_tag_refs[beam.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -655,6 +667,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[slab.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -673,6 +686,7 @@ class StepSerializer:
                 None,
                 ptype,
             )
+            element_tag_refs[cov.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -690,6 +704,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[stair.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -710,6 +725,7 @@ class StepSerializer:
                 float(flight.riser),
                 float(flight.tread),
             )
+            element_tag_refs[flight.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -726,6 +742,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[ramp.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -743,6 +760,7 @@ class StepSerializer:
                 None,
                 f".{ptype}.",
             )
+            element_tag_refs[railing.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -760,6 +778,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[wall.tag] = wall_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(wall_ref)
 
@@ -779,6 +798,7 @@ class StepSerializer:
                         float(child.height),
                         float(child.width),
                     )
+                    element_tag_refs[child.tag] = door_ref
                     opening_ref = self.create_entity(
                         "IfcOpeningElement",
                         generate_ifc_guid(),
@@ -827,6 +847,7 @@ class StepSerializer:
                         float(child.height),
                         float(child.width),
                     )
+                    element_tag_refs[child.tag] = win_ref
                     opening_ref = self.create_entity(
                         "IfcOpeningElement",
                         generate_ifc_guid(),
@@ -956,6 +977,7 @@ class StepSerializer:
                 prod_shape_ref,
                 None,
             )
+            element_tag_refs[custom.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -975,6 +997,7 @@ class StepSerializer:
                 None,
                 pred_type,
             )
+            element_tag_refs[cw.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -994,6 +1017,7 @@ class StepSerializer:
                 None,
                 pred_type,
             )
+            element_tag_refs[plate.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1011,6 +1035,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[roof.tag] = roof_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(roof_ref)
 
@@ -1029,6 +1054,7 @@ class StepSerializer:
                         float(child.height),
                         float(child.width),
                     )
+                    element_tag_refs[child.tag] = door_ref
                     opening_ref = self.create_entity(
                         "IfcOpeningElement",
                         generate_ifc_guid(),
@@ -1075,6 +1101,7 @@ class StepSerializer:
                         float(child.height),
                         float(child.width),
                     )
+                    element_tag_refs[child.tag] = win_ref
                     opening_ref = self.create_entity(
                         "IfcOpeningElement",
                         generate_ifc_guid(),
@@ -1121,6 +1148,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[pipe.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1137,6 +1165,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[conduit.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1153,6 +1182,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[term.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1177,6 +1207,7 @@ class StepSerializer:
                 None,
                 ptype,
             )
+            element_tag_refs[board.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1200,6 +1231,7 @@ class StepSerializer:
                 None,
                 ptype,
             )
+            element_tag_refs[light.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1221,6 +1253,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[sw.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1244,6 +1277,7 @@ class StepSerializer:
                 None,
                 ptype,
             )
+            element_tag_refs[out.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1260,6 +1294,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[duct.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1278,6 +1313,7 @@ class StepSerializer:
                 None,                 # 8. Tag
                 ptype,                # 9. PredefinedType
             )
+            element_tag_refs[air.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1296,6 +1332,7 @@ class StepSerializer:
                 None,                 # 8. Tag
                 ptype,                # 9. PredefinedType
             )
+            element_tag_refs[damper.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1313,6 +1350,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[controller.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1329,6 +1367,7 @@ class StepSerializer:
                 None,
                 None,
             )
+            element_tag_refs[eq.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -1411,6 +1450,7 @@ class StepSerializer:
                     None,
                 )
 
+            element_tag_refs[proxy.tag] = proxy_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(proxy_ref)
 
@@ -1463,16 +1503,6 @@ class StepSerializer:
 
         # 8. Topological Ports & Connections (IfcDistributionPort, IfcRelConnectsPortToElement, IfcRelConnectsPorts)
         port_entity_refs: Dict[str, str] = {}
-        element_tag_refs: Dict[str, str] = {}
-
-        # Collect element references mapping tag -> step_ref
-        for elem_resolved in getattr(resolved, "elements", []) or []:
-            tag = elem_resolved.tag
-            for line in self.lines:
-                if f"'{tag}'" in line:
-                    ref = line.split("=")[0]
-                    element_tag_refs[tag] = ref
-                    break
 
         for port in getattr(resolved, "resolved_ports", []) or []:
             f_dir = f".{port.flow_direction.upper()}." if port.flow_direction else ".SOURCEANDSINK."
