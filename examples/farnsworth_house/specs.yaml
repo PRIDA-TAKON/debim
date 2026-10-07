@@ -1,0 +1,97 @@
+specifications:
+  - id: STEEL_WHITE
+    name: "เหล็กรูปพรรณโครงสร้างพ่นสีขาวด้าน (White Painted Structural Steel H-Flange)"
+    manufacturer: "Mies Standard Steel Fabricators / SYS Thailand"
+    category: "structural_steel"
+    masterformat: "05 12 00 - Structural Steel Framing"
+    standards:
+      tis: "มอก. 1227-2558 (เหล็กโครงสร้างรูปพรรณรีดร้อน)"
+      astm: "ASTM A36 / A992"
+    warranty_years: 25
+    general_properties:
+      - "เหล็กโครงสร้างรูปพรรณหน้าตัด H-Flange (Wide Flange) ขนาดมาตรฐานตามแบบวิศวกรรม"
+      - "ผ่านการทำความสะอาดพื้นผิวขจัดสนิมระดับ Sa 2.5 (Near-White Blast Cleaning)"
+      - "พ่นเคลือบสีรองพื้นอีพ็อกซี่กันสนิมความหนาฟิล์มแห้งไม่น้อยกว่า 75 ไมครอน"
+      - "พ่นสีทับหน้าโพลียูรีเทนสีขาวกึ่งเงา (RAL 9010 Pure White) ทนรังสี UV สูง"
+    surface_preparation:
+      - "ทำความสะอาดรอยเชื่อม เจียรแต่งขอบคมและสะเก็ดเชื่อมให้เรียบเนียนระดับสถาปัตยกรรม (AESS 4)"
+      - "ตรวจสอบพื้นผิวให้ปราศจากคราบไขมัน ฝุ่นผง และความชื้นก่อนลงสีรองพื้น"
+    application_system:
+      - "ทารองพื้นกันสนิม Inorganic Zinc Rich Primer หนา 75 ไมครอน จำนวน 1 เที่ยว"
+      - "ทาสีชั้นกลาง Epoxy Intermediate Coat หนา 100 ไมครอน จำนวน 1 เที่ยว"
+      - "ทาสีทับหน้า Aliphatic Polyurethane Topcoat หนา 50 ไมครอน จำนวน 2 เที่ยว"
+
+  - id: TRAVERTINE
+    name: "หินทราเวอร์ทีนธรรมชาติจากอิตาลี (Italian Roman Travertine Slabs)"
+    manufacturer: "Tivoli Stone Quarries / Imported Natural Stone"
+    category: "masonry"
+    masterformat: "04 42 00 - Exterior Stone Cladding & Pavers"
+    standards:
+      astm: "ASTM C1527 (Standard Specification for Travertine Dimension Stone)"
+    warranty_years: 30
+    general_properties:
+      - "แผ่นหินทราเวอร์ทีนแท้ คัดสรรลวดลายและโทนสีครีมสม่ำเสมอ (Light Vein Cut)"
+      - "ความหนาแผ่นหิน 30 มม. สำหรับปูพื้นภายนอกและระเบียงเปิดโล่ง"
+      - "ผิวสัมผัสขัดเรียบไม่เปิดรูพรุน (Honed and Filled) ป้องกันการสะสมของคราบน้ำ"
+    surface_preparation:
+      - "เทพื้นคอนกรีตรองรับให้ได้ระดับและสโลประบายน้ำ 1:100 ทิ้งไว้แห้งสนิทอย่างน้อย 28 วัน"
+      - "ทาและพ่นน้ำยาประสานคอนกรีตกันความชื้นด้านล่างแผ่นหิน"
+    application_system:
+      - "ติดตั้งด้วยปูนกาวซีเมนต์เกรดสูงกันคราบขาว (White Polymer Modified Mortar)"
+      - "เว้นร่องรอยต่อ 3 มม. ยาแนวด้วยซิลิโคนชนิดไม่เกิดคราบน้ำมัน (Non-Staining Neutral Silicone)"
+
+  - id: GLASS_CLEAR
+    name: "กระจกนิรภัยใสพิเศษบานใหญ่ (Ultra-Clear Tempered Architectural Glass)"
+    manufacturer: "Guardian Glass / AGC Glass Thailand"
+    category: "glazing"
+    masterformat: "08 80 00 - Glazing"
+    standards:
+      tis: "มอก. 965-2560 (กระจกโฟลต)"
+      astm: "ASTM C1048 (Heat-Treated Flat Glass)"
+    warranty_years: 10
+    general_properties:
+      - "กระจกนิรภัยเทมเปอร์ใสพิเศษ Low-Iron Extra Clear ความหนา 12 มม."
+      - "มีค่าการส่องผ่านของแสงธรรมชาติ (Visible Light Transmittance) ไม่น้อยกว่า 89%"
+      - "ตัด เจียรริมขอบมน (Flat Polished Edge) ด้วยเครื่องจักรอัตโนมัติก่อนเข้าเตาอบเทมเปอร์"
+    surface_preparation:
+      - "ตรวจเช็คขนาดกรอบเหล็กโครงสร้างให้ได้แนวดิ่งและได้ฉาก คลาดเคลื่อนไม่เกิน +/- 1.5 มม."
+      - "ติดตั้งแผ่นรองรับน้ำหนักกระจก (Setting Blocks) ชนิด Neoprene ยางความแข็ง 85 Shore A"
+    application_system:
+      - "ยึดกระจกเข้ากับกรอบเหล็กด้วยซิลิโคนโครงสร้าง Structural Glazing Sealant"
+      - "ปิดรอยต่อกันน้ำภายนอกด้วย Weatherproofing Silicone Sealant สีดำด้าน"
+
+  - id: TEAK_CORE
+    name: "ไม้สักทองคัดพิเศษบุแกนกลางอาคาร (Natural Golden Teak Architectural Paneling)"
+    manufacturer: "Siam Teak Timber / Forest Stewardship Council (FSC)"
+    category: "wood_interior"
+    masterformat: "06 42 00 - Wood Paneling"
+    standards:
+      tis: "มอก. 267-2521 (ไม้สักแปรรูป)"
+    warranty_years: 15
+    general_properties:
+      - "ไม้สักทองอบแห้งควบคุมความชื้น (Kiln-Dried) ความชื้นสัมพัทธ์ไม่เกิน 10-12%"
+      - "คัดลายไม้ลายเส้นตรง (Quarter Sawn) ปราศจากกระพี้และตามด"
+      - "เคลือบผิวด้วยสารเคลือบด้านโพลียูรีเทนสูตรน้ำ ชนิดรักษาสีธรรมชาติของเนื้อไม้"
+    surface_preparation:
+      - "ติดตั้งโครงคร่าวเหล็กชุบสังกะสีหรือไม้อัดกันชื้นความหนา 15 มม. ได้ระนาบเรียบ"
+    application_system:
+      - "ยึดแผ่นไม้ด้วยตะปูลมและกาวตะปูแรงยึดเกาะสูงแบบซ่อนรอยต่อ (Concealed Fastening)"
+      - "ขัดลูบผิวด้วยกระดาษทรายเบอร์ 400 และเคลือบน้ำมันธรรมชาติ (Natural Hardwax Oil) 2 เที่ยว"
+
+  - id: PLASTER_WHITE
+    name: "ปูนฉาบฝ้าเพดานเรียบสีขาวบริสุทธิ์ (Smooth White Architectural Plaster Ceiling)"
+    manufacturer: "Gyproc Saint-Gobain / SCG Building Materials"
+    category: "finishes"
+    masterformat: "09 23 00 - Gypsum Plastering"
+    standards:
+      tis: "มอก. 219-2552 (ยิปซัมพลาสเตอร์)"
+      astm: "ASTM C842"
+    warranty_years: 10
+    general_properties:
+      - "ระบบฝ้าเพดานฉาบเรียบไร้รอยต่อชนิดทนชื้น ทนต่อการแตกร้าวและการบิดงอ"
+      - "ผิวสำเร็จเนียนเรียบเป็นพิเศษ (Smooth Level 5 Finish)"
+    surface_preparation:
+      - "ตรวจระดับโครงฝ้าซีลายน์ระยะห่างไม่เกิน 40 ซม. พร้อมลวดแขวนปรับระดับ"
+    application_system:
+      - "ติดเทปผ้าปิดรอยต่อยิปซัม ฉาบทับด้วยปูนฉาบรอยต่อ 3 เที่ยว"
+      - "ทาสีรองพื้นปูนเก่าและทาสีน้ำอะคริลิกด้านสีขาวซูเปอร์ไวท์สำหรับฝ้าเพดาน 2 เที่ยว"
