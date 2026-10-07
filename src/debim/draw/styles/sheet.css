@@ -1,0 +1,185 @@
+/* Standard Architectural Sheet CSS with CSS Paged Media & Thai Fonts */
+
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+/* CSS Paged Media Rules */
+@page {
+  size: A3 landscape;
+  margin: 0;
+}
+
+@page :left {
+  margin: 0;
+}
+
+@page :right {
+  margin: 0;
+}
+
+/* Root SVG & Font Settings */
+svg {
+  font-family: 'Sarabun', 'Prompt', 'TH Sarabun New', sans-serif;
+  background-color: #ffffff;
+  text-rendering: optimizeLegibility;
+}
+
+/* Lineweights */
+.cut-heavy {
+  stroke: #000000;
+  fill: #000000;
+  stroke-width: 0.50mm;
+  stroke-linejoin: round;
+  stroke-linecap: square;
+}
+
+.cut-medium {
+  stroke: #000000;
+  fill: none;
+  stroke-width: 0.35mm;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.projection {
+  stroke: #444444;
+  fill: none;
+  stroke-width: 0.18mm;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.grid-line {
+  stroke: #666666;
+  fill: none;
+  stroke-width: 0.18mm;
+  stroke-dasharray: 4mm 1mm 1mm 1mm;
+}
+
+/* Grid Bubbles */
+.grid-bubble {
+  fill: #ffffff;
+  stroke: #000000;
+  stroke-width: 0.25mm;
+}
+
+.grid-text {
+  fill: #000000;
+  font-family: 'Prompt', 'Sarabun', sans-serif;
+  font-size: 2.5mm;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* Annotative Scale Typography */
+.dimension-text {
+  fill: #000000;
+  font-family: 'Sarabun', 'Prompt', sans-serif;
+  font-size: 2.0mm;
+  font-weight: 500;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.room-tag {
+  fill: #000000;
+  font-family: 'Prompt', 'Sarabun', sans-serif;
+  font-size: 3.5mm;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.sheet-title {
+  fill: #000000;
+  font-family: 'Prompt', 'Sarabun', sans-serif;
+  font-size: 5.0mm;
+  font-weight: 700;
+}
+
+.title-block-text {
+  fill: #111111;
+  font-family: 'Sarabun', 'Prompt', sans-serif;
+  font-size: 2.5mm;
+  font-weight: 400;
+}
+
+.title-block-label {
+  fill: #666666;
+  font-family: 'Sarabun', 'Prompt', sans-serif;
+  font-size: 1.8mm;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+/* Dimension Line Primitives */
+.dimension-line {
+  stroke: #000000;
+  fill: none;
+  stroke-width: 0.18mm;
+}
+
+.dimension-extension {
+  stroke: #666666;
+  fill: none;
+  stroke-width: 0.15mm;
+}
+
+.dimension-tick {
+  stroke: #000000;
+  stroke-width: 0.35mm;
+  stroke-linecap: round;
+}
+
+/* Background Masking */
+.text-mask {
+  fill: #ffffff;
+  fill-opacity: 1.0;
+  stroke: none;
+}
+
+/* Sheet Frame & Title Block Structure */
+.sheet-border {
+  fill: none;
+  stroke: #000000;
+  stroke-width: 0.70mm;
+}
+
+.sheet-inner-border {
+  fill: none;
+  stroke: #000000;
+  stroke-width: 0.35mm;
+}
+
+.title-block-container {
+  fill: #ffffff;
+  stroke: #000000;
+  stroke-width: 0.35mm;
+}
+
+.title-block-divider {
+  stroke: #000000;
+  stroke-width: 0.25mm;
+}
+
+/* Sheet Index Table Styling */
+.sheet-index-title {
+  fill: #000000;
+  font-family: 'Prompt', 'Sarabun', sans-serif;
+  font-size: 3.0mm;
+  font-weight: 600;
+}
+
+.sheet-index-header {
+  fill: #333333;
+  font-family: 'Prompt', 'Sarabun', sans-serif;
+  font-size: 2.0mm;
+  font-weight: 600;
+}
+
+.sheet-index-cell {
+  fill: #111111;
+  font-family: 'Sarabun', 'Prompt', sans-serif;
+  font-size: 2.0mm;
+  font-weight: 400;
+}
