@@ -15,7 +15,7 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python: 3.11+" /></a>
   <a href="https://technical.buildingsmart.org/"><img src="https://img.shields.io/badge/BIM-IFC4--Minimal-brightgreen.svg" alt="BIM: IFC4" /></a>
-  <a href="tests/"><img src="https://img.shields.io/badge/tests-149%20passed-success.svg" alt="Tests: 149 Passed" /></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/tests-325%20passed-success.svg" alt="Tests: 325 Passed" /></a>
   <a href="https://www.kaggle.com/code/pridatakon/debim-3d-visual-balanced-benchmark"><img src="https://img.shields.io/badge/visual%20fidelity-85.5%25%20median-brightgreen.svg" alt="Visual Fidelity: 85.5% Median" /></a>
   <a href="https://prida-takon.github.io/debim/"><img src="https://img.shields.io/badge/Live%203D%20Demo-Interactive%20Viewer-2ea44f.svg?logo=three.js" alt="Live 3D Demo" /></a>
 </p>
@@ -371,17 +371,20 @@ Evaluating blind 3D geometric fidelity against ground-truth IFC models using **G
  
 #### 📈 Progression Across Waves:
  
-| Global Metric | V1 (Baseline) | V2 (Wave 1-2) | V3 (Latest Wave 4) | Cumulative Improvement |
+| Global Metric | V1 (Baseline) | V2 (Wave 1-2) | V3 (Round 3 / Latest) | Cumulative Improvement |
 |---|:---:|:---:|:---:|:---:|
 | **🎯 Median Visual Match** | 80.90% | 84.90% | **85.50%** | 🏆 **+4.60% (Exceeded 85%)** |
-| **⚖️ Macro Average Visual Match** | 70.57% | 77.60% | **77.71%** | 🟢 **+7.13%** |
-| **📊 Micro Average Visual Match** | 72.24% | 80.35% | **80.46%** | 🟢 **+8.23%** |
-| **Passing Elements ($\ge 85\%$)** | 2,865 | 3,140 | **3,135** | 🟢 **+270 elements** |
+| **⚖️ Macro Average Visual Match** | 70.57% | 77.60% | **77.71%** | 🟢 **+7.14%** |
+| **📊 Micro Average Visual Match** | 72.24% | 80.35% | **80.46%** | 🟢 **+8.22%** |
+| **Passing Elements ($\ge 85\%$)** | 2,865 | 3,140 | **3,135 (66.8%)** | 🟢 **+270 elements** |
 | **Top Performing Disciplines** | | | | |
-| • *Ceilings (`IfcCovering`)* | 11.4% | 89.0% | **89.0%** | 🟢 **+77.6% (Passing)** |
-| • *Valves & Piping (`IfcValve`)* | 0.0% | 82.2% | **82.4%** | 🟢 **+82.4% (Zero-shot lift)** |
-| • *Structural Plates (`IfcPlate`)* | 10.2% | 88.9% | **87.1%** | 🟢 **+76.9% (Passing)** |
-| • *Bracing Members (`IfcMember`)* | 91.8% | 91.6% | **92.4%** | 🟢 **+0.8% (3D Vector Pitch)** |
+| • *Cable Trays (`IfcCableCarrierSegment`)* | - | - | **99.1%** | 🏆 **Near-perfect alignment** |
+| • *Structural Beams (`IfcBeam`)* | 92.1% | 94.5% | **95.0%** | 🟢 **Grade-A+ Framing** |
+| • *Bracing Members (`IfcMember`)* | 91.8% | 91.6% | **94.2%** | 🟢 **+2.4% (3D Vector Pitch)** |
+| • *Railings (`IfcRailing`)* | 85.0% | 91.2% | **93.0%** | 🟢 **+8.0% (Passing)** |
+| • *Structural Plates (`IfcPlate`)* | 10.2% | 88.9% | **87.8%** | 🟢 **+77.6% (Passing)** |
+| • *Ceilings (`IfcCovering`)* | 11.4% | 89.0% | **86.4%** | 🟢 **+75.0% (Passing)** |
+| • *Valves & Piping (`IfcValve`)* | 0.0% | 82.2% | **81.9%** | 🟢 **+81.9% (Zero-shot lift)** |
  
 👉 *Want to inspect raw visual data or reproduce tests yourself? Explore the full dataset and code on the [Kaggle Benchmark Notebook](https://www.kaggle.com/code/pridatakon/debim-3d-visual-balanced-benchmark).*
  
@@ -391,10 +394,21 @@ Evaluating blind 3D geometric fidelity against ground-truth IFC models using **G
  
 Rigorously benchmarked against **407 real-world projects** across architectural, structural, and complex hospital MEP domains:
  
-- **100.0% Median Retention Rate:** Extract and re-compile back to standard IFC4 without element loss.
-- **91.6% Average Storage Reduction:** Compresses raw IFC files by an average of 91%.
-- **558M+ LLM Tokens Saved:** Prevented **558,629,804 tokens** from cluttering agent context windows.
-- **100.0% Modern Schema Crash-Resilience:** Zero fatal crashes or unhandled exceptions across standard IFC2X3 and IFC4 datasets.
+- **🎯 100.0% Median Retention Rate:** Extract and re-compile back to standard IFC4 without element loss.
+- **📊 85.0% Mean Retention Rate:** +26.1% retention gain across diverse real-world models (up from 58.9% in Round 1).
+- **📦 88.4% Average Storage Reduction:** Compresses raw IFC files by an average of 88.4% into compact declarative YAML.
+- **⚡ 558M+ LLM Tokens Saved:** Prevented **558,629,804 tokens** from cluttering agent context windows.
+- **🛡️ 100.0% Modern Schema Crash-Resilience:** Zero fatal crashes or unhandled exceptions across standard IFC2X3, IFC4, and IFC4X3 datasets.
+
+#### 📈 Round 1 vs. Round 2 Stress Test Evolution:
+
+| Key Performance Indicator | Round 1 Baseline (192 Models) | Round 2 Enhanced (407 Models) | Improvement / Evolution |
+|---|:---:|:---:|:---|
+| **Total Models Evaluated** | 192 models | **407 models** | 📈 **+112% (Scaled 2.1x dataset)** |
+| **🎯 Median Element Retention** | 79.0% | **100.0%** | 🏆 **+21.0% (Reached 100%)** |
+| **📊 Mean Element Retention** | 58.9% | **85.0%** | 🟢 **+26.1% retention gain** |
+| **📦 Mean Storage Compression** | 94.0% | **88.4%** | High-fidelity declarative YAML |
+| **🛡️ Modern Schema Crash-Resilience** | 100.0% | **100.0%** | Zero fatal crashes on IFC2X3, IFC4, IFC4X3 |
  
 📖 **Read Full Research Paper:** [debim: An Empirical Study of Declarative Building-as-Code on 407 Heterogeneous Real-World OpenBIM Models](docs/research/2026_empirical_study_407_ifc_models.md)  
 📦 **Kaggle Public Benchmark Dataset:** [debim-5000-ifc-benchmark](https://www.kaggle.com/datasets/pridatakon/debim-5000-ifc-benchmark)  
