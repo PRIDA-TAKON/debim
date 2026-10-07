@@ -37,17 +37,30 @@ debim/
 │       ├── cost.py            # Pricing engine matching QTO with prices.yaml/prices.json
 │       ├── compiler.py        # IFC4 compilation via IfcOpenShell
 │       ├── viewer.py          # Standalone lightweight 3D viewer generator
-│       └── scaffold.py        # Element code generator & boilerplate scaffolder
+│       ├── scaffold.py        # Element code generator & boilerplate scaffolder
+│       ├── draw/              # 2D Architectural Blueprint & DXF Export Engine
+│       │   ├── projection.py  # Horizontal cut-plane & 2D primitive slicing
+│       │   ├── renderer.py    # SVG & CSS sheet renderer (Thai font support)
+│       │   ├── viewer_2d.py   # Standalone 2D HTML blueprint viewer
+│       │   └── dxf.py         # AutoCAD DXF export-only bridge
+│       ├── spec/              # Declarative Architectural Specifications Engine
+│       │   ├── schema.py      # Material specification schema (MasterFormat)
+│       │   ├── audit.py       # Discrepancy auditor between 3D model & specs
+│       │   ├── builder.py     # Specification book compiler (PDF/Markdown)
+│       │   └── registry.py    # Open Material Registry client & cache
+│       ├── cloud/             # Cloud Ephemeral Runner & Webhook Sync
+│       │   ├── runner.py      # Zero-storage RAM/Temp runner for Cloud Run
+│       │   ├── webhook.py     # GitHub Webhook HMAC SHA-256 verification
+│       │   └── git_sync.py    # debim[bot] auto-committer
+│       └── benchmark/         # Benchmarking Suites
+│           ├── scalability.py # IFC generation speed & RAM scaling
+│           └── cognitive.py   # Round-trip AI Vision cognitive regression benchmark
 ├── examples/
 │   └── farnsworth_house/
 │       ├── project.yaml       # Sample project manifest (Ludwig Mies van der Rohe, 1951)
 │       ├── prices.yaml        # Sample price catalog
 │       └── viewer.html        # Lightweight 3D HTML viewer
-├── tests/
-│   ├── conftest.py            # Pytest fixtures loading project.yaml
-│   ├── test_schema.py         # Schema parsing & validation tests
-│   ├── test_qto.py            # Volume & reinforcement calculation tests
-│   └── test_compliance.py     # Building law compliance test suites
+├── tests/                     # 325+ deterministic unit & compliance tests
 ├── pyproject.toml
 ├── README.md
 └── AGENTS.md
@@ -61,7 +74,8 @@ debim/
 - **CLI Framework:** Typer + Rich
 - **Data Validation:** Pydantic v2
 - **Data Serialization:** PyYAML
-- **3D / Geometry:** Trimesh, NumPy
+- **3D / Geometry:** Trimesh, NumPy, Shapely
+- **CAD / Drafting:** ezdxf (Export-only)
 - **BIM / IFC:** IfcOpenShell (`ifcopenshell`)
 - **Testing:** Pytest
 
@@ -91,7 +105,7 @@ When working on any GitHub Issue or Pull Request:
    pytest
    ```
 2. **Surgical Updates:** Only modify lines and files relevant to your assigned task. Never perform unsolicited refactoring or file restructuring.
-3. **Test-Driven:** Every new feature (QTO formula, schema validator, compliance rule) must include corresponding unit tests in `tests/`.
+3. **Test-Driven:** Every new feature (QTO formula, schema validator, compliance rule, 2D projection) must include corresponding unit tests in `tests/`.
 4. **Strict Schema Adherence:** Match entity names with standard buildingSMART IFC4 entities (`IfcColumn`, `IfcBeam`, `IfcWall`, `IfcDoor`, `IfcWindow`, `IfcSlab`).
 
 ---
@@ -103,7 +117,7 @@ The CLI tool exposes the binary command `debim`:
 | Command | Action |
 |---|---|
 | `debim init <name>` | Scaffold a new project with template `project.yaml` & `prices.json` |
-| `debim validate` | Validate schema syntax, grid consistency, and placement links |
+| `debim validate` | Validate schema syntax, grid consistency, placement links, and bSDD Psets |
 | `debim test` | Execute compliance & building law tests via pytest |
 | `debim qto` | Calculate material quantities (concrete volume, formwork, rebar) |
 | `debim cost` | Map QTO against `prices.yaml`/`prices.json` (or stdin `-p -`) and generate cost summary / CSV |
@@ -113,6 +127,14 @@ The CLI tool exposes the binary command `debim`:
 | `debim view` | Launch a lightweight local 3D preview server with hierarchical layer tree explorer |
 | `debim split` | Decompose monolithic `project.yaml` into modular multi-file manifest under `models/` |
 | `debim bundle` | Bundle modular multi-file manifest into a standalone single-file `project.yaml` |
+| `debim diff` | Compare two YAML manifests and report 3D element deltas, QTO shifts, and cost variance |
+| `debim draw view` | Generate standalone interactive 2D HTML blueprint viewer (`viewer_2d.html`) with pan-zoom & ruler |
+| `debim draw export-dxf` | Export 2D section floor plan into AutoCAD DXF layers (`A-WALL`, `S-COLS`, `A-GRID`, ฯลฯ) |
+| `debim spec audit` | Audit project manifest against material specifications to detect missing or unused specs |
+| `debim spec build` | Scan active materials and compile a MasterFormat architectural Specification Book |
+| `debim spec add <pkg>` | Install material specification package from open registry into `specs/` |
+| `debim spec list` | List installed material specification packages in local project |
+| `debim mcp` | Launch Model Context Protocol (MCP) server for AI coding agents |
 
 
 
