@@ -1,6 +1,4 @@
-"""
-Declarative Specifications & Discrepancy Auditor package for debim.
-"""
+"""Declarative Specifications, Auditor, and Package Registry for debim."""
 
 from debim.spec.schema import (
     IndustryStandards,
@@ -14,6 +12,12 @@ from debim.spec.audit import (
     audit_project_specs,
     extract_project_materials,
 )
+from debim.spec.registry import (
+    MaterialSpecPackage,
+    SpecRegistryClient,
+    resolve_package_urls,
+    parse_spec_content,
+)
 
 __all__ = [
     "IndustryStandards",
@@ -24,4 +28,8 @@ __all__ = [
     "SpecAuditResult",
     "audit_project_specs",
     "extract_project_materials",
+    "MaterialSpecPackage",
+    "SpecRegistryClient",
+    "resolve_package_urls",
+    "parse_spec_content",
 ]
