@@ -1639,6 +1639,32 @@ def generate_viewer_html(
             "fixture_name_th": eq_th,
         })
 
+    ports_data: List[Dict[str, Any]] = []
+    for p in getattr(resolved, "resolved_ports", []) or []:
+        ports_data.append({
+            "port_id": p.port_id,
+            "global_port_id": p.global_port_id,
+            "host_tag": p.host_tag,
+            "world_position": list(p.world_position),
+            "flow_direction": p.flow_direction,
+            "connection_type": p.connection_type,
+            "nominal_diameter": p.nominal_diameter,
+        })
+
+    topology_conns: List[Dict[str, Any]] = []
+    if getattr(resolved, "topology_graph", None):
+        tg = resolved.topology_graph
+        for p1_id, p2_id in tg.connected_edges:
+            if p1_id in tg.ports and p2_id in tg.ports:
+                p1 = tg.ports[p1_id]
+                p2 = tg.ports[p2_id]
+                topology_conns.append({
+                    "p1_id": p1_id,
+                    "p2_id": p2_id,
+                    "p1_pos": list(p1.world_position),
+                    "p2_pos": list(p2.world_position),
+                })
+
     scene_json = json.dumps({
         "project": {
             "id": proj.id,
@@ -1648,6 +1674,8 @@ def generate_viewer_html(
         "storeys": storeys_data,
         "grids": grids_data,
         "elements": elements_data,
+        "ports": ports_data,
+        "topology_connections": topology_conns,
     }, indent=2, ensure_ascii=False)
 
     html_content = f"""<!DOCTYPE html>
@@ -2906,6 +2934,63 @@ def generate_viewer_html(
             }});
         }};
 
+        // Render 3D Distribution Ports and Topology Flow Lines
+        if (sceneData.ports && sceneData.ports.length > 0) {{
+            const portGroup = new THREE.Group();
+            const sphereGeom = new THREE.SphereGeometry(0.08, 16, 16);
+
+            sceneData.ports.forEach(p => {{
+                let colorHex = 0xeab308; // SOURCEANDSINK (Yellow/Orange)
+                if (p.flow_direction === "SOURCE") colorHex = 0x22c55e; // SOURCE (Green)
+                else if (p.flow_direction === "SINK") colorHex = 0x06b6d4; // SINK (Cyan)
+
+                const mat = new THREE.MeshStandardMaterial({{
+                    color: colorHex,
+                    roughness: 0.3,
+                    metalness: 0.2
+                }});
+                const mesh = new THREE.Mesh(sphereGeom, mat);
+                mesh.position.set(...p.world_position);
+                mesh.userData = {{
+                    tag: p.global_port_id,
+                    class: "IfcDistributionPort",
+                    flow_direction: p.flow_direction,
+                    connection_type: p.connection_type,
+                    nominal_diameter: p.nominal_diameter,
+                    host_tag: p.host_tag,
+                    layer: "mep/ports"
+                }};
+                portGroup.add(mesh);
+                pickableObjects.push(mesh);
+            }});
+            scene.add(portGroup);
+        }}
+
+        if (sceneData.topology_connections && sceneData.topology_connections.length > 0) {{
+            const flowGroup = new THREE.Group();
+            const flowMat = new THREE.LineDashedMaterial({{
+                color: 0x10b981,
+                dashSize: 0.2,
+                gapSize: 0.1,
+                linewidth: 3
+            }});
+
+            sceneData.topology_connections.forEach(conn => {{
+                const p1 = new THREE.Vector3(...conn.p1_pos);
+                const p2 = new THREE.Vector3(...conn.p2_pos);
+                const geom = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+                const line = new THREE.Line(geom, flowMat);
+                line.computeLineDistances();
+                line.userData = {{
+                    tag: `${{conn.p1_id}} -> ${{conn.p2_id}}`,
+                    class: "IfcRelConnectsPorts",
+                    layer: "mep/topology"
+                }};
+                flowGroup.add(line);
+            }});
+            scene.add(flowGroup);
+        }}
+
         buildLayerTree();
         renderLayerTree(layerTreeRoot, document.getElementById("layer-tree-container"));
 
@@ -3317,6 +3402,17 @@ def generate_viewer_html(
                 mepRow += `<div class="data-row"><span class="data-label">Finish Type</span><span class="data-value">${{colorDot}}${{data.covering_type}}</span></div>`;
             }}
 
+
+            if (data.class === "IfcDistributionPort") {{
+                mepRow += `<div class="data-row"><span class="data-label">Flow Direction</span><span class="data-value">${{data.flow_direction || "-"}}</span></div>`;
+                mepRow += `<div class="data-row"><span class="data-label">Host Element</span><span class="data-value">${{data.host_tag || "-"}}</span></div>`;
+                if (data.connection_type) {{
+                    mepRow += `<div class="data-row"><span class="data-label">Conn Type</span><span class="data-value">${{data.connection_type}}</span></div>`;
+                }}
+                if (data.nominal_diameter) {{
+                    mepRow += `<div class="data-row"><span class="data-label">Port Dia</span><span class="data-value">Ø ${{ (data.nominal_diameter * 1000).toFixed(0) }} mm</span></div>`;
+                }}
+            }}
 
             contentEl.innerHTML = `
                 <div style="margin-bottom: 8px;"><span class="badge">${{data.class}}</span></div>

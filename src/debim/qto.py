@@ -523,6 +523,12 @@ class ProjectQTO(BaseModel):
     total_doors_count: int = 0
     total_windows_count: int = 0
     total_openings_area: float = 0.0
+    # Topology & Network Graph Totals
+    total_ports_count: int = 0
+    total_connected_ports_count: int = 0
+    total_dead_end_ports_count: int = 0
+    total_network_connections_count: int = 0
+    total_connected_path_length: float = 0.0
     # MEP Totals
     total_cold_water_pipe_length: float = 0.0
     total_soil_pipe_length: float = 0.0
@@ -1900,6 +1906,32 @@ def calculate_qto(
     total_windows = 0
     total_openings_area = 0.0
 
+    # Topology & Network Graph Totals
+    total_ports_count: int = 0
+    total_connected_ports_count: int = 0
+    total_dead_end_ports_count: int = 0
+    total_network_connections_count: int = 0
+    total_connected_path_length: float = 0.0
+    # Topology Graph Analytics
+    total_ports = 0
+    total_connected_ports = 0
+    total_dead_ends = 0
+    total_net_conns = 0
+    total_path_len = 0.0
+
+    if getattr(resolved, "topology_graph", None):
+        tg = resolved.topology_graph
+        total_ports = len(tg.ports)
+        total_dead_ends = len(tg.dead_ends)
+        total_connected_ports = total_ports - total_dead_ends
+        total_net_conns = len(tg.connected_edges)
+
+        for p1_id, p2_id in tg.connected_edges:
+            if p1_id in tg.ports and p2_id in tg.ports:
+                pos1 = tg.ports[p1_id].world_position
+                pos2 = tg.ports[p2_id].world_position
+                total_path_len += math.dist(pos1, pos2)
+
     # MEP Totals
     total_cold_water_len = 0.0
     total_soil_len = 0.0
@@ -2168,4 +2200,10 @@ def calculate_qto(
         total_dampers_count=total_dampers,
         total_flow_controllers_count=total_flow_controllers,
         total_unitary_equipment_count=total_unitary_eqs,
+        total_ports_count=total_ports,
+        total_connected_ports_count=total_connected_ports,
+        total_dead_end_ports_count=total_dead_ends,
+        total_network_connections_count=total_net_conns,
+        total_connected_path_length=total_path_len,
+
     )

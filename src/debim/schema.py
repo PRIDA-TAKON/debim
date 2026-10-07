@@ -1191,6 +1191,24 @@ class IfcPlate(BaseModel):
 
 
 # Custom element placement & element
+FlowDirection = Literal["SOURCE", "SINK", "SOURCEANDSINK"]
+
+
+class IfcDistributionPort(BaseModel):
+    port_id: str
+    flow_direction: Literal["SOURCE", "SINK", "SOURCEANDSINK"] = "SOURCEANDSINK"
+    connection_type: Optional[str] = None
+    nominal_diameter: Optional[float] = None
+    offset: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+
+    @field_validator("offset", mode="before")
+    @classmethod
+    def convert_offset_tuple(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(float(x) for x in v)
+        return v
+
+
 class CustomElementPlacement(BaseModel):
     position: Tuple[float, float, float]
     storey: str
@@ -1205,6 +1223,7 @@ class IfcCustomElement(BaseModel):
     placement: CustomElementPlacement
     dimensions: Optional[Dimensions] = None
     solid: Optional[Union[SweptDiskSolid, RevolvedAreaSolid]] = None
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
 
@@ -1259,6 +1278,7 @@ class IfcRoof(BaseModel):
 
 
 # MEP (Mechanical, Electrical & Plumbing) Elements
+
 
 PipeSystemType = Literal[
     "COLD_WATER", "HOT_WATER", "SOIL", "WASTE", "VENT", "DRAINAGE", "REFRIGERANT", "CONDENSATE"
@@ -1363,6 +1383,7 @@ class IfcPipeSegment(BaseModel):
     material: Optional[str] = None
     nominal_diameter: float = 0.020  # Nominal diameter in meters (e.g. 0.020 for 3/4", 0.100 for 4")
     placement: PipePlacement
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
 
@@ -1373,6 +1394,7 @@ class IfcCableCarrierSegment(BaseModel):
     material: Optional[str] = None
     nominal_diameter: float = 0.020  # Conduit diameter in meters
     placement: PipePlacement
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
 
@@ -1428,6 +1450,7 @@ class IfcSanitaryTerminal(BaseModel):
     waste_outlet_diameter: Optional[float] = None
     catalog_reference: Optional[str] = None
     catalog_code: Optional[str] = None
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
     @model_validator(mode="after")
@@ -1464,6 +1487,7 @@ class IfcWasteTerminal(BaseModel):
     waste_outlet_diameter: Optional[float] = None
     catalog_reference: Optional[str] = None
     catalog_code: Optional[str] = None
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
     @model_validator(mode="after")
@@ -1503,6 +1527,7 @@ class IfcDistributionBoard(BaseModel):
     main_breaker_rating_amperes: Optional[float] = Field(default=None, alias="main_breaker_rating")
     poles_count: Optional[int] = None
     circuits_count: int = 12
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
     @model_validator(mode="after")
@@ -1546,6 +1571,7 @@ class IfcLightFixture(BaseModel):
     wattage: Optional[float] = 12.0
     luminous_flux_lumens: Optional[float] = None
     color_temperature_kelvin: Optional[float] = None
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
     @model_validator(mode="after")
@@ -1581,6 +1607,7 @@ class IfcSwitchingDevice(BaseModel):
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     gangs: int = 1
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
 
@@ -1595,6 +1622,7 @@ class IfcOutlet(BaseModel):
     height: float = 0.0
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
     @model_validator(mode="after")
@@ -1618,6 +1646,7 @@ class IfcDuctSegment(BaseModel):
     width: float = 0.25   # Duct width in meters (or diameter if circular)
     height: float = 0.20  # Duct height in meters
     placement: PipePlacement
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
 
@@ -1640,6 +1669,7 @@ class IfcAirTerminal(BaseModel):
     neck_diameter: Optional[float] = None
     neck_size: Optional[Union[float, Tuple[float, float], List[float]]] = None
     throw_distance_m: Optional[float] = None
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
     @model_validator(mode="after")
@@ -1691,6 +1721,7 @@ class IfcDamper(BaseModel):
     duct_depth: Optional[float] = None
     duct_diameter: Optional[float] = None
     actuator_type: DamperActuatorType = "MANUAL"
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
     @model_validator(mode="after")
@@ -1731,6 +1762,7 @@ class IfcFlowController(BaseModel):
     duct_width: Optional[float] = None
     duct_depth: Optional[float] = None
     duct_diameter: Optional[float] = None
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
     @model_validator(mode="after")
@@ -1755,6 +1787,7 @@ class IfcUnitaryEquipment(BaseModel):
     placement: TerminalPlacement
     dimensions: Optional[TerminalDimensions] = None
     cooling_capacity_btu: Optional[float] = 12000.0
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
 
@@ -1940,6 +1973,7 @@ class ProjectManifest(BaseModel):
     grids: Grids
     materials: List[Material]
     elements: List[Element] = Field(default_factory=list)
+    connections: List[Tuple[str, str]] = Field(default_factory=list)
     includes: List[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
