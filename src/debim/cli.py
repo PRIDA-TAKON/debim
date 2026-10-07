@@ -1058,6 +1058,71 @@ def scaffold_element_cmd(
             raise typer.Exit(code=1)
 
 
+draw_app = typer.Typer(
+    help="2D Architectural Blueprint & CAD export commands",
+    add_completion=False,
+)
+app.add_typer(draw_app, name="draw")
+
+
+@draw_app.command(name="export-dxf")
+def draw_export_dxf(
+    manifest: Path = typer.Option(
+        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
+    ),
+    output: Path = typer.Option(
+        Path("dist/plan.dxf"), "--output", "-o", help="Output DXF file path"
+    ),
+    storey: Optional[str] = typer.Option(
+        None, "--storey", "-s", help="Target storey ID to slice (defaults to first storey)"
+    ),
+    units: str = typer.Option(
+        "mm", "--units", "-u", help="Output DXF length units: 'mm' (millimeters, INSUNITS=4) or 'm' (meters, INSUNITS=6)"
+    ),
+    cut_offset_z: float = typer.Option(
+        1.20, "--cut-offset-z", help="Horizontal cut-plane elevation offset above storey elevation (meters)"
+    ),
+):
+    """Export 2D section floor plan into industry-standard AutoCAD DXF layers (A-WALL, S-COLS, A-DOOR, A-WIND, A-GRID, A-DIMS)"""
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        raise typer.Exit(code=1)
+
+    console.print(
+        f"[bold green]Exporting 2D CAD DXF:[/bold green] {manifest} -> [cyan]{output}[/cyan]"
+    )
+    try:
+        from debim.draw import export_2d_dxf
+
+        manifest_obj = load_manifest(manifest)
+        out_path = export_2d_dxf(
+            manifest_or_resolved=manifest_obj,
+            output_path=output,
+            storey_id=storey,
+            cut_offset_z=cut_offset_z,
+            units=units,
+        )
+
+        import ezdxf
+        dxf_doc = ezdxf.readfile(out_path)
+        entity_count = len(list(dxf_doc.modelspace()))
+        layer_names = [layer.dxf.name for layer in dxf_doc.layers]
+
+        console.print(
+            Panel(
+                f"[bold green]2D AutoCAD DXF Export Successful![/bold green]\n"
+                f"[bold cyan]Output File:[/bold cyan] {out_path}\n"
+                f"[bold cyan]Entities Exported:[/bold cyan] {entity_count}\n"
+                f"[bold cyan]CAD Units:[/bold cyan] {units.upper()} ($INSUNITS={dxf_doc.header.get('$INSUNITS', 4)})\n"
+                f"[bold cyan]Exported Layers:[/bold cyan] {', '.join(layer_names)}",
+                title="[bold green]debim 2D DXF Exporter Engine[/bold green]",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]DXF Export Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
 spec_app = typer.Typer(
     help="Declarative material specification management & discrepancy auditing commands",
     add_completion=False,
