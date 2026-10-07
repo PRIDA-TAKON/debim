@@ -627,6 +627,14 @@
             const svgEl = svgContainer.querySelector('svg:not(#measurement-layer)');
             const mLayer = document.getElementById('measurement-layer');
             if (svgEl && mLayer) {
+                // Set explicit pixel dimensions on svgContainer based on sheet paper mm
+                const widthPx = sheet.paper_width_mm * 3.7795;
+                const heightPx = sheet.paper_height_mm * 3.7795;
+                svgContainer.style.width = widthPx + 'px';
+                svgContainer.style.height = heightPx + 'px';
+                svgEl.style.width = '100%';
+                svgEl.style.height = '100%';
+
                 const viewBox = svgEl.getAttribute('viewBox');
                 if (viewBox) {
                     mLayer.setAttribute('viewBox', viewBox);
@@ -688,7 +696,8 @@
 
         // Smooth Pan & Zoom Controls Engine
         function updateTransform() {
-            wrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            svgContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            svgContainer.style.transformOrigin = '0 0';
         }
 
         function zoomIn() {
@@ -713,13 +722,16 @@
             const sheet = sheetsData[activeSheetIndex];
             if (!sheet) return;
 
+            const paperW = sheet.paper_width_mm * 3.7795;
+            const paperH = sheet.paper_height_mm * 3.7795;
+
             const targetScale = Math.min(
-                (vRect.width - 80) / (sheet.paper_width_mm * 3.78),
-                (vRect.height - 80) / (sheet.paper_height_mm * 3.78)
+                (vRect.width - 60) / paperW,
+                (vRect.height - 60) / paperH
             );
-            scale = Math.max(0.2, targetScale);
-            panX = (vRect.width - (sheet.paper_width_mm * 3.78 * scale)) / 2;
-            panY = (vRect.height - (sheet.paper_height_mm * 3.78 * scale)) / 2;
+            scale = Math.max(0.1, targetScale);
+            panX = (vRect.width - (paperW * scale)) / 2;
+            panY = (vRect.height - (paperH * scale)) / 2;
             updateTransform();
         }
 
