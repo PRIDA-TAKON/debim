@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>debim 2D Viewer - __PROJECT_NAME__</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        /* App Layout */
+        #app-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Sidebar / Drawer */
+        #drawer {
+            width: 320px;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+        }
+
+        #drawer.collapsed {
+            transform: translateX(-320px);
+            margin-right: -320px;
+        }
+
+        .drawer-header {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .drawer-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .drawer-subtitle {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .drawer-close-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .drawer-close-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .search-container {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 12px;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .search-input:focus {
+            border-color: #38bdf8;
+        }
+
+        .sheet-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sheet-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sheet-card:hover {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .sheet-card.active {
+            background: rgba(14, 165, 233, 0.15);
+            border-color: #38bdf8;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+        }
+
+        .sheet-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sheet-id-badge {
+            background: #0284c7;
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .sheet-scale-badge {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .sheet-card-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            line-height: 1.3;
+        }
+
+        .sheet-card-meta {
+            font-size: 0.72rem;
+            color: #64748b;
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Viewport Canvas Area */
+        #viewport {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            background-color: #0b1120;
+            overflow: hidden;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+
+        #viewport.panning {
+            cursor: grabbing;
+        }
+
+        #viewport.ruler-active {
+            cursor: crosshair;
+        }
+
+        #panzoom-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+
+        #svg-container {
+            position: relative;
+            background: #ffffff;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+            display: inline-block;
+        }
+
+        #svg-container svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Floating Toolbar */
+        #toolbar {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(15, 23, 42, 0.90);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 6px 12px;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            z-index: 50;
+            max-width: calc(100vw - 32px);
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .tool-btn {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            user-select: none;
+        }
+
+        .tool-btn:hover {
+            background: #334155;
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .tool-btn.active {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #38bdf8;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+        }
+
+        .tool-divider {
+            width: 1px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.12);
+            margin: 0 2px;
+        }
+
+        .active-sheet-info {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #f8fafc;
+            padding: 0 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Layer Filter Dropdown Menu */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 6px;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            min-width: 180px;
+            z-index: 60;
+        }
+
+        .dropdown.show .dropdown-content {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .layer-toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: #e2e8f0;
+            padding: 4px 6px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .layer-toggle-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .layer-toggle-item input {
+            cursor: pointer;
+        }
+
+        /* Ruler Measurement Tool Card / Tooltip */
+        #ruler-card {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid #38bdf8;
+            padding: 10px 18px;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            color: #f8fafc;
+            font-size: 0.85rem;
+        }
+
+        .ruler-val {
+            font-weight: 700;
+            color: #38bdf8;
+            font-size: 1.05rem;
+        }
+
+        /* Overlay SVG Layer for Measurement Ruler */
+        #measurement-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Floating Drawer Toggle Button when Collapsed */
+        #drawer-toggle-floating {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            z-index: 40;
+            display: none;
+        }
+
+        #drawer.collapsed ~ #viewport #drawer-toggle-floating {
+            display: inline-flex;
+        }
+
+        /* Print CSS Styling */
+        @media print {
+            body, html, #app-container {
+                width: 100%;
+                height: auto;
+                overflow: visible !important;
+                background: #ffffff !important;
+            }
+
+            #drawer, #toolbar, #ruler-card, #drawer-toggle-floating {
+                display: none !important;
+            }
+
+            #viewport {
+                background: #ffffff !important;
+                overflow: visible !important;
+            }
+
+            #panzoom-wrapper {
+                transform: none !important;
+                display: block !important;
+            }
+
+            #svg-container {
+                box-shadow: none !important;
+                margin: 0 auto !important;
+            }
+
+            @page {
+                size: landscape;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- Sidebar Sheet Navigator Drawer -->
+        <div id="drawer">
+            <div class="drawer-header">
+                <div>
+                    <div class="drawer-title">
+                        <span>📐</span> debim 2D Blueprint
+                    </div>
+                    <div class="drawer-subtitle">__PROJECT_NAME__ (__PROJECT_ID__)</div>
+                </div>
+                <button class="drawer-close-btn" onclick="toggleDrawer()" title="Close Drawer">✕</button>
+            </div>
+
+            <div class="search-container">
+                <input type="text" id="sheet-search" class="search-input" placeholder="🔍 Search sheets (e.g. A-101)..." oninput="filterSheets(this.value)">
+            </div>
+
+            <div id="sheet-list" class="sheet-list">
+                <!-- Dynamically rendered sheet cards -->
+            </div>
+        </div>
+
+        <!-- Viewport Canvas Area -->
+        <div id="viewport">
+            <button id="drawer-toggle-floating" class="tool-btn" onclick="toggleDrawer()">
+                <span>☰</span> Sheets
+            </button>
+
+            <!-- Floating Top Controls Toolbar -->
+            <div id="toolbar">
+                <button class="tool-btn" onclick="toggleDrawer()" title="Toggle Sheet Drawer">
+                    <span>☰</span> Sheets
+                </button>
+                <div class="tool-divider"></div>
+
+                <div class="active-sheet-info">
+                    <span id="active-sheet-id" class="sheet-id-badge">A-101</span>
+                    <span id="active-sheet-title">Floor Plan</span>
+                </div>
+                <div class="tool-divider"></div>
+
+                <!-- Zoom Controls -->
+                <button class="tool-btn" onclick="zoomIn()" title="Zoom In (+)">＋</button>
+                <button class="tool-btn" onclick="zoomReset()" title="Reset Zoom (100%)">100%</button>
+                <button class="tool-btn" onclick="zoomOut()" title="Zoom Out (-)">－</button>
+                <button class="tool-btn" onclick="zoomFit()" title="Fit to Screen">⊡ Fit</button>
+                <div class="tool-divider"></div>
+
+                <!-- Layer Filters Dropdown -->
+                <div class="dropdown" id="layer-dropdown">
+                    <button class="tool-btn" onclick="toggleLayerDropdown()">
+                        <span>🥞</span> Layers ▾
+                    </button>
+                    <div class="dropdown-content">
+                        <label class="layer-toggle-item">
+                            <input type="checkbox" id="layer-structure" checked onchange="toggleLayer('cut-heavy', this.checked)">
+                            <span>Structural (.cut-heavy)</span>
+                        </label>
+                        <label class="layer-toggle-item">
+                            <input type="checkbox" id="layer-arch" checked onchange="toggleLayer('cut-medium', this.checked); toggleLayer('projection', this.checked)">
+                            <span>Architectural Walls / Slabs</span>
+                        </label>
+                        <label class="layer-toggle-item">
+                            <input type="checkbox" id="layer-grid" checked onchange="toggleLayer('grid-line', this.checked); toggleLayer('grid-bubble', this.checked); toggleLayer('grid-text', this.checked)">
+                            <span>Grid Lines & Bubbles</span>
+                        </label>
+                        <label class="layer-toggle-item">
+                            <input type="checkbox" id="layer-dims" checked onchange="toggleLayer('dimension-line', this.checked); toggleLayer('dimension-tick', this.checked); toggleLayer('dimension-text', this.checked); toggleLayer('text-mask', this.checked)">
+                            <span>Dimensions & Annotations</span>
+                        </label>
+                        <label class="layer-toggle-item">
+                            <input type="checkbox" id="layer-titleblock" checked onchange="toggleLayerById('title-block', this.checked)">
+                            <span>Title Block</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="tool-divider"></div>
+
+                <!-- Measuring Ruler Tool -->
+                <button id="ruler-btn" class="tool-btn" onclick="toggleRulerTool()">
+                    <span>📏</span> Ruler
+                </button>
+                <button id="clear-ruler-btn" class="tool-btn" onclick="clearMeasurements()" style="display:none;">
+                    <span>🗑️</span> Clear
+                </button>
+                <div class="tool-divider"></div>
+
+                <!-- Native One-Click Print -->
+                <button class="tool-btn" onclick="printSheet()" title="Print / Export PDF">
+                    <span>🖨️</span> Print
+                </button>
+            </div>
+
+            <!-- Panzoom Container Wrapper -->
+            <div id="panzoom-wrapper">
+                <div id="svg-container">
+                    <!-- Loaded SVG content will be injected here -->
+                    <svg id="measurement-layer" xmlns="http://www.w3.org/2000/svg"></svg>
+                </div>
+            </div>
+
+            <!-- Interactive Measurement Status Card -->
+            <div id="ruler-card">
+                <div>
+                    <span style="color: #94a3b8; font-size: 0.75rem;">MEASUREMENT:</span>
+                    <div id="ruler-distance-display" class="ruler-val">0.00 m</div>
+                </div>
+                <div style="font-size: 0.72rem; color: #94a3b8; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 10px;">
+                    <div>Scale: <span id="ruler-scale-display">1:100</span></div>
+                    <div>Paper: <span id="ruler-paper-display">0.0 mm</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Injected Sheets JSON Payload
+        const sheetsData = __SHEETS_DATA_JSON__;
+
+        let activeSheetIndex = 0;
+        let scale = 1.0;
+        let panX = 0;
+        let panY = 0;
+        let isPanning = false;
+        let startX = 0;
+        let startY = 0;
+
+        // Ruler Measurement Tool State
+        let isRulerActive = false;
+        let rulerStartPt = null;
+        let measurementHistory = [];
+
+        const viewport = document.getElementById('viewport');
+        const wrapper = document.getElementById('panzoom-wrapper');
+        const svgContainer = document.getElementById('svg-container');
+        const measurementLayer = document.getElementById('measurement-layer');
+
+        // Init Application
+        function initApp() {
+            renderSheetList(sheetsData);
+            if (sheetsData.length > 0) {
+                loadSheet(0);
+            }
+            setupPanZoomEvents();
+        }
+
+        // Render Sheet Navigator Cards in Drawer
+        function renderSheetList(sheets) {
+            const listEl = document.getElementById('sheet-list');
+            listEl.innerHTML = '';
+
+            sheets.forEach((sheet, idx) => {
+                const card = document.createElement('div');
+                card.className = `sheet-card ${idx === activeSheetIndex ? 'active' : ''}`;
+                card.onclick = () => loadSheet(idx);
+
+                card.innerHTML = `
+                    <div class="sheet-card-header">
+                        <span class="sheet-id-badge">${sheet.id}</span>
+                        <span class="sheet-scale-badge">1:${sheet.scale}</span>
+                    </div>
+                    <div class="sheet-card-title">${sheet.title}</div>
+                    <div class="sheet-card-meta">
+                        <span>Paper: ${sheet.paper_size} (${sheet.orientation})</span>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+
+        // Filter Sheets via Search Input
+        function filterSheets(query) {
+            const q = query.toLowerCase().trim();
+            const cards = document.querySelectorAll('.sheet-card');
+            cards.forEach((card, idx) => {
+                const sheet = sheetsData[idx];
+                if (!q || sheet.id.toLowerCase().includes(q) || sheet.title.toLowerCase().includes(q)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Load Sheet SVG into Viewport
+        function loadSheet(index) {
+            if (index < 0 || index >= sheetsData.length) return;
+            activeSheetIndex = index;
+            const sheet = sheetsData[index];
+
+            // Update UI Badges
+            document.getElementById('active-sheet-id').textContent = sheet.id;
+            document.getElementById('active-sheet-title').textContent = sheet.title;
+
+            // Highlight active card
+            document.querySelectorAll('.sheet-card').forEach((card, idx) => {
+                card.classList.toggle('active', idx === index);
+            });
+
+            // Inject SVG
+            svgContainer.innerHTML = sheet.svg_content + '<svg id="measurement-layer" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:20;"></svg>';
+
+            // Setup Measurement Layer viewBox matching root SVG
+            const svgEl = svgContainer.querySelector('svg:not(#measurement-layer)');
+            const mLayer = document.getElementById('measurement-layer');
+            if (svgEl && mLayer) {
+                const viewBox = svgEl.getAttribute('viewBox');
+                if (viewBox) {
+                    mLayer.setAttribute('viewBox', viewBox);
+                }
+            }
+
+            clearMeasurements();
+            zoomFit();
+            applyLayerVisibility();
+        }
+
+        // Drawer Toggle
+        function toggleDrawer() {
+            document.getElementById('drawer').classList.toggle('collapsed');
+        }
+
+        // Layer Dropdown Toggle
+        function toggleLayerDropdown() {
+            document.getElementById('layer-dropdown').classList.toggle('show');
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.closest('#layer-dropdown')) {
+                document.getElementById('layer-dropdown').classList.remove('show');
+            }
+        };
+
+        function toggleLayer(className, visible) {
+            const svgEl = svgContainer.querySelector('svg');
+            if (!svgEl) return;
+            const elements = svgEl.querySelectorAll('.' + className);
+            elements.forEach(el => {
+                el.style.display = visible ? '' : 'none';
+            });
+        }
+
+        function toggleLayerById(id, visible) {
+            const svgEl = svgContainer.querySelector('svg');
+            if (!svgEl) return;
+            const el = svgEl.querySelector('#' + id);
+            if (el) {
+                el.style.display = visible ? '' : 'none';
+            }
+        }
+
+        function applyLayerVisibility() {
+            toggleLayer('cut-heavy', document.getElementById('layer-structure').checked);
+            toggleLayer('cut-medium', document.getElementById('layer-arch').checked);
+            toggleLayer('projection', document.getElementById('layer-arch').checked);
+            toggleLayer('grid-line', document.getElementById('layer-grid').checked);
+            toggleLayer('grid-bubble', document.getElementById('layer-grid').checked);
+            toggleLayer('grid-text', document.getElementById('layer-grid').checked);
+            toggleLayer('dimension-line', document.getElementById('layer-dims').checked);
+            toggleLayer('dimension-tick', document.getElementById('layer-dims').checked);
+            toggleLayer('dimension-text', document.getElementById('layer-dims').checked);
+            toggleLayer('text-mask', document.getElementById('layer-dims').checked);
+            toggleLayerById('title-block', document.getElementById('layer-titleblock').checked);
+        }
+
+        // Smooth Pan & Zoom Controls Engine
+        function updateTransform() {
+            wrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+        }
+
+        function zoomIn() {
+            scale *= 1.25;
+            updateTransform();
+        }
+
+        function zoomOut() {
+            scale /= 1.25;
+            updateTransform();
+        }
+
+        function zoomReset() {
+            scale = 1.0;
+            panX = 0;
+            panY = 0;
+            updateTransform();
+        }
+
+        function zoomFit() {
+            const vRect = viewport.getBoundingClientRect();
+            const sheet = sheetsData[activeSheetIndex];
+            if (!sheet) return;
+
+            const targetScale = Math.min(
+                (vRect.width - 80) / (sheet.paper_width_mm * 3.78),
+                (vRect.height - 80) / (sheet.paper_height_mm * 3.78)
+            );
+            scale = Math.max(0.2, targetScale);
+            panX = (vRect.width - (sheet.paper_width_mm * 3.78 * scale)) / 2;
+            panY = (vRect.height - (sheet.paper_height_mm * 3.78 * scale)) / 2;
+            updateTransform();
+        }
+
+        // Mouse & Touch Pan-Zoom Event Handlers
+        function setupPanZoomEvents() {
+            viewport.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
+
+                const rect = viewport.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                const newScale = Math.min(Math.max(scale * zoomFactor, 0.1), 15.0);
+                panX = mouseX - (mouseX - panX) * (newScale / scale);
+                panY = mouseY - (mouseY - panY) * (newScale / scale);
+                scale = newScale;
+                updateTransform();
+            }, { passive: false });
+
+            viewport.addEventListener('mousedown', (e) => {
+                if (e.target.closest('#toolbar') || e.target.closest('#drawer') || isRulerActive) return;
+                isPanning = true;
+                startX = e.clientX - panX;
+                startY = e.clientY - panY;
+                viewport.classList.add('panning');
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (isPanning) {
+                    panX = e.clientX - startX;
+                    panY = e.clientY - startY;
+                    updateTransform();
+                } else if (isRulerActive && rulerStartPt) {
+                    handleRulerMouseMove(e);
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                isPanning = false;
+                viewport.classList.remove('panning');
+            });
+
+            // Touch Gestures (Mobile/Tablet)
+            let touchStartDist = 0;
+            viewport.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    if (isRulerActive) return;
+                    isPanning = true;
+                    startX = e.touches[0].clientX - panX;
+                    startY = e.touches[0].clientY - panY;
+                } else if (e.touches.length === 2) {
+                    isPanning = false;
+                    touchStartDist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                }
+            }, { passive: true });
+
+            viewport.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && isPanning) {
+                    panX = e.touches[0].clientX - startX;
+                    panY = e.touches[0].clientY - startY;
+                    updateTransform();
+                } else if (e.touches.length === 2 && touchStartDist > 0) {
+                    const dist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    const zoomFactor = dist / touchStartDist;
+                    scale = Math.min(Math.max(scale * zoomFactor, 0.1), 15.0);
+                    touchStartDist = dist;
+                    updateTransform();
+                }
+            }, { passive: true });
+
+            viewport.addEventListener('touchend', () => {
+                isPanning = false;
+                touchStartDist = 0;
+            });
+
+            viewport.addEventListener('click', (e) => {
+                if (isRulerActive && !e.target.closest('#toolbar') && !e.target.closest('#drawer')) {
+                    handleRulerClick(e);
+                }
+            });
+        }
+
+        // Digital Measurement Ruler Engine
+        function toggleRulerTool() {
+            isRulerActive = !isRulerActive;
+            const btn = document.getElementById('ruler-btn');
+            btn.classList.toggle('active', isRulerActive);
+            viewport.classList.toggle('ruler-active', isRulerActive);
+            document.getElementById('ruler-card').style.display = isRulerActive ? 'flex' : 'none';
+
+            if (!isRulerActive) {
+                resetCurrentRuler();
+            }
+        }
+
+        function resetCurrentRuler() {
+            rulerStartPt = null;
+            const mLayer = document.getElementById('measurement-layer');
+            const previewLine = mLayer ? mLayer.querySelector('.preview-line') : null;
+            if (previewLine) previewLine.remove();
+        }
+
+        function clearMeasurements() {
+            resetCurrentRuler();
+            const mLayer = document.getElementById('measurement-layer');
+            if (mLayer) {
+                mLayer.innerHTML = '';
+            }
+            measurementHistory = [];
+            document.getElementById('clear-ruler-btn').style.display = 'none';
+            document.getElementById('ruler-distance-display').textContent = '0.00 m';
+            document.getElementById('ruler-paper-display').textContent = '0.0 mm';
+        }
+
+        function getPaperCoords(e) {
+            const svgEl = svgContainer.querySelector('svg:not(#measurement-layer)');
+            if (!svgEl) return { x: 0, y: 0 };
+            const rect = svgEl.getBoundingClientRect();
+            const sheet = sheetsData[activeSheetIndex];
+
+            const relX = (e.clientX - rect.left) / rect.width;
+            const relY = (e.clientY - rect.top) / rect.height;
+
+            return {
+                x: relX * sheet.paper_width_mm,
+                y: relY * sheet.paper_height_mm
+            };
+        }
+
+        function handleRulerClick(e) {
+            const pt = getPaperCoords(e);
+            const sheet = sheetsData[activeSheetIndex];
+            const mLayer = document.getElementById('measurement-layer');
+            if (!mLayer) return;
+
+            if (!rulerStartPt) {
+                rulerStartPt = pt;
+                const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                dot.setAttribute('cx', pt.x);
+                dot.setAttribute('cy', pt.y);
+                dot.setAttribute('r', '2.0');
+                dot.setAttribute('fill', '#0284c7');
+                dot.setAttribute('stroke', '#ffffff');
+                dot.setAttribute('stroke-width', '0.5');
+                dot.setAttribute('class', 'ruler-marker');
+                mLayer.appendChild(dot);
+            } else {
+                const endPt = pt;
+                const paperDistMM = Math.hypot(endPt.x - rulerStartPt.x, endPt.y - rulerStartPt.y);
+                const realDistM = (paperDistMM * sheet.scale) / 1000.0;
+
+                // Permanent Measurement Line
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', rulerStartPt.x);
+                line.setAttribute('y1', rulerStartPt.y);
+                line.setAttribute('x2', endPt.x);
+                line.setAttribute('y2', endPt.y);
+                line.setAttribute('stroke', '#0284c7');
+                line.setAttribute('stroke-width', '1.0');
+                line.setAttribute('stroke-dasharray', '2,1');
+
+                const endDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                endDot.setAttribute('cx', endPt.x);
+                endDot.setAttribute('cy', endPt.y);
+                endDot.setAttribute('r', '2.0');
+                endDot.setAttribute('fill', '#0284c7');
+                endDot.setAttribute('stroke', '#ffffff');
+                endDot.setAttribute('stroke-width', '0.5');
+
+                // Label Text Box
+                const midX = (rulerStartPt.x + endPt.x) / 2.0;
+                const midY = (rulerStartPt.y + endPt.y) / 2.0;
+
+                const textLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                textLabel.setAttribute('x', midX);
+                textLabel.setAttribute('y', midY - 2.0);
+                textLabel.setAttribute('fill', '#0284c7');
+                textLabel.setAttribute('font-size', '3.5');
+                textLabel.setAttribute('font-weight', 'bold');
+                textLabel.setAttribute('text-anchor', 'middle');
+                textLabel.textContent = `${realDistM.toFixed(2)} m`;
+
+                mLayer.appendChild(line);
+                mLayer.appendChild(endDot);
+                mLayer.appendChild(textLabel);
+
+                document.getElementById('ruler-distance-display').textContent = `${realDistM.toFixed(2)} m`;
+                document.getElementById('ruler-paper-display').textContent = `${paperDistMM.toFixed(1)} mm`;
+                document.getElementById('ruler-scale-display').textContent = `1:${sheet.scale}`;
+                document.getElementById('clear-ruler-btn').style.display = 'inline-flex';
+
+                rulerStartPt = null;
+            }
+        }
+
+        function handleRulerMouseMove(e) {
+            if (!rulerStartPt) return;
+            const pt = getPaperCoords(e);
+            const sheet = sheetsData[activeSheetIndex];
+            const mLayer = document.getElementById('measurement-layer');
+            if (!mLayer) return;
+
+            let pLine = mLayer.querySelector('.preview-line');
+            if (!pLine) {
+                pLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                pLine.setAttribute('class', 'preview-line');
+                pLine.setAttribute('stroke', '#f59e0b');
+                pLine.setAttribute('stroke-width', '0.8');
+                pLine.setAttribute('stroke-dasharray', '1.5,1.5');
+                mLayer.appendChild(pLine);
+            }
+
+            pLine.setAttribute('x1', rulerStartPt.x);
+            pLine.setAttribute('y1', rulerStartPt.y);
+            pLine.setAttribute('x2', pt.x);
+            pLine.setAttribute('y2', pt.y);
+
+            const paperDistMM = Math.hypot(pt.x - rulerStartPt.x, pt.y - rulerStartPt.y);
+            const realDistM = (paperDistMM * sheet.scale) / 1000.0;
+
+            document.getElementById('ruler-distance-display').textContent = `${realDistM.toFixed(2)} m`;
+            document.getElementById('ruler-paper-display').textContent = `${paperDistMM.toFixed(1)} mm`;
+            document.getElementById('ruler-scale-display').textContent = `1:${sheet.scale}`;
+        }
+
+        // One-Click Native Print
+        function printSheet() {
+            window.print();
+        }
+
+        // Key Listeners
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (isRulerActive) toggleRulerTool();
+            }
+        });
+
+        // Window Resize
+        window.addEventListener('resize', () => {
+            zoomFit();
+        });
+
+        // Initialize App on DOM Load
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

@@ -1065,6 +1065,50 @@ draw_app = typer.Typer(
 app.add_typer(draw_app, name="draw")
 
 
+@draw_app.command(name="view")
+def draw_view_cmd(
+    manifest: Path = typer.Option(
+        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
+    ),
+    sheets: Optional[Path] = typer.Option(
+        None, "--sheets", help="Directory containing sheet configs (*.yaml) or single sheet file"
+    ),
+    output: Path = typer.Option(
+        Path("dist/viewer_2d.html"), "--output", "-o", help="Output 2D HTML viewer file path"
+    ),
+):
+    """Generate standalone interactive 2D HTML blueprint viewer (viewer_2d.html) with sheet navigator drawer, pan-zoom, measuring ruler, and layer toggles"""
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        raise typer.Exit(code=1)
+
+    console.print(
+        f"[bold green]Generating 2D Blueprint HTML Viewer:[/bold green] {manifest} -> [cyan]{output}[/cyan]"
+    )
+    try:
+        from debim.draw import export_2d_viewer
+
+        out_path = export_2d_viewer(
+            manifest_or_resolved=manifest,
+            output_path=output,
+            sheets_dir_or_configs=sheets,
+        )
+
+        file_size = out_path.stat().st_size
+        console.print(
+            Panel(
+                f"[bold green]2D Blueprint Viewer Export Successful![/bold green]\n"
+                f"[bold cyan]Output HTML File:[/bold cyan] {out_path}\n"
+                f"[bold cyan]File Size:[/bold cyan] {file_size:,} bytes\n"
+                f"[dim]Open in web browser for interactive 2D sheet inspection, pan-zoom & ruler measuring.[/dim]",
+                title="[bold green]debim 2D Viewer Engine[/bold green]",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]2D Viewer Export Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
 @draw_app.command(name="export-dxf")
 def draw_export_dxf(
     manifest: Path = typer.Option(
