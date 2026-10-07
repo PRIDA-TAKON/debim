@@ -183,7 +183,7 @@ my_project/
             RefrigerantClass: R134a
     ```
   - **ผลลัพธ์:** ปลดล็อกการส่งออก IFC4 แท้จริงได้ทันทีสำหรับทุก Entity ในสเปก buildingSMART
-- [ ] **Task 4.2:** `feat: Automated Pset_* Validation via buildingSMART bSDD (Building Data Dictionary)`
+- [x] **Task 4.2:** `feat: Automated Pset_* Validation via buildingSMART bSDD (Building Data Dictionary)` *(เสร็จสิ้น: Issue #91, PR #93)*
   - ตรวจสอบ Property Set ว่าตรงตามมาตรฐานสากลหรือไม่ผ่าน JSON Schema อัตโนมัติ
 
 ---
