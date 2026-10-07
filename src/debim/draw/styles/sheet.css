@@ -31,11 +31,11 @@ svg:not(#measurement-layer) {
   background-color: transparent !important;
 }
 
-/* Lineweights */
+/* Lineweights (1px = 1 SVG user unit = 1mm paper space) */
 .cut-heavy {
   stroke: #000000;
   fill: #000000;
-  stroke-width: 0.50mm;
+  stroke-width: 0.50px;
   stroke-linejoin: round;
   stroke-linecap: square;
 }
@@ -43,7 +43,7 @@ svg:not(#measurement-layer) {
 .cut-medium {
   stroke: #000000;
   fill: none;
-  stroke-width: 0.35mm;
+  stroke-width: 0.35px;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
@@ -51,7 +51,7 @@ svg:not(#measurement-layer) {
 .projection {
   stroke: #444444;
   fill: none;
-  stroke-width: 0.18mm;
+  stroke-width: 0.18px;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
@@ -59,31 +59,31 @@ svg:not(#measurement-layer) {
 .grid-line {
   stroke: #666666;
   fill: none;
-  stroke-width: 0.18mm;
-  stroke-dasharray: 4mm 1mm 1mm 1mm;
+  stroke-width: 0.18px;
+  stroke-dasharray: 4px 1px 1px 1px;
 }
 
 /* Grid Bubbles */
 .grid-bubble {
   fill: #ffffff;
   stroke: #000000;
-  stroke-width: 0.25mm;
+  stroke-width: 0.25px;
 }
 
 .grid-text {
   fill: #000000;
   font-family: 'Prompt', 'Sarabun', sans-serif;
-  font-size: 2.5mm;
+  font-size: 2.2px;
   font-weight: 600;
   text-anchor: middle;
   dominant-baseline: central;
 }
 
-/* Annotative Scale Typography */
+/* Annotative Scale Typography (Architectural Standards ISO 128 / ISO 3098) */
 .dimension-text {
   fill: #000000;
   font-family: 'Sarabun', 'Prompt', sans-serif;
-  font-size: 2.0mm;
+  font-size: 2.0px;
   font-weight: 500;
   text-anchor: middle;
   dominant-baseline: central;
@@ -92,7 +92,7 @@ svg:not(#measurement-layer) {
 .room-tag {
   fill: #000000;
   font-family: 'Prompt', 'Sarabun', sans-serif;
-  font-size: 3.5mm;
+  font-size: 3.5px;
   font-weight: 600;
   text-anchor: middle;
   dominant-baseline: central;
@@ -101,41 +101,44 @@ svg:not(#measurement-layer) {
 .sheet-title {
   fill: #000000;
   font-family: 'Prompt', 'Sarabun', sans-serif;
-  font-size: 5.0mm;
+  font-size: 4.5px;
   font-weight: 700;
+  dominant-baseline: text-before-edge;
 }
 
 .title-block-text {
   fill: #111111;
   font-family: 'Sarabun', 'Prompt', sans-serif;
-  font-size: 2.5mm;
+  font-size: 2.5px;
   font-weight: 400;
+  dominant-baseline: text-before-edge;
 }
 
 .title-block-label {
   fill: #666666;
   font-family: 'Sarabun', 'Prompt', sans-serif;
-  font-size: 1.8mm;
+  font-size: 1.8px;
   font-weight: 500;
   text-transform: uppercase;
+  dominant-baseline: text-before-edge;
 }
 
 /* Dimension Line Primitives */
 .dimension-line {
   stroke: #000000;
   fill: none;
-  stroke-width: 0.18mm;
+  stroke-width: 0.18px;
 }
 
 .dimension-extension {
   stroke: #666666;
   fill: none;
-  stroke-width: 0.15mm;
+  stroke-width: 0.15px;
 }
 
 .dimension-tick {
   stroke: #000000;
-  stroke-width: 0.35mm;
+  stroke-width: 0.35px;
   stroke-linecap: round;
 }
 
@@ -150,44 +153,47 @@ svg:not(#measurement-layer) {
 .sheet-border {
   fill: none;
   stroke: #000000;
-  stroke-width: 0.70mm;
+  stroke-width: 0.70px;
 }
 
 .sheet-inner-border {
   fill: none;
   stroke: #000000;
-  stroke-width: 0.35mm;
+  stroke-width: 0.35px;
 }
 
 .title-block-container {
   fill: #ffffff;
   stroke: #000000;
-  stroke-width: 0.35mm;
+  stroke-width: 0.35px;
 }
 
 .title-block-divider {
   stroke: #000000;
-  stroke-width: 0.25mm;
+  stroke-width: 0.20px;
 }
 
 /* Sheet Index Table Styling */
 .sheet-index-title {
   fill: #000000;
   font-family: 'Prompt', 'Sarabun', sans-serif;
-  font-size: 3.0mm;
+  font-size: 2.8px;
   font-weight: 600;
+  dominant-baseline: text-before-edge;
 }
 
 .sheet-index-header {
   fill: #333333;
   font-family: 'Prompt', 'Sarabun', sans-serif;
-  font-size: 2.0mm;
+  font-size: 2.0px;
   font-weight: 600;
+  dominant-baseline: text-before-edge;
 }
 
 .sheet-index-cell {
   fill: #111111;
   font-family: 'Sarabun', 'Prompt', sans-serif;
-  font-size: 2.0mm;
+  font-size: 2.0px;
   font-weight: 400;
+  dominant-baseline: text-before-edge;
 }

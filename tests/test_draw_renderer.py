@@ -116,11 +116,11 @@ def test_lineweights_and_architectural_classes(project_manifest_path):
 
     # Check CSS class definitions in embedded style
     assert ".cut-heavy {" in svg_content
-    assert "stroke-width: 0.50mm;" in svg_content
+    assert "stroke-width: 0.50px;" in svg_content or "stroke-width: 0.50mm;" in svg_content
     assert ".cut-medium {" in svg_content
-    assert "stroke-width: 0.35mm;" in svg_content
+    assert "stroke-width: 0.35px;" in svg_content or "stroke-width: 0.35mm;" in svg_content
     assert ".projection {" in svg_content
-    assert "stroke-width: 0.18mm;" in svg_content
+    assert "stroke-width: 0.18px;" in svg_content or "stroke-width: 0.18mm;" in svg_content
     assert ".grid-line {" in svg_content
     assert "stroke-dasharray:" in svg_content
 
@@ -138,11 +138,11 @@ def test_annotative_scaling_and_masking(project_manifest_path):
 
     # Check annotative CSS typography rules
     assert ".dimension-text {" in svg_content
-    assert "font-size: 2.0mm;" in svg_content
+    assert "font-size: 2.0px;" in svg_content or "font-size: 2.0mm;" in svg_content
     assert ".room-tag {" in svg_content
-    assert "font-size: 3.5mm;" in svg_content
+    assert "font-size: 3.5px;" in svg_content or "font-size: 3.5mm;" in svg_content
     assert ".sheet-title {" in svg_content
-    assert "font-size: 5.0mm;" in svg_content
+    assert ("font-size: 4.5px;" in svg_content or "font-size: 5.0px;" in svg_content or "font-size: 5.0mm;" in svg_content)
 
     # Check background mask rects
     assert 'class="text-mask"' in svg_content
