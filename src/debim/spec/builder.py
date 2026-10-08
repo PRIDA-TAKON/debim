@@ -184,6 +184,9 @@ class SpecificationBook(BaseModel):
         fmt = format.lower() if format else out_p.suffix.lstrip(".").lower()
         if fmt in ("html", "htm"):
             out_p.write_text(self.html_content, encoding="utf-8")
+        elif fmt in ("docx", "word", "doc"):
+            from debim.spec.docx_exporter import export_spec_book_to_docx
+            export_spec_book_to_docx(self, out_p)
         else:
             out_p.write_text(self.markdown_content, encoding="utf-8")
 

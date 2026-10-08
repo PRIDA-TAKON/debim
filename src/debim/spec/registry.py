@@ -63,6 +63,29 @@ def resolve_package_urls(pkg_identifier: str) -> List[str]:
         if len(parts) == 2:
             scope, pkg_name = parts[0], parts[1]
             candidates = []
+            if scope in ("th", "thai", "debim-th"):
+                thai_divisions = [
+                    "03-concrete",
+                    "04-masonry",
+                    "05-metals",
+                    "07-thermal-moisture",
+                    "08-openings",
+                    "09-finishes",
+                    "22-plumbing",
+                    "26-electrical",
+                ]
+                for b in branches:
+                    for fn in filenames:
+                        candidates.append(
+                            f"https://raw.githubusercontent.com/PRIDA-TAKON/debim-specs-th/{b}/packages/{pkg_name}/{fn}"
+                        )
+                        if "/" not in pkg_name:
+                            for div in thai_divisions:
+                                candidates.append(
+                                    f"https://raw.githubusercontent.com/PRIDA-TAKON/debim-specs-th/{b}/packages/{div}/{pkg_name}/{fn}"
+                                )
+                return candidates
+
             for b in branches:
                 for fn in filenames:
                     candidates.append(f"https://raw.githubusercontent.com/{scope}/{pkg_name}/{b}/{fn}")
@@ -83,6 +106,31 @@ def resolve_package_urls(pkg_identifier: str) -> List[str]:
             return candidates
 
     parts = [p for p in pkg_str.split("/") if p]
+    if len(parts) >= 2 and parts[0] in ("th", "thai"):
+        pkg_sub = "/".join(parts[1:])
+        thai_divisions = [
+            "03-concrete",
+            "04-masonry",
+            "05-metals",
+            "07-thermal-moisture",
+            "08-openings",
+            "09-finishes",
+            "22-plumbing",
+            "26-electrical",
+        ]
+        candidates = []
+        for b in branches:
+            for fn in filenames:
+                candidates.append(
+                    f"https://raw.githubusercontent.com/PRIDA-TAKON/debim-specs-th/{b}/packages/{pkg_sub}/{fn}"
+                )
+                if len(parts) == 2:
+                    for div in thai_divisions:
+                        candidates.append(
+                            f"https://raw.githubusercontent.com/PRIDA-TAKON/debim-specs-th/{b}/packages/{div}/{pkg_sub}/{fn}"
+                        )
+        return candidates
+
     if len(parts) == 2:
         org, repo = parts[0], parts[1]
         candidates = []
@@ -289,7 +337,15 @@ class SpecRegistryClient:
     ) -> Path:
         pkg = self.fetch_package(pkg_identifier, force=force)
 
-        pkg_slug = pkg.name if pkg.name else self._get_pkg_slug(pkg_identifier)
+        leaf_slug = pkg_identifier.strip().rstrip("/").split("/")[-1].lstrip("@")
+        if leaf_slug and re.sub(r"[^a-zA-Z0-9_\-]", "", leaf_slug):
+            pkg_slug = leaf_slug
+        elif pkg.properties.get("id"):
+            pkg_slug = str(pkg.properties["id"]).lower()
+        elif pkg.name and re.sub(r"[^a-zA-Z0-9_\-]", "", pkg.name):
+            pkg_slug = pkg.name
+        else:
+            pkg_slug = self._get_pkg_slug(pkg_identifier)
         pkg_slug = re.sub(r"[^a-zA-Z0-9_\-]", "_", pkg_slug)
 
         target_dir = specs_dir / pkg_slug

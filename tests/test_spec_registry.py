@@ -42,6 +42,14 @@ def test_resolve_package_urls():
     blob_url = "https://github.com/toa/paint/blob/main/spec.yaml"
     assert resolve_package_urls(blob_url) == ["https://raw.githubusercontent.com/toa/paint/main/spec.yaml"]
 
+    # Thai registry @th shorthand
+    urls_th = resolve_package_urls("@th/toa-supershield-exterior")
+    assert any("PRIDA-TAKON/debim-specs-th/main/packages/09-finishes/toa-supershield-exterior/spec.yaml" in u for u in urls_th)
+
+    # Thai registry th/ shorthand
+    urls_th_div = resolve_package_urls("th/03-concrete/concrete-readymix-240ksc")
+    assert any("PRIDA-TAKON/debim-specs-th/main/packages/03-concrete/concrete-readymix-240ksc/spec.yaml" in u for u in urls_th_div)
+
 
 def test_parse_spec_content_yaml():
     yaml_content = """

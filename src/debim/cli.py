@@ -1183,10 +1183,10 @@ def spec_build_cmd(
         None, "--specs", "-s", help="Path to material specifications manifest file or directory"
     ),
     output: Path = typer.Option(
-        Path("dist/specifications.md"), "--output", "-o", help="Output destination file path (.md or .html)"
+        Path("dist/specifications.md"), "--output", "-o", help="Output destination file path (.md, .html, or .docx)"
     ),
     format: Optional[str] = typer.Option(
-        None, "--format", "-f", help="Output format override ('markdown' or 'html')"
+        None, "--format", "-f", help="Output format override ('markdown', 'html', or 'docx')"
     ),
     title: str = typer.Option(
         "ARCHITECTURAL MATERIAL SPECIFICATIONS BOOK", "--title", "-t", help="Title of the Specification Book"
@@ -1249,6 +1249,52 @@ def spec_build_cmd(
         raise
     except Exception as e:
         console.print(f"[bold red]Specification Book Build Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
+@spec_app.command(name="to-word")
+@spec_app.command(name="to-docx")
+def spec_to_word_cmd(
+    input_file: Path = typer.Argument(
+        ..., help="Path to input Markdown specification file (.md)"
+    ),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Output destination Word file path (.docx)"
+    ),
+    font: str = typer.Option(
+        "TH Sarabun PSK", "--font", help="Primary Thai-compatible font family (e.g. 'TH Sarabun PSK', 'Cordia New', 'Aptos')"
+    ),
+    title: Optional[str] = typer.Option(
+        None, "--title", "-t", help="Document title for the specification book"
+    ),
+):
+    """Convert a Markdown specification book (.md) into a formatted Microsoft Word document (.docx)."""
+    if not input_file.exists():
+        console.print(f"[bold red]Error:[/bold red] Input file '{input_file}' not found.")
+        raise typer.Exit(code=1)
+
+    out_p = output if output else input_file.with_suffix(".docx")
+    console.print(f"[bold blue]Converting specification book to MS Word:[/bold blue] {input_file} -> {out_p}")
+
+    try:
+        from debim.spec.docx_exporter import markdown_to_docx
+
+        md_content = input_file.read_text(encoding="utf-8")
+        saved_path = markdown_to_docx(md_content, out_p, title=title, font_name=font)
+        file_size = saved_path.stat().st_size
+
+        console.print(
+            Panel(
+                f"[bold green]MS Word Document Exported Successfully![/bold green]\n"
+                f"[bold cyan]Input File:[/bold cyan] {input_file}\n"
+                f"[bold cyan]Output File:[/bold cyan] [cyan]{saved_path}[/cyan] ({file_size:,} bytes)\n"
+                f"[bold cyan]Font Family:[/bold cyan] {font}",
+                title="[bold green]debim Spec Word Export[/bold green]",
+                style="green",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Word Conversion Error:[/bold red]\n{e}")
         raise typer.Exit(code=1)
 
 
