@@ -5,6 +5,7 @@ Compiles ProjectManifest or ResolvedManifest into standard buildingSMART IFC4 fi
 """
 
 import os
+import math
 import uuid
 import datetime
 from pathlib import Path
@@ -629,6 +630,7 @@ class StepSerializer:
             st_pl_ref = storey_pl_refs.get(st_id)
             st_elev = storey_elevations.get(st_id, 0.0)
 
+            px, py, pz = beam.start_point
             b_depth = getattr(prof, "depth", getattr(prof, "overall_depth", 0.3))
             rel_z = float(pz - st_elev - b_depth / 2.0)
 
@@ -895,7 +897,6 @@ class StepSerializer:
             elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
             rx, ry, rz = custom.rotation if custom.rotation else (0.0, 0.0, 0.0)
             if abs(rz) > 1e-4 or abs(rx) > 1e-4 or abs(ry) > 1e-4:
-                import math
                 rz_r = math.radians(float(rz))
                 ref_dir = self.create_entity("IfcDirection", (round(math.cos(rz_r), 6), round(math.sin(rz_r), 6), 0.0))
                 axis_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
@@ -918,7 +919,6 @@ class StepSerializer:
                     inner_r = float(c_solid.inner_radius) if c_solid.inner_radius is not None else None
                     solid_ref = self.create_entity("IfcSweptDiskSolid", polyline_ref, r, inner_r, None, None)
                 elif isinstance(c_solid, (RevolvedAreaSolid, ResolvedRevolvedArea)):
-                    import math
                     pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
                     axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
                     prof_ref = self.create_ifc_profile_def(c_solid.profile, custom.tag, axis2d)
@@ -1385,7 +1385,6 @@ class StepSerializer:
             elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
             rx, ry, rz = proxy.rotation
             if abs(rz) > 1e-4 or abs(rx) > 1e-4 or abs(ry) > 1e-4:
-                import math
                 rz_r = math.radians(float(rz))
                 ref_dir = self.create_entity("IfcDirection", (round(math.cos(rz_r), 6), round(math.sin(rz_r), 6), 0.0))
                 axis_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
@@ -1678,6 +1677,34 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id in storey_products:
             storey_products[st_id].append(footing_obj)
 
+        fx, fy, fz = footing.position
+        f_thick = float(footing.thickness)
+        mat = np.eye(4)
+        mat[0, 3] = float(fx)
+        mat[1, 3] = float(fy)
+        mat[2, 3] = float(fz)
+        ifcopenshell.api.run(
+            "geometry.edit_object_placement",
+            model,
+            product=footing_obj,
+            matrix=mat,
+        )
+
+        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+        rect_prof = model.createIfcRectangleProfileDef(
+            "AREA", None, pos2d, float(footing.width), float(footing.depth)
+        )
+        pos3d = model.createIfcAxis2Placement3D(
+            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            rect_prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), f_thick
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=footing_obj, representation=rep)
+
         for pile in footing.piles:
             pile_obj = ifcopenshell.api.run(
                 "root.create_entity", model, ifc_class="IfcPile", name=pile.tag
@@ -1824,6 +1851,33 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id in storey_products:
             storey_products[st_id].append(slab_obj)
 
+        if slab.polygon and len(slab.polygon) >= 3:
+            h = float(slab.thickness)
+            cz = float(slab.center[2])
+            mat = np.eye(4)
+            mat[2, 3] = cz - h
+            ifcopenshell.api.run(
+                "geometry.edit_object_placement",
+                model,
+                product=slab_obj,
+                matrix=mat,
+            )
+
+            pts_objs = [model.createIfcCartesianPoint((float(p[0]), float(p[1]))) for p in slab.polygon]
+            pts_objs.append(pts_objs[0])
+            poly_curve = model.createIfcPolyline(pts_objs)
+            prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly_curve)
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), h
+            )
+            rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+            ifcopenshell.api.run("geometry.assign_representation", model, product=slab_obj, representation=rep)
+
     # 3.1 Coverings
     for cov in resolved.coverings:
         ptype = cov.covering_type.upper() if cov.covering_type else "CEILING"
@@ -1842,6 +1896,71 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = stair.element.placement.from_storey
         if st_id in storey_products:
             storey_products[st_id].append(stair_obj)
+
+        if stair.landing_polygon and len(stair.landing_polygon) >= 3:
+            lz = min(p[2] for p in stair.landing_polygon)
+            l_thick = float(stair.landing_thickness)
+            mat = np.eye(4)
+            mat[2, 3] = float(lz)
+            ifcopenshell.api.run(
+                "geometry.edit_object_placement",
+                model,
+                product=stair_obj,
+                matrix=mat,
+            )
+
+            pts_objs = [model.createIfcCartesianPoint((float(p[0]), float(p[1]))) for p in stair.landing_polygon]
+            pts_objs.append(pts_objs[0])
+            poly_curve = model.createIfcPolyline(pts_objs)
+            prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly_curve)
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), l_thick
+            )
+            rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+            ifcopenshell.api.run("geometry.assign_representation", model, product=stair_obj, representation=rep)
+
+        for s_idx, step in enumerate(stair.steps):
+            step_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementPart",
+                name=f"{stair.tag}_Step_{step.step_index}",
+                predefined_type="USERDEFINED",
+            )
+            if st_id in storey_products:
+                storey_products[st_id].append(step_obj)
+
+            scx, scy, scz = step.position
+            s_rot = step.rotation or 0.0
+            s_cos = math.cos(s_rot)
+            s_sin = math.sin(s_rot)
+            s_mat = np.eye(4)
+            s_mat[0, 0] = s_cos
+            s_mat[0, 1] = -s_sin
+            s_mat[1, 0] = s_sin
+            s_mat[1, 1] = s_cos
+            s_mat[0, 3] = float(scx)
+            s_mat[1, 3] = float(scy)
+            s_mat[2, 3] = float(scz - step.riser / 2.0)
+            ifcopenshell.api.run("geometry.edit_object_placement", model, product=step_obj, matrix=s_mat)
+
+            s_pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+            s_prof = model.createIfcRectangleProfileDef("AREA", None, s_pos2d, float(step.width), float(step.tread))
+            s_pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            s_solid = model.createIfcExtrudedAreaSolid(
+                s_prof, s_pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(step.riser)
+            )
+            s_rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [s_solid])
+            ifcopenshell.api.run("geometry.assign_representation", model, product=step_obj, representation=s_rep)
 
     for flight in resolved.stair_flights:
         flight_obj = ifcopenshell.api.run(
@@ -1877,6 +1996,50 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id in storey_products:
             storey_products[st_id].append(wall_obj)
 
+        x1, y1, z1 = wall.start_point
+        x2, y2, z2 = wall.end_point
+        dx = x2 - x1
+        dy = y2 - y1
+        l_2d = math.hypot(dx, dy)
+        if l_2d > 1e-6:
+            ux, uy = dx / l_2d, dy / l_2d
+        else:
+            ux, uy = 1.0, 0.0
+
+        cx = (x1 + x2) / 2.0
+        cy = (y1 + y2) / 2.0
+        cz = z1
+
+        mat = np.eye(4)
+        mat[0, 0] = ux
+        mat[0, 1] = -uy
+        mat[1, 0] = uy
+        mat[1, 1] = ux
+        mat[0, 3] = cx
+        mat[1, 3] = cy
+        mat[2, 3] = cz
+        ifcopenshell.api.run(
+            "geometry.edit_object_placement",
+            model,
+            product=wall_obj,
+            matrix=mat,
+        )
+
+        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+        rect_prof = model.createIfcRectangleProfileDef(
+            "AREA", None, pos2d, float(wall.length), float(wall.thickness)
+        )
+        pos3d = model.createIfcAxis2Placement3D(
+            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            rect_prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(wall.height)
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=wall_obj, representation=rep)
+
         for child in wall.children:
             if isinstance(child, ResolvedDoor):
                 door_obj = ifcopenshell.api.run(
@@ -1885,12 +2048,53 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 door_obj.OverallHeight = float(child.height)
                 door_obj.OverallWidth = float(child.width)
 
+                dcx, dcy, dcz = child.position
+                dmat = np.eye(4)
+                dmat[0, 0] = ux
+                dmat[0, 1] = -uy
+                dmat[1, 0] = uy
+                dmat[1, 1] = ux
+                dmat[0, 3] = float(dcx)
+                dmat[1, 3] = float(dcy)
+                dmat[2, 3] = float(dcz)
+                ifcopenshell.api.run(
+                    "geometry.edit_object_placement",
+                    model,
+                    product=door_obj,
+                    matrix=dmat,
+                )
+
+                d_pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+                d_prof = model.createIfcRectangleProfileDef(
+                    "AREA", None, d_pos2d, float(child.width), float(child.frame_thickness)
+                )
+                d_pos3d = model.createIfcAxis2Placement3D(
+                    model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                    model.createIfcDirection((0.0, 0.0, 1.0)),
+                    model.createIfcDirection((1.0, 0.0, 0.0)),
+                )
+                d_solid = model.createIfcExtrudedAreaSolid(
+                    d_prof, d_pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(child.height)
+                )
+                d_rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [d_solid])
+                ifcopenshell.api.run("geometry.assign_representation", model, product=door_obj, representation=d_rep)
+
                 opening_obj = ifcopenshell.api.run(
                     "root.create_entity",
                     model,
                     ifc_class="IfcOpeningElement",
                     name=f"{child.tag}_Opening",
                 )
+                ifcopenshell.api.run("geometry.edit_object_placement", model, product=opening_obj, matrix=dmat)
+                op_d_prof = model.createIfcRectangleProfileDef(
+                    "AREA", None, d_pos2d, float(child.width), float(wall.thickness) * 1.2
+                )
+                op_d_solid = model.createIfcExtrudedAreaSolid(
+                    op_d_prof, d_pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(child.height)
+                )
+                op_d_rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [op_d_solid])
+                ifcopenshell.api.run("geometry.assign_representation", model, product=opening_obj, representation=op_d_rep)
+
                 ifcopenshell.api.run("feature.add_feature", model, feature=opening_obj, element=wall_obj)
                 ifcopenshell.api.run("feature.add_filling", model, opening=opening_obj, element=door_obj)
 
@@ -1904,12 +2108,53 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 win_obj.OverallHeight = float(child.height)
                 win_obj.OverallWidth = float(child.width)
 
+                wcx, wcy, wcz = child.position
+                wmat = np.eye(4)
+                wmat[0, 0] = ux
+                wmat[0, 1] = -uy
+                wmat[1, 0] = uy
+                wmat[1, 1] = ux
+                wmat[0, 3] = float(wcx)
+                wmat[1, 3] = float(wcy)
+                wmat[2, 3] = float(wcz)
+                ifcopenshell.api.run(
+                    "geometry.edit_object_placement",
+                    model,
+                    product=win_obj,
+                    matrix=wmat,
+                )
+
+                w_pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+                w_prof = model.createIfcRectangleProfileDef(
+                    "AREA", None, w_pos2d, float(child.width), float(child.frame_thickness)
+                )
+                w_pos3d = model.createIfcAxis2Placement3D(
+                    model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                    model.createIfcDirection((0.0, 0.0, 1.0)),
+                    model.createIfcDirection((1.0, 0.0, 0.0)),
+                )
+                w_solid = model.createIfcExtrudedAreaSolid(
+                    w_prof, w_pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(child.height)
+                )
+                w_rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [w_solid])
+                ifcopenshell.api.run("geometry.assign_representation", model, product=win_obj, representation=w_rep)
+
                 opening_obj = ifcopenshell.api.run(
                     "root.create_entity",
                     model,
                     ifc_class="IfcOpeningElement",
                     name=f"{child.tag}_Opening",
                 )
+                ifcopenshell.api.run("geometry.edit_object_placement", model, product=opening_obj, matrix=wmat)
+                op_w_prof = model.createIfcRectangleProfileDef(
+                    "AREA", None, w_pos2d, float(child.width), float(wall.thickness) * 1.2
+                )
+                op_w_solid = model.createIfcExtrudedAreaSolid(
+                    op_w_prof, w_pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(child.height)
+                )
+                op_w_rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [op_w_solid])
+                ifcopenshell.api.run("geometry.assign_representation", model, product=opening_obj, representation=op_w_rep)
+
                 ifcopenshell.api.run("feature.add_feature", model, feature=opening_obj, element=wall_obj)
                 ifcopenshell.api.run("feature.add_filling", model, opening=opening_obj, element=win_obj)
 
@@ -1958,7 +2203,6 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 inner_r = float(c_solid.inner_radius) if c_solid.inner_radius is not None else None
                 solid_entity = model.createIfcSweptDiskSolid(directrix_curve, r, inner_r, None, None)
             elif isinstance(c_solid, (RevolvedAreaSolid, ResolvedRevolvedArea)):
-                import math
                 pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
                 prof_def = _create_ifcopenshell_profile(model, c_solid.profile, custom.tag, pos2d)
                 axis_pt = model.createIfcCartesianPoint((float(x) for x in c_solid.axis_point))
@@ -2153,6 +2397,35 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = roof.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(roof_obj)
+
+        all_pts = []
+        coord_indices = []
+        if roof.planes:
+            for plane in roof.planes:
+                if plane.polygon and len(plane.polygon) >= 3:
+                    base_idx = len(all_pts) + 1
+                    for pt in plane.polygon:
+                        all_pts.append((float(pt[0]), float(pt[1]), float(pt[2])))
+                    for i in range(1, len(plane.polygon) - 1):
+                        coord_indices.append([base_idx, base_idx + i, base_idx + i + 1])
+        elif roof.footprint_polygon and len(roof.footprint_polygon) >= 3:
+            base_idx = len(all_pts) + 1
+            for pt in roof.footprint_polygon:
+                all_pts.append((float(pt[0]), float(pt[1]), float(pt[2])))
+            for i in range(1, len(roof.footprint_polygon) - 1):
+                coord_indices.append([base_idx, base_idx + i, base_idx + i + 1])
+
+        if all_pts and coord_indices:
+            ifcopenshell.api.run(
+                "geometry.edit_object_placement",
+                model,
+                product=roof_obj,
+                matrix=np.eye(4),
+            )
+            pt_list = model.createIfcCartesianPointList3D(all_pts)
+            face_set = model.createIfcTriangulatedFaceSet(pt_list, None, False, coord_indices)
+            rep = model.createIfcShapeRepresentation(body_context, "Body", "Tessellation", [face_set])
+            ifcopenshell.api.run("geometry.assign_representation", model, product=roof_obj, representation=rep)
 
         for child in roof.children:
             if isinstance(child, ResolvedDoor):
