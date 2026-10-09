@@ -714,7 +714,27 @@ def generate_viewer_html(
 
     # Civil Infrastructure Alignments (IFC4.3)
     for align in resolved.alignments:
-        if align.points_3d and len(align.points_3d) >= 2:
+        if align.swept_solids:
+            for s_idx, solid in enumerate(align.swept_solids):
+                s_name = solid.get("name", "corridor")
+                color = "#F59E0B" if "carriageway" in s_name else ("#64748B" if "curb" in s_name else "#10B981")
+                elements_data.append({
+                    "tag": f"{align.tag}-{s_name}",
+                    "class": "IfcAlignment",
+                    "predefined_type": align.predefined_type,
+                    "geometry_type": "triangulated_mesh",
+                    "vertices": solid["vertices"],
+                    "faces": solid["faces"],
+                    "color": color,
+                    "layer": align.layer,
+                    "dimensions": {
+                        "total_length": align.total_length,
+                        "start_chainage": align.start_chainage,
+                        "end_chainage": align.end_chainage,
+                        "cross_section": s_name,
+                    },
+                })
+        elif align.points_3d and len(align.points_3d) >= 2:
             elements_data.append({
                 "tag": align.tag,
                 "class": "IfcAlignment",
@@ -2948,7 +2968,24 @@ def generate_viewer_html(
                 return;
             }}
 
-            if (data.geometry_type === "swept_disk") {{
+            if (data.geometry_type === "triangulated_mesh") {{
+                const geom = new THREE.BufferGeometry();
+                const verts = new Float32Array(data.vertices.flat());
+                geom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+                if (data.faces && data.faces.length > 0) {{
+                    const indices = new Uint32Array(data.faces.flat().map(i => i - 1));
+                    geom.setIndex(new THREE.BufferAttribute(indices, 1));
+                }}
+                geom.computeVertexNormals();
+
+                const mat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color(data.color || "#F59E0B"),
+                    roughness: 0.5,
+                    metalness: 0.1,
+                    side: THREE.DoubleSide
+                }});
+                object3D = new THREE.Mesh(geom, mat);
+            }} else if (data.geometry_type === "swept_disk") {{
                 const points = data.points.map(p => new THREE.Vector3(...p));
                 const curve = new THREE.CatmullRomCurve3(points);
                 const tubeGeom = new THREE.TubeGeometry(curve, 64, data.radius, 16, false);

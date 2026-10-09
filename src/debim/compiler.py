@@ -3051,6 +3051,25 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 name=align.tag,
             )
             align_obj.ObjectType = f"IfcAlignment.{align.predefined_type}"
+
+        if align.swept_solids:
+            rep_items = []
+            for solid in align.swept_solids:
+                verts = solid["vertices"]
+                faces = solid["faces"]
+                if verts and faces:
+                    pts = model.createIfcCartesianPointList3D([list(v) for v in verts])
+                    tfs = model.createIfcTriangulatedFaceSet(Coordinates=pts, CoordIndex=[list(f) for f in faces])
+                    rep_items.append(tfs)
+            if rep_items:
+                rep = model.createIfcShapeRepresentation(
+                    ContextOfItems=body_context,
+                    RepresentationIdentifier="Body",
+                    RepresentationType="Tessellation",
+                    Items=rep_items,
+                )
+                ifcopenshell.api.run("geometry.assign_representation", model, product=align_obj, representation=rep)
+
         st_id = align.element.placement.storey
         if st_id and st_id in storey_products:
             storey_products[st_id].append(align_obj)
