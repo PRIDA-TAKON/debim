@@ -5374,6 +5374,112 @@
       "title": "IfcLightFixture",
       "type": "object"
     },
+    "IfcMarinePart": {
+      "properties": {
+        "class": {
+          "const": "IfcMarinePart",
+          "default": "IfcMarinePart",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "predefined_type": {
+          "default": "BERTH",
+          "enum": [
+            "BERTH",
+            "JETTY",
+            "QUAY",
+            "PIER",
+            "USERDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "length": {
+          "default": 30.0,
+          "title": "Length",
+          "type": "number"
+        },
+        "width": {
+          "default": 12.0,
+          "title": "Width",
+          "type": "number"
+        },
+        "deck_thickness": {
+          "default": 0.5,
+          "title": "Deck Thickness",
+          "type": "number"
+        },
+        "deck_elevation": {
+          "default": 0.0,
+          "title": "Deck Elevation",
+          "type": "number"
+        },
+        "depth": {
+          "default": 10.0,
+          "title": "Depth",
+          "type": "number"
+        },
+        "piles": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FootingPiles"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "placement": {
+          "$ref": "#/$defs/MarinePartPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcMarinePart",
+      "type": "object"
+    },
     "IfcOutlet": {
       "properties": {
         "class": {
@@ -7836,6 +7942,170 @@
         }
       },
       "title": "LandingEdgeBeamConfig",
+      "type": "object"
+    },
+    "MarinePartPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "from_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From Grid"
+        },
+        "to_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To Grid"
+        },
+        "alignment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alignment"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation"
+        }
+      },
+      "title": "MarinePartPlacement",
       "type": "object"
     },
     "Material": {
@@ -11208,6 +11478,9 @@
           },
           {
             "$ref": "#/$defs/IfcBearing"
+          },
+          {
+            "$ref": "#/$defs/IfcMarinePart"
           },
           {
             "$ref": "#/$defs/IfcCustomElement"
