@@ -4740,9 +4740,10 @@ class SpatialResolver:
             resolved_manifest.proxies.append(r_proxy)
             resolved_manifest.elements.append(r_proxy)
 
-        # Resolve ports for all elements
+        # Resolve ports for all elements and proxies
         all_resolved_ports: List[ResolvedPort] = []
-        for elem in self.manifest.elements:
+        all_manifest_elems = list(self.manifest.elements) + list(self.manifest.proxies)
+        for elem in all_manifest_elems:
             r_elem = resolved_manifest.get_element_by_tag(elem.tag)
             if not r_elem:
                 continue

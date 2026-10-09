@@ -27,7 +27,14 @@ from debim.resolver import (
     ResolvedWindow,
     resolve_manifest,
 )
-from debim.schema import ProjectManifest, RevolvedAreaSolid, SweptDiskSolid, load_manifest
+from debim.schema import (
+    IFC4_DISTRIBUTION_8_ATTR_CLASSES,
+    IFC4_DISTRIBUTION_9_ATTR_CLASSES,
+    ProjectManifest,
+    RevolvedAreaSolid,
+    SweptDiskSolid,
+    load_manifest,
+)
 
 
 def _build_transform_matrix(
@@ -102,6 +109,36 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcWasteTerminal"
     if "sanitary" in l:
         return "IfcSanitaryTerminal"
+    if "pump" in l:
+        return "IfcPump"
+    if "chiller" in l:
+        return "IfcChiller"
+    if "boiler" in l:
+        return "IfcBoiler"
+    if "tank" in l:
+        return "IfcTank"
+    if "fan" in l:
+        return "IfcFan"
+    if "coil" in l:
+        return "IfcCoil"
+    if "transformer" in l:
+        return "IfcTransformer"
+    if "actuator" in l:
+        return "IfcActuator"
+    if "sensor" in l:
+        return "IfcSensor"
+    if "controller" in l:
+        return "IfcController"
+    if "alarm" in l:
+        return "IfcAlarm"
+    if "interceptor" in l:
+        return "IfcInterceptor"
+    if "filter" in l:
+        return "IfcFilter"
+    if "heater" in l:
+        return "IfcSpaceHeater"
+    if "lamp" in l or "light" in l:
+        return "IfcLightFixture"
     if "terminal" in l or "air_terminal" in l:
         return "IfcAirTerminal"
     if "fitting" in l:
@@ -226,6 +263,60 @@ class StepSerializer:
                 return self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", prof_name, outer_poly)
         else:
             return self.create_entity("IfcRectangleProfileDef", ".AREA.", prof_name, axis2d, float(prof.width), float(prof.depth))
+
+    def _create_mep_terminal_shape(
+        self, px: float, py: float, pz: float, rot_z: float, st_pl_ref: Optional[str], st_elev: float, w: float, d: float, h: float, body_context_ref: str
+    ) -> Tuple[str, str]:
+        rel_z = float(pz - st_elev)
+        elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+        if abs(rot_z) > 1e-4:
+            rz_r = math.radians(float(rot_z))
+            ref_dir = self.create_entity("IfcDirection", (round(math.cos(rz_r), 6), round(math.sin(rz_r), 6), 0.0))
+            axis_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, axis_dir, ref_dir)
+        else:
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+        elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
+        w_val = float(w) if w and float(w) > 0 else 0.30
+        d_val = float(d) if d and float(d) > 0 else 0.30
+        h_val = float(h) if h and float(h) > 0 else 0.30
+
+        pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+        axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+        rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, w_val, d_val)
+
+        pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+        axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+        ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+        solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, h_val)
+
+        shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
+        prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+        return elem_pl, prod_shape_ref
+
+    def _create_mep_flow_segment_shape(
+        self, waypoints: List[Tuple[float, float, float]], radius: float, st_pl_ref: Optional[str], st_elev: float, body_context_ref: str
+    ) -> Tuple[str, str]:
+        if not waypoints:
+            waypoints = [(0.0, 0.0, st_elev), (1.0, 0.0, st_elev)]
+        start_pt = waypoints[0]
+        rel_z = float(start_pt[2] - st_elev)
+        elem_pt = self.create_entity("IfcCartesianPoint", (float(start_pt[0]), float(start_pt[1]), rel_z))
+        elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+        elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
+        pt_refs = [
+            self.create_entity("IfcCartesianPoint", (float(p[0]), float(p[1]), float(p[2] - st_elev)))
+            for p in waypoints
+        ]
+        polyline_ref = self.create_entity("IfcPolyline", pt_refs)
+
+        r = float(radius) if radius and float(radius) > 0 else 0.05
+        solid_ref = self.create_entity("IfcSweptDiskSolid", polyline_ref, r, None, None, None)
+        shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid_ref])
+        prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+        return elem_pl, prod_shape_ref
 
     def serialize(
         self,
@@ -1134,56 +1225,83 @@ class StepSerializer:
                     if st_id in storey_elements:
                         storey_elements[st_id].append(win_ref)
 
-        # 7. MEP Elements (Pipes, Conduits, Terminals, Electrical)
+        # 7. MEP Elements (Pipes, Conduits, Terminals, Electrical, HVAC)
         for pipe in resolved.pipes:
             st_id = pipe.element.placement.storey
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            wpts = pipe.waypoints or [pipe.start_point, pipe.end_point]
+            rad = (pipe.nominal_diameter or 0.05) / 2.0
+            elem_pl, prod_shape = self._create_mep_flow_segment_shape(wpts, rad, st_pl, st_elev, body_context_ref)
             elem_ref = self.create_entity(
-                "IfcPipeSegment",
-                generate_ifc_guid(),
-                None,
-                pipe.tag,
-                None,
-                None,
-                None,
-                None,
-                None,
+                "IfcPipeSegment", generate_ifc_guid(), None, pipe.tag, None, None, elem_pl, prod_shape, None
             )
             element_tag_refs[pipe.tag] = elem_ref
-            if st_id in storey_elements:
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         for conduit in resolved.conduits:
             st_id = conduit.element.placement.storey
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            wpts = conduit.waypoints or [conduit.start_point, conduit.end_point]
+            rad = (conduit.nominal_diameter or 0.05) / 2.0
+            elem_pl, prod_shape = self._create_mep_flow_segment_shape(wpts, rad, st_pl, st_elev, body_context_ref)
             elem_ref = self.create_entity(
-                "IfcCableCarrierSegment",
-                generate_ifc_guid(),
-                None,
-                conduit.tag,
-                None,
-                None,
-                None,
-                None,
-                None,
+                "IfcCableCarrierSegment", generate_ifc_guid(), None, conduit.tag, None, None, elem_pl, prod_shape, None
             )
             element_tag_refs[conduit.tag] = elem_ref
-            if st_id in storey_elements:
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for duct in resolved.ducts:
+            st_id = duct.element.placement.storey
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            wpts = getattr(duct, "waypoints", None) or [getattr(duct, "start_point", (0.0, 0.0, 0.0)), getattr(duct, "end_point", (1.0, 0.0, 0.0))]
+            rad = getattr(duct, "width", 0.25) / 2.0
+            elem_pl, prod_shape = self._create_mep_flow_segment_shape(wpts, rad, st_pl, st_elev, body_context_ref)
+            elem_ref = self.create_entity(
+                "IfcDuctSegment", generate_ifc_guid(), None, duct.tag, None, None, elem_pl, prod_shape, None
+            )
+            element_tag_refs[duct.tag] = elem_ref
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         for term in resolved.sanitary_terminals:
             st_id = term.element.placement.storey
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            elem_pl, prod_shape = self._create_mep_terminal_shape(
+                term.position[0], term.position[1], term.position[2],
+                getattr(term, "rotation_angle", 0.0), st_pl, st_elev,
+                getattr(term, "width", 0.5), getattr(term, "depth", 0.5), getattr(term, "height", 0.8),
+                body_context_ref
+            )
+            ptype = f".{term.predefined_type}." if term.predefined_type else ".USERDEFINED."
             elem_ref = self.create_entity(
-                "IfcSanitaryTerminal",
-                generate_ifc_guid(),
-                None,
-                term.tag,
-                None,
-                None,
-                None,
-                None,
-                None,
+                "IfcSanitaryTerminal", generate_ifc_guid(), None, term.tag, None, None, elem_pl, prod_shape, None, ptype
             )
             element_tag_refs[term.tag] = elem_ref
-            if st_id in storey_elements:
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for term in getattr(resolved, "waste_terminals", []):
+            st_id = term.element.placement.storey
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            elem_pl, prod_shape = self._create_mep_terminal_shape(
+                term.position[0], term.position[1], term.position[2],
+                getattr(term, "rotation_angle", 0.0), st_pl, st_elev,
+                getattr(term, "width", 0.4), getattr(term, "depth", 0.4), getattr(term, "height", 0.4),
+                body_context_ref
+            )
+            ptype = f".{term.predefined_type}." if term.predefined_type else ".FLOORDRAIN."
+            elem_ref = self.create_entity(
+                "IfcWasteTerminal", generate_ifc_guid(), None, term.tag, None, None, elem_pl, prod_shape, None, ptype
+            )
+            element_tag_refs[term.tag] = elem_ref
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         for board in resolved.distribution_boards:
@@ -1193,19 +1311,18 @@ class StepSerializer:
                     if w.tag == board.element.placement.wall:
                         st_id = w.element.placement.storey
                         break
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            elem_pl, prod_shape = self._create_mep_terminal_shape(
+                board.position[0], board.position[1], board.position[2],
+                getattr(board, "rotation_angle", 0.0), st_pl, st_elev,
+                getattr(board, "width", 0.4), getattr(board, "depth", 0.2), getattr(board, "height", 0.6),
+                body_context_ref
+            )
             ifc_cls = "IfcElectricDistributionBoard" if getattr(board.element, "class_", "") == "IfcElectricDistributionBoard" else "IfcDistributionBoard"
             ptype = f".{board.predefined_type}." if board.predefined_type else ".CONSUMERUNIT."
             elem_ref = self.create_entity(
-                ifc_cls,
-                generate_ifc_guid(),
-                None,
-                board.tag,
-                None,
-                None,
-                None,
-                None,
-                None,
-                ptype,
+                ifc_cls, generate_ifc_guid(), None, board.tag, None, None, elem_pl, prod_shape, None, ptype
             )
             element_tag_refs[board.tag] = elem_ref
             if st_id and st_id in storey_elements:
@@ -1218,18 +1335,17 @@ class StepSerializer:
                     if w.tag == light.element.placement.wall:
                         st_id = w.element.placement.storey
                         break
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            elem_pl, prod_shape = self._create_mep_terminal_shape(
+                light.position[0], light.position[1], light.position[2],
+                getattr(light, "rotation_angle", 0.0), st_pl, st_elev,
+                getattr(light, "width", 0.3), getattr(light, "depth", 0.3), getattr(light, "height", 0.1),
+                body_context_ref
+            )
             ptype = f".{light.predefined_type}." if light.predefined_type else ".POINTSOURCE."
             elem_ref = self.create_entity(
-                "IfcLightFixture",
-                generate_ifc_guid(),
-                None,
-                light.tag,
-                None,
-                None,
-                None,
-                None,
-                None,
-                ptype,
+                "IfcLightFixture", generate_ifc_guid(), None, light.tag, None, None, elem_pl, prod_shape, None, ptype
             )
             element_tag_refs[light.tag] = elem_ref
             if st_id and st_id in storey_elements:
@@ -1242,16 +1358,16 @@ class StepSerializer:
                     if w.tag == sw.element.placement.wall:
                         st_id = w.element.placement.storey
                         break
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            elem_pl, prod_shape = self._create_mep_terminal_shape(
+                sw.position[0], sw.position[1], sw.position[2],
+                getattr(sw, "rotation_angle", 0.0), st_pl, st_elev,
+                getattr(sw, "width", 0.1), getattr(sw, "depth", 0.05), getattr(sw, "height", 0.1),
+                body_context_ref
+            )
             elem_ref = self.create_entity(
-                "IfcSwitchingDevice",
-                generate_ifc_guid(),
-                None,
-                sw.tag,
-                None,
-                None,
-                None,
-                None,
-                None,
+                "IfcSwitchingDevice", generate_ifc_guid(), None, sw.tag, None, None, elem_pl, prod_shape, None
             )
             element_tag_refs[sw.tag] = elem_ref
             if st_id and st_id in storey_elements:
@@ -1264,111 +1380,95 @@ class StepSerializer:
                     if w.tag == out.element.placement.wall:
                         st_id = w.element.placement.storey
                         break
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            elem_pl, prod_shape = self._create_mep_terminal_shape(
+                out.position[0], out.position[1], out.position[2],
+                getattr(out, "rotation_angle", 0.0), st_pl, st_elev,
+                getattr(out, "width", 0.1), getattr(out, "depth", 0.05), getattr(out, "height", 0.1),
+                body_context_ref
+            )
             ptype = f".{out.predefined_type}." if out.predefined_type else ".POWEROUTLET."
             elem_ref = self.create_entity(
-                "IfcOutlet",
-                generate_ifc_guid(),
-                None,
-                out.tag,
-                None,
-                None,
-                None,
-                None,
-                None,
-                ptype,
+                "IfcOutlet", generate_ifc_guid(), None, out.tag, None, None, elem_pl, prod_shape, None, ptype
             )
             element_tag_refs[out.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
-        for duct in resolved.ducts:
-            st_id = duct.element.placement.storey
-            elem_ref = self.create_entity(
-                "IfcDuctSegment",
-                generate_ifc_guid(),
-                None,
-                duct.tag,
-                None,
-                None,
-                None,
-                None,
-                None,
-            )
-            element_tag_refs[duct.tag] = elem_ref
-            if st_id in storey_elements:
-                storey_elements[st_id].append(elem_ref)
-
         for air in resolved.air_terminals:
             st_id = air.element.placement.storey
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            elem_pl, prod_shape = self._create_mep_terminal_shape(
+                air.position[0], air.position[1], air.position[2],
+                getattr(air, "rotation_angle", 0.0), st_pl, st_elev,
+                getattr(air, "width", 0.4), getattr(air, "depth", 0.4), getattr(air, "height", 0.2),
+                body_context_ref
+            )
             ptype = f".{air.predefined_type}." if air.predefined_type else ".DIFFUSER."
             elem_ref = self.create_entity(
-                "IfcAirTerminal",
-                generate_ifc_guid(),  # 1. GlobalId
-                None,                 # 2. OwnerHistory
-                air.tag,              # 3. Name
-                None,                 # 4. Description
-                None,                 # 5. ObjectType
-                None,                 # 6. ObjectPlacement
-                None,                 # 7. Representation
-                None,                 # 8. Tag
-                ptype,                # 9. PredefinedType
+                "IfcAirTerminal", generate_ifc_guid(), None, air.tag, None, None, elem_pl, prod_shape, None, ptype
             )
             element_tag_refs[air.tag] = elem_ref
-            if st_id in storey_elements:
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         for damper in resolved.dampers:
             st_id = damper.element.placement.storey
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            elem_pl, prod_shape = self._create_mep_terminal_shape(
+                damper.position[0], damper.position[1], damper.position[2],
+                getattr(damper, "rotation_angle", 0.0), st_pl, st_elev,
+                getattr(damper, "duct_width", getattr(damper, "width", 0.3)),
+                getattr(damper, "duct_depth", getattr(damper, "depth", 0.3)),
+                getattr(damper, "height", 0.3),
+                body_context_ref
+            )
             ptype = f".{damper.predefined_type}." if damper.predefined_type else ".FIREDAMPER."
             elem_ref = self.create_entity(
-                "IfcDamper",
-                generate_ifc_guid(),  # 1. GlobalId
-                None,                 # 2. OwnerHistory
-                damper.tag,           # 3. Name
-                None,                 # 4. Description
-                None,                 # 5. ObjectType
-                None,                 # 6. ObjectPlacement
-                None,                 # 7. Representation
-                None,                 # 8. Tag
-                ptype,                # 9. PredefinedType
+                "IfcDamper", generate_ifc_guid(), None, damper.tag, None, None, elem_pl, prod_shape, None, ptype
             )
             element_tag_refs[damper.tag] = elem_ref
-            if st_id in storey_elements:
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         for controller in resolved.flow_controllers:
             st_id = controller.element.placement.storey
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            elem_pl, prod_shape = self._create_mep_terminal_shape(
+                controller.position[0], controller.position[1], controller.position[2],
+                getattr(controller, "rotation_angle", 0.0), st_pl, st_elev,
+                getattr(controller, "duct_width", getattr(controller, "width", 0.4)),
+                getattr(controller, "duct_depth", getattr(controller, "depth", 0.3)),
+                getattr(controller, "height", 0.3),
+                body_context_ref
+            )
             obj_type = controller.predefined_type or "AIR_CONTROLLER"
             elem_ref = self.create_entity(
-                "IfcFlowController",
-                generate_ifc_guid(),
-                None,
-                controller.tag,
-                None,
-                obj_type,
-                None,
-                None,
-                None,
+                "IfcFlowController", generate_ifc_guid(), None, controller.tag, None, obj_type, elem_pl, prod_shape, None
             )
             element_tag_refs[controller.tag] = elem_ref
-            if st_id in storey_elements:
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         for eq in resolved.unitary_equipments:
             st_id = eq.element.placement.storey
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+            elem_pl, prod_shape = self._create_mep_terminal_shape(
+                eq.position[0], eq.position[1], eq.position[2],
+                getattr(eq, "rotation_angle", 0.0), st_pl, st_elev,
+                getattr(eq, "width", 0.8), getattr(eq, "depth", 0.4), getattr(eq, "height", 0.6),
+                body_context_ref
+            )
             elem_ref = self.create_entity(
-                "IfcUnitaryEquipment",
-                generate_ifc_guid(),
-                None,
-                eq.tag,
-                None,
-                None,
-                None,
-                None,
-                None,
+                "IfcUnitaryEquipment", generate_ifc_guid(), None, eq.tag, None, None, elem_pl, prod_shape, None
             )
             element_tag_refs[eq.tag] = elem_ref
-            if st_id in storey_elements:
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         # 8. Universal Proxies
@@ -1414,16 +1514,11 @@ class StepSerializer:
                 "IfcProductDefinitionShape", None, None, [shape_rep]
             )
 
-            std_classes = {
-                "IFCBUILDINGELEMENTPROXY", "IFCCHILLER", "IFCBURNER", "IFCSOLARDEVICE",
-                "IFCCOMPRESSOR", "IFCUNITARYEQUIPMENT", "IFCINTERCEPTOR", "IFCENERGYCONVERSIONDEVICE",
-                "IFCENGINE", "IFCPUMP", "IFCFAN", "IFCTANK", "IFCBOILER"
-            }
-            target_entity = ifc_cls if ifc_cls.upper() in std_classes else "IfcBuildingElementProxy"
-            obj_type = ifc_cls if target_entity == "IfcBuildingElementProxy" else None
-            pred_type = f".{proxy.predefined_type.upper()}." if proxy.predefined_type else None
-
-            if pred_type:
+            cls_upper = ifc_cls.upper()
+            if cls_upper in IFC4_DISTRIBUTION_9_ATTR_CLASSES or cls_upper in ("IFCBUILDINGELEMENTPROXY", "IFCUNITARYEQUIPMENT"):
+                target_entity = ifc_cls
+                obj_type = ifc_cls if target_entity.upper() == "IFCBUILDINGELEMENTPROXY" else None
+                pred_type = f".{proxy.predefined_type.upper()}." if proxy.predefined_type else ".USERDEFINED."
                 proxy_ref = self.create_entity(
                     target_entity,
                     generate_ifc_guid(),
@@ -1436,7 +1531,9 @@ class StepSerializer:
                     None,
                     pred_type,
                 )
-            else:
+            elif cls_upper in IFC4_DISTRIBUTION_8_ATTR_CLASSES:
+                target_entity = ifc_cls
+                obj_type = ifc_cls if target_entity.upper() == "IFCBUILDINGELEMENTPROXY" else None
                 proxy_ref = self.create_entity(
                     target_entity,
                     generate_ifc_guid(),
@@ -1448,6 +1545,35 @@ class StepSerializer:
                     prod_shape_ref,
                     None,
                 )
+            else:
+                target_entity = "IfcBuildingElementProxy"
+                obj_type = ifc_cls
+                pred_type = f".{proxy.predefined_type.upper()}." if proxy.predefined_type else None
+                if pred_type:
+                    proxy_ref = self.create_entity(
+                        target_entity,
+                        generate_ifc_guid(),
+                        None,
+                        proxy.tag,
+                        None,
+                        obj_type,
+                        elem_pl,
+                        prod_shape_ref,
+                        None,
+                        pred_type,
+                    )
+                else:
+                    proxy_ref = self.create_entity(
+                        target_entity,
+                        generate_ifc_guid(),
+                        None,
+                        proxy.tag,
+                        None,
+                        obj_type,
+                        elem_pl,
+                        prod_shape_ref,
+                        None,
+                    )
 
             element_tag_refs[proxy.tag] = proxy_ref
             if st_id and st_id in storey_elements:
@@ -1547,6 +1673,46 @@ class StepSerializer:
                         p2_ref,
                         None,
                     )
+
+        # 9. Systems Containment (IfcDistributionSystem & IfcRelAssignsToGroup)
+        systems_to_compile = []
+        if hasattr(manifest, "systems") and manifest.systems:
+            for sys in manifest.systems:
+                systems_to_compile.append((sys.name, sys.system_type or sys.predefined_type, sys.elements))
+        else:
+            # Auto-group elements by system_type/system
+            system_groups: Dict[str, List[str]] = {}
+            for elem in getattr(resolved, "elements", []):
+                stype = getattr(elem, "system_type", None) or getattr(getattr(elem, "element", None), "system_type", None)
+                if stype:
+                    system_groups.setdefault(str(stype), []).append(elem.tag)
+            for s_name, tags in system_groups.items():
+                systems_to_compile.append((s_name, s_name, tags))
+
+        for sys_name, sys_type, elem_tags in systems_to_compile:
+            ptype = f".{str(sys_type).upper()}." if sys_type else None
+            sys_ref = self.create_entity(
+                "IfcDistributionSystem",
+                generate_ifc_guid(),
+                None,
+                sys_name,
+                None,
+                sys_name,
+                None,
+                ptype,
+            )
+            elem_refs = [element_tag_refs[t] for t in elem_tags if t in element_tag_refs]
+            if elem_refs:
+                self.create_entity(
+                    "IfcRelAssignsToGroup",
+                    generate_ifc_guid(),
+                    None,
+                    sys_name,
+                    None,
+                    elem_refs,
+                    None,
+                    sys_ref,
+                )
 
         footer = ["ENDSEC;", "END-ISO-10303-21;"]
         return "\n".join(header + self.lines + footer) + "\n"
@@ -2466,7 +2632,48 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 if st_id in storey_products:
                     storey_products[st_id].append(win_obj)
 
-    # 7. MEP Elements (Pipes, Conduits, Terminals, Electrical)
+    def _add_ifcopenshell_terminal_geometry(product_obj: Any, position: Tuple[float, float, float], rotation: float, dimensions: Tuple[float, float, float]):
+        px, py, pz = position
+        rz = float(rotation) if rotation else 0.0
+        mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, rz))
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=product_obj, matrix=mat)
+
+        w, d, h = dimensions
+        w_val = float(w) if w and float(w) > 0 else 0.30
+        d_val = float(d) if d and float(d) > 0 else 0.30
+        h_val = float(h) if h and float(h) > 0 else 0.30
+
+        profile = model.createIfcRectangleProfileDef(
+            "AREA", None, model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0))), w_val, d_val
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            profile,
+            model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            ),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            h_val,
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=product_obj, representation=rep)
+
+    def _add_ifcopenshell_flow_segment_geometry(product_obj: Any, waypoints: List[Tuple[float, float, float]], radius: float):
+        if not waypoints:
+            waypoints = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0)]
+        start_pt = waypoints[0]
+        mat = _build_transform_matrix(start_pt, (0.0, 0.0, 0.0))
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=product_obj, matrix=mat)
+
+        pt_objs = [model.createIfcCartesianPoint((float(p[0]), float(p[1]), float(p[2]))) for p in waypoints]
+        polyline = model.createIfcPolyline(pt_objs)
+        r = float(radius) if radius and float(radius) > 0 else 0.05
+        solid = model.createIfcSweptDiskSolid(polyline, r, None, None, None)
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=product_obj, representation=rep)
+
+    # 7. MEP Elements (Pipes, Conduits, Terminals, Electrical, HVAC)
     for pipe in resolved.pipes:
         pipe_obj = ifcopenshell.api.run(
             "root.create_entity",
@@ -2474,6 +2681,10 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             ifc_class="IfcPipeSegment",
             name=pipe.tag,
         )
+        ifcopenshell_elem_objs[pipe.tag] = pipe_obj
+        wpts = pipe.waypoints or [pipe.start_point, pipe.end_point]
+        rad = (pipe.nominal_diameter or 0.05) / 2.0
+        _add_ifcopenshell_flow_segment_geometry(pipe_obj, wpts, rad)
         st_id = pipe.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(pipe_obj)
@@ -2485,9 +2696,28 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             ifc_class="IfcCableCarrierSegment",
             name=conduit.tag,
         )
+        ifcopenshell_elem_objs[conduit.tag] = conduit_obj
+        wpts = conduit.waypoints or [conduit.start_point, conduit.end_point]
+        rad = (conduit.nominal_diameter or 0.05) / 2.0
+        _add_ifcopenshell_flow_segment_geometry(conduit_obj, wpts, rad)
         st_id = conduit.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(conduit_obj)
+
+    for duct in resolved.ducts:
+        duct_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcDuctSegment",
+            name=duct.tag,
+        )
+        ifcopenshell_elem_objs[duct.tag] = duct_obj
+        wpts = getattr(duct, "waypoints", None) or [getattr(duct, "start_point", (0.0, 0.0, 0.0)), getattr(duct, "end_point", (1.0, 0.0, 0.0))]
+        rad = getattr(duct, "width", 0.25) / 2.0
+        _add_ifcopenshell_flow_segment_geometry(duct_obj, wpts, rad)
+        st_id = duct.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(duct_obj)
 
     for term in resolved.sanitary_terminals:
         term_obj = ifcopenshell.api.run(
@@ -2497,17 +2727,27 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             name=term.tag,
             predefined_type=term.predefined_type or "USERDEFINED",
         )
+        ifcopenshell_elem_objs[term.tag] = term_obj
+        _add_ifcopenshell_terminal_geometry(
+            term_obj, term.position, getattr(term, "rotation_angle", 0.0),
+            (getattr(term, "width", 0.5), getattr(term, "depth", 0.5), getattr(term, "height", 0.8))
+        )
         st_id = term.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(term_obj)
 
-    for term in resolved.waste_terminals:
+    for term in getattr(resolved, "waste_terminals", []):
         term_obj = ifcopenshell.api.run(
             "root.create_entity",
             model,
             ifc_class="IfcWasteTerminal",
             name=term.tag,
             predefined_type=term.predefined_type or "USERDEFINED",
+        )
+        ifcopenshell_elem_objs[term.tag] = term_obj
+        _add_ifcopenshell_terminal_geometry(
+            term_obj, term.position, getattr(term, "rotation_angle", 0.0),
+            (getattr(term, "width", 0.4), getattr(term, "depth", 0.4), getattr(term, "height", 0.4))
         )
         st_id = term.element.placement.storey
         if st_id in storey_products:
@@ -2522,6 +2762,11 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             ifc_class=board_cls,
             name=board.tag,
             predefined_type=ptype,
+        )
+        ifcopenshell_elem_objs[board.tag] = board_obj
+        _add_ifcopenshell_terminal_geometry(
+            board_obj, board.position, getattr(board, "rotation_angle", 0.0),
+            (getattr(board, "width", 0.4), getattr(board, "depth", 0.2), getattr(board, "height", 0.6))
         )
         st_id = board.element.placement.storey
         if not st_id and getattr(board.element.placement, "wall", None):
@@ -2541,6 +2786,11 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             name=light.tag,
             predefined_type=ptype,
         )
+        ifcopenshell_elem_objs[light.tag] = light_obj
+        _add_ifcopenshell_terminal_geometry(
+            light_obj, light.position, getattr(light, "rotation_angle", 0.0),
+            (getattr(light, "width", 0.3), getattr(light, "depth", 0.3), getattr(light, "height", 0.1))
+        )
         st_id = light.element.placement.storey
         if not st_id and getattr(light.element.placement, "wall", None):
             for w in resolved.walls:
@@ -2556,6 +2806,11 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             model,
             ifc_class="IfcSwitchingDevice",
             name=sw.tag,
+        )
+        ifcopenshell_elem_objs[sw.tag] = sw_obj
+        _add_ifcopenshell_terminal_geometry(
+            sw_obj, sw.position, getattr(sw, "rotation_angle", 0.0),
+            (getattr(sw, "width", 0.1), getattr(sw, "depth", 0.05), getattr(sw, "height", 0.1))
         )
         st_id = sw.element.placement.storey
         if not st_id and getattr(sw.element.placement, "wall", None):
@@ -2575,6 +2830,11 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             name=out.tag,
             predefined_type=ptype,
         )
+        ifcopenshell_elem_objs[out.tag] = out_obj
+        _add_ifcopenshell_terminal_geometry(
+            out_obj, out.position, getattr(out, "rotation_angle", 0.0),
+            (getattr(out, "width", 0.1), getattr(out, "depth", 0.05), getattr(out, "height", 0.1))
+        )
         st_id = out.element.placement.storey
         if not st_id and getattr(out.element.placement, "wall", None):
             for w in resolved.walls:
@@ -2584,17 +2844,6 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id and st_id in storey_products:
             storey_products[st_id].append(out_obj)
 
-    for duct in resolved.ducts:
-        duct_obj = ifcopenshell.api.run(
-            "root.create_entity",
-            model,
-            ifc_class="IfcDuctSegment",
-            name=duct.tag,
-        )
-        st_id = duct.element.placement.storey
-        if st_id in storey_products:
-            storey_products[st_id].append(duct_obj)
-
     for air in resolved.air_terminals:
         ptype = getattr(air, "predefined_type", "DIFFUSER")
         air_obj = ifcopenshell.api.run(
@@ -2603,6 +2852,11 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             ifc_class="IfcAirTerminal",
             name=air.tag,
             predefined_type=ptype,
+        )
+        ifcopenshell_elem_objs[air.tag] = air_obj
+        _add_ifcopenshell_terminal_geometry(
+            air_obj, air.position, getattr(air, "rotation_angle", 0.0),
+            (getattr(air, "width", 0.4), getattr(air, "depth", 0.4), getattr(air, "height", 0.2))
         )
         st_id = air.element.placement.storey
         if st_id in storey_products:
@@ -2617,6 +2871,15 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             name=damper.tag,
             predefined_type=ptype,
         )
+        ifcopenshell_elem_objs[damper.tag] = damper_obj
+        _add_ifcopenshell_terminal_geometry(
+            damper_obj, damper.position, getattr(damper, "rotation_angle", 0.0),
+            (
+                getattr(damper, "duct_width", getattr(damper, "width", 0.3)),
+                getattr(damper, "duct_depth", getattr(damper, "depth", 0.3)),
+                getattr(damper, "height", 0.3)
+            )
+        )
         st_id = damper.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(damper_obj)
@@ -2628,8 +2891,17 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             ifc_class="IfcFlowController",
             name=controller.tag,
         )
+        ifcopenshell_elem_objs[controller.tag] = controller_obj
         if controller.predefined_type:
             controller_obj.ObjectType = controller.predefined_type
+        _add_ifcopenshell_terminal_geometry(
+            controller_obj, controller.position, getattr(controller, "rotation_angle", 0.0),
+            (
+                getattr(controller, "duct_width", getattr(controller, "width", 0.4)),
+                getattr(controller, "duct_depth", getattr(controller, "depth", 0.3)),
+                getattr(controller, "height", 0.3)
+            )
+        )
         st_id = controller.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(controller_obj)
@@ -2640,6 +2912,11 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             model,
             ifc_class="IfcUnitaryEquipment",
             name=eq.tag,
+        )
+        ifcopenshell_elem_objs[eq.tag] = eq_obj
+        _add_ifcopenshell_terminal_geometry(
+            eq_obj, eq.position, getattr(eq, "rotation_angle", 0.0),
+            (getattr(eq, "width", 0.8), getattr(eq, "depth", 0.4), getattr(eq, "height", 0.6))
         )
         st_id = eq.element.placement.storey
         if st_id in storey_products:
@@ -2785,6 +3062,45 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                     RelatingPort=p1_obj,
                     RelatedPort=p2_obj,
                 )
+
+    # 9. Systems Containment (IfcDistributionSystem & IfcRelAssignsToGroup)
+    systems_to_compile = []
+    if hasattr(manifest, "systems") and manifest.systems:
+        for sys in manifest.systems:
+            systems_to_compile.append((sys.name, sys.system_type or sys.predefined_type, sys.elements))
+    else:
+        system_groups: Dict[str, List[str]] = {}
+        for elem in getattr(resolved, "elements", []):
+            stype = getattr(elem, "system_type", None) or getattr(getattr(elem, "element", None), "system_type", None)
+            if stype:
+                system_groups.setdefault(str(stype), []).append(elem.tag)
+        for s_name, tags in system_groups.items():
+            systems_to_compile.append((s_name, s_name, tags))
+
+    for sys_name, sys_type, elem_tags in systems_to_compile:
+        try:
+            sys_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcDistributionSystem",
+                name=sys_name,
+            )
+            if sys_type:
+                try:
+                    sys_obj.PredefinedType = str(sys_type).upper()
+                except Exception:
+                    sys_obj.ObjectType = str(sys_type)
+
+            rel_objs = [ifcopenshell_elem_objs[t] for t in elem_tags if t in ifcopenshell_elem_objs]
+            if rel_objs:
+                ifcopenshell.api.run(
+                    "group.assign_group",
+                    model,
+                    products=rel_objs,
+                    group=sys_obj,
+                )
+        except Exception as e:
+            logger.warning(f"Failed to create IfcDistributionSystem {sys_name}: {e}")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     model.write(str(output_path))

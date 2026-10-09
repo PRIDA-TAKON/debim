@@ -2262,6 +2262,49 @@ class IfcRetainingWall(BaseModel):
     layer: Optional[str] = None
 
 
+IFC4_DISTRIBUTION_9_ATTR_CLASSES = {
+    "IFCACTUATOR", "IFCAIRTERMINAL", "IFCAIRTERMINALBOX", "IFCAIRTOAIRHEATRECOVERY", "IFCALARM",
+    "IFCAUDIOVISUALAPPLIANCE", "IFCBOILER", "IFCBURNER", "IFCCABLECARRIERFITTING", "IFCCABLECARRIERSEGMENT",
+    "IFCCABLEFITTING", "IFCCABLESEGMENT", "IFCCHILLER", "IFCCOIL", "IFCCOMMUNICATIONSAPPLIANCE",
+    "IFCCOMPRESSOR", "IFCCONDENSER", "IFCCONTROLLER", "IFCCOOLEDBEAM", "IFCCOOLINGTOWER", "IFCDAMPER",
+    "IFCDISTRIBUTIONCHAMBERELEMENT", "IFCDUCTFITTING", "IFCDUCTSEGMENT", "IFCDUCTSILENCER",
+    "IFCELECTRICAPPLIANCE", "IFCELECTRICDISTRIBUTIONBOARD", "IFCELECTRICFLOWSTORAGEDEVICE",
+    "IFCELECTRICGENERATOR", "IFCELECTRICMOTOR", "IFCELECTRICTIMECONTROL", "IFCENGINE",
+    "IFCEVAPORATIVECOOLER", "IFCEVAPORATOR", "IFCFAN", "IFCFILTER", "IFCFIRESUPPRESSIONTERMINAL",
+    "IFCFLOWINSTRUMENT", "IFCFLOWMETER", "IFCHEATEXCHANGER", "IFCHUMIDIFIER", "IFCINTERCEPTOR",
+    "IFCJUNCTIONBOX", "IFCLAMP", "IFCLIGHTFIXTURE", "IFCMEDICALDEVICE", "IFCMOTORCONNECTION", "IFCOUTLET",
+    "IFCPIPEFITTING", "IFCPIPESEGMENT", "IFCPROTECTIVEDEVICE", "IFCPROTECTIVEDEVICETRIPPINGUNIT",
+    "IFCPUMP", "IFCSANITARYTERMINAL", "IFCSENSOR", "IFCSOLARDEVICE", "IFCSPACEHEATER",
+    "IFCSTACKTERMINAL", "IFCSWITCHINGDEVICE", "IFCTANK", "IFCTRANSFORMER", "IFCTUBEBUNDLE",
+    "IFCUNITARYCONTROLELEMENT", "IFCUNITARYEQUIPMENT", "IFCVALVE", "IFCWASTETERMINAL"
+}
+
+IFC4_DISTRIBUTION_8_ATTR_CLASSES = {
+    "IFCDISTRIBUTIONCONTROLELEMENT", "IFCDISTRIBUTIONELEMENT", "IFCDISTRIBUTIONFLOWELEMENT",
+    "IFCENERGYCONVERSIONDEVICE", "IFCFLOWCONTROLLER", "IFCFLOWFITTING", "IFCFLOWMOVINGDEVICE",
+    "IFCFLOWSEGMENT", "IFCFLOWSTORAGEDEVICE", "IFCFLOWTERMINAL", "IFCFLOWTREATMENTDEVICE"
+}
+
+IFC4_DISTRIBUTION_CLASSES = {
+    "IfcActuator", "IfcAirTerminal", "IfcAirTerminalBox", "IfcAirToAirHeatRecovery", "IfcAlarm",
+    "IfcAudioVisualAppliance", "IfcBoiler", "IfcBurner", "IfcCableCarrierFitting", "IfcCableCarrierSegment",
+    "IfcCableFitting", "IfcCableSegment", "IfcChiller", "IfcCoil", "IfcCommunicationsAppliance",
+    "IfcCompressor", "IfcCondenser", "IfcController", "IfcCooledBeam", "IfcCoolingTower", "IfcDamper",
+    "IfcDistributionChamberElement", "IfcDuctFitting", "IfcDuctSegment", "IfcDuctSilencer",
+    "IfcElectricAppliance", "IfcElectricDistributionBoard", "IfcElectricFlowStorageDevice",
+    "IfcElectricGenerator", "IfcElectricMotor", "IfcElectricTimeControl", "IfcEngine",
+    "IfcEvaporativeCooler", "IfcEvaporator", "IfcFan", "IfcFilter", "IfcFireSuppressionTerminal",
+    "IfcFlowInstrument", "IfcFlowMeter", "IfcHeatExchanger", "IfcHumidifier", "IfcInterceptor",
+    "IfcJunctionBox", "IfcLamp", "IfcLightFixture", "IfcMedicalDevice", "IfcMotorConnection", "IfcOutlet",
+    "IfcPipeFitting", "IfcPipeSegment", "IfcProtectiveDevice", "IfcProtectiveDeviceTrippingUnit",
+    "IfcPump", "IfcSanitaryTerminal", "IfcSensor", "IfcSolarDevice", "IfcSpaceHeater",
+    "IfcStackTerminal", "IfcSwitchingDevice", "IfcTank", "IfcTransformer", "IfcTubeBundle",
+    "IfcUnitaryControlElement", "IfcUnitaryEquipment", "IfcValve", "IfcWasteTerminal",
+    "IfcDistributionControlElement", "IfcDistributionElement", "IfcDistributionFlowElement",
+    "IfcEnergyConversionDevice", "IfcFlowController", "IfcFlowFitting", "IfcFlowMovingDevice",
+    "IfcFlowSegment", "IfcFlowStorageDevice", "IfcFlowTerminal", "IfcFlowTreatmentDevice"
+}
+
 KNOWN_ELEMENT_CLASSES = {
     "IfcColumn",
     "IfcBeam",
@@ -2299,7 +2342,17 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcRoad",
     "IfcBridge",
     "IfcCustomElement",
-}
+} | IFC4_DISTRIBUTION_CLASSES
+
+
+class IfcDistributionSystem(BaseModel):
+    class_: Literal["IfcDistributionSystem"] = Field(alias="class", default="IfcDistributionSystem")
+    tag: Optional[str] = None
+    name: str
+    system_type: Optional[str] = None
+    predefined_type: Optional[str] = None
+    description: Optional[str] = None
+    elements: List[str] = Field(default_factory=list)
 
 
 from pydantic import Tag
@@ -2394,6 +2447,7 @@ class ProjectManifest(BaseModel):
     materials: List[Material]
     elements: List[Element] = Field(default_factory=list)
     proxies: List[IfcBuildingElementProxy] = Field(default_factory=list)
+    systems: List[IfcDistributionSystem] = Field(default_factory=list)
     connections: List[Tuple[str, str]] = Field(default_factory=list)
     includes: List[str] = Field(default_factory=list)
     site: Optional[SiteBoundary] = None
