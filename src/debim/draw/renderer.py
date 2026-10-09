@@ -52,6 +52,24 @@ class SheetIndexItem(BaseModel):
     revision: str = "01"
 
 
+class TitleBlockField(BaseModel):
+    """Custom professional or metadata field for Title Block."""
+    label: str
+    value: str
+    subtext: Optional[str] = None
+
+
+class TitleBlockConfig(BaseModel):
+    """Declarative Title Block configuration."""
+    enabled: bool = True
+    layout: Literal["vertical_right", "horizontal_bottom", "corner_bottom_right"] = "vertical_right"
+    width_mm: float = 75.0
+    height_mm: float = 38.0
+    fields: List[TitleBlockField] = Field(default_factory=list)
+    show_sheet_index: bool = True
+    show_notes: bool = True
+
+
 class CropBox(BaseModel):
     """2D crop box bounds in model coordinates (meters)."""
     min_x: float
@@ -77,7 +95,17 @@ class SheetConfig(BaseModel):
     architect_name: str = "debim Engine"
     date: Optional[str] = None
     revision: str = "01"
+    title_block: TitleBlockConfig = Field(default_factory=TitleBlockConfig)
     sheet_index: List[SheetIndexItem] = Field(default_factory=list)
+
+    @field_validator("title_block", mode="before")
+    @classmethod
+    def parse_title_block(cls, v: Any) -> Any:
+        if isinstance(v, dict):
+            return TitleBlockConfig.model_validate(v)
+        if isinstance(v, TitleBlockConfig):
+            return v
+        return TitleBlockConfig()
 
     @field_validator("crop", mode="before")
     @classmethod
@@ -213,22 +241,52 @@ class SheetRenderer:
         printable_w = paper_w - 2 * margin
         printable_h = paper_h - 2 * margin
 
-        # Right Title Block Width & Area (if enabled)
-        title_block_width = 75.0 if printable_w >= 300.0 else 55.0
-        if cfg.visibility.show_title_block:
-            drawing_w = printable_w - title_block_width - 5.0
-            title_x = printable_x + printable_w - title_block_width
-            title_y = printable_y
-            title_h = printable_h
+        # Title Block & Drawing Area Calculations
+        tb_enabled = cfg.visibility.show_title_block and cfg.title_block.enabled
+        tb_layout = cfg.title_block.layout
+
+        if tb_enabled:
+            if tb_layout == "horizontal_bottom":
+                title_w = printable_w
+                title_h = cfg.title_block.height_mm
+                title_x = printable_x
+                title_y = printable_y + printable_h - title_h
+
+                drawing_w = printable_w
+                drawing_h = printable_h - title_h - 2.0
+                drawing_cx = printable_x + drawing_w / 2.0
+                drawing_cy = printable_y + drawing_h / 2.0
+            elif tb_layout == "corner_bottom_right":
+                title_w = cfg.title_block.width_mm
+                title_h = cfg.title_block.height_mm
+                title_x = printable_x + printable_w - title_w
+                title_y = printable_y + printable_h - title_h
+
+                drawing_w = printable_w
+                drawing_h = printable_h
+                drawing_cx = printable_x + drawing_w / 2.0
+                drawing_cy = printable_y + drawing_h / 2.0
+            else:  # vertical_right (default)
+                title_w = cfg.title_block.width_mm if cfg.title_block.width_mm != 75.0 or printable_w < 300.0 else 75.0
+                if printable_w < 300.0 and cfg.title_block.width_mm == 75.0:
+                    title_w = 55.0
+                title_h = printable_h
+                title_x = printable_x + printable_w - title_w
+                title_y = printable_y
+
+                drawing_w = printable_w - title_w - 5.0
+                drawing_h = printable_h
+                drawing_cx = printable_x + drawing_w / 2.0
+                drawing_cy = printable_y + drawing_h / 2.0
         else:
-            drawing_w = printable_w
+            title_w = 0.0
+            title_h = 0.0
             title_x = 0.0
             title_y = 0.0
-            title_h = 0.0
-
-        drawing_h = printable_h
-        drawing_cx = printable_x + drawing_w / 2.0
-        drawing_cy = printable_y + drawing_h / 2.0
+            drawing_w = printable_w
+            drawing_h = printable_h
+            drawing_cx = printable_x + drawing_w / 2.0
+            drawing_cy = printable_y + drawing_h / 2.0
 
         # 4. Model Bounds & Crop Box
         if cfg.crop:
@@ -534,143 +592,270 @@ class SheetRenderer:
         svg_lines.append('  </g> <!-- End drawing-viewport -->')
 
         # 12. Title Block & Sheet Index Table
-        if cfg.visibility.show_title_block:
+        if tb_enabled:
             svg_lines.append('  <!-- Standard Architectural Title Block -->')
             svg_lines.append(
                 f'  <g id="title-block" transform="translate({title_x:.1f}, {title_y:.1f})">'
             )
             svg_lines.append(
-                f'    <rect x="0" y="0" width="{title_block_width:.1f}" height="{title_h:.1f}" class="title-block-container" />'
+                f'    <rect x="0" y="0" width="{title_w:.1f}" height="{title_h:.1f}" class="title-block-container" />'
             )
 
-            curr_y = 6.0
+            if tb_layout == "horizontal_bottom":
+                # Divide strip into 4 modular horizontal grid cells
+                w1 = round(title_w * 0.22, 1)
+                w2 = round(title_w * 0.22, 1)
+                w3 = round(title_w * 0.38, 1)
+                w4 = title_w - w1 - w2 - w3
 
-            # Project Title Header Box
-            svg_lines.append(
-                f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">PROJECT / โครงการ</text>'
-            )
-            curr_y += 3.5
-            display_proj = (proj_name[:26] + "...") if len(proj_name) > 28 else proj_name
-            svg_lines.append(
-                f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-title">{display_proj}</text>'
-            )
-            curr_y += 6.5
-            svg_lines.append(
-                f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
-            )
-            curr_y += 3.0
+                x1 = 0.0
+                x2 = x1 + w1
+                x3 = x2 + w2
+                x4 = x3 + w3
 
-            # Sheet Title Box
-            svg_lines.append(
-                f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">DRAWING TITLE / ชื่อแบบ</text>'
-            )
-            curr_y += 3.5
-            svg_lines.append(
-                f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-title">{cfg.title}</text>'
-            )
-            curr_y += 6.5
-            svg_lines.append(
-                f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
-            )
-            curr_y += 3.0
+                # Vertical Dividers between cells
+                svg_lines.append(f'    <line x1="{x2:.1f}" y1="0" x2="{x2:.1f}" y2="{title_h:.1f}" class="title-block-divider" />')
+                svg_lines.append(f'    <line x1="{x3:.1f}" y1="0" x2="{x3:.1f}" y2="{title_h:.1f}" class="title-block-divider" />')
+                svg_lines.append(f'    <line x1="{x4:.1f}" y1="0" x2="{x4:.1f}" y2="{title_h:.1f}" class="title-block-divider" />')
 
-            # Details Grid: Sheet No, Scale, Date, Rev, Client, Architect
-            details = [
-                ("SHEET NO. / เลขที่แบบ", cfg.id),
-                ("SCALE / มาตราส่วน", f"1:{cfg.scale}"),
-                ("DATE / วันที่", date_str),
-                ("REVISION / แก้ไขครั้งที่", cfg.revision),
-                ("CLIENT / เจ้าของโครงการ", cfg.client_name),
-                ("ARCHITECT / สถาปนิก", cfg.architect_name),
-            ]
+                # Cell 1: Project Info & Organization
+                curr_y = 4.0
+                svg_lines.append(f'    <text x="{x1 + 3.0:.1f}" y="{curr_y:.1f}" class="title-block-label">PROJECT / โครงการ</text>')
+                curr_y += 3.5
+                display_proj = (proj_name[:24] + "...") if len(proj_name) > 26 else proj_name
+                svg_lines.append(f'    <text x="{x1 + 3.0:.1f}" y="{curr_y:.1f}" class="sheet-title">{display_proj}</text>')
+                curr_y += 6.5
+                svg_lines.append(f'    <line x1="{x1}" y1="{curr_y:.1f}" x2="{x2:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />')
+                curr_y += 3.0
+                svg_lines.append(f'    <text x="{x1 + 3.0:.1f}" y="{curr_y:.1f}" class="title-block-label">CLIENT / เจ้าของโครงการ</text>')
+                curr_y += 3.5
+                svg_lines.append(f'    <text x="{x1 + 3.0:.1f}" y="{curr_y:.1f}" class="title-block-text">{cfg.client_name}</text>')
 
-            for lbl, val in details:
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">{lbl}</text>'
-                )
-                curr_y += 3.2
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-text">{val}</text>'
-                )
+                # Cell 2: Sheet Title & Drawing Type
+                curr_y = 4.0
+                svg_lines.append(f'    <text x="{x2 + 3.0:.1f}" y="{curr_y:.1f}" class="title-block-label">DRAWING TITLE / ชื่อแบบ</text>')
+                curr_y += 3.5
+                svg_lines.append(f'    <text x="{x2 + 3.0:.1f}" y="{curr_y:.1f}" class="sheet-title">{cfg.title}</text>')
+                curr_y += 6.5
+                svg_lines.append(f'    <line x1="{x2}" y1="{curr_y:.1f}" x2="{x3:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />')
+                curr_y += 3.0
+                svg_lines.append(f'    <text x="{x2 + 3.0:.1f}" y="{curr_y:.1f}" class="title-block-label">ARCHITECT / สถาปนิก</text>')
+                curr_y += 3.5
+                svg_lines.append(f'    <text x="{x2 + 3.0:.1f}" y="{curr_y:.1f}" class="title-block-text">{cfg.architect_name}</text>')
+
+                # Cell 3: Multi-Signatory Professional Certification Grid
+                svg_lines.append(f'    <text x="{x3 + 3.0:.1f}" y="4.0" class="title-block-label">PROFESSIONAL CERTIFICATION / คณะผู้จัดทำ &amp; วิศวกร</text>')
+                fields = cfg.title_block.fields
+                if fields:
+                    num_cols = min(len(fields), 2)
+                    col_w = w3 / max(num_cols, 1)
+                    for i, field in enumerate(fields):
+                        col_idx = i % 2 if len(fields) > 1 else 0
+                        row_idx = i // 2 if len(fields) > 1 else i
+                        fx = x3 + 3.0 + col_idx * col_w
+                        fy = 8.5 + row_idx * 13.5
+                        if fy < title_h - 2.0:
+                            svg_lines.append(f'    <text x="{fx:.1f}" y="{fy:.1f}" class="title-block-label">{field.label}</text>')
+                            svg_lines.append(f'    <text x="{fx:.1f}" y="{fy + 3.2:.1f}" class="title-block-text">{field.value}</text>')
+                            if field.subtext:
+                                svg_lines.append(f'    <text x="{fx:.1f}" y="{fy + 6.5:.1f}" class="title-block-subtext">{field.subtext}</text>')
+                else:
+                    svg_lines.append(f'    <text x="{x3 + 3.0:.1f}" y="9.0" class="title-block-text">สถาปนิกโครงการ / วิศวกรโครงสร้าง / งานระบบ</text>')
+
+                # Cell 4: Sheet No, Scale, Revision, Date
+                c4_y = 3.5
+                details_c4 = [
+                    ("SHEET NO.", cfg.id),
+                    ("SCALE", f"1:{cfg.scale}"),
+                    ("DATE", date_str),
+                    ("REVISION", cfg.revision),
+                ]
+                for lbl, val in details_c4:
+                    svg_lines.append(f'    <text x="{x4 + 3.0:.1f}" y="{c4_y:.1f}" class="title-block-label">{lbl}</text>')
+                    svg_lines.append(f'    <text x="{x4 + 22.0:.1f}" y="{c4_y:.1f}" class="title-block-text">{val}</text>')
+                    c4_y += 5.5
+                    if c4_y < title_h - 2.0:
+                        svg_lines.append(f'    <line x1="{x4}" y1="{c4_y - 1.5:.1f}" x2="{title_w:.1f}" y2="{c4_y - 1.5:.1f}" class="title-block-divider" />')
+
+            elif tb_layout == "corner_bottom_right":
+                curr_y = 4.0
+                svg_lines.append(f'    <text x="4.0" y="{curr_y:.1f}" class="title-block-label">PROJECT / โครงการ: {proj_name[:20]}</text>')
                 curr_y += 4.5
-                svg_lines.append(
-                    f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
-                )
+                svg_lines.append(f'    <text x="4.0" y="{curr_y:.1f}" class="sheet-title">{cfg.title}</text>')
+                curr_y += 6.0
+                svg_lines.append(f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_w:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />')
                 curr_y += 2.5
 
-            # Sheet Index Table (if enabled & provided)
-            if cfg.visibility.show_sheet_index and cfg.sheet_index:
-                curr_y += 1.0
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-title">SHEET INDEX /สารบัญแบบ</text>'
-                )
+                svg_lines.append(f'    <text x="4.0" y="{curr_y:.1f}" class="title-block-label">SHEET NO: <tspan class="title-block-text">{cfg.id}</tspan>  SCALE: <tspan class="title-block-text">1:{cfg.scale}</tspan></text>')
                 curr_y += 4.5
+                svg_lines.append(f'    <text x="4.0" y="{curr_y:.1f}" class="title-block-label">DATE: <tspan class="title-block-text">{date_str}</tspan>  REV: <tspan class="title-block-text">{cfg.revision}</tspan></text>')
+                curr_y += 5.0
 
-                # Table Header
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-header">NO.</text>'
-                )
-                svg_lines.append(
-                    f'    <text x="18.0" y="{curr_y:.1f}" class="sheet-index-header">TITLE</text>'
-                )
-                svg_lines.append(
-                    f'    <text x="{title_block_width - 15.0:.1f}" y="{curr_y:.1f}" class="sheet-index-header">SCALE</text>'
-                )
-                curr_y += 3.2
-                svg_lines.append(
-                    f'    <line x1="5.0" y1="{curr_y:.1f}" x2="{title_block_width - 5.0:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
-                )
-                curr_y += 2.5
+                if cfg.title_block.fields:
+                    svg_lines.append(f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_w:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />')
+                    curr_y += 2.5
+                    for field in cfg.title_block.fields:
+                        if curr_y > title_h - 4.0:
+                            break
+                        svg_lines.append(f'    <text x="4.0" y="{curr_y:.1f}" class="title-block-label">{field.label}: <tspan class="title-block-text">{field.value}</tspan></text>')
+                        curr_y += 4.0
 
-                for idx_item in cfg.sheet_index:
-                    if curr_y > title_h - 45.0:
-                        break
-                    svg_lines.append(
-                        f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">{idx_item.sheet_no}</text>'
-                    )
-                    svg_lines.append(
-                        f'    <text x="18.0" y="{curr_y:.1f}" class="sheet-index-cell">{idx_item.title[:20]}</text>'
-                    )
-                    svg_lines.append(
-                        f'    <text x="{title_block_width - 15.0:.1f}" y="{curr_y:.1f}" class="sheet-index-cell">{idx_item.scale}</text>'
-                    )
-                    curr_y += 4.0
+            else:  # vertical_right
+                curr_y = 6.0
 
-            # General Notes & Professional Stamp Box
-            if curr_y < title_h - 40.0:
-                curr_y += 3.0
+                # Project Title Header Box
                 svg_lines.append(
-                    f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
+                    f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">PROJECT / โครงการ</text>'
+                )
+                curr_y += 3.5
+                display_proj = (proj_name[:26] + "...") if len(proj_name) > 28 else proj_name
+                svg_lines.append(
+                    f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-title">{display_proj}</text>'
+                )
+                curr_y += 6.5
+                svg_lines.append(
+                    f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_w:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
                 )
                 curr_y += 3.0
+
+                # Sheet Title Box
                 svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">GENERAL NOTES / ข้อกำหนดทั่วไป</text>'
+                    f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">DRAWING TITLE / ชื่อแบบ</text>'
                 )
                 curr_y += 3.5
                 svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">1. DO NOT SCALE DRAWINGS / ห้ามวัดขนาดจากแบบ</text>'
+                    f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-title">{cfg.title}</text>'
                 )
-                curr_y += 3.5
+                curr_y += 6.5
                 svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">2. ALL DIMENSIONS IN METERS / หน่วยวัดเป็นเมตร</text>'
-                )
-                curr_y += 3.5
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">3. VERIFY ALL DIMS ON SITE / ตรวจขนาดจริงหน้างาน</text>'
-                )
-                curr_y += 4.5
-                svg_lines.append(
-                    f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
+                    f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_w:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
                 )
                 curr_y += 3.0
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">PROFESSIONAL STAMP & SIGNATURE</text>'
-                )
 
-            # Footer debim Engine Tag
-            svg_lines.append(
-                f'    <text x="5.0" y="{title_h - 4.0:.1f}" class="title-block-label">GENERATED BY debim ARCHITECTURAL ENGINE</text>'
-            )
+                # Details Grid: Sheet No, Scale, Date, Rev, Client, Architect
+                details = [
+                    ("SHEET NO. / เลขที่แบบ", cfg.id),
+                    ("SCALE / มาตราส่วน", f"1:{cfg.scale}"),
+                    ("DATE / วันที่", date_str),
+                    ("REVISION / แก้ไขครั้งที่", cfg.revision),
+                    ("CLIENT / เจ้าของโครงการ", cfg.client_name),
+                    ("ARCHITECT / สถาปนิก", cfg.architect_name),
+                ]
+
+                for lbl, val in details:
+                    svg_lines.append(
+                        f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">{lbl}</text>'
+                    )
+                    curr_y += 3.2
+                    svg_lines.append(
+                        f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-text">{val}</text>'
+                    )
+                    curr_y += 4.5
+                    svg_lines.append(
+                        f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_w:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
+                    )
+                    curr_y += 2.5
+
+                # Professional Certification / Custom Fields
+                if cfg.title_block.fields:
+                    svg_lines.append(
+                        f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">PROFESSIONAL CERTIFICATION / คณะผู้จัดทำ</text>'
+                    )
+                    curr_y += 3.5
+                    for field in cfg.title_block.fields:
+                        if curr_y > title_h - 45.0:
+                            break
+                        svg_lines.append(
+                            f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">{field.label}</text>'
+                        )
+                        curr_y += 3.2
+                        svg_lines.append(
+                            f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-text">{field.value}</text>'
+                        )
+                        curr_y += 4.0
+                        if field.subtext:
+                            svg_lines.append(
+                                f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-subtext">{field.subtext}</text>'
+                            )
+                            curr_y += 3.5
+                        svg_lines.append(
+                            f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_w:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
+                        )
+                        curr_y += 2.5
+
+                # Sheet Index Table (if enabled & provided)
+                if cfg.visibility.show_sheet_index and cfg.title_block.show_sheet_index and cfg.sheet_index:
+                    curr_y += 1.0
+                    svg_lines.append(
+                        f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-title">SHEET INDEX /สารบัญแบบ</text>'
+                    )
+                    curr_y += 4.5
+
+                    # Table Header
+                    svg_lines.append(
+                        f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-header">NO.</text>'
+                    )
+                    svg_lines.append(
+                        f'    <text x="18.0" y="{curr_y:.1f}" class="sheet-index-header">TITLE</text>'
+                    )
+                    svg_lines.append(
+                        f'    <text x="{title_w - 15.0:.1f}" y="{curr_y:.1f}" class="sheet-index-header">SCALE</text>'
+                    )
+                    curr_y += 3.2
+                    svg_lines.append(
+                        f'    <line x1="5.0" y1="{curr_y:.1f}" x2="{title_w - 5.0:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
+                    )
+                    curr_y += 2.5
+
+                    for idx_item in cfg.sheet_index:
+                        if curr_y > title_h - 45.0:
+                            break
+                        svg_lines.append(
+                            f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">{idx_item.sheet_no}</text>'
+                        )
+                        svg_lines.append(
+                            f'    <text x="18.0" y="{curr_y:.1f}" class="sheet-index-cell">{idx_item.title[:20]}</text>'
+                        )
+                        svg_lines.append(
+                            f'    <text x="{title_w - 15.0:.1f}" y="{curr_y:.1f}" class="sheet-index-cell">{idx_item.scale}</text>'
+                        )
+                        curr_y += 4.0
+
+                # General Notes & Professional Stamp Box
+                if cfg.title_block.show_notes and curr_y < title_h - 40.0:
+                    curr_y += 3.0
+                    svg_lines.append(
+                        f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_w:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
+                    )
+                    curr_y += 3.0
+                    svg_lines.append(
+                        f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">GENERAL NOTES / ข้อกำหนดทั่วไป</text>'
+                    )
+                    curr_y += 3.5
+                    svg_lines.append(
+                        f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">1. DO NOT SCALE DRAWINGS / ห้ามวัดขนาดจากแบบ</text>'
+                    )
+                    curr_y += 3.5
+                    svg_lines.append(
+                        f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">2. ALL DIMENSIONS IN METERS / หน่วยวัดเป็นเมตร</text>'
+                    )
+                    curr_y += 3.5
+                    svg_lines.append(
+                        f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">3. VERIFY ALL DIMS ON SITE / ตรวจขนาดจริงหน้างาน</text>'
+                    )
+                    curr_y += 4.5
+                    svg_lines.append(
+                        f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_w:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
+                    )
+                    curr_y += 3.0
+                    svg_lines.append(
+                        f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">PROFESSIONAL STAMP &amp; SIGNATURE</text>'
+                    )
+
+                # Footer debim Engine Tag
+                svg_lines.append(
+                    f'    <text x="5.0" y="{title_h - 4.0:.1f}" class="title-block-label">GENERATED BY debim ARCHITECTURAL ENGINE</text>'
+                )
 
             svg_lines.append('  </g> <!-- End title-block -->')
 

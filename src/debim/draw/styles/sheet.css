@@ -114,6 +114,14 @@ svg:not(#measurement-layer) {
   dominant-baseline: text-before-edge;
 }
 
+.title-block-subtext {
+  fill: #555555;
+  font-family: 'Sarabun', 'Prompt', sans-serif;
+  font-size: 1.8px;
+  font-weight: 300;
+  dominant-baseline: text-before-edge;
+}
+
 .title-block-label {
   fill: #666666;
   font-family: 'Sarabun', 'Prompt', sans-serif;
