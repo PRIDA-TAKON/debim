@@ -4017,7 +4017,14 @@ def generate_viewer_html(
             }}
 
             contentEl.innerHTML = `
-                <div style="margin-bottom: 8px;"><span class="badge">${{data.class}}</span></div>
+                <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <span class="badge" style="font-size: 0.8rem;">${{data.class}}</span>
+                    <a href="class_directory.html?class=${{encodeURIComponent(data.class)}}" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 0.73rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.35);">
+                        <span>📖</span>
+                        <span>คู่มือในสารบัญ</span>
+                        <span>↗</span>
+                    </a>
+                </div>
                 <div class="data-row"><span class="data-label">Tag</span><span class="data-value">${{data.tag}}</span></div>
                 <div class="data-row"><span class="data-label">Layer</span><span class="data-value">${{data.layer || 'general/other'}}</span></div>
                 ${{memberRow}}

@@ -486,6 +486,15 @@
                     <span>📚</span> debim Class Encyclopedia
                 </div>
                 <div class="brand-subtitle">Interactive 6D BIM Class Directory</div>
+                <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                    <a href="../examples/farnsworth_house/viewer.html" target="_blank" style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px; color: #e2e8f0; font-size: 0.78rem; text-decoration: none; transition: all 0.15s ease;">
+                        <span style="display: flex; align-items: center; gap: 6px;">
+                            <span>🏡</span>
+                            <span style="font-weight: 500;">Farnsworth House</span>
+                        </span>
+                        <span style="color: #38bdf8; font-size: 0.7rem; font-weight: 600;">3D Live ↗</span>
+                    </a>
+                </div>
             </div>
 
             <div class="search-box">
@@ -509,6 +518,13 @@
                     </div>
                     <div class="active-class-th-name" style="font-size: 0.9rem; color: #cbd5e1; margin-top: 4px;" id="title-th-name">เสาคอนกรีตเสริมเหล็ก</div>
                     <div class="active-class-desc" id="title-desc">องค์อาคารรับแรงอัดแนวแกนและแรงดัด</div>
+                </div>
+                <div class="header-showcase-actions">
+                    <a id="btn-showcase-farnsworth" href="../examples/farnsworth_house/viewer.html" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; padding: 8px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease;">
+                        <span>🏡</span>
+                        <span id="btn-showcase-label">ดูในบ้านตัวอย่าง (Farnsworth House)</span>
+                        <span style="font-size: 0.75rem; opacity: 0.8;">↗</span>
+                    </a>
                 </div>
             </div>
 
@@ -642,9 +658,25 @@
         function init() {
             renderNavList(classesData);
             init3DScene();
-            if (classesData.length > 0) {
-                selectClass(0);
+
+            // Read URL parameters (?class=... & tab=...)
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetClass = urlParams.get('class');
+            let initialIndex = 0;
+            if (targetClass) {
+                const foundIdx = classesData.findIndex(c => c.class_name.toLowerCase() === targetClass.toLowerCase());
+                if (foundIdx !== -1) {
+                    initialIndex = foundIdx;
+                }
             }
+            if (classesData.length > 0) {
+                selectClass(initialIndex);
+            }
+            const targetTab = urlParams.get('tab');
+            if (targetTab) {
+                switchTab(targetTab);
+            }
+
             window.addEventListener('resize', onWindowResize);
         }
 
@@ -737,6 +769,33 @@
 
             // 3D Model
             update3DModel(item.sample_3d);
+
+            // Update Farnsworth House Showcase link
+            const farnsworthClasses = ['IfcColumn', 'IfcBeam', 'IfcSlab', 'IfcWall'];
+            const btnShowcase = document.getElementById('btn-showcase-farnsworth');
+            const lblShowcase = document.getElementById('btn-showcase-label');
+            if (btnShowcase && lblShowcase) {
+                if (farnsworthClasses.includes(item.class_name)) {
+                    btnShowcase.href = `../examples/farnsworth_house/viewer.html?class=${encodeURIComponent(item.class_name)}`;
+                    lblShowcase.innerHTML = `ดู <strong style="color:#ffffff;">${item.class_name}</strong> ในบ้านตัวอย่าง Farnsworth House ✨`;
+                    btnShowcase.style.borderColor = '#38bdf8';
+                    btnShowcase.style.background = 'rgba(14, 165, 233, 0.22)';
+                    btnShowcase.style.boxShadow = '0 0 12px rgba(56, 189, 248, 0.25)';
+                } else {
+                    btnShowcase.href = `../examples/farnsworth_house/viewer.html`;
+                    lblShowcase.textContent = `ดูโครงการบ้านตัวอย่าง (Farnsworth House)`;
+                    btnShowcase.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                    btnShowcase.style.background = 'rgba(30, 41, 59, 0.85)';
+                    btnShowcase.style.boxShadow = 'none';
+                }
+            }
+
+            // Sync URL query param without full reload
+            try {
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('class', item.class_name);
+                window.history.replaceState({}, '', currentUrl.toString());
+            } catch (e) {}
         }
 
         // Render BOQ Table
