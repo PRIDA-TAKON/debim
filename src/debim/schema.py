@@ -2044,7 +2044,7 @@ class IfcCovering(BaseModel):
 RoadType = Literal["HIGHWAY", "CARRIAGEWAY", "ROUNDABOUT", "SERVICE_ROAD", "USERDEFINED"]
 BridgeType = Literal["GIRDER", "SLAB", "ARCH", "CABLE_STAYED", "USERDEFINED"]
 BridgePartType = Literal["SUBSTRUCTURE", "SUPERSTRUCTURE", "DECK", "PIER", "ABUTMENT", "FOUNDATION", "USERDEFINED", "NOTDEFINED"]
-MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "USERDEFINED"]
+MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "BREAKWATER", "REVETMENT", "USERDEFINED"]
 BearingType = Literal["BRIDGEBEARING", "ELASTOMERIC", "POT", "SPHERICAL", "DISK", "ROLLER", "ROCKER", "USERDEFINED", "NOTDEFINED"]
 RailwayType = Literal["PASSENGER", "FREIGHT", "MIXED", "HIGH_SPEED", "LIGHT_RAIL", "METRO", "USERDEFINED"]
 RailwayPartType = Literal["TRACK", "SUBGRADE", "LINESIDE", "USERDEFINED"]
@@ -2473,6 +2473,11 @@ class IfcMarinePart(BaseModel):
     deck_thickness: float = 0.50
     deck_elevation: float = 0.0
     depth: float = 10.0
+    crest_width: Optional[float] = None
+    crest_elevation: Optional[float] = None
+    base_width: Optional[float] = None
+    slope_ratio: Optional[float] = None
+    armor_weight_tons: Optional[float] = None
     piles: Optional[FootingPiles] = None
     placement: MarinePartPlacement = Field(default_factory=MarinePartPlacement)
     layer: Optional[str] = None
@@ -2485,6 +2490,10 @@ class IfcMarinePart(BaseModel):
                 data["deck_thickness"] = data["thickness"]
             if "elevation" in data and "deck_elevation" not in data:
                 data["deck_elevation"] = data["elevation"]
+            if "crest_width" in data and "width" not in data:
+                data["width"] = data["crest_width"]
+            if "crest_elevation" in data and "deck_elevation" not in data:
+                data["deck_elevation"] = data["crest_elevation"]
             if "pile_count" in data and "piles" not in data:
                 data["piles"] = {
                     "count": data["pile_count"],

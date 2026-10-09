@@ -482,6 +482,12 @@ class MarineQTO(BaseModel):
     pile_count: int = 0                  # Number of foundation piles
     pile_total_length: float = 0.0       # Total pile linear meters (m)
     depth: float = 0.0                   # Water depth / berth depth (m)
+    crest_width: float = 0.0             # Breakwater/Revetment crest width (m)
+    crest_elevation: float = 0.0         # Crest elevation (m)
+    base_width: float = 0.0              # Bottom base width (m)
+    slope_ratio: float = 1.5             # Side slope ratio (e.g. 1.5 for 1:1.5)
+    core_rock_volume: float = 0.0        # Core rock fill volume (m3)
+    armor_rock_tonnage: float = 0.0      # Armor layer rock tonnage (ton)
 
 
 class RailwayQTO(BaseModel):
@@ -1738,6 +1744,8 @@ def calculate_element_qto(
         pile_cnt = resolved.pile_count
         pile_len = resolved.pile_total_length
 
+        armor_tonnage = resolved.armor_weight_tons if resolved.armor_weight_tons is not None else 0.0
+
         marine_qto = MarineQTO(
             length=resolved.length,
             width=resolved.width,
@@ -1746,6 +1754,12 @@ def calculate_element_qto(
             pile_count=pile_cnt,
             pile_total_length=pile_len,
             depth=resolved.depth,
+            crest_width=resolved.crest_width,
+            crest_elevation=resolved.crest_elevation,
+            base_width=resolved.base_width,
+            slope_ratio=resolved.slope_ratio,
+            core_rock_volume=resolved.core_rock_volume,
+            armor_rock_tonnage=armor_tonnage,
         )
         sub_qto = None
         if pile_cnt > 0:
