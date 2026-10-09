@@ -2763,10 +2763,8 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksElement", "IfcEarthworksCut",
     "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
     "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
-    "IfcTrackElement", "IfcCustomElement", "IfcBuildingElementProxy"
-    "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksCut", "IfcEarthworksFill",
-    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcBridgePart", "IfcBearing",
-    "IfcMarinePart", "IfcCustomElement", "IfcBuildingElementProxy"
+    "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcMarinePart",
+    "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
 
