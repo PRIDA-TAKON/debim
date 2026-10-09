@@ -60,7 +60,7 @@ def generate_2d_viewer_html(
             sheets_dir_or_configs = Path("sheets")
 
     if sheets_dir_or_configs is None:
-        # Fallback: auto-generate sheet configs for each storey + default section sheets
+        # Fallback: auto-generate sheet configs for floor plans, elevations & sections
         configs = []
         storeys = manifest_obj.spatial_structure.storeys or []
         if storeys:
@@ -80,7 +80,27 @@ def generate_2d_viewer_html(
         else:
             configs.append(SheetConfig(id="A-101", title="Floor Plan", view_type="plan"))
 
-        # Add default Architectural Section sheets
+        # Add default elevation sheets (A-201..A-204)
+        elevation_specs = [
+            ("A-201", "รูปด้าน 1 (Front Elevation)", "FRONT"),
+            ("A-202", "รูปด้าน 2 (Rear Elevation)", "REAR"),
+            ("A-203", "รูปด้าน 3 (Right Elevation)", "RIGHT"),
+            ("A-204", "รูปด้าน 4 (Left Elevation)", "LEFT"),
+        ]
+        for elev_id, elev_title, elev_dir in elevation_specs:
+            configs.append(
+                SheetConfig(
+                    id=elev_id,
+                    title=elev_title,
+                    view_type="ELEVATION",
+                    elevation_direction=elev_dir,
+                    scale=100,
+                    paper_size="A3",
+                    orientation="landscape",
+                )
+            )
+
+        # Add default Architectural Section sheets (A-301..A-302)
         configs.append(
             SheetConfig(
                 id="A-301",

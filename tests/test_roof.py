@@ -301,9 +301,11 @@ def test_roof_viewer_generation(sample_roof_manifest):
     html = generate_viewer_html(sample_roof_manifest)
     assert "IfcRoofCovering" in html
     assert "IfcRoofFraming" in html
+    assert "IfcFasciaBoard" in html
     assert "polygon" in html
     assert "architecture/roofs/covering" in html
     assert "architecture/roofs/framing" in html
+    assert "architecture/roofs/fascia" in html
 
 
 def test_roof_framing_takeoff_hip_and_gable(sample_roof_manifest, tmp_path):
