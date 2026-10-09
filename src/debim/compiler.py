@@ -127,8 +127,6 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcActuator"
     if "sensor" in l:
         return "IfcSensor"
-    if "controller" in l:
-        return "IfcController"
     if "alarm" in l:
         return "IfcAlarm"
     if "interceptor" in l:
@@ -147,8 +145,10 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcValve"
     if "damper" in l:
         return "IfcDamper"
-    if "flow_controller" in l or "flowcontroller" in l or "flow_control" in l:
+    if "flow_controller" in l or "flowcontroller" in l or "flow_control" in l or "flow_controllers" in l:
         return "IfcFlowController"
+    if "controller" in l:
+        return "IfcController"
     if "control" in l:
         return "IfcDistributionControlElement"
     return "IfcBuildingElementProxy"
@@ -616,29 +616,6 @@ class StepSerializer:
             )
             element_tag_refs[rw.tag] = elem_ref
             if st_id in storey_elements:
-                storey_elements[st_id].append(elem_ref)
-
-        # 6. MEP Terminals
-        for term in resolved.terminals:
-            st_id = term.element.placement.storey or (
-                term.hosting_wall.element.placement.storey if term.hosting_wall else None
-            )
-            ifc_cls = term.element.class_
-            raw_pred_type = getattr(term, "predefined_type", None) or getattr(term.element, "predefined_type", None)
-            pred_type = f".{raw_pred_type.upper()}." if raw_pred_type else None
-            elem_ref = self.create_entity(
-                ifc_cls,
-                generate_ifc_guid(),
-                None,
-                term.tag,
-                None,
-                None,
-                None,
-                None,
-                pred_type,
-            )
-            element_tag_refs[term.tag] = elem_ref
-            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         # 1. Columns
@@ -1833,6 +1810,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
     storey_products: Dict[str, List[ifcopenshell.entity_instance]] = {
         s_id: [] for s_id in storey_objs
     }
+    ifcopenshell_elem_objs: Dict[str, Any] = {}
 
     # 0. Footings & Piles
     for footing in resolved.footings:
@@ -2947,9 +2925,18 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             except Exception:
                 proxy_obj.ObjectType = proxy.predefined_type
 
+        ifcopenshell_elem_objs[proxy.tag] = proxy_obj
         st_id = proxy.element.placement.storey
         if st_id and st_id in storey_products:
             storey_products[st_id].append(proxy_obj)
+
+        if st_id and st_id in storey_objs:
+            ifcopenshell.api.run(
+                "spatial.assign_container",
+                model,
+                products=[proxy_obj],
+                relating_structure=storey_objs[st_id],
+            )
 
         px, py, pz = proxy.position
         rx, ry, rz = proxy.rotation

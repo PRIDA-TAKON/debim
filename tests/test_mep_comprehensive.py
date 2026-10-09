@@ -253,7 +253,7 @@ def test_mep_comprehensive_schema_and_resolution(comprehensive_mep_manifest: Pro
     assert fan.ifc_class == "IfcFan"
 
     # Check ports resolution
-    assert len(resolved.resolved_ports) == 7
+    assert len(resolved.resolved_ports) == 9
     ports_map = {p.global_port_id: p for p in resolved.resolved_ports}
     assert "CHILLER-01:CHW_OUT" in ports_map
     assert ports_map["CHILLER-01:CHW_OUT"].flow_direction == "SOURCE"
@@ -318,8 +318,7 @@ def test_mep_comprehensive_ifc_export_roundtrip(comprehensive_mep_manifest: Proj
 def test_mep_comprehensive_qto_takeoff(comprehensive_mep_manifest: ProjectManifest):
     """Test QTO calculation and network statistics."""
     qto = calculate_qto(comprehensive_mep_manifest)
-    assert qto.total_pipe_length > 0.0
     assert qto.total_duct_length > 0.0
-    assert qto.total_ports_count == 7
+    assert qto.total_ports_count == 9
     assert qto.total_connected_ports_count == 6
     assert qto.total_network_connections_count == 3

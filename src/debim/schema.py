@@ -1386,6 +1386,7 @@ class IfcBuildingElementProxy(BaseModel):
     dimensions: Optional[Dimensions] = None
     placement: ProxyPlacement
     properties: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
 
     @model_validator(mode="before")
@@ -1476,7 +1477,7 @@ class IfcRoof(BaseModel):
 
 
 PipeSystemType = Literal[
-    "COLD_WATER", "HOT_WATER", "SOIL", "WASTE", "VENT", "DRAINAGE", "REFRIGERANT", "CONDENSATE"
+    "COLD_WATER", "HOT_WATER", "CHILLED_WATER", "HEATING", "SOIL", "WASTE", "VENT", "DRAINAGE", "REFRIGERANT", "CONDENSATE", "GAS", "FIRE_PROTECTION"
 ]
 ElectricalSystemType = Literal["POWER", "LIGHTING", "MAIN_FEEDER", "COMMUNICATION", "SOLAR"]
 DuctSystemType = Literal["SUPPLY_AIR", "RETURN_AIR", "EXHAUST_AIR", "FRESH_AIR"]
@@ -2358,16 +2359,27 @@ class IfcDistributionSystem(BaseModel):
 from pydantic import Tag
 
 
+EXPLICIT_TYPED_ELEMENT_CLASSES = {
+    "IfcColumn", "IfcBeam", "IfcWall", "IfcDoor", "IfcWindow", "IfcFooting", "IfcSlab",
+    "IfcCovering", "IfcStair", "IfcStairFlight", "IfcRamp", "IfcRailing", "IfcRoof",
+    "IfcCurtainWall", "IfcPlate", "IfcPipeSegment", "IfcCableCarrierSegment", "IfcDuctSegment",
+    "IfcSanitaryTerminal", "IfcWasteTerminal", "IfcDistributionBoard", "IfcElectricDistributionBoard",
+    "IfcLightFixture", "IfcSwitchingDevice", "IfcOutlet", "IfcAirTerminal", "IfcDamper",
+    "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksCut", "IfcEarthworksFill",
+    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcCustomElement", "IfcBuildingElementProxy"
+}
+
+
 def element_discriminator(v: Any) -> str:
     """Dynamically route custom/proxy class names to IfcBuildingElementProxy."""
     if isinstance(v, dict):
         cls_val = v.get("class") or v.get("class_")
-        if cls_val in KNOWN_ELEMENT_CLASSES:
+        if cls_val in EXPLICIT_TYPED_ELEMENT_CLASSES:
             return str(cls_val)
         return "IfcBuildingElementProxy"
     elif isinstance(v, BaseModel):
         cls_val = getattr(v, "class_", None)
-        if cls_val in KNOWN_ELEMENT_CLASSES:
+        if cls_val in EXPLICIT_TYPED_ELEMENT_CLASSES:
             return str(cls_val)
         return "IfcBuildingElementProxy"
     return "IfcBuildingElementProxy"
