@@ -949,6 +949,43 @@ def generate_viewer_html(
                 "opacity": 0.70,
                 "layer": ew.layer,
             })
+    # Civil Infrastructure Bridge Parts (IFC4.3)
+    for bp in getattr(resolved, "bridge_parts", []) or []:
+        elements_data.append({
+            "tag": bp.tag,
+            "class": "IfcBridgePart",
+            "predefined_type": bp.predefined_type,
+            "material": bp.element.material or "Reinforced Concrete",
+            "position": [bp.position[0], bp.position[1], bp.position[2] + bp.thickness / 2.0],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": bp.span_length,
+                "depth": bp.width,
+                "height": bp.thickness,
+                "concrete_volume": bp.concrete_volume,
+                "formwork_area": bp.formwork_area,
+            },
+            "color": "#38BDF8",
+            "layer": bp.layer,
+        })
+
+    # Civil Infrastructure Bearings (IFC4.3)
+    for br in getattr(resolved, "bearings", []) or []:
+        elements_data.append({
+            "tag": br.tag,
+            "class": "IfcBearing",
+            "predefined_type": br.predefined_type,
+            "material": br.element.material or "Elastomeric Rubber",
+            "position": [br.position[0], br.position[1], br.position[2] + br.height / 2.0],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": br.width,
+                "depth": br.depth,
+                "height": br.height,
+            },
+            "color": "#1E293B",
+            "layer": br.layer,
+        })
 
     # Civil Earthworks Cut
     for cut in resolved.earthworks_cuts:
