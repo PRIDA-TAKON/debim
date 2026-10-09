@@ -32,6 +32,12 @@ from debim.schema import ProjectManifest, load_manifest, export_json_schema
 from debim.viewer import generate_viewer_html, serve_viewer
 from debim.modular import bundle_manifest, split_manifest
 from debim.spec.registry import SpecRegistryClient
+from debim.docs.exemplar import (
+    generate_exemplar_element,
+    generate_exemplar_manifest,
+    get_supported_exemplar_classes,
+)
+from debim.docs.thai_specs import get_thai_spec_clause, THAI_SPEC_LIBRARY
 
 app = typer.Typer(
     name="debim",
@@ -1560,6 +1566,118 @@ def spec_list(
         )
 
     console.print(table)
+
+
+docs_app = typer.Typer(
+    help="Exemplar manifest generator & Thai workmanship spec library tools",
+    add_completion=False,
+)
+app.add_typer(docs_app, name="docs")
+
+
+@docs_app.command(name="exemplar")
+def docs_exemplar_cmd(
+    class_name: Optional[str] = typer.Option(
+        None,
+        "--class-name",
+        "-c",
+        help="Target IFC class name (e.g. IfcColumn, IfcWall) or 'ALL' for all classes",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Path to write generated exemplar YAML manifest. If omitted, prints to stdout.",
+    ),
+    format: str = typer.Option(
+        "yaml",
+        "--format",
+        "-f",
+        help="Output format ('yaml' or 'json')",
+    ),
+):
+    """Generate minimal, syntactically valid exemplar .debim manifest for given IFC class or all supported classes."""
+    try:
+        manifest_obj = generate_exemplar_manifest(class_name=class_name)
+        dict_data = manifest_obj.model_dump(by_alias=True, exclude_none=True)
+
+        if format.lower() == "json":
+            import json
+            out_str = json.dumps(dict_data, indent=2, ensure_ascii=False) + "\n"
+        else:
+            out_str = yaml.safe_dump(dict_data, allow_unicode=True, sort_keys=False)
+
+        if output:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(out_str, encoding="utf-8")
+            console.print(
+                Panel(
+                    f"[bold green]Exemplar Manifest Generated Successfully![/bold green]\n"
+                    f"[bold cyan]Target Class:[/bold cyan] {class_name or 'ALL'}\n"
+                    f"[bold cyan]Elements Generated:[/bold cyan] {len(manifest_obj.elements)}\n"
+                    f"[bold cyan]Saved Path:[/bold cyan] {output}",
+                    title="[bold green]debim Exemplar Generator[/bold green]",
+                )
+            )
+        else:
+            sys.stdout.write(out_str)
+
+    except Exception as e:
+        console.print(f"[bold red]Exemplar Generation Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
+@docs_app.command(name="export-data")
+def docs_export_data_cmd(
+    output_dir: Path = typer.Option(
+        Path("dist/docs"),
+        "--output-dir",
+        "-o",
+        help="Target output directory to export exemplar manifests and Thai spec clauses",
+    ),
+):
+    """Export complete exemplar manifests and Thai workmanship specification library data to disk."""
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # 1. Export complete exemplar manifest (all classes)
+        full_manifest = generate_exemplar_manifest(class_name="ALL")
+        full_yaml_path = output_dir / "exemplar_all.debim.yaml"
+        full_yaml_path.write_text(
+            yaml.safe_dump(full_manifest.model_dump(by_alias=True, exclude_none=True), allow_unicode=True, sort_keys=False),
+            encoding="utf-8",
+        )
+
+        # 2. Export per-class exemplar snippets
+        exemplars_dir = output_dir / "exemplars"
+        exemplars_dir.mkdir(exist_ok=True)
+        supported = get_supported_exemplar_classes()
+        for cls_name in supported:
+            elem_data = generate_exemplar_element(cls_name)
+            cls_file = exemplars_dir / f"{cls_name.lower()}.yaml"
+            cls_file.write_text(yaml.safe_dump(elem_data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+        # 3. Export Thai specs library
+        specs_dir = output_dir / "specs_thai"
+        specs_dir.mkdir(exist_ok=True)
+        for code, clause in THAI_SPEC_LIBRARY.items():
+            code_slug = code.replace(" ", "_")
+            spec_file = specs_dir / f"masterformat_{code_slug}.md"
+            spec_file.write_text(clause.to_markdown(), encoding="utf-8")
+
+        console.print(
+            Panel(
+                f"[bold green]Exemplar & Thai Specs Data Exported Successfully![/bold green]\n"
+                f"[bold cyan]Output Directory:[/bold cyan] {output_dir}\n"
+                f"[bold cyan]Classes Exported:[/bold cyan] {len(supported)} individual YAML exemplars\n"
+                f"[bold cyan]Thai Specs Exported:[/bold cyan] {len(THAI_SPEC_LIBRARY)} MasterFormat division Markdown specs",
+                title="[bold green]debim Docs Exporter[/bold green]",
+            )
+        )
+
+    except Exception as e:
+        console.print(f"[bold red]Docs Export Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":
