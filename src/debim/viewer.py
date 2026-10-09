@@ -949,6 +949,48 @@ def generate_viewer_html(
                 "opacity": 0.70,
                 "layer": ew.layer,
             })
+    # Civil Marine Infrastructure Parts (IFC4.3)
+    for mp in getattr(resolved, "marine_parts", []) or []:
+        elements_data.append({
+            "tag": mp.tag,
+            "class": "IfcMarinePart",
+            "predefined_type": mp.predefined_type,
+            "material": mp.element.material or "Marine Reinforced Concrete",
+            "position": [mp.position[0], mp.position[1], mp.position[2] + mp.deck_elevation + mp.deck_thickness / 2.0],
+            "rotation": [0, 0, mp.rotation_angle],
+            "dimensions": {
+                "length": mp.length,
+                "width": mp.width,
+                "height": mp.deck_thickness,
+                "deck_thickness": mp.deck_thickness,
+                "depth": mp.depth,
+                "concrete_volume": mp.concrete_volume,
+                "formwork_area": mp.formwork_area,
+                "pile_count": mp.pile_count,
+            },
+            "color": "#0284C7",
+            "layer": mp.layer,
+        })
+        for pile in mp.piles:
+            elements_data.append({
+                "tag": pile.tag,
+                "class": "IfcPile",
+                "material": pile.material or mp.element.material or "Precast Concrete",
+                "position": [
+                    pile.position[0],
+                    pile.position[1],
+                    pile.position[2] - pile.length / 2.0,
+                ],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": pile.dimension,
+                    "depth": pile.dimension,
+                    "height": pile.length,
+                },
+                "color": "#64748B",
+                "layer": pile.layer,
+            })
+
     # Civil Infrastructure Bridge Parts (IFC4.3)
     for bp in getattr(resolved, "bridge_parts", []) or []:
         elements_data.append({

@@ -17,6 +17,7 @@ from debim.schema import (
     IfcBridge,
     IfcBridgePart,
     IfcBuildingElementProxy,
+    IfcMarinePart,
     IfcBuiltSystem,
     IfcCableCarrierSegment,
     IfcColumn,
@@ -1303,6 +1304,28 @@ class ResolvedBearing(BaseModel):
     layer: str = "civil/infrastructure/bridges/bearings"
 
 
+class ResolvedMarinePart(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMarinePart
+    predefined_type: str = "BERTH"
+    length: float = 30.0
+    width: float = 12.0
+    deck_thickness: float = 0.50
+    deck_elevation: float = 0.0
+    depth: float = 10.0
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    rotation_angle: float = 0.0
+    deck_boundary: List[Tuple[float, float, float]] = Field(default_factory=list)
+    piles: List[ResolvedPile] = Field(default_factory=list)
+    concrete_volume: float = 0.0
+    formwork_area: float = 0.0
+    pile_count: int = 0
+    pile_total_length: float = 0.0
+    layer: str = "civil/infrastructure/marine"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1344,6 +1367,7 @@ ResolvedElement = Union[
     ResolvedTrackElement,
     ResolvedBridgePart,
     ResolvedBearing,
+    ResolvedMarinePart,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1399,6 +1423,7 @@ class ResolvedManifest(BaseModel):
     built_systems: List[ResolvedBuiltSystem] = []
     bridge_parts: List[ResolvedBridgePart] = []
     bearings: List[ResolvedBearing] = []
+    marine_parts: List[ResolvedMarinePart] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -5078,6 +5103,135 @@ class SpatialResolver:
             layer=derive_default_layer(bearing),
         )
 
+    def resolve_marine_part(self, marine_part: IfcMarinePart) -> ResolvedMarinePart:
+        z_base = self.get_storey(marine_part.placement.storey).elevation if marine_part.placement.storey else 0.0
+
+        rot_deg = 0.0
+        if marine_part.placement.rotation is not None:
+            if isinstance(marine_part.placement.rotation, (int, float)):
+                rot_deg = float(marine_part.placement.rotation)
+            elif isinstance(marine_part.placement.rotation, (list, tuple)) and len(marine_part.placement.rotation) >= 3:
+                rot_deg = float(marine_part.placement.rotation[2])
+
+        if marine_part.placement.position:
+            px, py, pz = marine_part.placement.position
+            pos = (px, py, z_base + pz)
+        elif marine_part.placement.from_grid and marine_part.placement.to_grid:
+            x1, y1 = self.get_grid_xy(marine_part.placement.from_grid)
+            x2, y2 = self.get_grid_xy(marine_part.placement.to_grid)
+            x1 += marine_part.placement.offset_x
+            y1 += marine_part.placement.offset_y
+            x2 += marine_part.placement.offset_x
+            y2 += marine_part.placement.offset_y
+            z = z_base + marine_part.placement.offset_z
+            pos = ((x1 + x2) / 2.0, (y1 + y2) / 2.0, z)
+            if marine_part.placement.rotation is None:
+                rot_deg = math.degrees(math.atan2(y2 - y1, x2 - x1))
+        elif marine_part.placement.grid:
+            gx, gy = self.get_grid_xy(marine_part.placement.grid)
+            gx += marine_part.placement.offset_x
+            gy += marine_part.placement.offset_y
+            z = z_base + marine_part.placement.offset_z
+            pos = (gx, gy, z)
+        else:
+            z = z_base + marine_part.placement.offset_z
+            pos = (marine_part.placement.offset_x, marine_part.placement.offset_y, z)
+
+        L = marine_part.length
+        W = marine_part.width
+        t = marine_part.deck_thickness
+        deck_elev = marine_part.deck_elevation
+        depth = marine_part.depth
+
+        rad = math.radians(rot_deg)
+        cos_a = math.cos(rad)
+        sin_a = math.sin(rad)
+
+        local_corners = [
+            (-L / 2.0, -W / 2.0),
+            (L / 2.0, -W / 2.0),
+            (L / 2.0, W / 2.0),
+            (-L / 2.0, W / 2.0),
+        ]
+        z_deck = pos[2] + deck_elev
+        deck_boundary = []
+        for lx, ly in local_corners:
+            gx = pos[0] + (lx * cos_a - ly * sin_a)
+            gy = pos[1] + (lx * sin_a + ly * cos_a)
+            deck_boundary.append((gx, gy, z_deck))
+
+        resolved_piles: List[ResolvedPile] = []
+        if marine_part.piles and marine_part.piles.count > 0:
+            p_cnt = marine_part.piles.count
+            p_len = marine_part.piles.length
+            p_dim = 0.40
+            p_shape = "CIRCULAR"
+            if marine_part.piles.profile:
+                p_dim = (
+                    marine_part.piles.profile.dimension
+                    or marine_part.piles.profile.diameter
+                    or (marine_part.piles.profile.radius * 2.0 if marine_part.piles.profile.radius else None)
+                    or marine_part.piles.profile.width
+                    or 0.40
+                )
+                p_shape = marine_part.piles.profile.shape or "CIRCULAR"
+
+            cols = max(1, math.ceil(math.sqrt(p_cnt)))
+            rows = max(1, math.ceil(p_cnt / cols))
+
+            dx = (L * 0.8) / max(1, cols - 1) if cols > 1 else 0.0
+            dy = (W * 0.8) / max(1, rows - 1) if rows > 1 else 0.0
+
+            start_x = -(cols - 1) * dx / 2.0 if cols > 1 else 0.0
+            start_y = -(rows - 1) * dy / 2.0 if rows > 1 else 0.0
+
+            pile_idx = 0
+            for r in range(rows):
+                for c in range(cols):
+                    if pile_idx >= p_cnt:
+                        break
+                    lx = start_x + c * dx
+                    ly = start_y + r * dy
+                    px = pos[0] + (lx * cos_a - ly * sin_a)
+                    py = pos[1] + (lx * sin_a + ly * cos_a)
+                    pz = z_deck
+                    resolved_piles.append(
+                        ResolvedPile(
+                            tag=f"{marine_part.tag}-PILE-{pile_idx + 1}",
+                            position=(px, py, pz),
+                            length=p_len,
+                            dimension=p_dim,
+                            shape=p_shape,
+                            material=marine_part.piles.material or marine_part.material,
+                            layer=f"{marine_part.layer or 'civil/infrastructure/marine'}/piles",
+                        )
+                    )
+                    pile_idx += 1
+
+        conc_vol = L * W * t
+        formwork = (L * W) + 2.0 * (L * t) + 2.0 * (W * t)
+        p_total_len = sum(p.length for p in resolved_piles)
+
+        return ResolvedMarinePart(
+            tag=marine_part.tag,
+            element=marine_part,
+            predefined_type=marine_part.predefined_type,
+            length=L,
+            width=W,
+            deck_thickness=t,
+            deck_elevation=deck_elev,
+            depth=depth,
+            position=pos,
+            rotation_angle=rot_deg,
+            deck_boundary=deck_boundary,
+            piles=resolved_piles,
+            concrete_volume=conc_vol,
+            formwork_area=formwork,
+            pile_count=len(resolved_piles),
+            pile_total_length=p_total_len,
+            layer=marine_part.layer or derive_default_layer(marine_part),
+        )
+
 
     def _resolve_element_ports(self, elem, host_pos: Tuple[float, float, float], rot_deg: float = 0.0) -> List[ResolvedPort]:
         resolved_ports = []
@@ -5361,6 +5515,10 @@ class SpatialResolver:
                 r_br = self.resolve_bearing(elem)
                 resolved_manifest.bearings.append(r_br)
                 resolved_manifest.elements.append(r_br)
+            elif isinstance(elem, IfcMarinePart):
+                r_mp = self.resolve_marine_part(elem)
+                resolved_manifest.marine_parts.append(r_mp)
+                resolved_manifest.elements.append(r_mp)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

@@ -339,6 +339,8 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcBridgePart"
     if "bearing" in l:
         return "IfcBearing"
+    if "marine" in l or "berth" in l or "quay" in l or "jetty" in l:
+        return "IfcMarinePart"
     if "chimney" in l:
         return "IfcChimney"
     if "accessory" in l or "accessories" in l or "accessor" in l:
@@ -964,6 +966,81 @@ class StepSerializer:
             element_tag_refs[bp.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
+
+        for mp in getattr(resolved, "marine_parts", []) or []:
+            st_id = mp.element.placement.storey
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+            st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
+
+            px, py, pz = mp.position
+            rel_z = float(pz + mp.deck_elevation - st_elev)
+
+            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+            rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(mp.length), float(mp.width))
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(mp.deck_thickness))
+
+            shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
+            prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, elem_axis)
+
+            ptype = f".{mp.predefined_type.upper()}." if mp.predefined_type else ".BERTH."
+            elem_ref = self.create_entity(
+                "IfcMarinePart",
+                generate_ifc_guid(),
+                None,
+                mp.tag,
+                None,
+                f"IfcMarinePart.{mp.predefined_type}",
+                elem_pl,
+                prod_shape_ref,
+                ptype,
+            )
+            element_tag_refs[mp.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+            for pile in mp.piles:
+                p_px, p_py, p_pz = pile.position
+                p_rel_z = float(p_pz - pile.length - st_elev)
+                p_pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                p_axis2d = self.create_entity("IfcAxis2Placement2D", p_pos2d, None)
+                if pile.shape == "CIRCULAR":
+                    p_prof = self.create_entity("IfcCircleProfileDef", ".AREA.", None, p_axis2d, float(pile.dimension / 2.0))
+                else:
+                    p_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, p_axis2d, float(pile.dimension), float(pile.dimension))
+                p_pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                p_axis3d = self.create_entity("IfcAxis2Placement3D", p_pos3d, None, None)
+                p_ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                p_solid = self.create_entity("IfcExtrudedAreaSolid", p_prof, p_axis3d, p_ext_dir, float(pile.length))
+                p_shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [p_solid])
+                p_prod_shape = self.create_entity("IfcProductDefinitionShape", None, None, [p_shape_rep])
+
+                p_pt = self.create_entity("IfcCartesianPoint", (float(p_px), float(p_py), p_rel_z))
+                p_axis = self.create_entity("IfcAxis2Placement3D", p_pt, None, None)
+                p_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, p_axis)
+
+                p_ref = self.create_entity(
+                    "IfcPile",
+                    generate_ifc_guid(),
+                    None,
+                    pile.tag,
+                    None,
+                    None,
+                    p_pl,
+                    p_prod_shape,
+                    ".BORED.",
+                )
+                element_tag_refs[pile.tag] = p_ref
+                if st_id and st_id in storey_elements:
+                    storey_elements[st_id].append(p_ref)
 
         for br in getattr(resolved, "bearings", []) or []:
             st_id = br.element.placement.storey
@@ -2294,6 +2371,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             or resolved.bridges
             or getattr(resolved, "bridge_parts", [])
             or getattr(resolved, "bearings", [])
+            or getattr(resolved, "marine_parts", [])
             or getattr(resolved, "railways", [])
             or getattr(resolved, "railway_parts", [])
             or getattr(resolved, "track_elements", [])
@@ -3276,6 +3354,84 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
 
         ifcopenshell.api.run("geometry.edit_object_placement", model, product=bridge_obj, matrix=np.eye(4))
         bridge_objs[bridge.tag] = bridge_obj
+
+    for mp in getattr(resolved, "marine_parts", []) or []:
+        try:
+            mp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcMarinePart",
+                name=mp.tag,
+                predefined_type=mp.predefined_type.upper(),
+            )
+        except Exception:
+            mp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=mp.tag,
+            )
+            mp_obj.ObjectType = f"IfcMarinePart.{mp.predefined_type}"
+
+        st_id = mp.element.placement.storey if mp.element and mp.element.placement else None
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(mp_obj)
+        elif default_storey_obj:
+            ifcopenshell.api.run("spatial.assign_container", model, products=[mp_obj], relating_structure=default_storey_obj)
+
+        px, py, pz = mp.position
+        pz += mp.deck_elevation
+        mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, mp.rotation_angle))
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=mp_obj, matrix=mat)
+
+        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+        prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(mp.length), float(mp.width))
+        pos3d = model.createIfcAxis2Placement3D(
+            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(mp.deck_thickness)
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=mp_obj, representation=rep)
+
+        for pile in mp.piles:
+            try:
+                pile_obj = ifcopenshell.api.run(
+                    "root.create_entity", model, ifc_class="IfcPile", name=pile.tag
+                )
+            except Exception:
+                pile_obj = ifcopenshell.api.run(
+                    "root.create_entity", model, ifc_class="IfcBuildingElementProxy", name=pile.tag
+                )
+                pile_obj.ObjectType = "IfcPile"
+
+            p_px, p_py, p_pz = pile.position
+            p_mat = _build_transform_matrix((p_px, p_py, p_pz - pile.length), (0.0, 0.0, 0.0))
+            ifcopenshell.api.run("geometry.edit_object_placement", model, product=pile_obj, matrix=p_mat)
+
+            p_pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+            if pile.shape == "CIRCULAR":
+                p_prof = model.createIfcCircleProfileDef("AREA", None, p_pos2d, float(pile.dimension / 2.0))
+            else:
+                p_prof = model.createIfcRectangleProfileDef("AREA", None, p_pos2d, float(pile.dimension), float(pile.dimension))
+            p_pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            p_solid = model.createIfcExtrudedAreaSolid(
+                p_prof, p_pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(pile.length)
+            )
+            p_rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [p_solid])
+            ifcopenshell.api.run("geometry.assign_representation", model, product=pile_obj, representation=p_rep)
+
+            if st_id and st_id in storey_products:
+                storey_products[st_id].append(pile_obj)
+            elif default_storey_obj:
+                ifcopenshell.api.run("spatial.assign_container", model, products=[pile_obj], relating_structure=default_storey_obj)
 
     bridge_part_objs: Dict[str, Any] = {}
     for bp in getattr(resolved, "bridge_parts", []) or []:
