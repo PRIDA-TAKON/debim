@@ -15,6 +15,7 @@ from debim.schema import (
     IfcBeam,
     IfcBridge,
     IfcBuildingElementProxy,
+    IfcBuiltSystem,
     IfcCableCarrierSegment,
     IfcColumn,
     IfcCovering,
@@ -35,6 +36,8 @@ from debim.schema import (
     IfcPipeSegment,
     IfcPlate,
     IfcRailing,
+    IfcRailway,
+    IfcRailwayPart,
     IfcRamp,
     IfcRetainingWall,
     IfcRoad,
@@ -44,6 +47,7 @@ from debim.schema import (
     IfcStair,
     IfcStairFlight,
     IfcSwitchingDevice,
+    IfcTrackElement,
     IfcUnitaryEquipment,
     IfcWall,
     IfcWasteTerminal,
@@ -1145,6 +1149,72 @@ class ResolvedBridge(BaseModel):
     layer: str = "civil/infrastructure/bridges"
 
 
+class ResolvedRailway(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcRailway
+    predefined_type: str = "RAILWAY"
+    track_gauge: float = 1.435
+    total_length: float = 0.0
+    centerline_points: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/railways/facility"
+
+
+class ResolvedRailwayPart(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcRailwayPart
+    predefined_type: str = "TRACK"
+    total_length: float = 0.0
+    centerline_points: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/railways/track"
+
+
+class ResolvedSleeper(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    position: Tuple[float, float, float]
+    rotation_yaw: float = 0.0
+    length: float = 2.40
+    width: float = 0.28
+    height: float = 0.22
+
+
+class ResolvedTrackElement(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcTrackElement
+    predefined_type: str = "RAIL"
+    gauge: float = 1.435
+    rail_profile: str = "UIC60"
+    rail_weight_kg_m: float = 60.0
+    track_length: float = 0.0
+    total_rail_length: float = 0.0  # 2 x track_length for parallel rails
+    total_rail_weight_kg: float = 0.0
+    left_rail_points: List[Tuple[float, float, float]] = Field(default_factory=list)
+    right_rail_points: List[Tuple[float, float, float]] = Field(default_factory=list)
+    sleepers: List[ResolvedSleeper] = Field(default_factory=list)
+    sleepers_count: int = 0
+    ballast_volume: float = 0.0  # m3
+    centerline_points: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/railways/track/rail"
+
+
+class ResolvedBuiltSystem(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: Optional[str] = None
+    element: IfcBuiltSystem
+    name: str
+    system_type: str = "TRACKSYSTEM"
+    predefined_type: str = "TRACKSYSTEM"
+    elements: List[str] = Field(default_factory=list)
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1178,6 +1248,9 @@ ResolvedElement = Union[
     ResolvedAlignment,
     ResolvedRoad,
     ResolvedBridge,
+    ResolvedRailway,
+    ResolvedRailwayPart,
+    ResolvedTrackElement,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1224,6 +1297,10 @@ class ResolvedManifest(BaseModel):
     alignments: List[ResolvedAlignment] = []
     roads: List[ResolvedRoad] = []
     bridges: List[ResolvedBridge] = []
+    railways: List[ResolvedRailway] = []
+    railway_parts: List[ResolvedRailwayPart] = []
+    track_elements: List[ResolvedTrackElement] = []
+    built_systems: List[ResolvedBuiltSystem] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -4524,6 +4601,159 @@ class SpatialResolver:
             layer=derive_default_layer(bridge),
         )
 
+    def _extract_placement_centerline(self, placement: Any) -> List[Tuple[float, float, float]]:
+        z_base = self.get_storey(placement.storey).elevation if placement.storey else 0.0
+        pts: List[Tuple[float, float, float]] = []
+
+        if placement.points:
+            for pt in placement.points:
+                pts.append((pt.x + placement.offset_x, pt.y + placement.offset_y, z_base + pt.z + placement.offset_z))
+        elif placement.from_grid and placement.to_grid:
+            x1, y1 = self.get_grid_xy(placement.from_grid)
+            x2, y2 = self.get_grid_xy(placement.to_grid)
+            x1 += placement.offset_x
+            y1 += placement.offset_y
+            x2 += placement.offset_x
+            y2 += placement.offset_y
+            z = z_base + placement.offset_z
+            pts = [(x1, y1, z), (x2, y2, z)]
+        elif placement.grid:
+            gx, gy = self.get_grid_xy(placement.grid)
+            gx += placement.offset_x
+            gy += placement.offset_y
+            z = z_base + placement.offset_z
+            pts = [(gx, gy, z), (gx + 10.0, gy, z)]
+        else:
+            z = z_base + placement.offset_z
+            pts = [(placement.offset_x, placement.offset_y, z), (placement.offset_x + 10.0, placement.offset_y, z)]
+        return pts
+
+    def resolve_railway(self, rw: IfcRailway) -> ResolvedRailway:
+        pts = self._extract_placement_centerline(rw.placement)
+        tot_length = sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1))
+        return ResolvedRailway(
+            tag=rw.tag,
+            element=rw,
+            predefined_type=rw.predefined_type,
+            track_gauge=rw.track_gauge,
+            total_length=tot_length,
+            centerline_points=pts,
+            layer=derive_default_layer(rw),
+        )
+
+    def resolve_railway_part(self, rwp: IfcRailwayPart) -> ResolvedRailwayPart:
+        pts = self._extract_placement_centerline(rwp.placement)
+        tot_length = sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1))
+        return ResolvedRailwayPart(
+            tag=rwp.tag,
+            element=rwp,
+            predefined_type=rwp.predefined_type,
+            total_length=tot_length,
+            centerline_points=pts,
+            layer=derive_default_layer(rwp),
+        )
+
+    def resolve_track_element(self, te: IfcTrackElement) -> ResolvedTrackElement:
+        pts = self._extract_placement_centerline(te.placement)
+        tot_length = sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1))
+        gauge = te.gauge or 1.435
+        half_g = gauge / 2.0
+
+        left_rail_pts: List[Tuple[float, float, float]] = []
+        right_rail_pts: List[Tuple[float, float, float]] = []
+        sleepers: List[ResolvedSleeper] = []
+
+        # Generate left and right rail parallel offsets and sleeper positions along centerline
+        for i in range(len(pts) - 1):
+            p1 = pts[i]
+            p2 = pts[i + 1]
+            dx = p2[0] - p1[0]
+            dy = p2[1] - p1[1]
+            dz = p2[2] - p1[2]
+            seg_len = math.dist(p1, p2)
+            if seg_len < 1e-6:
+                continue
+
+            # Unit tangent and perpendicular vectors in horizontal plane
+            ux = dx / seg_len
+            uy = dy / seg_len
+            nx = -uy
+            ny = ux
+            yaw = math.atan2(dy, dx)
+
+            # Left/Right rail points
+            l1 = (p1[0] - nx * half_g, p1[1] - ny * half_g, p1[2])
+            r1 = (p1[0] + nx * half_g, p1[1] + ny * half_g, p1[2])
+            if not left_rail_pts:
+                left_rail_pts.append(l1)
+                right_rail_pts.append(r1)
+
+            l2 = (p2[0] - nx * half_g, p2[1] - ny * half_g, p2[2])
+            r2 = (p2[0] + nx * half_g, p2[1] + ny * half_g, p2[2])
+            left_rail_pts.append(l2)
+            right_rail_pts.append(r2)
+
+            # Sleepers repetitive placement
+            spacing = te.sleeper_spacing if te.sleeper_spacing > 0 else 0.60
+            n_sleepers = max(1, int(round(seg_len / spacing)))
+            for k in range(n_sleepers):
+                frac = k / float(n_sleepers)
+                sx = p1[0] + frac * dx
+                sy = p1[1] + frac * dy
+                sz = p1[2] + frac * dz
+                sleepers.append(ResolvedSleeper(
+                    tag=f"{te.tag}-Sleeper-{len(sleepers) + 1}",
+                    position=(sx, sy, sz - te.sleeper_height / 2.0),
+                    rotation_yaw=yaw,
+                    length=te.sleeper_length,
+                    width=te.sleeper_width,
+                    height=te.sleeper_height,
+                ))
+
+        rail_type = te.predefined_type.upper()
+        # For TURNOUT / SWITCH, compute dual/diverging track profile or angle
+        if rail_type in ("TURNOUT", "SWITCH", "DERAILER"):
+            turnout_ang = te.turnout_angle if te.turnout_angle is not None else 0.10  # rad
+            # Add diverging turnout rail extension
+            if len(pts) >= 2:
+                last_p = pts[-1]
+                p_prev = pts[-2]
+                dx = last_p[0] - p_prev[0]
+                dy = last_p[1] - p_prev[1]
+                yaw = math.atan2(dy, dx)
+                div_yaw = yaw + turnout_ang
+                div_len = 10.0
+                div_p = (last_p[0] + div_len * math.cos(div_yaw), last_p[1] + div_len * math.sin(div_yaw), last_p[2])
+                pts.append(div_p)
+
+        total_rail_len = tot_length * 2.0
+        rail_weight = te.rail_weight_kg_m or 60.0
+        total_rail_wt_kg = total_rail_len * rail_weight
+
+        # Ballast prism volume calculation (subgrade volume per meter of track)
+        ballast_width = gauge + 1.20
+        ballast_depth = 0.35
+        ballast_vol = tot_length * ballast_width * ballast_depth
+
+        return ResolvedTrackElement(
+            tag=te.tag,
+            element=te,
+            predefined_type=te.predefined_type,
+            gauge=gauge,
+            rail_profile=te.rail_profile or "UIC60",
+            rail_weight_kg_m=rail_weight,
+            track_length=tot_length,
+            total_rail_length=total_rail_len,
+            total_rail_weight_kg=total_rail_wt_kg,
+            left_rail_points=left_rail_pts,
+            right_rail_points=right_rail_pts,
+            sleepers=sleepers,
+            sleepers_count=len(sleepers),
+            ballast_volume=ballast_vol,
+            centerline_points=pts,
+            layer=derive_default_layer(te),
+        )
+
 
     def _resolve_element_ports(self, elem, host_pos: Tuple[float, float, float], rot_deg: float = 0.0) -> List[ResolvedPort]:
         resolved_ports = []
@@ -4610,6 +4840,18 @@ class SpatialResolver:
                 self.walls_by_tag[elem.tag] = r_wall
 
         # Pass 2: Resolve all elements in order
+        for built_sys in getattr(self.manifest, "systems", []) or []:
+            if isinstance(built_sys, IfcBuiltSystem):
+                r_bs = ResolvedBuiltSystem(
+                    tag=built_sys.tag,
+                    element=built_sys,
+                    name=built_sys.name,
+                    system_type=built_sys.system_type or "TRACKSYSTEM",
+                    predefined_type=built_sys.predefined_type or "TRACKSYSTEM",
+                    elements=built_sys.elements,
+                )
+                resolved_manifest.built_systems.append(r_bs)
+
         for elem in self.manifest.elements:
             if isinstance(elem, IfcFooting):
                 r_footing = self.resolve_footing(elem)
@@ -4763,6 +5005,18 @@ class SpatialResolver:
                 r_bridge = self.resolve_bridge(elem)
                 resolved_manifest.bridges.append(r_bridge)
                 resolved_manifest.elements.append(r_bridge)
+            elif isinstance(elem, IfcRailway):
+                r_rw = self.resolve_railway(elem)
+                resolved_manifest.railways.append(r_rw)
+                resolved_manifest.elements.append(r_rw)
+            elif isinstance(elem, IfcRailwayPart):
+                r_rwp = self.resolve_railway_part(elem)
+                resolved_manifest.railway_parts.append(r_rwp)
+                resolved_manifest.elements.append(r_rwp)
+            elif isinstance(elem, IfcTrackElement):
+                r_te = self.resolve_track_element(elem)
+                resolved_manifest.track_elements.append(r_te)
+                resolved_manifest.elements.append(r_te)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

@@ -755,6 +755,89 @@ def generate_viewer_html(
                 },
             })
 
+    # Civil Infrastructure Railways & Track Infrastructure (IFC4.3)
+    for rw in resolved.railways:
+        pts = rw.centerline_points
+        if pts and len(pts) >= 2:
+            elements_data.append({
+                "tag": rw.tag,
+                "class": "IfcRailway",
+                "predefined_type": rw.predefined_type,
+                "geometry_type": "line",
+                "points": pts,
+                "color": "#EF4444",
+                "linewidth": 5,
+                "layer": rw.layer,
+                "dimensions": {
+                    "total_length": rw.total_length,
+                    "track_gauge": rw.track_gauge,
+                },
+            })
+
+    for rwp in resolved.railway_parts:
+        pts = rwp.centerline_points
+        if pts and len(pts) >= 2:
+            elements_data.append({
+                "tag": rwp.tag,
+                "class": "IfcRailwayPart",
+                "predefined_type": rwp.predefined_type,
+                "geometry_type": "line",
+                "points": pts,
+                "color": "#F59E0B",
+                "linewidth": 4,
+                "layer": rwp.layer,
+                "dimensions": {
+                    "total_length": rwp.total_length,
+                },
+            })
+
+    for te in resolved.track_elements:
+        # 1. Left Rail
+        if te.left_rail_points and len(te.left_rail_points) >= 2:
+            elements_data.append({
+                "tag": f"{te.tag}-LeftRail",
+                "class": "IfcTrackElement",
+                "predefined_type": te.predefined_type,
+                "material": te.element.material or "Steel Rail (UIC60)",
+                "geometry_type": "line",
+                "points": te.left_rail_points,
+                "color": "#38BDF8",
+                "linewidth": 4,
+                "layer": f"{te.layer}/rail",
+            })
+
+        # 2. Right Rail
+        if te.right_rail_points and len(te.right_rail_points) >= 2:
+            elements_data.append({
+                "tag": f"{te.tag}-RightRail",
+                "class": "IfcTrackElement",
+                "predefined_type": te.predefined_type,
+                "material": te.element.material or "Steel Rail (UIC60)",
+                "geometry_type": "line",
+                "points": te.right_rail_points,
+                "color": "#38BDF8",
+                "linewidth": 4,
+                "layer": f"{te.layer}/rail",
+            })
+
+        # 3. Sleepers / Ties
+        for s in te.sleepers:
+            elements_data.append({
+                "tag": s.tag,
+                "class": "IfcTrackElement",
+                "predefined_type": "SLEEPER",
+                "material": "Prestressed Concrete Sleeper",
+                "position": [s.position[0], s.position[1], s.position[2]],
+                "rotation": [0, 0, s.rotation_yaw],
+                "dimensions": {
+                    "width": s.length,  # sleeper length across rails
+                    "depth": s.width,
+                    "height": s.height,
+                },
+                "color": "#94A3B8",
+                "layer": f"{te.layer}/sleeper",
+            })
+
     # Civil Infrastructure Bridges (IFC4.3)
     for bridge in resolved.bridges:
         d_pos = bridge.deck_position

@@ -822,6 +822,57 @@ class StepSerializer:
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        for rw in resolved.railways:
+            st_id = rw.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcRailway",
+                generate_ifc_guid(),
+                None,
+                rw.tag,
+                None,
+                f"IfcRailway.{rw.predefined_type}",
+                None,
+                None,
+                f".{rw.predefined_type.upper()}.",
+            )
+            element_tag_refs[rw.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for rwp in resolved.railway_parts:
+            st_id = rwp.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcRailwayPart",
+                generate_ifc_guid(),
+                None,
+                rwp.tag,
+                None,
+                f"IfcRailwayPart.{rwp.predefined_type}",
+                None,
+                None,
+                f".{rwp.predefined_type.upper()}.",
+            )
+            element_tag_refs[rwp.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for te in resolved.track_elements:
+            st_id = te.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcTrackElement",
+                generate_ifc_guid(),
+                None,
+                te.tag,
+                None,
+                f"IfcTrackElement.{te.predefined_type}",
+                None,
+                None,
+                f".{te.predefined_type.upper()}.",
+            )
+            element_tag_refs[te.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
         for fill in resolved.earthworks_fills:
             st_id = fill.element.placement.storey
             elem_ref = self.create_entity(
@@ -2101,7 +2152,21 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
     manifest = resolved.manifest
     project_info = manifest.project
 
-    model = ifcopenshell.file(schema="IFC4")
+    schema_ver = str(getattr(manifest, "schema_version", "") or getattr(manifest, "schema", "") or "")
+    is_ifc43 = (
+        "4.3" in schema_ver
+        or "4X3" in schema_ver.upper()
+        or bool(
+            resolved.alignments
+            or resolved.roads
+            or resolved.bridges
+            or resolved.railways
+            or resolved.railway_parts
+            or resolved.track_elements
+        )
+    )
+    ifc_schema = "IFC4X3" if is_ifc43 else "IFC4"
+    model = ifcopenshell.file(schema=ifc_schema)
 
     # IfcProject
     project = ifcopenshell.api.run(
@@ -2969,6 +3034,66 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id and st_id in storey_products:
             storey_products[st_id].append(bridge_obj)
 
+    for rw in resolved.railways:
+        try:
+            rw_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcRailway",
+                name=rw.tag,
+            )
+        except Exception:
+            rw_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=rw.tag,
+            )
+            rw_obj.ObjectType = f"IfcRailway.{rw.predefined_type}"
+        st_id = rw.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(rw_obj)
+
+    for rwp in resolved.railway_parts:
+        try:
+            rwp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcRailwayPart",
+                name=rwp.tag,
+            )
+        except Exception:
+            rwp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=rwp.tag,
+            )
+            rwp_obj.ObjectType = f"IfcRailwayPart.{rwp.predefined_type}"
+        st_id = rwp.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(rwp_obj)
+
+    for te in resolved.track_elements:
+        try:
+            te_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcTrackElement",
+                name=te.tag,
+            )
+        except Exception:
+            te_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=te.tag,
+            )
+            te_obj.ObjectType = f"IfcTrackElement.{te.predefined_type}"
+        st_id = te.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(te_obj)
+
     # 6. Roofs & Roof Openings / Skylights
     for roof in resolved.roofs:
         pred_type = roof.element.roof_type if roof.element.roof_type in ("GABLE_ROOF", "HIP_ROOF", "SHED_ROOF", "FLAT_ROOF") else "NOTDEFINED"
@@ -3425,12 +3550,28 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
     # Assign containment
     for st_id, products in storey_products.items():
         if products and st_id in storey_objs:
-            ifcopenshell.api.run(
-                "spatial.assign_container",
-                model,
-                products=products,
-                relating_structure=storey_objs[st_id],
-            )
+            spatial_prods = []
+            aggregate_prods = []
+            for p in products:
+                if p.is_a("IfcFacility") or p.is_a("IfcFacilityPart"):
+                    aggregate_prods.append(p)
+                else:
+                    spatial_prods.append(p)
+
+            if spatial_prods:
+                ifcopenshell.api.run(
+                    "spatial.assign_container",
+                    model,
+                    products=spatial_prods,
+                    relating_structure=storey_objs[st_id],
+                )
+            if aggregate_prods:
+                ifcopenshell.api.run(
+                    "aggregate.assign_object",
+                    model,
+                    products=aggregate_prods,
+                    relating_object=storey_objs[st_id],
+                )
 
 
     # 8. Topological Ports & Connections

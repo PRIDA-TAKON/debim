@@ -2017,10 +2017,16 @@ class IfcCovering(BaseModel):
     layer: Optional[str] = None
 
 
-# Civil Infrastructure (IFC4.3) Entities: Alignment, Road, Bridge
+# Civil Infrastructure (IFC4.3) Entities: Alignment, Road, Bridge, Railways
 
 RoadType = Literal["HIGHWAY", "CARRIAGEWAY", "ROUNDABOUT", "SERVICE_ROAD", "USERDEFINED"]
 BridgeType = Literal["GIRDER", "SLAB", "ARCH", "CABLE_STAYED", "USERDEFINED"]
+RailwayPartType = Literal[
+    "TRACK", "SUBGRADE", "LINESIDE", "STATION", "STRUCTURE", "TURNOUTSTRUCTURE", "USERDEFINED", "NOTDEFINED"
+]
+TrackElementType = Literal[
+    "RAIL", "SLEEPER", "TURNOUT", "DERAILER", "SWITCH", "FASTENING", "FROG", "TRACKELEMENT", "USERDEFINED", "NOTDEFINED"
+]
 
 
 class AlignmentPoint(BaseModel):
@@ -2161,6 +2167,80 @@ class IfcBridge(BaseModel):
             if "width" in data and "deck_width" not in data:
                 data["deck_width"] = data["width"]
         return data
+
+
+class RailwayPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    alignment: Optional[str] = None  # Reference to IfcAlignment tag
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    points: Optional[List[AlignmentPoint]] = None
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcRailway(BaseModel):
+    class_: Literal["IfcRailway"] = Field(alias="class", default="IfcRailway")
+    tag: str
+    name: Optional[str] = None
+    predefined_type: Literal["RAILWAY", "USERDEFINED", "NOTDEFINED"] = "RAILWAY"
+    track_gauge: float = 1.435
+    placement: RailwayPlacement
+    layer: Optional[str] = None
+
+
+class IfcRailwayPart(BaseModel):
+    class_: Literal["IfcRailwayPart"] = Field(alias="class", default="IfcRailwayPart")
+    tag: str
+    name: Optional[str] = None
+    predefined_type: RailwayPartType = "TRACK"
+    placement: RailwayPlacement
+    layer: Optional[str] = None
+
+
+class IfcTrackElement(BaseModel):
+    class_: Literal["IfcTrackElement"] = Field(alias="class", default="IfcTrackElement")
+    tag: str
+    name: Optional[str] = None
+    predefined_type: TrackElementType = "RAIL"
+    material: Optional[str] = None
+    rail_profile: Optional[str] = "UIC60"
+    rail_weight_kg_m: float = 60.0
+    gauge: float = 1.435
+    sleeper_spacing: float = 0.60
+    sleeper_length: float = 2.40
+    sleeper_width: float = 0.28
+    sleeper_height: float = 0.22
+    turnout_angle: Optional[float] = None
+    placement: RailwayPlacement
+    layer: Optional[str] = None
+
+
+class IfcBuiltSystem(BaseModel):
+    class_: Literal["IfcBuiltSystem"] = Field(alias="class", default="IfcBuiltSystem")
+    tag: Optional[str] = None
+    name: str
+    system_type: Optional[str] = "TRACKSYSTEM"
+    predefined_type: Optional[str] = "TRACKSYSTEM"
+    description: Optional[str] = None
+    elements: List[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def resolve_built_system_type(self) -> "IfcBuiltSystem":
+        if not self.predefined_type and self.system_type:
+            self.predefined_type = self.system_type.upper()
+        elif not self.system_type and self.predefined_type:
+            self.system_type = self.predefined_type.upper()
+        return self
 
 
 # Civil Earthworks & Retaining Structures
@@ -2344,6 +2424,9 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcAlignment",
     "IfcRoad",
     "IfcBridge",
+    "IfcRailway",
+    "IfcRailwayPart",
+    "IfcTrackElement",
     "IfcCustomElement",
 } | IFC4_DISTRIBUTION_CLASSES
 
@@ -2368,7 +2451,8 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcSanitaryTerminal", "IfcWasteTerminal", "IfcDistributionBoard", "IfcElectricDistributionBoard",
     "IfcLightFixture", "IfcSwitchingDevice", "IfcOutlet", "IfcAirTerminal", "IfcDamper",
     "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksCut", "IfcEarthworksFill",
-    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcCustomElement", "IfcBuildingElementProxy"
+    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
+    "IfcTrackElement", "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
 
@@ -2422,6 +2506,9 @@ Element = Annotated[
         Annotated[IfcAlignment, Tag("IfcAlignment")],
         Annotated[IfcRoad, Tag("IfcRoad")],
         Annotated[IfcBridge, Tag("IfcBridge")],
+        Annotated[IfcRailway, Tag("IfcRailway")],
+        Annotated[IfcRailwayPart, Tag("IfcRailwayPart")],
+        Annotated[IfcTrackElement, Tag("IfcTrackElement")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -2460,8 +2547,9 @@ class ProjectManifest(BaseModel):
     grids: Grids
     materials: List[Material]
     elements: List[Element] = Field(default_factory=list)
+    railways: List[Union[IfcRailway, IfcRailwayPart, IfcTrackElement]] = Field(default_factory=list)
     proxies: List[IfcBuildingElementProxy] = Field(default_factory=list)
-    systems: List[IfcDistributionSystem] = Field(default_factory=list)
+    systems: List[Union[IfcDistributionSystem, IfcBuiltSystem]] = Field(default_factory=list)
     connections: List[Tuple[str, str]] = Field(default_factory=list)
     includes: List[str] = Field(default_factory=list)
     site: Optional[SiteBoundary] = None
@@ -2669,7 +2757,7 @@ class ProjectManifest(BaseModel):
                     if gy not in grid_y_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge)):
+            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcRailway, IfcRailwayPart, IfcTrackElement)):
                 if elem.placement.storey and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -3048,6 +3136,14 @@ def derive_default_layer(elem) -> str:
         return "civil/infrastructure/roads"
     elif cls == "IfcBridge":
         return "civil/infrastructure/bridges"
+    elif cls == "IfcRailway":
+        return "civil/railways/facility"
+    elif cls == "IfcRailwayPart":
+        ptype = getattr(elem, "predefined_type", "TRACK").lower()
+        return f"civil/railways/{ptype}"
+    elif cls == "IfcTrackElement":
+        ttype = getattr(elem, "predefined_type", "RAIL").lower()
+        return f"civil/railways/track/{ttype}"
     elif cls == "IfcCustomElement":
         return "general/custom"
     elif cls == "IfcBuildingElementProxy" or isinstance(elem, IfcBuildingElementProxy):
@@ -3088,6 +3184,9 @@ def load_manifest(path: Path | str) -> ProjectManifest:
     mat_ids = {m["id"] for m in merged_materials if isinstance(m, dict) and "id" in m}
 
     merged_elements = list(data.get("elements", []) or [])
+    railways_list = list(data.get("railways", []) or [])
+    if railways_list:
+        merged_elements.extend(railways_list)
     merged_proxies = list(data.get("proxies", []) or [])
 
     if includes:

@@ -274,6 +274,46 @@ def generate_cost_template(
         )
         item_disciplines["BRIDGE-RC-DECK"] = "civil"
 
+    if (qto.total_railway_rail_length > 0 or qto.total_railway_rail_weight_kg > 0) and "RAIL-STEEL-TRACK" not in required_items:
+        required_items["RAIL-STEEL-TRACK"] = PriceItem(
+            name="Steel Railway Rail Track (UIC60/BS110)",
+            unit="m",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="34 11 00", uniformat="G2040"),
+        )
+        item_disciplines["RAIL-STEEL-TRACK"] = "civil"
+
+    if qto.total_railway_sleepers_count > 0 and "RAIL-CONCRETE-SLEEPER" not in required_items:
+        required_items["RAIL-CONCRETE-SLEEPER"] = PriceItem(
+            name="Prestressed Concrete Railway Sleeper / Tie",
+            unit="set",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="34 11 00", uniformat="G2040"),
+        )
+        item_disciplines["RAIL-CONCRETE-SLEEPER"] = "civil"
+
+    if qto.total_railway_turnouts_count > 0 and "RAIL-TURNOUT-SWITCH" not in required_items:
+        required_items["RAIL-TURNOUT-SWITCH"] = PriceItem(
+            name="Railway Turnout / Switch Assembly",
+            unit="set",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="34 11 00", uniformat="G2040"),
+        )
+        item_disciplines["RAIL-TURNOUT-SWITCH"] = "civil"
+
+    if qto.total_railway_ballast_volume > 0 and "RAIL-BALLAST-SUBGRADE" not in required_items:
+        required_items["RAIL-BALLAST-SUBGRADE"] = PriceItem(
+            name="Railway Granite Rock Ballast Prism & Subgrade",
+            unit="m3",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="34 11 00", uniformat="G2040"),
+        )
+        item_disciplines["RAIL-BALLAST-SUBGRADE"] = "civil"
+
     if qto.total_lean_concrete_volume > 0 and "MAT-LEAN-CONC" not in required_items:
         required_items["MAT-LEAN-CONC"] = PriceItem(
             name="Lean Concrete Bedding (1:3:6)",
@@ -1060,6 +1100,31 @@ def estimate_cost(
         for code, item in catalog.items.items():
             if "bridge" in code.lower() or "bridge-rc" in code.lower() or "สะพาน" in item.name:
                 quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_bridge_concrete_volume
+                break
+
+    if qto.total_railway_rail_length > 0 or qto.total_railway_rail_weight_kg > 0:
+        for code, item in catalog.items.items():
+            if "rail-steel" in code.lower() or "rail-track" in code.lower() or "รางรถไฟ" in item.name:
+                qty = qto.total_railway_rail_weight_kg if item.unit.lower() in ("kg", "kilogram") else qto.total_railway_rail_length
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qty
+                break
+
+    if qto.total_railway_sleepers_count > 0:
+        for code, item in catalog.items.items():
+            if "sleeper" in code.lower() or "หมอนรถไฟ" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_railway_sleepers_count
+                break
+
+    if qto.total_railway_turnouts_count > 0:
+        for code, item in catalog.items.items():
+            if "turnout" in code.lower() or "ประแจสับ" in item.name or "switch" in code.lower():
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_railway_turnouts_count
+                break
+
+    if qto.total_railway_ballast_volume > 0:
+        for code, item in catalog.items.items():
+            if "ballast" in code.lower() or "หินโรยทาง" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_railway_ballast_volume
                 break
 
     # 9. Map Ceilings (Gypsum, T-Bar, Eaves) if not already mapped via material ref

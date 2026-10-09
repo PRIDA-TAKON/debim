@@ -35,6 +35,8 @@ from debim.resolver import (
     ResolvedPlate,
     ResolvedProxy,
     ResolvedRailing,
+    ResolvedRailway,
+    ResolvedRailwayPart,
     ResolvedRamp,
     ResolvedRetainingWall,
     ResolvedRevolvedArea,
@@ -47,6 +49,7 @@ from debim.resolver import (
     ResolvedSweptDisk,
     ResolvedSwitchingDevice,
     ResolvedTerminal,
+    ResolvedTrackElement,
     ResolvedUnitaryEquipment,
     ResolvedWall,
     ResolvedWasteTerminal,
@@ -465,6 +468,15 @@ class BridgeQTO(BaseModel):
     pier_count: int = 2
 
 
+class RailwayQTO(BaseModel):
+    track_length: float = 0.0            # Track corridor length (m)
+    total_rail_length: float = 0.0       # Total parallel steel rails length (m)
+    total_rail_weight_kg: float = 0.0    # Steel rails weight (kg)
+    sleepers_count: int = 0              # Number of sleepers / ties
+    ballast_volume: float = 0.0          # Ballast prism subgrade volume (m3)
+    turnout_count: int = 0               # Turnouts / switches / derailers count
+
+
 class MepQTO(BaseModel):
     system_type: str = ""
     length: float = 0.0                    # ท่อ / สายไฟ / ท่อลม (linear meters)
@@ -510,6 +522,7 @@ class ElementQTO(BaseModel):
     alignment: Optional[AlignmentQTO] = None
     road: Optional[RoadQTO] = None
     bridge: Optional[BridgeQTO] = None
+    railway: Optional[RailwayQTO] = None
     mep: Optional[MepQTO] = None
 
 
@@ -564,6 +577,12 @@ class ProjectQTO(BaseModel):
     total_road_subbase_volume: float = 0.0
     total_bridge_concrete_volume: float = 0.0
     total_bridge_formwork_area: float = 0.0
+    total_railway_track_length: float = 0.0
+    total_railway_rail_length: float = 0.0
+    total_railway_rail_weight_kg: float = 0.0
+    total_railway_sleepers_count: int = 0
+    total_railway_ballast_volume: float = 0.0
+    total_railway_turnouts_count: int = 0
     # Ceilings & Floor Finishes Totals
     total_ceiling_gypsum_area: float = 0.0
     total_ceiling_tbar_area: float = 0.0
@@ -1650,6 +1669,50 @@ def calculate_element_qto(
             bridge=bridge_qto,
         )
 
+    elif isinstance(resolved, ResolvedRailway):
+        elem = resolved.element
+        rw_qto = RailwayQTO(
+            track_length=resolved.total_length,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            length=resolved.total_length,
+            railway=rw_qto,
+        )
+
+    elif isinstance(resolved, ResolvedRailwayPart):
+        elem = resolved.element
+        rw_qto = RailwayQTO(
+            track_length=resolved.total_length,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            length=resolved.total_length,
+            railway=rw_qto,
+        )
+
+    elif isinstance(resolved, ResolvedTrackElement):
+        elem = resolved.element
+        is_turnout = resolved.predefined_type.upper() in ("TURNOUT", "SWITCH", "DERAILER")
+        rw_qto = RailwayQTO(
+            track_length=resolved.track_length,
+            total_rail_length=resolved.total_rail_length,
+            total_rail_weight_kg=resolved.total_rail_weight_kg,
+            sleepers_count=resolved.sleepers_count,
+            ballast_volume=resolved.ballast_volume,
+            turnout_count=1 if is_turnout else 0,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.track_length,
+            structural_steel_weight=resolved.total_rail_weight_kg,
+            railway=rw_qto,
+        )
+
     elif isinstance(resolved, ResolvedTerminal):
         elem = resolved.element
         return ElementQTO(
@@ -2055,6 +2118,12 @@ def calculate_qto(
     total_road_subbase_vol = 0.0
     total_bridge_conc_vol = 0.0
     total_bridge_formwork = 0.0
+    total_railway_track_length = 0.0
+    total_railway_rail_length = 0.0
+    total_railway_rail_weight_kg = 0.0
+    total_railway_sleepers_count = 0
+    total_railway_ballast_volume = 0.0
+    total_railway_turnouts_count = 0
 
     total_ceil_gypsum = 0.0
     total_ceil_tbar = 0.0
@@ -2241,6 +2310,14 @@ def calculate_qto(
             total_bridge_conc_vol += eqto.bridge.total_concrete_volume
             total_bridge_formwork += eqto.bridge.formwork_area
 
+        if eqto.railway:
+            total_railway_track_length += eqto.railway.track_length
+            total_railway_rail_length += eqto.railway.total_rail_length
+            total_railway_rail_weight_kg += eqto.railway.total_rail_weight_kg
+            total_railway_sleepers_count += eqto.railway.sleepers_count
+            total_railway_ballast_volume += eqto.railway.ballast_volume
+            total_railway_turnouts_count += eqto.railway.turnout_count
+
         if eqto.element_class == "IfcWall":
             if hasattr(elem, "thickness") and elem.thickness > 0:
                 total_wall_masonry += eqto.concrete_volume / elem.thickness
@@ -2354,6 +2431,12 @@ def calculate_qto(
         total_road_subbase_volume=total_road_subbase_vol,
         total_bridge_concrete_volume=total_bridge_conc_vol,
         total_bridge_formwork_area=total_bridge_formwork,
+        total_railway_track_length=total_railway_track_length,
+        total_railway_rail_length=total_railway_rail_length,
+        total_railway_rail_weight_kg=total_railway_rail_weight_kg,
+        total_railway_sleepers_count=total_railway_sleepers_count,
+        total_railway_ballast_volume=total_railway_ballast_volume,
+        total_railway_turnouts_count=total_railway_turnouts_count,
         total_ceiling_gypsum_area=total_ceil_gypsum,
         total_ceiling_tbar_area=total_ceil_tbar,
         total_ceiling_eaves_area=total_ceil_eaves,
