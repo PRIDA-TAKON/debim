@@ -79,11 +79,10 @@ class SheetConfig(BaseModel):
     """Sheet specification model."""
     id: str = "A-101"
     title: str = "Ground Floor Plan"
-    view_type: Literal["plan", "section"] = "plan"
+    view_type: str = "FLOOR_PLAN"
     paper_size: Literal["A4", "A3", "A2", "A1", "A0"] = "A3"
     orientation: Literal["landscape", "portrait"] = "landscape"
     scale: int = 100  # Scale ratio 1:S e.g. 100 for 1:100, 50 for 1:50
-    view_type: Literal["FLOOR_PLAN", "ELEVATION", "SECTION"] = "FLOOR_PLAN"
     elevation_direction: Union[ElevationDirection, str] = "FRONT"
     storey_id: Optional[str] = None
     cut_offset_z: float = 1.20
@@ -101,6 +100,19 @@ class SheetConfig(BaseModel):
     date: Optional[str] = None
     revision: str = "01"
     sheet_index: List[SheetIndexItem] = Field(default_factory=list)
+
+    @field_validator("view_type", mode="before")
+    @classmethod
+    def normalize_view_type(cls, v: Any) -> str:
+        if isinstance(v, str):
+            v_upper = v.upper()
+            if v_upper in ("PLAN", "FLOOR_PLAN"):
+                return "FLOOR_PLAN"
+            if v_upper in ("SECTION",):
+                return "SECTION"
+            if v_upper in ("ELEVATION",):
+                return "ELEVATION"
+        return str(v).upper() if v else "FLOOR_PLAN"
 
     @field_validator("crop", mode="before")
     @classmethod
