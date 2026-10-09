@@ -72,15 +72,28 @@ def extract_project_materials(
     mat_elem_map: Dict[str, List[str]] = {}
 
     # Extract declared materials in manifest
+    mat_to_spec: Dict[str, str] = {}
     if hasattr(manifest, "materials") and manifest.materials:
         for m in manifest.materials:
             mat_set.add(m.id)
+            spec_ref = getattr(m, "spec", None)
+            if spec_ref:
+                mat_set.add(spec_ref)
+                mat_to_spec[m.id] = spec_ref
 
     # Extract material references from elements and proxies
     all_elements = list(manifest.elements) + list(manifest.proxies)
     for elem in all_elements:
         tag = getattr(elem, "tag", "")
         _extract_material_refs_from_obj(elem, tag, mat_set, mat_elem_map)
+
+    # Propagate element mappings to referenced spec IDs
+    for m_id, s_id in mat_to_spec.items():
+        if m_id in mat_elem_map:
+            mat_elem_map.setdefault(s_id, [])
+            for t in mat_elem_map[m_id]:
+                if t not in mat_elem_map[s_id]:
+                    mat_elem_map[s_id].append(t)
 
     return mat_set, mat_elem_map
 

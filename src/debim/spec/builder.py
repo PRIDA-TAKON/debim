@@ -233,10 +233,19 @@ def build_specification_book(
             included_specs.append(spec)
             spec_by_id[spec.id] = spec
 
+    # Map declared material IDs that have explicit spec references
+    mat_to_spec: Dict[str, str] = {}
+    if hasattr(manifest_obj, "materials") and manifest_obj.materials:
+        for m in manifest_obj.materials:
+            if getattr(m, "spec", None):
+                mat_to_spec[m.id] = m.spec
+
     # If any referenced material does not have an explicit MaterialSpec package found,
     # create a stub MaterialSpec so no active building material is omitted.
     for mat_id in sorted(referenced_mats):
         if mat_id not in spec_by_id:
+            if mat_id in mat_to_spec and mat_to_spec[mat_id] in spec_by_id:
+                continue
             # Check if material is declared in manifest.materials with name
             mat_name = mat_id
             if hasattr(manifest_obj, "materials") and manifest_obj.materials:

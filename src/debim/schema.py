@@ -2362,6 +2362,7 @@ class Material(BaseModel):
     name: str
     category: str
     unit_cost_ref: str
+    spec: Optional[str] = None
 
 
 class SiteBoundary(BaseModel):

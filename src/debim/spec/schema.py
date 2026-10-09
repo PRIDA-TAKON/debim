@@ -22,9 +22,9 @@ class StructuredClauses(BaseModel):
     """Structured clauses for specification text and rules."""
     model_config = ConfigDict(extra="allow")
 
-    general_properties: Optional[Union[str, List[str], Dict[str, Any]]] = None
-    surface_preparation: Optional[Union[str, List[str], Dict[str, Any]]] = None
-    application_system: Optional[Union[str, List[str], Dict[str, Any]]] = None
+    general_properties: Optional[Union[str, List[Any], Dict[str, Any]]] = None
+    surface_preparation: Optional[Union[str, List[Any], Dict[str, Any]]] = None
+    application_system: Optional[Union[str, List[Any], Dict[str, Any]]] = None
 
 
 class MaterialSpec(BaseModel):
