@@ -49,6 +49,73 @@ def test_generate_viewer_html_from_manifest_object(sample_project_path: Path):
     assert "B-A1_B1" in html
 
 
+def test_roof_framing_and_fascia_3d_rendering(tmp_path: Path):
+    manifest_yaml = tmp_path / "roof_project.yaml"
+    manifest_yaml.write_text(
+        """
+schema: IFC4-Minimal
+project:
+  id: PRJ-TEST-ROOF
+  name: Roof 3D Framing Test
+  units:
+    length: METER
+spatial_structure:
+  storeys:
+    - id: L1
+      name: "Level 1"
+      elevation: 0.0
+      height: 3.0
+grids:
+  axes_x:
+    "1": 0.0
+    "2": 6.0
+  axes_y:
+    "A": 0.0
+    "B": 4.0
+materials:
+  - id: STEEL_SS400
+    name: Structural Steel
+    category: STEEL
+    unit_cost_ref: MAT-STEEL-01
+elements:
+  - class: IfcRoof
+    tag: ROOF-01
+    material: STEEL_SS400
+    roof_type: HIP
+    placement:
+      boundary:
+        - ["1", "A"]
+        - ["2", "A"]
+        - ["2", "B"]
+        - ["1", "B"]
+      storey: L1
+      overhang: 0.8
+    covering:
+      tile_type: CONCRETE_TILE
+      pitch: 30.0
+      fascia_board: true
+    framing:
+      truss_type: STEEL_TRUSS
+      material: STEEL_SS400
+      spacing: 1.0
+      purlin_spacing: 0.50
+"""
+    )
+
+    manifest = load_manifest(manifest_yaml)
+    html = generate_viewer_html(manifest)
+
+    # Check 3D volumetric framing members and fascia elements
+    assert "IfcRoofFraming" in html
+    assert "IfcFasciaBoard" in html
+    assert "direction_vector_3d" in html
+    assert "architecture/roofs/covering" in html
+    assert "architecture/roofs/framing" in html
+    assert "architecture/roofs/fascia" in html
+    assert "ไม้เชิงชาย (Fascia Board)" in html
+    assert "ISHAPE" in html or "USHAPE" in html or "RHS" in html
+
+
 def test_skirting_and_cladding_rendering(tmp_path: Path):
     manifest_yaml = tmp_path / "project.yaml"
     manifest_yaml.write_text(
