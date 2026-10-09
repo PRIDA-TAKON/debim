@@ -478,6 +478,9 @@ class MarineQTO(BaseModel):
     length: float = 0.0                  # Berth/Wharf length (m)
     width: float = 0.0                   # Berth/Wharf width (m)
     deck_concrete_volume: float = 0.0    # Deck slab concrete volume (m3)
+    dock_floor_concrete_volume: float = 0.0 # Dry dock / slipway floor concrete volume (m3)
+    dock_wall_concrete_volume: float = 0.0  # Dry dock / slipway wall concrete volume (m3)
+    basin_excavation_volume: float = 0.0 # Dry dock / slipway basin excavation volume (m3)
     formwork_area: float = 0.0           # Deck formwork area (m2)
     pile_count: int = 0                  # Number of foundation piles
     pile_total_length: float = 0.0       # Total pile linear meters (m)
@@ -1741,7 +1744,10 @@ def calculate_element_qto(
         marine_qto = MarineQTO(
             length=resolved.length,
             width=resolved.width,
-            deck_concrete_volume=vol,
+            deck_concrete_volume=vol if resolved.predefined_type not in ("DRYDOCK", "SLIPWAY") else 0.0,
+            dock_floor_concrete_volume=resolved.dock_floor_concrete_volume,
+            dock_wall_concrete_volume=resolved.dock_wall_concrete_volume,
+            basin_excavation_volume=resolved.basin_excavation_volume,
             formwork_area=formwork,
             pile_count=pile_cnt,
             pile_total_length=pile_len,
@@ -2344,10 +2350,13 @@ def calculate_qto(
 
         # Include volume in concrete volume total if element's material category is concrete
         mat_cat = material_categories.get(eqto.material, "") if eqto.material else ""
-        if mat_cat == "concrete" or (eqto.element_class in ("IfcColumn", "IfcBeam", "IfcSlab", "IfcStair") and mat_cat not in ("steel", "metal", "timber", "wood")):
+        if mat_cat == "concrete" or (eqto.element_class in ("IfcColumn", "IfcBeam", "IfcSlab", "IfcStair", "IfcMarinePart") and mat_cat not in ("steel", "metal", "timber", "wood")):
             total_conc_vol += eqto.concrete_volume
         elif "footing" in eqto.element_class.lower() or "f2" in eqto.tag.lower() or "footing" in eqto.tag.lower():
             total_conc_vol += eqto.concrete_volume
+
+        if eqto.marine and eqto.marine.basin_excavation_volume > 0:
+            total_excav_vol += eqto.marine.basin_excavation_volume
 
         total_formwork += eqto.formwork_area
         total_rebar_wt += eqto.total_rebar_weight

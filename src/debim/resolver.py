@@ -1315,11 +1315,19 @@ class ResolvedMarinePart(BaseModel):
     deck_thickness: float = 0.50
     deck_elevation: float = 0.0
     depth: float = 10.0
+    dock_length: float = 0.0
+    dock_width: float = 0.0
+    dock_depth: float = 0.0
+    floor_slope: float = 0.0
+    sill_elevation: float = 0.0
     position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     rotation_angle: float = 0.0
     deck_boundary: List[Tuple[float, float, float]] = Field(default_factory=list)
     piles: List[ResolvedPile] = Field(default_factory=list)
     concrete_volume: float = 0.0
+    dock_floor_concrete_volume: float = 0.0
+    dock_wall_concrete_volume: float = 0.0
+    basin_excavation_volume: float = 0.0
     formwork_area: float = 0.0
     pile_count: int = 0
     pile_total_length: float = 0.0
@@ -5208,8 +5216,29 @@ class SpatialResolver:
                     )
                     pile_idx += 1
 
-        conc_vol = L * W * t
-        formwork = (L * W) + 2.0 * (L * t) + 2.0 * (W * t)
+        dock_L = marine_part.dock_length or L
+        dock_W = marine_part.dock_width or W
+        dock_D = marine_part.dock_depth or depth
+        slope = marine_part.floor_slope or 0.0
+        sill_elev = marine_part.sill_elevation or 0.0
+
+        if marine_part.predefined_type in ("DRYDOCK", "SLIPWAY"):
+            inclined_length = dock_L * math.sqrt(1.0 + slope * slope) if slope > 0 else dock_L
+            dock_floor_conc = inclined_length * dock_W * t
+            wall_thk = t
+            dock_wall_conc = (2.0 * dock_L + dock_W) * dock_D * wall_thk
+            conc_vol = dock_floor_conc + dock_wall_conc
+
+            avg_depth = dock_D + 0.5 * slope * dock_L
+            basin_excav = dock_L * dock_W * avg_depth
+            formwork = (dock_L * dock_W) + 2.0 * (dock_L * dock_D) + (dock_W * dock_D)
+        else:
+            dock_floor_conc = 0.0
+            dock_wall_conc = 0.0
+            basin_excav = 0.0
+            conc_vol = L * W * t
+            formwork = (L * W) + 2.0 * (L * t) + 2.0 * (W * t)
+
         p_total_len = sum(p.length for p in resolved_piles)
 
         return ResolvedMarinePart(
@@ -5221,11 +5250,19 @@ class SpatialResolver:
             deck_thickness=t,
             deck_elevation=deck_elev,
             depth=depth,
+            dock_length=dock_L,
+            dock_width=dock_W,
+            dock_depth=dock_D,
+            floor_slope=slope,
+            sill_elevation=sill_elev,
             position=pos,
             rotation_angle=rot_deg,
             deck_boundary=deck_boundary,
             piles=resolved_piles,
             concrete_volume=conc_vol,
+            dock_floor_concrete_volume=dock_floor_conc,
+            dock_wall_concrete_volume=dock_wall_conc,
+            basin_excavation_volume=basin_excav,
             formwork_area=formwork,
             pile_count=len(resolved_piles),
             pile_total_length=p_total_len,

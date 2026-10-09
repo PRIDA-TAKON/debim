@@ -2020,7 +2020,7 @@ class IfcCovering(BaseModel):
 RoadType = Literal["HIGHWAY", "CARRIAGEWAY", "ROUNDABOUT", "SERVICE_ROAD", "USERDEFINED"]
 BridgeType = Literal["GIRDER", "SLAB", "ARCH", "CABLE_STAYED", "USERDEFINED"]
 BridgePartType = Literal["SUBSTRUCTURE", "SUPERSTRUCTURE", "DECK", "PIER", "ABUTMENT", "FOUNDATION", "USERDEFINED", "NOTDEFINED"]
-MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "USERDEFINED"]
+MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "DRYDOCK", "SLIPWAY", "USERDEFINED"]
 BearingType = Literal["BRIDGEBEARING", "ELASTOMERIC", "POT", "SPHERICAL", "DISK", "ROLLER", "ROCKER", "USERDEFINED", "NOTDEFINED"]
 RailwayType = Literal["PASSENGER", "FREIGHT", "MIXED", "HIGH_SPEED", "LIGHT_RAIL", "METRO", "USERDEFINED"]
 RailwayPartType = Literal["TRACK", "SUBGRADE", "LINESIDE", "USERDEFINED"]
@@ -2449,6 +2449,11 @@ class IfcMarinePart(BaseModel):
     deck_thickness: float = 0.50
     deck_elevation: float = 0.0
     depth: float = 10.0
+    dock_length: Optional[float] = None
+    dock_width: Optional[float] = None
+    dock_depth: Optional[float] = None
+    floor_slope: Optional[float] = None
+    sill_elevation: Optional[float] = None
     piles: Optional[FootingPiles] = None
     placement: MarinePartPlacement = Field(default_factory=MarinePartPlacement)
     layer: Optional[str] = None
@@ -2461,6 +2466,18 @@ class IfcMarinePart(BaseModel):
                 data["deck_thickness"] = data["thickness"]
             if "elevation" in data and "deck_elevation" not in data:
                 data["deck_elevation"] = data["elevation"]
+            if "dock_length" in data and "length" not in data:
+                data["length"] = data["dock_length"]
+            elif "length" in data and "dock_length" not in data:
+                data["dock_length"] = data["length"]
+            if "dock_width" in data and "width" not in data:
+                data["width"] = data["dock_width"]
+            elif "width" in data and "dock_width" not in data:
+                data["dock_width"] = data["width"]
+            if "dock_depth" in data and "depth" not in data:
+                data["depth"] = data["dock_depth"]
+            elif "depth" in data and "dock_depth" not in data:
+                data["dock_depth"] = data["depth"]
             if "pile_count" in data and "piles" not in data:
                 data["piles"] = {
                     "count": data["pile_count"],
@@ -2468,6 +2485,25 @@ class IfcMarinePart(BaseModel):
                     "spacing": data.get("pile_spacing"),
                 }
         return data
+
+    @model_validator(mode="after")
+    def sync_dock_dimensions(self) -> "IfcMarinePart":
+        if self.dock_length is None:
+            self.dock_length = self.length
+        elif self.length == 30.0 and self.dock_length != 30.0:
+            self.length = self.dock_length
+
+        if self.dock_width is None:
+            self.dock_width = self.width
+        elif self.width == 12.0 and self.dock_width != 12.0:
+            self.width = self.dock_width
+
+        if self.dock_depth is None:
+            self.dock_depth = self.depth
+        elif self.depth == 10.0 and self.dock_depth != 10.0:
+            self.depth = self.dock_depth
+
+        return self
 
 
 # Civil Earthworks & Retaining Structures
