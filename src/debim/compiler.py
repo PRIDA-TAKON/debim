@@ -1414,36 +1414,44 @@ class StepSerializer:
                 "IfcProductDefinitionShape", None, None, [shape_rep]
             )
 
-            std_classes = {
-                "IFCBUILDINGELEMENTPROXY", "IFCCHILLER", "IFCBURNER", "IFCSOLARDEVICE",
-                "IFCCOMPRESSOR", "IFCUNITARYEQUIPMENT", "IFCINTERCEPTOR", "IFCENERGYCONVERSIONDEVICE",
-                "IFCENGINE", "IFCPUMP", "IFCFAN", "IFCTANK", "IFCBOILER"
-            }
-            target_entity = ifc_cls if ifc_cls.upper() in std_classes else "IfcBuildingElementProxy"
-            obj_type = ifc_cls if target_entity == "IfcBuildingElementProxy" else None
+            target_entity = ifc_cls if ifc_cls.startswith("Ifc") else f"Ifc{ifc_cls}"
+            obj_type = target_entity if target_entity.upper() != "IFCBUILDINGELEMENTPROXY" else None
             pred_type = f".{proxy.predefined_type.upper()}." if proxy.predefined_type else None
 
-            if pred_type:
+            try:
+                if pred_type:
+                    proxy_ref = self.create_entity(
+                        target_entity,
+                        generate_ifc_guid(),
+                        None,
+                        proxy.tag,
+                        None,
+                        obj_type,
+                        elem_pl,
+                        prod_shape_ref,
+                        None,
+                        pred_type,
+                    )
+                else:
+                    proxy_ref = self.create_entity(
+                        target_entity,
+                        generate_ifc_guid(),
+                        None,
+                        proxy.tag,
+                        None,
+                        obj_type,
+                        elem_pl,
+                        prod_shape_ref,
+                        None,
+                    )
+            except Exception:
                 proxy_ref = self.create_entity(
-                    target_entity,
+                    "IfcBuildingElementProxy",
                     generate_ifc_guid(),
                     None,
                     proxy.tag,
                     None,
-                    obj_type,
-                    elem_pl,
-                    prod_shape_ref,
-                    None,
-                    pred_type,
-                )
-            else:
-                proxy_ref = self.create_entity(
                     target_entity,
-                    generate_ifc_guid(),
-                    None,
-                    proxy.tag,
-                    None,
-                    obj_type,
                     elem_pl,
                     prod_shape_ref,
                     None,
@@ -2648,11 +2656,12 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
     # Universal Proxies in ifcopenshell
     for proxy in resolved.proxies:
         ifc_cls = proxy.ifc_class or "IfcBuildingElementProxy"
+        target_cls = ifc_cls if ifc_cls.startswith("Ifc") else f"Ifc{ifc_cls}"
         try:
             proxy_obj = ifcopenshell.api.run(
                 "root.create_entity",
                 model,
-                ifc_class=ifc_cls,
+                ifc_class=target_cls,
                 name=proxy.tag,
             )
         except Exception:
@@ -2662,13 +2671,14 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 ifc_class="IfcBuildingElementProxy",
                 name=proxy.tag,
             )
-            proxy_obj.ObjectType = ifc_cls
+            proxy_obj.ObjectType = target_cls
 
         if proxy.predefined_type:
             try:
                 proxy_obj.PredefinedType = proxy.predefined_type.upper()
             except Exception:
-                proxy_obj.ObjectType = proxy.predefined_type
+                if hasattr(proxy_obj, "ObjectType") and not proxy_obj.ObjectType:
+                    proxy_obj.ObjectType = proxy.predefined_type
 
         st_id = proxy.element.placement.storey
         if st_id and st_id in storey_products:
