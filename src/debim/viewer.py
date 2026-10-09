@@ -183,7 +183,8 @@ def generate_viewer_html(
         else:
             cx = (beam.start_point[0] + beam.end_point[0]) / 2.0
             cy = (beam.start_point[1] + beam.end_point[1]) / 2.0
-            cz = (beam.start_point[2] + beam.end_point[2]) / 2.0
+            b_depth = getattr(prof, "depth", getattr(prof, "overall_depth", 0.3))
+            cz = (beam.start_point[2] + beam.end_point[2]) / 2.0 - b_depth / 2.0
             elements_data.append({
                 "tag": beam.tag,
                 "class": "IfcBeam",

@@ -629,8 +629,8 @@ class StepSerializer:
             st_pl_ref = storey_pl_refs.get(st_id)
             st_elev = storey_elevations.get(st_id, 0.0)
 
-            px, py, pz = beam.start_point
-            rel_z = float(pz - st_elev)
+            b_depth = getattr(prof, "depth", getattr(prof, "overall_depth", 0.3))
+            rel_z = float(pz - st_elev - b_depth / 2.0)
 
             elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
             dx, dy, dz = beam.direction_vector_3d

@@ -203,15 +203,19 @@ def is_valid_connection(elem1: ResolvedElement, elem2: ResolvedElement) -> bool:
         if dist < 1e-2:
             return True
 
-    # Beam and Wall stacking/alignment
+    # Beam and Wall stacking/alignment (walls sitting on beams or walls under beams)
     if (isinstance(elem1, ResolvedBeam) and isinstance(elem2, ResolvedWall)) or (
         isinstance(elem2, ResolvedBeam) and isinstance(elem1, ResolvedWall)
     ):
         beam = elem1 if isinstance(elem1, ResolvedBeam) else elem2
         wall = elem2 if isinstance(elem1, ResolvedBeam) else elem1
         wall_top_z = wall.start_point[2] + wall.height
+        wall_base_z = wall.start_point[2]
+        beam_top_z = beam.start_point[2]
         beam_soffit_z = beam.start_point[2] - beam.element.profile.depth
-        if abs(wall_top_z - beam_soffit_z) < 1e-2 or wall_top_z <= beam.start_point[2]:
+        if abs(wall_top_z - beam_soffit_z) < 1e-2 or wall_top_z <= beam_top_z:
+            return True
+        if abs(wall_base_z - beam_top_z) < 2e-2 or wall_base_z >= beam_soffit_z - 1e-2:
             return True
 
     # Beam-to-beam framing joints
