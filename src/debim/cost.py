@@ -867,7 +867,12 @@ def estimate_cost(
     # 6. Map roof items (Structural steel truss, Roof tiles, Ridge/Hip caps, Fascia, Insulation, Purlins, Rafters)
     if qto.total_roof_purlin_length > 0:
         for code, item in catalog.items.items():
-            if "purlin" in code.lower() or "แป" in item.name or "batten" in code.lower():
+            is_purlin = (
+                "purlin" in code.lower()
+                or "batten" in code.lower()
+                or ("แป" in item.name and "แปรรูป" not in item.name and "แปลน" not in item.name)
+            )
+            if is_purlin:
                 qty = qto.total_roof_purlin_length if item.unit.lower() in ("m", "meter", "linear_meter") else sum(eq.roof.purlin_weight for eq in qto.elements if eq.roof)
                 quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qty
                 break

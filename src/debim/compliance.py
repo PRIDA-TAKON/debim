@@ -13,7 +13,12 @@ from debim.resolver import (
     ResolvedCustomElement,
     ResolvedDoor,
     ResolvedElement,
+    ResolvedFooting,
     ResolvedManifest,
+    ResolvedRoof,
+    ResolvedSlab,
+    ResolvedStair,
+    ResolvedStairFlight,
     ResolvedWall,
     ResolvedWindow,
     resolve_manifest,
@@ -95,6 +100,59 @@ def get_element_aabb(elem: ResolvedElement) -> Tuple[float, float, float, float,
         h = elem.height
         return (x - w / 2, y - w / 2, z, x + w / 2, y + w / 2, z + h)
 
+    elif isinstance(elem, ResolvedSlab):
+        xs = [pt[0] for pt in elem.polygon]
+        ys = [pt[1] for pt in elem.polygon]
+        zs = [pt[2] for pt in elem.polygon]
+        t = elem.thickness
+        min_z = min(zs) - t
+        max_z = max(zs)
+        return (min(xs), min(ys), min_z, max(xs), max(ys), max_z)
+
+    elif isinstance(elem, ResolvedFooting):
+        x, y, z = elem.position
+        w = elem.width
+        d = elem.depth
+        t = elem.thickness
+        return (x - w / 2, y - d / 2, z - t, x + w / 2, y + d / 2, z)
+
+    elif isinstance(elem, ResolvedStair):
+        xs, ys, zs = [], [], []
+        if elem.landing_polygon:
+            xs.extend(p[0] for p in elem.landing_polygon)
+            ys.extend(p[1] for p in elem.landing_polygon)
+            zs.extend(p[2] for p in elem.landing_polygon)
+        for st in elem.steps:
+            if hasattr(st, "polygon") and st.polygon:
+                xs.extend(p[0] for p in st.polygon)
+                ys.extend(p[1] for p in st.polygon)
+                zs.extend(p[2] for p in st.polygon)
+            elif hasattr(st, "position"):
+                xs.append(st.position[0])
+                ys.append(st.position[1])
+                zs.append(st.position[2])
+        if not xs:
+            for fl in elem.flights:
+                xs.extend([fl.start_point[0], fl.end_point[0]])
+                ys.extend([fl.start_point[1], fl.end_point[1]])
+                zs.extend([fl.start_point[2], fl.end_point[2]])
+        w = getattr(elem.element, "width", 1.0)
+        return (min(xs) - w / 2, min(ys) - w / 2, min(zs), max(xs) + w / 2, max(ys) + w / 2, max(zs) + 1.0)
+
+    elif isinstance(elem, ResolvedStairFlight):
+        xs = [elem.start_point[0], elem.end_point[0]]
+        ys = [elem.start_point[1], elem.end_point[1]]
+        zs = [elem.start_point[2], elem.end_point[2]]
+        w = elem.width
+        return (min(xs) - w / 2, min(ys) - w / 2, min(zs), max(xs) + w / 2, max(ys) + w / 2, max(zs) + 1.0)
+
+    elif isinstance(elem, ResolvedRoof):
+        xs = [pt[0] for pt in elem.footprint_polygon]
+        ys = [pt[1] for pt in elem.footprint_polygon]
+        min_z = min(elem.eaves_elevation, elem.ridge_elevation)
+        max_z = max(elem.eaves_elevation, elem.ridge_elevation)
+        return (min(xs), min(ys), min_z, max(xs), max(ys), max_z)
+
     raise TypeError(f"Unsupported resolved element type: {type(elem)}")
 
 
@@ -115,19 +173,34 @@ def is_valid_connection(elem1: ResolvedElement, elem2: ResolvedElement) -> bool:
     """Determine if overlap between two elements is an expected structural joint connection."""
     if isinstance(elem1, (ResolvedDoor, ResolvedWindow)) or isinstance(elem2, (ResolvedDoor, ResolvedWindow)):
         return True
-    # Column and Beam/Wall joint connection
+
+    # Stair connections (stair rests on slab, ground, column, beam, wall)
+    if isinstance(elem1, (ResolvedStair, ResolvedStairFlight)) or isinstance(elem2, (ResolvedStair, ResolvedStairFlight)):
+        other = elem2 if isinstance(elem1, (ResolvedStair, ResolvedStairFlight)) else elem1
+        if isinstance(other, (ResolvedBeam, ResolvedColumn, ResolvedWall, ResolvedSlab)):
+            return True
+
+    # Roof connections (roof supported by column, beam, wall, slab or adjacent roof wing)
+    if isinstance(elem1, ResolvedRoof) or isinstance(elem2, ResolvedRoof):
+        other = elem2 if isinstance(elem1, ResolvedRoof) else elem1
+        if isinstance(other, (ResolvedBeam, ResolvedColumn, ResolvedWall, ResolvedSlab, ResolvedRoof)):
+            return True
+
+    # Column and Beam/Wall joint connection (endpoint or embedded along segment)
     if isinstance(elem1, ResolvedColumn) and isinstance(elem2, (ResolvedBeam, ResolvedWall)):
         col_x, col_y = elem1.start_point[0], elem1.start_point[1]
-        p1 = (elem2.start_point[0], elem2.start_point[1])
-        p2 = (elem2.end_point[0], elem2.end_point[1])
-        if math.hypot(p1[0] - col_x, p1[1] - col_y) < 1e-2 or math.hypot(p2[0] - col_x, p2[1] - col_y) < 1e-2:
+        x1, y1 = elem2.start_point[0], elem2.start_point[1]
+        x2, y2 = elem2.end_point[0], elem2.end_point[1]
+        dist = point_to_segment_distance(col_x, col_y, x1, y1, x2, y2)
+        if dist < 1e-2:
             return True
 
     if isinstance(elem2, ResolvedColumn) and isinstance(elem1, (ResolvedBeam, ResolvedWall)):
         col_x, col_y = elem2.start_point[0], elem2.start_point[1]
-        p1 = (elem1.start_point[0], elem1.start_point[1])
-        p2 = (elem1.end_point[0], elem1.end_point[1])
-        if math.hypot(p1[0] - col_x, p1[1] - col_y) < 1e-2 or math.hypot(p2[0] - col_x, p2[1] - col_y) < 1e-2:
+        x1, y1 = elem1.start_point[0], elem1.start_point[1]
+        x2, y2 = elem1.end_point[0], elem1.end_point[1]
+        dist = point_to_segment_distance(col_x, col_y, x1, y1, x2, y2)
+        if dist < 1e-2:
             return True
 
     # Beam and Wall stacking/alignment
@@ -136,10 +209,45 @@ def is_valid_connection(elem1: ResolvedElement, elem2: ResolvedElement) -> bool:
     ):
         beam = elem1 if isinstance(elem1, ResolvedBeam) else elem2
         wall = elem2 if isinstance(elem1, ResolvedBeam) else elem1
-        # Check if wall top sits under beam soffit
         wall_top_z = wall.start_point[2] + wall.height
         beam_soffit_z = beam.start_point[2] - beam.element.profile.depth
-        if abs(wall_top_z - beam_soffit_z) < 1e-2:
+        if abs(wall_top_z - beam_soffit_z) < 1e-2 or wall_top_z <= beam.start_point[2]:
+            return True
+
+    # Beam-to-beam framing joints
+    if isinstance(elem1, ResolvedBeam) and isinstance(elem2, ResolvedBeam):
+        p1 = (elem1.start_point[0], elem1.start_point[1])
+        p2 = (elem1.end_point[0], elem1.end_point[1])
+        q1 = (elem2.start_point[0], elem2.start_point[1])
+        q2 = (elem2.end_point[0], elem2.end_point[1])
+        if any(math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-2 for a in (p1, p2) for b in (q1, q2)):
+            return True
+
+    # Wall-to-wall corner joints
+    if isinstance(elem1, ResolvedWall) and isinstance(elem2, ResolvedWall):
+        p1 = (elem1.start_point[0], elem1.start_point[1])
+        p2 = (elem1.end_point[0], elem1.end_point[1])
+        q1 = (elem2.start_point[0], elem2.start_point[1])
+        q2 = (elem2.end_point[0], elem2.end_point[1])
+        if any(math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-2 for a in (p1, p2) for b in (q1, q2)):
+            return True
+
+    # Slab resting on beams, columns, or walls
+    if isinstance(elem1, ResolvedSlab) or isinstance(elem2, ResolvedSlab):
+        slab = elem1 if isinstance(elem1, ResolvedSlab) else elem2
+        other = elem2 if isinstance(elem1, ResolvedSlab) else elem1
+        if isinstance(other, (ResolvedBeam, ResolvedColumn, ResolvedWall)):
+            return True
+
+    # Footing and Column connection
+    if (isinstance(elem1, ResolvedFooting) and isinstance(elem2, ResolvedColumn)) or (
+        isinstance(elem2, ResolvedFooting) and isinstance(elem1, ResolvedColumn)
+    ):
+        footing = elem1 if isinstance(elem1, ResolvedFooting) else elem2
+        col = elem2 if isinstance(elem1, ResolvedFooting) else elem1
+        fx, fy, _ = footing.position
+        cx, cy = col.start_point[0], col.start_point[1]
+        if math.hypot(fx - cx, fy - cy) < 1e-2:
             return True
 
     return False
@@ -340,6 +448,11 @@ class ComplianceChecker:
                 passed = True
                 failed_storeys = []
                 for st in self.manifest.spatial_structure.storeys:
+                    s_id_lower = st.id.lower()
+                    s_name_lower = (st.name or "").lower()
+                    # Skip non-habitable roof/foundation levels in ceiling height check
+                    if any(k in s_id_lower or k in s_name_lower for k in ["roof", "parapet", "หลังคา", "footing", "foundation"]):
+                        continue
                     ch = self.calculate_clear_height(st.id)
                     if ch < min_h:
                         passed = False
