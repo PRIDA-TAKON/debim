@@ -1,0 +1,73 @@
+name: Build & Deploy Interactive Class Directory Docs
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'src/debim/schema_registry.py'
+      - 'src/debim/schema.py'
+      - 'src/debim/cli.py'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - 'src/debim/schema_registry.py'
+      - 'src/debim/schema.py'
+      - 'src/debim/cli.py'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system -e ".[all]"
+
+      - name: Build Interactive Class Directory
+        run: |
+          debim docs build --output-dir dist/docs
+
+      - name: Upload artifact for GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/docs
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

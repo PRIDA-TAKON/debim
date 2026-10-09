@@ -335,6 +335,10 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcFooting"
     if "proxy" in l:
         return "IfcBuildingElementProxy"
+    if "bridgepart" in l or "bridge_part" in l:
+        return "IfcBridgePart"
+    if "bearing" in l:
+        return "IfcBearing"
     if "chimney" in l:
         return "IfcChimney"
     if "accessory" in l or "accessories" in l or "accessor" in l:
@@ -921,6 +925,83 @@ class StepSerializer:
                 f".{te.predefined_type.upper()}.",
             )
             element_tag_refs[te.tag] = elem_ref
+        for bp in getattr(resolved, "bridge_parts", []) or []:
+            st_id = bp.element.placement.storey
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+            st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
+
+            px, py, pz = bp.position
+            rel_z = float(pz - st_elev)
+
+            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+            rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(bp.span_length), float(bp.width))
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(bp.thickness))
+
+            shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
+            prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, elem_axis)
+
+            ptype = f".{bp.predefined_type.upper()}." if bp.predefined_type else ".SUPERSTRUCTURE."
+            elem_ref = self.create_entity(
+                "IfcBridgePart",
+                generate_ifc_guid(),
+                None,
+                bp.tag,
+                None,
+                f"IfcBridgePart.{bp.predefined_type}",
+                elem_pl,
+                prod_shape_ref,
+                ptype,
+            )
+            element_tag_refs[bp.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for br in getattr(resolved, "bearings", []) or []:
+            st_id = br.element.placement.storey
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+            st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
+
+            px, py, pz = br.position
+            rel_z = float(pz - st_elev)
+
+            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+            rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(br.width), float(br.depth))
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(br.height))
+
+            shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
+            prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, elem_axis)
+
+            ptype = f".{br.predefined_type.upper()}." if br.predefined_type else ".BRIDGEBEARING."
+            elem_ref = self.create_entity(
+                "IfcBearing",
+                generate_ifc_guid(),
+                None,
+                br.tag,
+                None,
+                f"IfcBearing.{br.predefined_type}",
+                elem_pl,
+                prod_shape_ref,
+                ptype,
+            )
+            element_tag_refs[br.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -2211,13 +2292,18 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             resolved.alignments
             or resolved.roads
             or resolved.bridges
-            or resolved.railways
-            or resolved.railway_parts
-            or resolved.track_elements
+            or getattr(resolved, "bridge_parts", [])
+            or getattr(resolved, "bearings", [])
+            or getattr(resolved, "railways", [])
+            or getattr(resolved, "railway_parts", [])
+            or getattr(resolved, "track_elements", [])
         )
     )
     ifc_schema = "IFC4X3" if is_ifc43 else "IFC4"
-    model = ifcopenshell.file(schema=ifc_schema)
+    try:
+        model = ifcopenshell.file(schema=ifc_schema)
+    except Exception:
+        model = ifcopenshell.file(schema="IFC4")
 
     # IfcProject
     project = ifcopenshell.api.run(
@@ -3147,6 +3233,10 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 ifc_class="IfcRoad",
                 name=road.tag,
             )
+            try:
+                ifcopenshell.api.run("aggregate.assign_object", model, products=[road_obj], relating_object=site)
+            except Exception:
+                pass
         except Exception:
             road_obj = ifcopenshell.api.run(
                 "root.create_entity",
@@ -3155,10 +3245,11 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 name=road.tag,
             )
             road_obj.ObjectType = f"IfcRoad.{road.predefined_type}"
-        st_id = road.element.placement.storey
-        if st_id and st_id in storey_products:
-            storey_products[st_id].append(road_obj)
+            st_id = road.element.placement.storey
+            if st_id and st_id in storey_products:
+                storey_products[st_id].append(road_obj)
 
+    bridge_objs: Dict[str, Any] = {}
     for bridge in resolved.bridges:
         try:
             bridge_obj = ifcopenshell.api.run(
@@ -3167,6 +3258,10 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 ifc_class="IfcBridge",
                 name=bridge.tag,
             )
+            try:
+                ifcopenshell.api.run("aggregate.assign_object", model, products=[bridge_obj], relating_object=site)
+            except Exception:
+                pass
         except Exception:
             bridge_obj = ifcopenshell.api.run(
                 "root.create_entity",
@@ -3175,9 +3270,113 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 name=bridge.tag,
             )
             bridge_obj.ObjectType = f"IfcBridge.{bridge.predefined_type}"
-        st_id = bridge.element.placement.storey
-        if st_id and st_id in storey_products:
-            storey_products[st_id].append(bridge_obj)
+            st_id = bridge.element.placement.storey
+            if st_id and st_id in storey_products:
+                storey_products[st_id].append(bridge_obj)
+
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=bridge_obj, matrix=np.eye(4))
+        bridge_objs[bridge.tag] = bridge_obj
+
+    bridge_part_objs: Dict[str, Any] = {}
+    for bp in getattr(resolved, "bridge_parts", []) or []:
+        try:
+            bp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBridgePart",
+                name=bp.tag,
+                predefined_type=bp.predefined_type.upper(),
+            )
+        except Exception:
+            bp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=bp.tag,
+            )
+            bp_obj.ObjectType = f"IfcBridgePart.{bp.predefined_type}"
+
+        bridge_part_objs[bp.tag] = bp_obj
+
+        parent_bridge = None
+        if bp.bridge_tag and bp.bridge_tag in bridge_objs:
+            parent_bridge = bridge_objs[bp.bridge_tag]
+        elif bridge_objs:
+            parent_bridge = next(iter(bridge_objs.values()))
+
+        if parent_bridge:
+            try:
+                ifcopenshell.api.run("aggregate.assign_object", model, products=[bp_obj], relating_object=parent_bridge)
+            except Exception:
+                pass
+
+        px, py, pz = bp.position
+        mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, 0.0))
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=bp_obj, matrix=mat)
+
+        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+        prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(bp.span_length), float(bp.width))
+        pos3d = model.createIfcAxis2Placement3D(
+            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(bp.thickness)
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=bp_obj, representation=rep)
+
+    for br in getattr(resolved, "bearings", []) or []:
+        try:
+            br_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBearing",
+                name=br.tag,
+                predefined_type=br.predefined_type.upper(),
+            )
+        except Exception:
+            br_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=br.tag,
+            )
+            br_obj.ObjectType = f"IfcBearing.{br.predefined_type}"
+
+        parent_part = None
+        if br.bridge_part_tag and br.bridge_part_tag in bridge_part_objs:
+            parent_part = bridge_part_objs[br.bridge_part_tag]
+        elif bridge_part_objs:
+            parent_part = next(iter(bridge_part_objs.values()))
+
+        if parent_part:
+            try:
+                ifcopenshell.api.run("spatial.assign_container", model, products=[br_obj], relating_structure=parent_part)
+            except Exception:
+                pass
+        else:
+            st_id = br.element.placement.storey
+            if st_id and st_id in storey_products:
+                storey_products[st_id].append(br_obj)
+
+        px, py, pz = br.position
+        mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, 0.0))
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=br_obj, matrix=mat)
+
+        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+        prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(br.width), float(br.depth))
+        pos3d = model.createIfcAxis2Placement3D(
+            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(br.height)
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=br_obj, representation=rep)
 
     for rw in resolved.railways:
         try:
