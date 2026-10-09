@@ -2165,8 +2165,17 @@ class IfcBridge(BaseModel):
 
 # Civil Earthworks & Retaining Structures
 
-EarthworksCutType = Literal["TRENCH", "DREDGING", "CUT", "BASEMENT_EXCAVATION", "USERDEFINED"]
-EarthworksFillType = Literal["EMBANKMENT", "BACKFILL", "SLOPE_FILL", "SUBGRADE", "USERDEFINED"]
+EarthworksElementType = Literal["RETAINING_STRUCTURE", "PAVEMENT", "GABION", "REINFORCED_SOIL", "BERM", "TERRACE", "DRAINAGE", "USERDEFINED", "NOTDEFINED"]
+EarthworksCutType = Literal[
+    "EXCAVATION", "CUT", "CUTTING", "TRENCH", "BASEMENT_EXCAVATION", "BASE_EXCAVATION",
+    "DREDGING", "OVEREXCAVATION", "PAVEMENTMILLING", "STEPEXCAVATION", "TOPSOILREMOVAL",
+    "USERDEFINED", "NOTDEFINED"
+]
+EarthworksFillType = Literal[
+    "EMBANKMENT", "BACKFILL", "BERM", "SLOPE_FILL", "SLOPEFILL", "SUBGRADE", "SUBGRADEBED",
+    "COUNTERWEIGHT", "TRANSITIONSECTION", "USERDEFINED", "NOTDEFINED"
+]
+GeotechnicalStratumType = Literal["SOLID", "VOID", "WATER", "SOIL", "ROCK", "CLAY", "SAND", "GRAVEL", "SILT", "USERDEFINED", "NOTDEFINED"]
 RetainingWallType = Literal["CANTILEVER_WALL", "GRAVITY_WALL", "SHEET_PILE_WALL", "DIAPHRAGM_WALL", "USERDEFINED"]
 
 
@@ -2192,6 +2201,20 @@ class EarthworksPlacement(BaseModel):
         if isinstance(v, list):
             return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
         return v
+
+
+class IfcEarthworksElement(BaseModel):
+    class_: Literal["IfcEarthworksElement"] = Field(alias="class", default="IfcEarthworksElement")
+    tag: str
+    predefined_type: EarthworksElementType = "RETAINING_STRUCTURE"
+    material: Optional[str] = None
+    width: Optional[float] = None
+    depth: Optional[float] = None  # Height/depth (m)
+    length: Optional[float] = None
+    volume: Optional[float] = None
+    surface_area: Optional[float] = None
+    placement: EarthworksPlacement
+    layer: Optional[str] = None
 
 
 class IfcEarthworksCut(BaseModel):
@@ -2221,6 +2244,41 @@ class IfcEarthworksFill(BaseModel):
     fill_volume: Optional[float] = None  # Loose or baseline volume (m3)
     compacted_volume: Optional[float] = None  # Compacted volume (m3)
     surface_area: Optional[float] = None  # Surface area (m2)
+    placement: EarthworksPlacement
+    layer: Optional[str] = None
+
+
+class IfcGeotechnicalStratum(BaseModel):
+    class_: Literal["IfcGeotechnicalStratum"] = Field(alias="class", default="IfcGeotechnicalStratum")
+    tag: str
+    predefined_type: GeotechnicalStratumType = "SOLID"
+    material: Optional[str] = None
+    soil_type: Optional[str] = "clay"  # clay, sand, silt, gravel, rock
+    top_elevation: Optional[float] = None
+    bottom_elevation: Optional[float] = None
+    thickness: Optional[float] = None  # Stratum thickness (m)
+    width: Optional[float] = None
+    length: Optional[float] = None
+    volume: Optional[float] = None
+    area: Optional[float] = None
+    placement: EarthworksPlacement
+    layer: Optional[str] = None
+
+
+class IfcSoil(BaseModel):
+    class_: Literal["IfcSoil"] = Field(alias="class", default="IfcSoil")
+    tag: str
+    material: Optional[str] = None
+    soil_type: Optional[str] = "topsoil"  # topsoil, clay, sand, gravel
+    density_kg_m3: float = 1800.0  # Soil density kg/m3
+    bearing_capacity_kpa: Optional[float] = None  # Allowable bearing capacity in kPa
+    moisture_content_percent: Optional[float] = None
+    thickness: Optional[float] = None  # Stratum thickness (m)
+    depth: Optional[float] = None
+    width: Optional[float] = None
+    length: Optional[float] = None
+    volume: Optional[float] = None
+    area: Optional[float] = None
     placement: EarthworksPlacement
     layer: Optional[str] = None
 
@@ -2338,8 +2396,11 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcDamper",
     "IfcFlowController",
     "IfcUnitaryEquipment",
+    "IfcEarthworksElement",
     "IfcEarthworksCut",
     "IfcEarthworksFill",
+    "IfcGeotechnicalStratum",
+    "IfcSoil",
     "IfcRetainingWall",
     "IfcAlignment",
     "IfcRoad",
@@ -2367,8 +2428,9 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcCurtainWall", "IfcPlate", "IfcPipeSegment", "IfcCableCarrierSegment", "IfcDuctSegment",
     "IfcSanitaryTerminal", "IfcWasteTerminal", "IfcDistributionBoard", "IfcElectricDistributionBoard",
     "IfcLightFixture", "IfcSwitchingDevice", "IfcOutlet", "IfcAirTerminal", "IfcDamper",
-    "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksCut", "IfcEarthworksFill",
-    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcCustomElement", "IfcBuildingElementProxy"
+    "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksElement", "IfcEarthworksCut",
+    "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
+    "IfcAlignment", "IfcRoad", "IfcBridge", "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
 
@@ -2416,8 +2478,11 @@ Element = Annotated[
         Annotated[IfcDamper, Tag("IfcDamper")],
         Annotated[IfcFlowController, Tag("IfcFlowController")],
         Annotated[IfcUnitaryEquipment, Tag("IfcUnitaryEquipment")],
+        Annotated[IfcEarthworksElement, Tag("IfcEarthworksElement")],
         Annotated[IfcEarthworksCut, Tag("IfcEarthworksCut")],
         Annotated[IfcEarthworksFill, Tag("IfcEarthworksFill")],
+        Annotated[IfcGeotechnicalStratum, Tag("IfcGeotechnicalStratum")],
+        Annotated[IfcSoil, Tag("IfcSoil")],
         Annotated[IfcRetainingWall, Tag("IfcRetainingWall")],
         Annotated[IfcAlignment, Tag("IfcAlignment")],
         Annotated[IfcRoad, Tag("IfcRoad")],
@@ -2794,7 +2859,7 @@ class ProjectManifest(BaseModel):
                             f"Element '{elem.tag}' references unknown Y grid '{gy}'"
                         )
 
-            elif isinstance(elem, (IfcEarthworksCut, IfcEarthworksFill)):
+            elif isinstance(elem, (IfcEarthworksElement, IfcEarthworksCut, IfcEarthworksFill, IfcGeotechnicalStratum, IfcSoil)):
                 if elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -3036,10 +3101,16 @@ def derive_default_layer(elem) -> str:
         return "mep/hvac/equipment"
     elif cls == "IfcUnitaryEquipment":
         return "mep/hvac/equipment"
+    elif cls == "IfcEarthworksElement":
+        return "civil/earthworks/elements"
     elif cls == "IfcEarthworksCut":
         return "civil/earthworks/cut"
     elif cls == "IfcEarthworksFill":
         return "civil/earthworks/fill"
+    elif cls == "IfcGeotechnicalStratum":
+        return "civil/geotechnical/strata"
+    elif cls == "IfcSoil":
+        return "civil/geotechnical/soil"
     elif cls == "IfcRetainingWall":
         return "civil/structures/retaining_walls"
     elif cls == "IfcAlignment":

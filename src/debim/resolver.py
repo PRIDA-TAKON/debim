@@ -25,9 +25,12 @@ from debim.schema import (
     IfcDistributionBoard,
     IfcDoor,
     IfcDuctSegment,
+    IfcEarthworksElement,
     IfcEarthworksCut,
     IfcEarthworksFill,
     IfcElectricDistributionBoard,
+    IfcGeotechnicalStratum,
+    IfcSoil,
     IfcFlowController,
     IfcFooting,
     IfcLightFixture,
@@ -1040,6 +1043,22 @@ class ResolvedProxy(BaseModel):
     layer: str = "equipment/proxy"
 
 
+class ResolvedEarthworksElement(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcEarthworksElement
+    predefined_type: str = "RETAINING_STRUCTURE"
+    position: Tuple[float, float, float]
+    width: float
+    length: float
+    depth: float  # Height/depth (m)
+    volume: float  # m3
+    surface_area: float  # m2
+    polygon: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/earthworks/elements"
+
+
 class ResolvedEarthworksCut(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -1073,6 +1092,42 @@ class ResolvedEarthworksFill(BaseModel):
     surface_area: float  # Surface area (m2)
     polygon: List[Tuple[float, float, float]] = Field(default_factory=list)
     layer: str = "civil/earthworks/fill"
+
+
+class ResolvedGeotechnicalStratum(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcGeotechnicalStratum
+    predefined_type: str = "SOLID"
+    soil_type: str = "clay"
+    position: Tuple[float, float, float]
+    width: float
+    length: float
+    thickness: float  # m
+    volume: float  # m3
+    area: float  # m2
+    polygon: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/geotechnical/strata"
+
+
+class ResolvedSoil(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcSoil
+    soil_type: str = "topsoil"
+    density_kg_m3: float = 1800.0
+    bearing_capacity_kpa: Optional[float] = None
+    moisture_content_percent: Optional[float] = None
+    position: Tuple[float, float, float]
+    width: float
+    length: float
+    thickness: float  # m
+    volume: float  # m3
+    area: float  # m2
+    polygon: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/geotechnical/soil"
 
 
 class ResolvedRetainingWall(BaseModel):
@@ -1172,8 +1227,11 @@ ResolvedElement = Union[
     ResolvedDamper,
     ResolvedFlowController,
     ResolvedUnitaryEquipment,
+    ResolvedEarthworksElement,
     ResolvedEarthworksCut,
     ResolvedEarthworksFill,
+    ResolvedGeotechnicalStratum,
+    ResolvedSoil,
     ResolvedRetainingWall,
     ResolvedAlignment,
     ResolvedRoad,
@@ -1218,8 +1276,11 @@ class ResolvedManifest(BaseModel):
     dampers: List[ResolvedDamper] = []
     flow_controllers: List[ResolvedFlowController] = []
     unitary_equipments: List[ResolvedUnitaryEquipment] = []
+    earthworks_elements: List[ResolvedEarthworksElement] = []
     earthworks_cuts: List[ResolvedEarthworksCut] = []
     earthworks_fills: List[ResolvedEarthworksFill] = []
+    geotechnical_strata: List[ResolvedGeotechnicalStratum] = []
+    soils: List[ResolvedSoil] = []
     retaining_walls: List[ResolvedRetainingWall] = []
     alignments: List[ResolvedAlignment] = []
     roads: List[ResolvedRoad] = []
@@ -4121,6 +4182,156 @@ class SpatialResolver:
             layer=derive_default_layer(equip),
         )
 
+    def _calculate_earthworks_boundary_geometry(self, placement, default_width: float = 10.0, default_length: float = 10.0, z_base: float = 0.0):
+        poly_3d: List[Tuple[float, float, float]] = []
+        area = 0.0
+        width = default_width
+        length = default_length
+
+        if placement.boundary:
+            pts_2d: List[Tuple[float, float]] = []
+            for grid_pt in placement.boundary:
+                x, y = self.get_grid_xy(grid_pt)
+                pts_2d.append((x, y))
+                poly_3d.append((x, y, z_base))
+
+            n = len(pts_2d)
+            if n >= 3:
+                for i in range(n):
+                    j = (i + 1) % n
+                    area += pts_2d[i][0] * pts_2d[j][1]
+                    area -= pts_2d[j][0] * pts_2d[i][1]
+                area = abs(area) / 2.0
+                xs = [p[0] for p in pts_2d]
+                ys = [p[1] for p in pts_2d]
+                width = max(xs) - min(xs)
+                length = max(ys) - min(ys)
+                cx = sum(xs) / n
+                cy = sum(ys) / n
+                cz = z_base
+            else:
+                cx, cy, cz = 0.0, 0.0, z_base
+        elif placement.boundary_points:
+            bpts = placement.boundary_points
+            gx, gy = (0.0, 0.0)
+            if placement.grid:
+                gx, gy = self.get_grid_xy(placement.grid)
+            gx += placement.offset_x
+            gy += placement.offset_y
+
+            for lx, ly in bpts:
+                poly_3d.append((gx + lx, gy + ly, z_base))
+
+            n = len(bpts)
+            if n >= 3:
+                for i in range(n):
+                    j = (i + 1) % n
+                    area += bpts[i][0] * bpts[j][1]
+                    area -= bpts[j][0] * bpts[i][1]
+                area = abs(area) / 2.0
+                xs = [p[0] for p in bpts]
+                ys = [p[1] for p in bpts]
+                width = max(xs) - min(xs)
+                length = max(ys) - min(ys)
+                cx = gx + sum(xs) / n
+                cy = gy + sum(ys) / n
+                cz = z_base
+            else:
+                cx, cy, cz = gx, gy, z_base
+        else:
+            gx, gy = (0.0, 0.0)
+            if placement.grid:
+                gx, gy = self.get_grid_xy(placement.grid)
+            cx = gx + placement.offset_x
+            cy = gy + placement.offset_y
+            cz = z_base
+            area = width * length
+
+        return (cx, cy, cz), width, length, area, poly_3d
+
+    def resolve_earthworks_element(self, elem: IfcEarthworksElement) -> ResolvedEarthworksElement:
+        storey = self.get_storey(elem.placement.storey)
+        z_base = storey.elevation + elem.placement.offset_z
+        width = elem.width or 10.0
+        length = elem.length or 10.0
+        depth = elem.depth or 1.0
+
+        pos, w, l, calc_area, poly_3d = self._calculate_earthworks_boundary_geometry(elem.placement, width, length, z_base)
+        s_area = elem.surface_area if elem.surface_area is not None else calc_area
+        vol = elem.volume if elem.volume is not None else (s_area * depth)
+
+        return ResolvedEarthworksElement(
+            tag=elem.tag,
+            element=elem,
+            predefined_type=elem.predefined_type,
+            position=pos,
+            width=w,
+            length=l,
+            depth=depth,
+            volume=vol,
+            surface_area=s_area,
+            polygon=poly_3d,
+            layer=derive_default_layer(elem),
+        )
+
+    def resolve_geotechnical_stratum(self, stratum: IfcGeotechnicalStratum) -> ResolvedGeotechnicalStratum:
+        storey = self.get_storey(stratum.placement.storey)
+        z_base = storey.elevation + stratum.placement.offset_z
+
+        width = stratum.width or 10.0
+        length = stratum.length or 10.0
+        thickness = stratum.thickness or 2.0
+        if stratum.top_elevation is not None and stratum.bottom_elevation is not None:
+            thickness = abs(stratum.top_elevation - stratum.bottom_elevation)
+
+        pos, w, l, calc_area, poly_3d = self._calculate_earthworks_boundary_geometry(stratum.placement, width, length, z_base)
+        area = stratum.area if stratum.area is not None else calc_area
+        vol = stratum.volume if stratum.volume is not None else (area * thickness)
+
+        return ResolvedGeotechnicalStratum(
+            tag=stratum.tag,
+            element=stratum,
+            predefined_type=stratum.predefined_type,
+            soil_type=stratum.soil_type or "clay",
+            position=pos,
+            width=w,
+            length=l,
+            thickness=thickness,
+            volume=vol,
+            area=area,
+            polygon=poly_3d,
+            layer=derive_default_layer(stratum),
+        )
+
+    def resolve_soil(self, soil: IfcSoil) -> ResolvedSoil:
+        storey = self.get_storey(soil.placement.storey)
+        z_base = storey.elevation + soil.placement.offset_z
+
+        width = soil.width or 10.0
+        length = soil.length or 10.0
+        thickness = soil.thickness or soil.depth or 1.0
+
+        pos, w, l, calc_area, poly_3d = self._calculate_earthworks_boundary_geometry(soil.placement, width, length, z_base)
+        area = soil.area if soil.area is not None else calc_area
+        vol = soil.volume if soil.volume is not None else (area * thickness)
+
+        return ResolvedSoil(
+            tag=soil.tag,
+            element=soil,
+            soil_type=soil.soil_type or "topsoil",
+            density_kg_m3=soil.density_kg_m3,
+            bearing_capacity_kpa=soil.bearing_capacity_kpa,
+            moisture_content_percent=soil.moisture_content_percent,
+            position=pos,
+            width=w,
+            length=l,
+            thickness=thickness,
+            volume=vol,
+            area=area,
+            polygon=poly_3d,
+            layer=derive_default_layer(soil),
+        )
+
     def resolve_earthworks_cut(self, cut: IfcEarthworksCut) -> ResolvedEarthworksCut:
         storey = self.get_storey(cut.placement.storey)
         z_base = storey.elevation + cut.placement.offset_z
@@ -4739,6 +4950,10 @@ class SpatialResolver:
                 resolved_manifest.unitary_equipments.append(r_eq)
                 resolved_manifest.elements.append(r_eq)
                 resolved_manifest.terminals.append(self.resolve_terminal(elem))
+            elif isinstance(elem, IfcEarthworksElement):
+                r_ew = self.resolve_earthworks_element(elem)
+                resolved_manifest.earthworks_elements.append(r_ew)
+                resolved_manifest.elements.append(r_ew)
             elif isinstance(elem, IfcEarthworksCut):
                 r_cut = self.resolve_earthworks_cut(elem)
                 resolved_manifest.earthworks_cuts.append(r_cut)
@@ -4747,6 +4962,14 @@ class SpatialResolver:
                 r_fill = self.resolve_earthworks_fill(elem)
                 resolved_manifest.earthworks_fills.append(r_fill)
                 resolved_manifest.elements.append(r_fill)
+            elif isinstance(elem, IfcGeotechnicalStratum):
+                r_strat = self.resolve_geotechnical_stratum(elem)
+                resolved_manifest.geotechnical_strata.append(r_strat)
+                resolved_manifest.elements.append(r_strat)
+            elif isinstance(elem, IfcSoil):
+                r_soil = self.resolve_soil(elem)
+                resolved_manifest.soils.append(r_soil)
+                resolved_manifest.elements.append(r_soil)
             elif isinstance(elem, IfcRetainingWall):
                 r_rw = self.resolve_retaining_wall(elem)
                 resolved_manifest.retaining_walls.append(r_rw)

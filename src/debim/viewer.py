@@ -803,6 +803,50 @@ def generate_viewer_html(
                 "layer": bridge.layer,
             })
 
+    # Civil Earthworks Elements
+    for ew in resolved.earthworks_elements:
+        cz = ew.position[2] + ew.depth / 2.0
+        if ew.polygon and len(ew.polygon) >= 3:
+            elements_data.append({
+                "tag": ew.tag,
+                "class": "IfcEarthworksElement",
+                "predefined_type": ew.predefined_type,
+                "material": ew.element.material or "Earthworks Element",
+                "geometry_type": "polygon",
+                "points": ew.polygon,
+                "color": "#A16207",
+                "transparent": True,
+                "opacity": 0.70,
+                "layer": ew.layer,
+                "dimensions": {
+                    "width": ew.width,
+                    "length": ew.length,
+                    "depth": ew.depth,
+                    "volume": ew.volume,
+                    "surface_area": ew.surface_area,
+                },
+            })
+        else:
+            elements_data.append({
+                "tag": ew.tag,
+                "class": "IfcEarthworksElement",
+                "predefined_type": ew.predefined_type,
+                "material": ew.element.material or "Earthworks Element",
+                "position": [ew.position[0], ew.position[1], cz],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": ew.width,
+                    "depth": ew.length,
+                    "height": ew.depth,
+                    "volume": ew.volume,
+                    "surface_area": ew.surface_area,
+                },
+                "color": "#A16207",
+                "transparent": True,
+                "opacity": 0.70,
+                "layer": ew.layer,
+            })
+
     # Civil Earthworks Cut
     for cut in resolved.earthworks_cuts:
         cz = cut.position[2] - cut.depth / 2.0
@@ -891,6 +935,96 @@ def generate_viewer_html(
                 "transparent": True,
                 "opacity": 0.85,
                 "layer": fill.layer,
+            })
+
+    # Geotechnical Strata
+    for strat in resolved.geotechnical_strata:
+        cz = strat.position[2] - strat.thickness / 2.0
+        if strat.polygon and len(strat.polygon) >= 3:
+            elements_data.append({
+                "tag": strat.tag,
+                "class": "IfcGeotechnicalStratum",
+                "predefined_type": strat.predefined_type,
+                "material": strat.element.material or f"Soil Stratum ({strat.soil_type})",
+                "geometry_type": "polygon",
+                "points": strat.polygon,
+                "color": "#78350F",
+                "transparent": True,
+                "opacity": 0.60,
+                "layer": strat.layer,
+                "dimensions": {
+                    "width": strat.width,
+                    "length": strat.length,
+                    "thickness": strat.thickness,
+                    "volume": strat.volume,
+                    "area": strat.area,
+                },
+            })
+        else:
+            elements_data.append({
+                "tag": strat.tag,
+                "class": "IfcGeotechnicalStratum",
+                "predefined_type": strat.predefined_type,
+                "material": strat.element.material or f"Soil Stratum ({strat.soil_type})",
+                "position": [strat.position[0], strat.position[1], cz],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": strat.width,
+                    "depth": strat.length,
+                    "height": strat.thickness,
+                    "volume": strat.volume,
+                    "area": strat.area,
+                },
+                "color": "#78350F",
+                "transparent": True,
+                "opacity": 0.60,
+                "layer": strat.layer,
+            })
+
+    # Soil
+    for soil in resolved.soils:
+        cz = soil.position[2] - soil.thickness / 2.0
+        if soil.polygon and len(soil.polygon) >= 3:
+            elements_data.append({
+                "tag": soil.tag,
+                "class": "IfcSoil",
+                "soil_type": soil.soil_type,
+                "material": soil.element.material or f"Soil ({soil.soil_type})",
+                "geometry_type": "polygon",
+                "points": soil.polygon,
+                "color": "#9A3412",
+                "transparent": True,
+                "opacity": 0.65,
+                "layer": soil.layer,
+                "dimensions": {
+                    "width": soil.width,
+                    "length": soil.length,
+                    "thickness": soil.thickness,
+                    "volume": soil.volume,
+                    "area": soil.area,
+                    "density_kg_m3": soil.density_kg_m3,
+                },
+            })
+        else:
+            elements_data.append({
+                "tag": soil.tag,
+                "class": "IfcSoil",
+                "soil_type": soil.soil_type,
+                "material": soil.element.material or f"Soil ({soil.soil_type})",
+                "position": [soil.position[0], soil.position[1], cz],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": soil.width,
+                    "depth": soil.length,
+                    "height": soil.thickness,
+                    "volume": soil.volume,
+                    "area": soil.area,
+                    "density_kg_m3": soil.density_kg_m3,
+                },
+                "color": "#9A3412",
+                "transparent": True,
+                "opacity": 0.65,
+                "layer": soil.layer,
             })
 
     # Civil Retaining Walls
