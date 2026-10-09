@@ -475,13 +475,19 @@ class BridgeQTO(BaseModel):
 
 
 class MarineQTO(BaseModel):
-    length: float = 0.0                  # Berth/Wharf length (m)
-    width: float = 0.0                   # Berth/Wharf width (m)
-    deck_concrete_volume: float = 0.0    # Deck slab concrete volume (m3)
-    formwork_area: float = 0.0           # Deck formwork area (m2)
+    length: float = 0.0                  # Berth/Wharf/Seawall length (m)
+    width: float = 0.0                   # Berth/Wharf/Seawall width (m)
+    deck_concrete_volume: float = 0.0    # Deck slab / wall concrete volume (m3)
+    concrete_volume: float = 0.0         # Concrete volume (m3)
+    formwork_area: float = 0.0           # Deck / wall formwork area (m2)
     pile_count: int = 0                  # Number of foundation piles
     pile_total_length: float = 0.0       # Total pile linear meters (m)
     depth: float = 0.0                   # Water depth / berth depth (m)
+    wall_height: float = 0.0             # Wall height (m)
+    crest_width: float = 0.0            # Crest top width (m)
+    base_width: float = 0.0             # Base bottom width (m)
+    parapet_height: float = 0.0          # Recurved parapet height (m)
+    foundation_key_trench_volume: float = 0.0 # Foundation key trench volume (m3)
 
 
 class RailwayQTO(BaseModel):
@@ -1742,10 +1748,16 @@ def calculate_element_qto(
             length=resolved.length,
             width=resolved.width,
             deck_concrete_volume=vol,
+            concrete_volume=vol,
             formwork_area=formwork,
             pile_count=pile_cnt,
             pile_total_length=pile_len,
             depth=resolved.depth,
+            wall_height=resolved.wall_height,
+            crest_width=resolved.crest_width,
+            base_width=resolved.base_width,
+            parapet_height=resolved.parapet_height,
+            foundation_key_trench_volume=resolved.foundation_key_trench_volume,
         )
         sub_qto = None
         if pile_cnt > 0:

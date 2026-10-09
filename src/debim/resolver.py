@@ -1315,12 +1315,18 @@ class ResolvedMarinePart(BaseModel):
     deck_thickness: float = 0.50
     deck_elevation: float = 0.0
     depth: float = 10.0
+    wall_height: float = 0.0
+    crest_width: float = 0.0
+    base_width: float = 0.0
+    parapet_height: float = 0.0
     position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     rotation_angle: float = 0.0
     deck_boundary: List[Tuple[float, float, float]] = Field(default_factory=list)
     piles: List[ResolvedPile] = Field(default_factory=list)
     concrete_volume: float = 0.0
     formwork_area: float = 0.0
+    foundation_key_trench_volume: float = 0.0
+    wall_profile_points: List[Tuple[float, float]] = Field(default_factory=list)
     pile_count: int = 0
     pile_total_length: float = 0.0
     layer: str = "civil/infrastructure/marine"
@@ -5138,6 +5144,100 @@ class SpatialResolver:
             pos = (marine_part.placement.offset_x, marine_part.placement.offset_y, z)
 
         L = marine_part.length
+        ptype = marine_part.predefined_type.upper() if marine_part.predefined_type else "BERTH"
+
+        if ptype in ("SEAWALL", "GROYNE"):
+            wall_h = marine_part.wall_height or marine_part.depth or 5.0
+            base_w = marine_part.base_width or marine_part.width or 3.0
+            crest_w = marine_part.crest_width or (base_w * 0.5)
+            parapet_h = marine_part.parapet_height or 0.0
+
+            if parapet_h > 0:
+                wall_profile = [
+                    (-base_w / 2.0, 0.0),
+                    (base_w / 2.0, 0.0),
+                    (crest_w / 2.0, wall_h),
+                    (crest_w / 2.0, wall_h + parapet_h),
+                    (-crest_w / 2.0 - 0.2, wall_h + parapet_h),
+                    (-crest_w / 2.0, wall_h),
+                ]
+            else:
+                wall_profile = [
+                    (-base_w / 2.0, 0.0),
+                    (base_w / 2.0, 0.0),
+                    (crest_w / 2.0, wall_h),
+                    (-crest_w / 2.0, wall_h),
+                ]
+
+            n_pts = len(wall_profile)
+            sec_area = 0.0
+            for i in range(n_pts):
+                j = (i + 1) % n_pts
+                sec_area += wall_profile[i][0] * wall_profile[j][1]
+                sec_area -= wall_profile[j][0] * wall_profile[i][1]
+            sec_area = abs(sec_area) / 2.0
+
+            conc_vol = sec_area * L
+
+            front_len = 0.0
+            if parapet_h > 0:
+                front_len += math.hypot(-crest_w / 2.0 - (-base_w / 2.0), wall_h - 0.0)
+                front_len += math.hypot(-0.2, parapet_h)
+                front_len += (crest_w + 0.2)
+            else:
+                front_len += math.hypot(-crest_w / 2.0 - (-base_w / 2.0), wall_h - 0.0)
+                front_len += crest_w
+
+            rear_len = math.hypot(crest_w / 2.0 - base_w / 2.0, wall_h + parapet_h)
+            formwork = (front_len + rear_len) * L + 2.0 * sec_area
+
+            key_w = base_w * 0.5
+            key_h = max(0.5, wall_h * 0.2)
+            key_trench_vol = key_w * key_h * L
+
+            rad = math.radians(rot_deg)
+            cos_a = math.cos(rad)
+            sin_a = math.sin(rad)
+
+            local_corners = [
+                (-L / 2.0, -base_w / 2.0),
+                (L / 2.0, -base_w / 2.0),
+                (L / 2.0, base_w / 2.0),
+                (-L / 2.0, base_w / 2.0),
+            ]
+            z_deck = pos[2] + marine_part.deck_elevation
+            deck_boundary = []
+            for lx, ly in local_corners:
+                gx = pos[0] + (lx * cos_a - ly * sin_a)
+                gy = pos[1] + (lx * sin_a + ly * cos_a)
+                deck_boundary.append((gx, gy, z_deck))
+
+            return ResolvedMarinePart(
+                tag=marine_part.tag,
+                element=marine_part,
+                predefined_type=ptype,
+                length=L,
+                width=base_w,
+                deck_thickness=wall_h,
+                deck_elevation=marine_part.deck_elevation,
+                depth=marine_part.depth,
+                wall_height=wall_h,
+                crest_width=crest_w,
+                base_width=base_w,
+                parapet_height=parapet_h,
+                position=pos,
+                rotation_angle=rot_deg,
+                deck_boundary=deck_boundary,
+                piles=[],
+                concrete_volume=conc_vol,
+                formwork_area=formwork,
+                foundation_key_trench_volume=key_trench_vol,
+                wall_profile_points=wall_profile,
+                pile_count=0,
+                pile_total_length=0.0,
+                layer=marine_part.layer or derive_default_layer(marine_part),
+            )
+
         W = marine_part.width
         t = marine_part.deck_thickness
         deck_elev = marine_part.deck_elevation

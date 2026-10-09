@@ -951,26 +951,50 @@ def generate_viewer_html(
             })
     # Civil Marine Infrastructure Parts (IFC4.3)
     for mp in getattr(resolved, "marine_parts", []) or []:
-        elements_data.append({
-            "tag": mp.tag,
-            "class": "IfcMarinePart",
-            "predefined_type": mp.predefined_type,
-            "material": mp.element.material or "Marine Reinforced Concrete",
-            "position": [mp.position[0], mp.position[1], mp.position[2] + mp.deck_elevation + mp.deck_thickness / 2.0],
-            "rotation": [0, 0, mp.rotation_angle],
-            "dimensions": {
-                "length": mp.length,
-                "width": mp.width,
-                "height": mp.deck_thickness,
-                "deck_thickness": mp.deck_thickness,
-                "depth": mp.depth,
-                "concrete_volume": mp.concrete_volume,
-                "formwork_area": mp.formwork_area,
-                "pile_count": mp.pile_count,
-            },
-            "color": "#0284C7",
-            "layer": mp.layer,
-        })
+        if mp.predefined_type in ("SEAWALL", "GROYNE"):
+            elements_data.append({
+                "tag": mp.tag,
+                "class": "IfcMarinePart",
+                "predefined_type": mp.predefined_type,
+                "material": mp.element.material or "Marine Concrete Seawall",
+                "position": [mp.position[0], mp.position[1], mp.position[2] + mp.deck_elevation],
+                "rotation": [0, 0, mp.rotation_angle],
+                "dimensions": {
+                    "length": mp.length,
+                    "width": mp.base_width,
+                    "height": mp.wall_height,
+                    "wall_height": mp.wall_height,
+                    "crest_width": mp.crest_width,
+                    "base_width": mp.base_width,
+                    "parapet_height": mp.parapet_height,
+                    "concrete_volume": mp.concrete_volume,
+                    "formwork_area": mp.formwork_area,
+                    "foundation_key_trench_volume": mp.foundation_key_trench_volume,
+                },
+                "color": "#0284C7",
+                "layer": mp.layer,
+            })
+        else:
+            elements_data.append({
+                "tag": mp.tag,
+                "class": "IfcMarinePart",
+                "predefined_type": mp.predefined_type,
+                "material": mp.element.material or "Marine Reinforced Concrete",
+                "position": [mp.position[0], mp.position[1], mp.position[2] + mp.deck_elevation + mp.deck_thickness / 2.0],
+                "rotation": [0, 0, mp.rotation_angle],
+                "dimensions": {
+                    "length": mp.length,
+                    "width": mp.width,
+                    "height": mp.deck_thickness,
+                    "deck_thickness": mp.deck_thickness,
+                    "depth": mp.depth,
+                    "concrete_volume": mp.concrete_volume,
+                    "formwork_area": mp.formwork_area,
+                    "pile_count": mp.pile_count,
+                },
+                "color": "#0284C7",
+                "layer": mp.layer,
+            })
         for pile in mp.piles:
             elements_data.append({
                 "tag": pile.tag,
