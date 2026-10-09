@@ -1060,9 +1060,17 @@ class ResolvedEarthworksElement(BaseModel):
     width: float
     length: float
     depth: float  # Height/depth (m)
+    height: float = 0.0
+    base_thickness: float = 0.0
+    step_batter: float = 0.0
+    mesh_wire_dia_mm: Optional[float] = None
     volume: float  # m3
     surface_area: float  # m2
     polygon: List[Tuple[float, float, float]] = Field(default_factory=list)
+    tiers: List[Dict[str, Any]] = Field(default_factory=list)
+    gabion_stone_fill_volume: float = 0.0  # m3
+    wire_mesh_cage_area: float = 0.0       # m2
+    geotextile_area: float = 0.0           # m2
     layer: str = "civil/earthworks/elements"
 
 
@@ -4391,13 +4399,59 @@ class SpatialResolver:
     def resolve_earthworks_element(self, elem: IfcEarthworksElement) -> ResolvedEarthworksElement:
         storey = self.get_storey(elem.placement.storey)
         z_base = storey.elevation + elem.placement.offset_z
-        width = elem.width or 10.0
-        length = elem.length or 10.0
-        depth = elem.depth or 1.0
 
-        pos, w, l, calc_area, poly_3d = self._calculate_earthworks_boundary_geometry(elem.placement, width, length, z_base)
+        height_val = elem.height if elem.height is not None else (elem.depth if elem.depth is not None else 1.0)
+        base_thk_val = elem.base_thickness if elem.base_thickness is not None else (elem.width if elem.width is not None else 10.0)
+        length_val = elem.length or 10.0
+
+        pos, w, l, calc_area, poly_3d = self._calculate_earthworks_boundary_geometry(
+            elem.placement, base_thk_val, length_val, z_base
+        )
         s_area = elem.surface_area if elem.surface_area is not None else calc_area
-        vol = elem.volume if elem.volume is not None else (s_area * depth)
+
+        is_gabion_or_crib = elem.predefined_type in ("GABION", "CRIB_WALL") or elem.step_batter > 0 or elem.mesh_wire_dia_mm is not None
+
+        tiers_list: List[Dict[str, Any]] = []
+        total_stone_vol = 0.0
+        total_mesh_area = 0.0
+
+        if is_gabion_or_crib:
+            h_tier = elem.tier_height if (elem.tier_height and elem.tier_height > 0) else 1.0
+            num_tiers = max(1, int(round(height_val / h_tier)))
+            tier_h = height_val / num_tiers
+            step = elem.step_batter
+
+            for i in range(num_tiers):
+                w_i = max(0.1, base_thk_val - i * step)
+                tier_vol = l * w_i * tier_h
+                tier_mesh = 2.0 * (l * w_i + l * tier_h + w_i * tier_h)
+
+                tx = pos[0]
+                ty = pos[1] + (i * step) / 2.0
+                tz = z_base + i * tier_h + tier_h / 2.0
+
+                tiers_list.append({
+                    "index": i,
+                    "position": (tx, ty, tz),
+                    "dimensions": (l, w_i, tier_h),
+                    "width": w_i,
+                    "length": l,
+                    "height": tier_h,
+                    "volume": tier_vol,
+                    "mesh_area": tier_mesh,
+                })
+                total_stone_vol += tier_vol
+                total_mesh_area += tier_mesh
+
+            stone_fill_vol = elem.volume if elem.volume is not None else total_stone_vol
+            mesh_cage_area = total_mesh_area if (elem.predefined_type == "GABION" or elem.mesh_wire_dia_mm is not None) else 0.0
+            geotextile_area = l * height_val + l * base_thk_val
+            vol = stone_fill_vol
+        else:
+            vol = elem.volume if elem.volume is not None else (s_area * height_val)
+            stone_fill_vol = vol if elem.predefined_type == "GABION" else 0.0
+            mesh_cage_area = 2.0 * (l * w + l * height_val + w * height_val) if elem.predefined_type == "GABION" else 0.0
+            geotextile_area = l * height_val + l * w if elem.predefined_type in ("GABION", "CRIB_WALL") else 0.0
 
         return ResolvedEarthworksElement(
             tag=elem.tag,
@@ -4406,10 +4460,18 @@ class SpatialResolver:
             position=pos,
             width=w,
             length=l,
-            depth=depth,
+            depth=height_val,
+            height=height_val,
+            base_thickness=base_thk_val,
+            step_batter=elem.step_batter,
+            mesh_wire_dia_mm=elem.mesh_wire_dia_mm,
             volume=vol,
             surface_area=s_area,
             polygon=poly_3d,
+            tiers=tiers_list,
+            gabion_stone_fill_volume=stone_fill_vol,
+            wire_mesh_cage_area=mesh_cage_area,
+            geotextile_area=geotextile_area,
             layer=derive_default_layer(elem),
         )
 

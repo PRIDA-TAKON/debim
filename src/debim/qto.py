@@ -438,6 +438,9 @@ class EarthworksQTO(BaseModel):
     surface_area: float = 0.0            # Top surface area for fill (m2)
     depth: float = 0.0                   # Average depth/height (m)
     compaction_ratio: float = 0.95
+    gabion_stone_fill_volume: float = 0.0  # Gabion rock stone fill volume (m3)
+    wire_mesh_cage_area: float = 0.0       # Wire mesh cage surface area (m2)
+    geotextile_area: float = 0.0           # Geotextile filter fabric area (m2)
 
 
 class RetainingWallQTO(BaseModel):
@@ -584,6 +587,9 @@ class ProjectQTO(BaseModel):
     total_cut_volume: float = 0.0
     total_fill_volume: float = 0.0
     total_compacted_fill_volume: float = 0.0
+    total_gabion_stone_fill_volume: float = 0.0
+    total_wire_mesh_cage_area: float = 0.0
+    total_geotextile_area: float = 0.0
     total_retaining_wall_concrete_volume: float = 0.0
     total_retaining_wall_formwork_area: float = 0.0
     # Civil Infrastructure Totals (IFC4.3)
@@ -1553,10 +1559,13 @@ def calculate_element_qto(
     elif isinstance(resolved, ResolvedEarthworksElement):
         elem = resolved.element
         ew_qto = EarthworksQTO(
-            type="CUT" if "CUT" in str(resolved.predefined_type).upper() else "FILL",
+            type="FILL" if resolved.predefined_type in ("GABION", "CRIB_WALL", "REINFORCED_SOIL", "BERM", "TERRACE") else ("CUT" if "CUT" in str(resolved.predefined_type).upper() else "FILL"),
             volume=resolved.volume,
             surface_area=resolved.surface_area,
             depth=resolved.depth,
+            gabion_stone_fill_volume=resolved.gabion_stone_fill_volume,
+            wire_mesh_cage_area=resolved.wire_mesh_cage_area,
+            geotextile_area=resolved.geotextile_area,
         )
         return ElementQTO(
             tag=tag,
@@ -2241,6 +2250,9 @@ def calculate_qto(
     total_cut_vol = 0.0
     total_fill_vol = 0.0
     total_compacted_fill_vol = 0.0
+    total_gabion_stone_vol = 0.0
+    total_wire_mesh_area = 0.0
+    total_geotextile_area_val = 0.0
     total_rw_conc_vol = 0.0
     total_rw_formwork = 0.0
 
@@ -2426,6 +2438,9 @@ def calculate_qto(
             elif eqto.earthworks.type == "FILL":
                 total_fill_vol += eqto.earthworks.volume
                 total_compacted_fill_vol += eqto.earthworks.compacted_volume
+            total_gabion_stone_vol += eqto.earthworks.gabion_stone_fill_volume
+            total_wire_mesh_area += eqto.earthworks.wire_mesh_cage_area
+            total_geotextile_area_val += eqto.earthworks.geotextile_area
 
         if eqto.retaining_wall:
             total_rw_conc_vol += eqto.retaining_wall.concrete_volume
@@ -2556,6 +2571,9 @@ def calculate_qto(
         total_cut_volume=total_cut_vol,
         total_fill_volume=total_fill_vol,
         total_compacted_fill_volume=total_compacted_fill_vol,
+        total_gabion_stone_fill_volume=total_gabion_stone_vol,
+        total_wire_mesh_cage_area=total_wire_mesh_area,
+        total_geotextile_area=total_geotextile_area_val,
         total_retaining_wall_concrete_volume=total_rw_conc_vol,
         total_retaining_wall_formwork_area=total_rw_formwork,
         total_alignment_length=total_alignment_len,

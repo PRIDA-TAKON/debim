@@ -909,7 +909,30 @@ def generate_viewer_html(
     # Civil Earthworks Elements
     for ew in resolved.earthworks_elements:
         cz = ew.position[2] + ew.depth / 2.0
-        if ew.polygon and len(ew.polygon) >= 3:
+        if ew.tiers:
+            for t_idx, t in enumerate(ew.tiers):
+                elements_data.append({
+                    "tag": f"{ew.tag}-Tier-{t_idx+1}",
+                    "class": "IfcEarthworksElement",
+                    "predefined_type": ew.predefined_type,
+                    "material": ew.element.material or ("Gabion Basket / Rock Fill" if ew.predefined_type == "GABION" else "Retaining Structure"),
+                    "position": [t["position"][0], t["position"][1], t["position"][2]],
+                    "rotation": [0, 0, 0],
+                    "dimensions": {
+                        "width": t["width"],
+                        "depth": t["length"],
+                        "height": t["height"],
+                        "tier_index": t_idx + 1,
+                        "gabion_stone_fill_volume": ew.gabion_stone_fill_volume,
+                        "wire_mesh_cage_area": ew.wire_mesh_cage_area,
+                        "geotextile_area": ew.geotextile_area,
+                    },
+                    "color": "#8B5A2B" if ew.predefined_type == "GABION" else "#A16207",
+                    "transparent": True,
+                    "opacity": 0.85,
+                    "layer": ew.layer,
+                })
+        elif ew.polygon and len(ew.polygon) >= 3:
             elements_data.append({
                 "tag": ew.tag,
                 "class": "IfcEarthworksElement",
@@ -927,6 +950,9 @@ def generate_viewer_html(
                     "depth": ew.depth,
                     "volume": ew.volume,
                     "surface_area": ew.surface_area,
+                    "gabion_stone_fill_volume": ew.gabion_stone_fill_volume,
+                    "wire_mesh_cage_area": ew.wire_mesh_cage_area,
+                    "geotextile_area": ew.geotextile_area,
                 },
             })
         else:
@@ -943,6 +969,9 @@ def generate_viewer_html(
                     "height": ew.depth,
                     "volume": ew.volume,
                     "surface_area": ew.surface_area,
+                    "gabion_stone_fill_volume": ew.gabion_stone_fill_volume,
+                    "wire_mesh_cage_area": ew.wire_mesh_cage_area,
+                    "geotextile_area": ew.geotextile_area,
                 },
                 "color": "#A16207",
                 "transparent": True,

@@ -234,6 +234,36 @@ def generate_cost_template(
         )
         item_disciplines["EARTH-FILL-COMPACTED"] = "civil"
 
+    if qto.total_gabion_stone_fill_volume > 0 and "EARTH-GABION-STONE" not in required_items:
+        required_items["EARTH-GABION-STONE"] = PriceItem(
+            name="Gabion Stone / Rock Fill",
+            unit="m3",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="31 37 00", uniformat="C1010"),
+        )
+        item_disciplines["EARTH-GABION-STONE"] = "civil"
+
+    if qto.total_wire_mesh_cage_area > 0 and "EARTH-WIRE-MESH-CAGE" not in required_items:
+        required_items["EARTH-WIRE-MESH-CAGE"] = PriceItem(
+            name="Gabion Galvanized Wire Mesh Cage",
+            unit="m2",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="31 37 00", uniformat="C1010"),
+        )
+        item_disciplines["EARTH-WIRE-MESH-CAGE"] = "civil"
+
+    if qto.total_geotextile_area > 0 and "EARTH-GEOTEXTILE-FABRIC" not in required_items:
+        required_items["EARTH-GEOTEXTILE-FABRIC"] = PriceItem(
+            name="Geotextile Filter Fabric Layer",
+            unit="m2",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="31 32 19", uniformat="C1010"),
+        )
+        item_disciplines["EARTH-GEOTEXTILE-FABRIC"] = "civil"
+
     if qto.total_retaining_wall_concrete_volume > 0 and "RC-RETAINING-WALL" not in required_items:
         required_items["RC-RETAINING-WALL"] = PriceItem(
             name="Reinforced Concrete Retaining Wall",
@@ -1075,6 +1105,24 @@ def estimate_cost(
         for code, item in catalog.items.items():
             if "fill" in code.lower() or "earth-fill" in code.lower() or "ถมดิน" in item.name:
                 quantities_by_code[code] = quantities_by_code.get(code, 0.0) + fill_qty
+                break
+
+    if qto.total_gabion_stone_fill_volume > 0:
+        for code, item in catalog.items.items():
+            if "gabion-stone" in code.lower() or "earth-gabion-stone" in code.lower() or "หินกล่อง" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_gabion_stone_fill_volume
+                break
+
+    if qto.total_wire_mesh_cage_area > 0:
+        for code, item in catalog.items.items():
+            if "wire-mesh-cage" in code.lower() or "earth-wire-mesh-cage" in code.lower() or "ตาข่ายกล่อง" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_wire_mesh_cage_area
+                break
+
+    if qto.total_geotextile_area > 0:
+        for code, item in catalog.items.items():
+            if "geotextile" in code.lower() or "earth-geotextile" in code.lower() or "แผ่นใยสังเคราะห์" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_geotextile_area
                 break
 
     if qto.total_retaining_wall_concrete_volume > 0:
