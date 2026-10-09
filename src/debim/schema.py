@@ -2057,6 +2057,78 @@ class AlignmentPlacement(BaseModel):
         return v
 
 
+class AlignmentHorizontalSegment(BaseModel):
+    segment_type: Literal["LINE", "CIRCULARARC", "CLOTHOID"] = "LINE"
+    start_point: Tuple[float, float] = (0.0, 0.0)
+    start_direction: float = 0.0  # Heading angle in radians or degrees
+    start_radius_of_curvature: float = 0.0  # 0.0 represents infinite/straight
+    end_radius_of_curvature: float = 0.0
+    segment_length: float = 0.0
+    clothoid_constant: Optional[float] = None
+
+    @field_validator("start_point", mode="before")
+    @classmethod
+    def convert_tuple_2d(cls, v):
+        if isinstance(v, (list, tuple)):
+            return (float(v[0]), float(v[1]))
+        return v
+
+
+class AlignmentVerticalSegment(BaseModel):
+    segment_type: Literal["LINE", "PARABOLA", "CIRCULARARC"] = "LINE"
+    start_dist_along: float = 0.0
+    horizontal_length: float = 0.0
+    start_height: float = 0.0
+    start_gradient: float = 0.0  # dz/ds slope
+    end_gradient: Optional[float] = None
+    radius_of_curvature: Optional[float] = None
+
+
+class AlignmentCantSegment(BaseModel):
+    segment_type: Literal["CONSTANTCANT", "LINEARTRANSITION"] = "CONSTANTCANT"
+    start_dist_along: float = 0.0
+    horizontal_length: float = 0.0
+    start_cant: float = 0.0  # Cant offset in meters or angle
+    end_cant: Optional[float] = None
+
+
+class IfcAlignmentHorizontal(BaseModel):
+    class_: Literal["IfcAlignmentHorizontal"] = Field(alias="class", default="IfcAlignmentHorizontal")
+    tag: Optional[str] = None
+    segments: List[AlignmentHorizontalSegment] = Field(default_factory=list)
+
+
+class IfcAlignmentVertical(BaseModel):
+    class_: Literal["IfcAlignmentVertical"] = Field(alias="class", default="IfcAlignmentVertical")
+    tag: Optional[str] = None
+    segments: List[AlignmentVerticalSegment] = Field(default_factory=list)
+
+
+class IfcAlignmentCant(BaseModel):
+    class_: Literal["IfcAlignmentCant"] = Field(alias="class", default="IfcAlignmentCant")
+    tag: Optional[str] = None
+    segments: List[AlignmentCantSegment] = Field(default_factory=list)
+
+
+class CorridorCrossSection(BaseModel):
+    name: str = "carriageway"
+    points: List[Tuple[float, float]] = Field(default_factory=list)  # (u, v) local 2D offsets
+    material: Optional[str] = None
+
+    @field_validator("points", mode="before")
+    @classmethod
+    def convert_points_list(cls, v):
+        if isinstance(v, list):
+            res = []
+            for pt in v:
+                if isinstance(pt, (list, tuple)) and len(pt) >= 2:
+                    res.append((float(pt[0]), float(pt[1])))
+                else:
+                    res.append(pt)
+            return res
+        return v
+
+
 class IfcAlignment(BaseModel):
     class_: Literal["IfcAlignment"] = Field(alias="class", default="IfcAlignment")
     tag: str
@@ -2066,6 +2138,10 @@ class IfcAlignment(BaseModel):
     end_chainage: Optional[float] = None
     design_speed_kmh: Optional[float] = None
     placement: AlignmentPlacement
+    horizontal: Optional[IfcAlignmentHorizontal] = None
+    vertical: Optional[IfcAlignmentVertical] = None
+    cant: Optional[IfcAlignmentCant] = None
+    cross_sections: Optional[List[CorridorCrossSection]] = None
     layer: Optional[str] = None
 
 

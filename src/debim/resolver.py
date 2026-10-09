@@ -1105,6 +1105,8 @@ class ResolvedAlignment(BaseModel):
     end_chainage: float = 0.0
     total_length: float = 0.0
     points_3d: List[Tuple[float, float, float]] = Field(default_factory=list)
+    frames_3d: List[Dict[str, Any]] = Field(default_factory=list)
+    swept_solids: List[Dict[str, Any]] = Field(default_factory=list)
     layer: str = "civil/infrastructure/alignment"
 
 
@@ -4362,24 +4364,17 @@ class SpatialResolver:
         )
 
     def resolve_alignment(self, align: IfcAlignment) -> ResolvedAlignment:
-        if align.placement.grid:
-            gx, gy = self.get_grid_xy(align.placement.grid)
-        else:
-            gx, gy = 0.0, 0.0
-        gx += align.placement.offset_x
-        gy += align.placement.offset_y
+        from debim.civil import AlignmentSweeper
 
-        z_base = self.get_storey(align.placement.storey).elevation if align.placement.storey else align.placement.offset_z
+        sweeper = AlignmentSweeper(align)
+        frames = sweeper.discretize_frames(step_size=5.0)
+        swept_solids = sweeper.sweep_corridor_solids(frames)
 
-        world_pts: List[Tuple[float, float, float]] = []
-        if align.placement.points:
-            for pt in align.placement.points:
-                world_pts.append((gx + pt.x, gy + pt.y, z_base + pt.z))
-
+        world_pts = [f["position"] for f in frames]
         tot_length = sum(
             math.dist(world_pts[i], world_pts[i + 1])
             for i in range(len(world_pts) - 1)
-        )
+        ) if len(world_pts) >= 2 else 0.0
         st_chain = align.start_chainage
         end_chain = align.end_chainage if align.end_chainage is not None else (st_chain + tot_length)
 
@@ -4391,6 +4386,8 @@ class SpatialResolver:
             end_chainage=end_chain,
             total_length=tot_length,
             points_3d=world_pts,
+            frames_3d=frames,
+            swept_solids=swept_solids,
             layer=derive_default_layer(align),
         )
 
