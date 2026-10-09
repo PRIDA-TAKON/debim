@@ -6,7 +6,7 @@ import json
 import math
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 import webbrowser
 
 from debim.resolver import (
@@ -77,7 +77,8 @@ def extract_profile_viewer_dim(prof: Any, length_or_height: float, is_column: bo
 
 
 def generate_viewer_html(
-    manifest: Union[ProjectManifest, ResolvedManifest, Path, str]
+    manifest: Union[ProjectManifest, ResolvedManifest, Path, str],
+    live_reload: bool = False,
 ) -> str:
     """
     Generate a self-contained, standalone 3D web viewer HTML string
@@ -3587,35 +3588,126 @@ def generate_viewer_html(
 </body>
 </html>
 """
+    if live_reload:
+        reload_script = """
+    <script>
+        // debim Live Hot-Reload Watcher
+        let _debimLastVersion = 0;
+        setInterval(async () => {
+            try {
+                const resp = await fetch('/api/version');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (_debimLastVersion === 0) {
+                        _debimLastVersion = data.version;
+                    } else if (data.version !== _debimLastVersion) {
+                        _debimLastVersion = data.version;
+                        if (typeof camera !== 'undefined' && typeof controls !== 'undefined') {
+                            sessionStorage.setItem('debim_cam_state', JSON.stringify({
+                                pos: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+                                target: { x: controls.target.x, y: controls.target.y, z: controls.target.z }
+                            }));
+                        }
+                        console.log('🔄 [debim] Model updated! Hot-reloading 3D scene...');
+                        window.location.reload();
+                    }
+                }
+            } catch (e) {}
+        }, 400);
+
+        window.addEventListener('load', () => {
+            const saved = sessionStorage.getItem('debim_cam_state');
+            if (saved && typeof camera !== 'undefined' && typeof controls !== 'undefined') {
+                try {
+                    const s = JSON.parse(saved);
+                    camera.position.set(s.pos.x, s.pos.y, s.pos.z);
+                    controls.target.set(s.target.x, s.target.y, s.target.z);
+                    controls.update();
+                } catch (e) {}
+            }
+        });
+    </script>
+</body>
+"""
+        html_content = html_content.replace("</body>", reload_script)
+
     return html_content
 
 
 class _ViewerHTTPRequestHandler(BaseHTTPRequestHandler):
+    manifest_path: Optional[Path] = None
     html_content: bytes = b""
+    last_mtime: float = 0.0
+
+    @classmethod
+    def get_manifest_mtime(cls) -> float:
+        if not cls.manifest_path or not cls.manifest_path.exists():
+            return 0.0
+        try:
+            mtime = cls.manifest_path.stat().st_mtime
+            base_dir = cls.manifest_path.parent
+            for ext in ("*.yaml", "*.debim", "*.dbim"):
+                for sub in base_dir.glob(f"**/{ext}"):
+                    try:
+                        mtime = max(mtime, sub.stat().st_mtime)
+                    except Exception:
+                        pass
+            return mtime
+        except Exception:
+            return 0.0
 
     def do_GET(self) -> None:
+        if self.path == "/api/version":
+            current_mtime = self.get_manifest_mtime()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            data = json.dumps({"version": current_mtime})
+            self.wfile.write(data.encode("utf-8"))
+            return
+
+        current_mtime = self.get_manifest_mtime()
+        if self.manifest_path and current_mtime > self.__class__.last_mtime:
+            try:
+                new_html = generate_viewer_html(self.manifest_path, live_reload=True)
+                self.__class__.html_content = new_html.encode("utf-8")
+                self.__class__.last_mtime = current_mtime
+            except Exception:
+                pass
+
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(self.html_content)))
+        self.send_header("Content-Length", str(len(self.__class__.html_content)))
         self.end_headers()
-        self.wfile.write(self.html_content)
+        self.wfile.write(self.__class__.html_content)
 
     def log_message(self, format: str, *args: Any) -> None:
         pass
 
 
 def serve_viewer(
-    html_content: str, port: int = 8000, open_browser: bool = True
+    html_content: str,
+    port: int = 8000,
+    open_browser: bool = True,
+    manifest_path: Optional[Union[str, Path]] = None,
+    watch: bool = True,
 ) -> None:
     """
     Serve the viewer HTML content on a local HTTP server and optionally open in browser.
+    If watch=True and manifest_path is provided, automatically hot-reloads when the file changes.
     """
-    handler = type(
-        "ViewerHandler",
-        (_ViewerHTTPRequestHandler,),
-        {"html_content": html_content.encode("utf-8")},
-    )
-    server = HTTPServer(("0.0.0.0", port), handler)
+    p = Path(manifest_path) if manifest_path else None
+    if watch and p and p.exists() and p.is_file():
+        html_content = generate_viewer_html(p, live_reload=True)
+        _ViewerHTTPRequestHandler.manifest_path = p
+        _ViewerHTTPRequestHandler.last_mtime = _ViewerHTTPRequestHandler.get_manifest_mtime()
+    else:
+        _ViewerHTTPRequestHandler.manifest_path = None
+        _ViewerHTTPRequestHandler.last_mtime = 0.0
+
+    _ViewerHTTPRequestHandler.html_content = html_content.encode("utf-8")
+    server = HTTPServer(("0.0.0.0", port), _ViewerHTTPRequestHandler)
     url = f"http://localhost:{port}"
 
     if open_browser:
@@ -3625,3 +3717,4 @@ def serve_viewer(
         server.serve_forever()
     except KeyboardInterrupt:
         server.server_close()
+

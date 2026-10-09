@@ -667,7 +667,29 @@ def estimate_cost(
 
         for resolved_elem in resolved.elements:
             eqto = qto.get_element(resolved_elem.tag)
-            if not eqto or not eqto.material:
+            if not eqto:
+                continue
+
+            if eqto.wall_layers:
+                for w_layer in eqto.wall_layers:
+                    cost_ref = (
+                        w_layer.unit_cost_ref
+                        or material_ref_map.get(w_layer.material)
+                        or w_layer.material
+                    )
+                    if cost_ref and cost_ref in catalog.items:
+                        p_item = catalog.items[cost_ref]
+                        u = p_item.unit.lower()
+                        if u in ("m3", "cubic_meter"):
+                            l_qty = w_layer.volume
+                        elif u in ("m2", "square_meter"):
+                            l_qty = w_layer.area
+                        else:
+                            l_qty = 1.0
+                        quantities_by_code[cost_ref] = quantities_by_code.get(cost_ref, 0.0) + l_qty
+                continue
+
+            if not eqto.material:
                 continue
 
             cost_ref = material_ref_map.get(eqto.material)

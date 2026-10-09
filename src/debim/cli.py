@@ -28,7 +28,7 @@ from debim.scaffold import scaffold_element
 from debim.cost import estimate_cost, generate_cost_template, load_price_catalog
 from debim.qto import calculate_qto
 from debim.resolver import resolve_manifest
-from debim.schema import ProjectManifest, load_manifest
+from debim.schema import ProjectManifest, load_manifest, export_json_schema
 from debim.viewer import generate_viewer_html, serve_viewer
 from debim.modular import bundle_manifest, split_manifest
 from debim.spec.registry import SpecRegistryClient
@@ -164,6 +164,63 @@ def validate(
     except Exception as e:
         console.print(f"[bold red]Validation Error:[/bold red]\n{e}")
         raise typer.Exit(code=1)
+
+
+@app.command(name="schema")
+def schema_cmd(
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Target file path to write JSON schema (e.g. debim.schema.json). If omitted, prints to stdout.",
+    ),
+    indent: int = typer.Option(2, "--indent", help="JSON indentation level"),
+    vscode: bool = typer.Option(
+        False,
+        "--vscode",
+        help="Configure .vscode/settings.json with schema mapping for instant YAML autocompletion",
+    ),
+):
+    """Export debim language specification as standalone JSON Schema for IDEs, LSP, and tooling"""
+    import json
+
+    schema_file = output or (Path("debim.schema.json") if vscode else None)
+    schema = export_json_schema(output_path=schema_file, indent=indent)
+
+    if schema_file:
+        defs_count = len(schema.get("$defs", {}))
+        console.print(
+            f"[bold green]Success:[/bold green] Exported debim JSON Schema ({defs_count} definitions) to [cyan]{schema_file}[/cyan]"
+        )
+    else:
+        sys.stdout.write(json.dumps(schema, indent=indent, ensure_ascii=False) + "\n")
+
+    if vscode:
+        vscode_dir = Path(".vscode")
+        vscode_dir.mkdir(parents=True, exist_ok=True)
+        settings_file = vscode_dir / "settings.json"
+        settings_data = {}
+        if settings_file.exists():
+            try:
+                with open(settings_file, "r", encoding="utf-8") as f:
+                    settings_data = json.load(f)
+            except Exception:
+                settings_data = {}
+
+        associations = settings_data.setdefault("files.associations", {})
+        associations["*.debim"] = "yaml"
+        yaml_schemas = settings_data.setdefault("yaml.schemas", {})
+        schema_rel_path = f"./{schema_file.name if schema_file else 'debim.schema.json'}"
+        patterns = ["project.yaml", "**/project.yaml", "*.debim.yaml", "**/*.debim.yaml", "*.debim", "**/*.debim"]
+        yaml_schemas[schema_rel_path] = patterns
+
+        with open(settings_file, "w", encoding="utf-8") as f:
+            json.dump(settings_data, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+
+        console.print(
+            f"[bold green]Success:[/bold green] Configured [cyan]{settings_file}[/cyan] with schema mapping {patterns}."
+        )
 
 
 @app.command()
@@ -725,23 +782,33 @@ def compile(
 @app.command()
 def view(
     manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
+        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest (.debim / .yaml)"
     ),
     port: int = typer.Option(8000, "--port", "-p", help="Port to serve 3D viewer"),
     no_browser: bool = typer.Option(
         False, "--no-browser", help="Do not open web browser automatically"
     ),
+    watch: bool = typer.Option(
+        True, "--watch/--no-watch", "-w", help="Enable automatic live hot-reload on file save"
+    ),
     export: Optional[Path] = typer.Option(
         None, "--export", "-e", help="Export standalone 3D/2D HTML viewer file without running HTTP server"
     ),
 ):
-    """Launch lightweight local 3D preview server in browser or export HTML viewer"""
+    """Launch lightweight local 3D preview server in browser with live hot-reload or export HTML"""
+    # Auto-detect default manifest file ONLY if manifest was not explicitly specified
+    if manifest == Path("project.yaml") and not manifest.exists():
+        for candidate in [Path("house.debim"), Path("project.debim"), Path("main.debim")]:
+            if candidate.exists():
+                manifest = candidate
+                break
+
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
         raise typer.Exit(code=1)
 
     try:
-        html_content = generate_viewer_html(manifest)
+        html_content = generate_viewer_html(manifest, live_reload=watch and not export)
         if export:
             export.parent.mkdir(parents=True, exist_ok=True)
             export.write_text(html_content, encoding="utf-8")
@@ -757,14 +824,26 @@ def view(
             return
 
         url = f"http://localhost:{port}"
+        watch_status = (
+            "[bold green]Live Hot-Reload Active[/bold green] (edits in VS Code update in real-time)"
+            if watch
+            else "[dim]Static[/dim]"
+        )
         console.print(
             Panel(
                 f"[bold green]Serving 3D Web Preview at:[/bold green] [cyan bold]{url}[/cyan bold]\n"
+                f"[dim]Manifest:[/dim] [yellow]{manifest}[/yellow] — {watch_status}\n"
                 f"[dim]Press Ctrl+C in terminal to stop server.[/dim]",
-                title="[bold blue]debim 3D Viewer[/bold blue]",
+                title="[bold blue]debim 3D Live Viewer[/bold blue]",
             )
         )
-        serve_viewer(html_content, port=port, open_browser=not no_browser)
+        serve_viewer(
+            html_content,
+            port=port,
+            open_browser=not no_browser,
+            manifest_path=manifest,
+            watch=watch,
+        )
     except Exception as e:
         console.print(f"[bold red]Viewer Error:[/bold red]\n{e}")
         raise typer.Exit(code=1)

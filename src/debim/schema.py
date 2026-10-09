@@ -2,6 +2,7 @@
 Pydantic v2 data models for project.yaml schema and manifest validation logic.
 """
 
+import json
 import math
 from pathlib import Path
 import re
@@ -793,16 +794,65 @@ class WallFinishesConfig(BaseModel):
     tile_height: Optional[float] = None
 
 
+class WallLayer(BaseModel):
+    name: Optional[str] = None
+    material: str
+    thickness: float = Field(..., gt=0, description="Layer thickness in meters (e.g. 0.075)")
+    function: Optional[Literal["structure", "insulation", "finish", "substrate", "membrane"]] = "structure"
+    unit_cost_ref: Optional[str] = None
+
+
 class IfcWall(BaseModel):
     class_: Literal["IfcWall"] = Field(alias="class", default="IfcWall")
     tag: str
-    material: str
-    thickness: float
+    material: Optional[str] = None
+    thickness: Optional[float] = None
     height: float
     placement: WallPlacement
     children: List[WallChild] = Field(default_factory=list)
     finishes: Optional[WallFinishesConfig] = None
     layer: Optional[str] = None
+    layers: Optional[List[WallLayer]] = None
+
+    @model_validator(mode="after")
+    def validate_wall_specs(self) -> "IfcWall":
+        if self.layers:
+            computed_thk = sum(l.thickness for l in self.layers)
+            if self.thickness is None:
+                self.thickness = round(computed_thk, 5)
+            if self.material is None:
+                self.material = self.layers[0].material
+        else:
+            if self.thickness is None:
+                raise ValueError(f"Wall '{self.tag}' must specify either 'thickness' or 'layers'")
+            if self.material is None:
+                raise ValueError(f"Wall '{self.tag}' must specify 'material' when 'layers' is not used")
+        return self
+
+
+class SlabOpening(BaseModel):
+    tag: Optional[str] = None
+    purpose: Optional[str] = "VOID"  # e.g. "MEP_SHAFT", "STAIR", "ELEVATOR", "LIGHTWELL"
+    grid: Optional[Tuple[str, str]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    width: Optional[float] = None
+    length: Optional[float] = None
+    boundary: Optional[List[Tuple[str, str]]] = None
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_grid(cls, v):
+        if isinstance(v, (list, tuple)) and len(v) == 2:
+            return (str(v[0]), str(v[1]))
+        return v
+
+    @field_validator("boundary", mode="before")
+    @classmethod
+    def convert_boundary(cls, v):
+        if isinstance(v, list):
+            return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
 
 
 # Slab placement & element
@@ -811,6 +861,7 @@ class SlabPlacement(BaseModel):
     storey: str
     offset_z: float = 0.00
     voids: Optional[List[List[Tuple[str, str]]]] = None
+    openings: Optional[List[SlabOpening]] = None
 
     @field_validator("boundary", mode="before")
     @classmethod
@@ -2313,6 +2364,22 @@ class Material(BaseModel):
     unit_cost_ref: str
 
 
+class SiteBoundary(BaseModel):
+    boundary: Optional[List[Tuple[float, float]]] = None
+    bounding_box: Optional[Tuple[float, float, float, float]] = None  # (min_x, min_y, max_x, max_y)
+    front_road_width: Optional[float] = None  # Road width in meters
+    front_axis: Optional[str] = None  # Front boundary grid axis name (e.g. "1")
+
+
+class ComplianceRule(BaseModel):
+    rule: str  # e.g., "TH_MIN_CEILING_HEIGHT_240", "TH_SETBACK_OPENING_2M", "TH_SETBACK_BLIND_050", "FAR_LIMIT"
+    name: Optional[str] = None
+    standard: Optional[str] = "TH-MINISTERIAL-REG-55"
+    threshold: Optional[float] = None
+    enabled: bool = True
+    notes: Optional[str] = None
+
+
 class ProjectManifest(BaseModel):
     schema_version: str = Field(alias="schema", default="IFC4-Minimal")
     project: ProjectInfo
@@ -2323,6 +2390,8 @@ class ProjectManifest(BaseModel):
     proxies: List[IfcBuildingElementProxy] = Field(default_factory=list)
     connections: List[Tuple[str, str]] = Field(default_factory=list)
     includes: List[str] = Field(default_factory=list)
+    site: Optional[SiteBoundary] = None
+    compliances: List[ComplianceRule] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_references(self) -> "ProjectManifest":
@@ -2969,3 +3038,29 @@ def load_manifest(path: Path | str) -> ProjectManifest:
     data["grids"] = {"axes_x": merged_axes_x, "axes_y": merged_axes_y}
 
     return ProjectManifest.model_validate(data)
+
+
+def export_json_schema(output_path: Optional[Path | str] = None, indent: int = 2) -> dict:
+    """Generate and export the standalone JSON Schema for debim ProjectManifest.
+
+    Enriches the Pydantic v2 JSON Schema with $schema, $id, and metadata so it
+    can be used directly by IDEs (e.g. VS Code YAML extension) and external tooling.
+    """
+    schema = ProjectManifest.model_json_schema()
+    schema["$schema"] = "https://json-schema.org/draft/2020-12/schema"
+    schema["$id"] = "https://debim.org/schema/v1/debim.schema.json"
+    schema["title"] = "debim Language Specification Schema"
+    schema["description"] = (
+        "Official JSON Schema for debim (Declarative BIM / Building-as-Code) manifests. "
+        "Enables IntelliSense autocompletion, hover documentation, and deterministic static validation."
+    )
+
+    if output_path:
+        out = Path(output_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        with open(out, "w", encoding="utf-8") as f:
+            json.dump(schema, f, indent=indent, ensure_ascii=False)
+            f.write("\n")
+
+    return schema
+

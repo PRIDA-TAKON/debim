@@ -117,6 +117,7 @@ The CLI tool exposes the binary command `debim`:
 | Command | Action |
 |---|---|
 | `debim init <name>` | Scaffold a new project with template `project.yaml` & `prices.json` |
+| `debim schema` | Export debim language specification as standalone JSON Schema (`--vscode` for IntelliSense) |
 | `debim validate` | Validate schema syntax, grid consistency, placement links, and bSDD Psets |
 | `debim test` | Execute compliance & building law tests via pytest |
 | `debim qto` | Calculate material quantities (concrete volume, formwork, rebar) |

@@ -1,0 +1,115 @@
+# yaml-language-server: $schema=./debim.schema.json
+# ==============================================================================
+# debim Language File (.debim)
+# Declarative BIM / Building-as-Code
+# ==============================================================================
+
+schema: "IFC4-Minimal"
+
+project:
+  id: "PRJ-HOUSE-01"
+  name: "บ้านพักอาศัยโมเดิร์น 2 ชั้น (.debim)"
+  units:
+    length: "METER"
+    area: "SQUARE_METER"
+    volume: "CUBIC_METER"
+
+site:
+  bounding_box: [-3.0, -3.0, 15.0, 15.0]
+  front_road_width: 6.0
+
+spatial_structure:
+  storeys:
+    - id: "L1"
+      name: "ชั้นล่าง (Ground Floor)"
+      elevation: 0.00
+      height: 3.50
+    - id: "L2"
+      name: "ชั้นบน (Second Floor)"
+      elevation: 3.50
+      height: 3.20
+
+grids:
+  axes_x:
+    "1": 0.00
+    "2": 4.00
+    "3": 8.00
+  axes_y:
+    "A": 0.00
+    "B": 4.00
+    "C": 8.00
+
+materials:
+  - id: "CONC_240"
+    name: "คอนกรีตผสมเสร็จ 240 ksc"
+    category: "concrete"
+    unit_cost_ref: "MAT-C240"
+  - id: "AAC_BLOCK"
+    name: "อิฐมวลเบา 7.5 ซม."
+    category: "masonry"
+    unit_cost_ref: "MAT-AAC"
+  - id: "PLASTER_CEMENT"
+    name: "ปูนฉาบสำเร็จรูป"
+    category: "finish"
+    unit_cost_ref: "MAT-PLASTER"
+
+elements:
+  # เสา คสล. ชั้น 1
+  - class: IfcColumn
+    tag: "C1"
+    material: "CONC_240"
+    profile: { shape: BOX, width: 0.25, depth: 0.25 }
+    placement: { grid: ["1", "A"], base_storey: "L1", top_storey: "L1" }
+
+  - class: IfcColumn
+    tag: "C2"
+    material: "CONC_240"
+    profile: { shape: BOX, width: 0.25, depth: 0.25 }
+    placement: { grid: ["2", "A"], base_storey: "L1", top_storey: "L1" }
+
+  # ผนังหลายเลเยอร์ (อิฐมวลเบา + ฉาบปูน 2 ด้าน)
+  - class: IfcWall
+    tag: "W-EXT-01"
+    height: 3.00
+    placement:
+      from_grid: ["1", "A"]
+      to_grid: ["2", "A"]
+      storey: "L1"
+    layers:
+      - name: "ฉาบปูนภายนอก"
+        material: "PLASTER_CEMENT"
+        thickness: 0.015
+        function: "finish"
+      - name: "อิฐมวลเบา"
+        material: "AAC_BLOCK"
+        thickness: 0.075
+        function: "structure"
+      - name: "ฉาบปูนภายใน"
+        material: "PLASTER_CEMENT"
+        thickness: 0.015
+        function: "finish"
+
+  # แผ่นพื้นพร้อมช่องชาร์ฟท่อสุขภัณฑ์
+  - class: IfcSlab
+    tag: "S-01"
+    material: "CONC_240"
+    thickness: 0.15
+    placement:
+      boundary: [["1", "A"], ["2", "A"], ["2", "B"], ["1", "B"]]
+      storey: "L1"
+      openings:
+        - tag: "PIPE-SHAFT"
+          purpose: "MEP_SHAFT"
+          grid: ["1", "A"]
+          offset_x: 0.30
+          offset_y: 0.30
+          width: 0.60
+          length: 0.60
+
+compliances:
+  - rule: "TH_MIN_CEILING_HEIGHT_240"
+    name: "ความสูงเพดานขั้นต่ำ 2.40 ม. (กฎกระทรวงฉบับที่ 55)"
+  - rule: "TH_SETBACK_BLIND_050"
+    name: "ระยะร่นผนังทึบขั้นต่ำ 0.50 ม."
+  - rule: "NO_STRUCTURAL_CLASHES"
+    name: "ตรวจสอบไม่มีชิ้นงานชนกัน"

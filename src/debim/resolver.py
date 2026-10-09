@@ -1737,7 +1737,7 @@ class SpatialResolver:
         else:
             cx, cy = 0.0, 0.0
 
-        # Resolve voids if present
+        # Resolve voids and openings if present
         resolved_voids_3d: List[List[Tuple[float, float, float]]] = []
         voids_area_total = 0.0
         if getattr(slab.placement, "voids", None):
@@ -1757,6 +1757,39 @@ class SpatialResolver:
                         va -= vpts_2d[j][0] * vpts_2d[i][1]
                     voids_area_total += abs(va) / 2.0
                     resolved_voids_3d.append(vpts_3d)
+
+        if getattr(slab.placement, "openings", None):
+            for op in slab.placement.openings:
+                if op.boundary:
+                    vpts_2d = []
+                    vpts_3d = []
+                    for grid_pt in op.boundary:
+                        vx, vy = self.get_grid_xy(grid_pt)
+                        vpts_2d.append((vx, vy))
+                        vpts_3d.append((vx, vy, z))
+                    nv = len(vpts_2d)
+                    if nv >= 3:
+                        va = 0.0
+                        for i in range(nv):
+                            j = (i + 1) % nv
+                            va += vpts_2d[i][0] * vpts_2d[j][1]
+                            va -= vpts_2d[j][0] * vpts_2d[i][1]
+                        voids_area_total += abs(va) / 2.0
+                        resolved_voids_3d.append(vpts_3d)
+                elif op.grid and op.width is not None and op.length is not None and op.width > 0 and op.length > 0:
+                    gx, gy = self.get_grid_xy(op.grid)
+                    ox = gx + op.offset_x
+                    oy = gy + op.offset_y
+                    w = op.width
+                    l = op.length
+                    rect_3d = [
+                        (ox, oy, z),
+                        (ox + w, oy, z),
+                        (ox + w, oy + l, z),
+                        (ox, oy + l, z),
+                    ]
+                    voids_area_total += w * l
+                    resolved_voids_3d.append(rect_3d)
 
         net_area = max(0.0, area - voids_area_total)
 

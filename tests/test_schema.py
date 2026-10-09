@@ -14,6 +14,7 @@ from debim.schema import (
     IfcWall,
     ProjectManifest,
     load_manifest,
+    export_json_schema,
 )
 
 
@@ -316,3 +317,50 @@ elements: []
     with pytest.raises(ValueError) as exc_info:
         load_manifest(file_a)
     assert "Circular include detected" in str(exc_info.value)
+
+
+def test_export_json_schema_in_memory():
+    schema = export_json_schema()
+    assert isinstance(schema, dict)
+    assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+    assert "debim" in schema["title"].lower()
+    assert "$defs" in schema
+    assert "ProjectManifest" in schema.get("title", "") or "debim" in schema.get("title", "")
+    assert "properties" in schema
+    assert "elements" in schema["properties"]
+    assert "grids" in schema["properties"]
+
+
+def test_export_json_schema_to_file(tmp_path):
+    target = tmp_path / "test.schema.json"
+    schema = export_json_schema(output_path=target)
+    assert target.exists()
+    import json
+    loaded = json.loads(target.read_text(encoding="utf-8"))
+    assert loaded == schema
+
+
+def test_schema_cli_export(tmp_path, monkeypatch):
+    import json
+    from typer.testing import CliRunner
+    from debim.cli import app
+
+    runner = CliRunner()
+    target_file = tmp_path / "custom.schema.json"
+
+    # Test export with -o
+    res = runner.invoke(app, ["schema", "-o", str(target_file)])
+    assert res.exit_code == 0
+    assert target_file.exists()
+    assert "Exported debim JSON Schema" in res.stdout
+
+    # Test vscode configuration option
+    monkeypatch.chdir(tmp_path)
+    res_vscode = runner.invoke(app, ["schema", "--vscode"])
+    assert res_vscode.exit_code == 0
+    vscode_settings = tmp_path / ".vscode" / "settings.json"
+    assert vscode_settings.exists()
+    settings = json.loads(vscode_settings.read_text(encoding="utf-8"))
+    assert "yaml.schemas" in settings
+    assert "*.debim" in settings.get("files.associations", {})
+

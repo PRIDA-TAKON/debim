@@ -127,3 +127,11 @@ def test_cli_view_missing_manifest():
     result = runner.invoke(app, ["view", "--manifest", "non_existent.yaml"])
     assert result.exit_code == 1
     assert "Error" in result.output
+
+
+def test_viewer_live_reload_script_injection(sample_project_path: Path):
+    html = generate_viewer_html(sample_project_path, live_reload=True)
+    assert "/api/version" in html
+    assert "debim Live Hot-Reload Watcher" in html
+    assert "sessionStorage.setItem('debim_cam_state'" in html
+

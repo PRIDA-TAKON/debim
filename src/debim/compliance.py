@@ -4,7 +4,8 @@ Automated Building Code Compliance and Feasibility Rule Engine for debim.
 
 import math
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
+from pydantic import BaseModel, Field
 
 from debim.resolver import (
     ResolvedBeam,
@@ -17,7 +18,7 @@ from debim.resolver import (
     ResolvedWindow,
     resolve_manifest,
 )
-from debim.schema import IfcBeam, IfcWall, ProjectManifest, load_manifest
+from debim.schema import ComplianceRule, IfcBeam, IfcWall, ProjectManifest, load_manifest
 
 
 def point_to_segment_distance(
@@ -142,6 +143,14 @@ def is_valid_connection(elem1: ResolvedElement, elem2: ResolvedElement) -> bool:
             return True
 
     return False
+
+
+class ComplianceCheckResult(BaseModel):
+    rule: str
+    passed: bool
+    message: str
+    standard: Optional[str] = "TH-MINISTERIAL-REG-55"
+    details: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ComplianceChecker:
@@ -304,6 +313,137 @@ class ComplianceChecker:
                     clashes.append((elem1.tag, elem2.tag))
 
         return clashes
+
+    def evaluate_manifest_compliances(
+        self, site_boundary: Optional[Any] = None
+    ) -> List[ComplianceCheckResult]:
+        """Evaluate declarative compliance rules configured on the manifest."""
+        results: List[ComplianceCheckResult] = []
+        rules = self.manifest.compliances
+        if not rules:
+            return results
+
+        effective_boundary = site_boundary
+        if effective_boundary is None and self.manifest.site:
+            effective_boundary = (
+                self.manifest.site.bounding_box or self.manifest.site.boundary
+            )
+
+        for rule_cfg in rules:
+            if not rule_cfg.enabled:
+                continue
+
+            r_code = rule_cfg.rule.upper()
+
+            if "CEILING_HEIGHT" in r_code or "CLEAR_HEIGHT" in r_code:
+                min_h = rule_cfg.threshold or 2.40
+                passed = True
+                failed_storeys = []
+                for st in self.manifest.spatial_structure.storeys:
+                    ch = self.calculate_clear_height(st.id)
+                    if ch < min_h:
+                        passed = False
+                        failed_storeys.append(f"{st.name} ({ch:.2f}m < {min_h:.2f}m)")
+                msg = (
+                    f"Passed minimum clear ceiling height ({min_h:.2f}m)"
+                    if passed
+                    else f"Clear height violation on: {', '.join(failed_storeys)}"
+                )
+                results.append(
+                    ComplianceCheckResult(
+                        rule=rule_cfg.rule,
+                        passed=passed,
+                        message=msg,
+                        standard=rule_cfg.standard,
+                        details={"threshold": min_h},
+                    )
+                )
+
+            elif "SETBACK_OPENING" in r_code:
+                min_sb = rule_cfg.threshold or 2.00
+                passed = True
+                failed_walls = []
+                for wall in self.resolved.walls:
+                    if wall.children:
+                        dist = self.calculate_setback(wall, site_boundary=effective_boundary)
+                        if dist < min_sb:
+                            passed = False
+                            failed_walls.append(f"{wall.tag} ({dist:.2f}m < {min_sb:.2f}m)")
+                msg = (
+                    f"Passed wall setback with openings (>={min_sb:.2f}m)"
+                    if passed
+                    else f"Wall with openings setback violation on: {', '.join(failed_walls)}"
+                )
+                results.append(
+                    ComplianceCheckResult(
+                        rule=rule_cfg.rule,
+                        passed=passed,
+                        message=msg,
+                        standard=rule_cfg.standard,
+                        details={"threshold": min_sb},
+                    )
+                )
+
+            elif "SETBACK_BLIND" in r_code:
+                min_sb = rule_cfg.threshold or 0.50
+                passed = True
+                failed_walls = []
+                for wall in self.resolved.walls:
+                    if not wall.children:
+                        dist = self.calculate_setback(wall, site_boundary=effective_boundary)
+                        if dist < min_sb:
+                            passed = False
+                            failed_walls.append(f"{wall.tag} ({dist:.2f}m < {min_sb:.2f}m)")
+                msg = (
+                    f"Passed blind wall setback (>={min_sb:.2f}m)"
+                    if passed
+                    else f"Blind wall setback violation on: {', '.join(failed_walls)}"
+                )
+                results.append(
+                    ComplianceCheckResult(
+                        rule=rule_cfg.rule,
+                        passed=passed,
+                        message=msg,
+                        standard=rule_cfg.standard,
+                        details={"threshold": min_sb},
+                    )
+                )
+
+            elif "CLASH" in r_code:
+                clashes = self.detect_clashes()
+                passed = len(clashes) == 0
+                msg = "No structural clashes detected" if passed else f"Detected {len(clashes)} clashes: {clashes}"
+                results.append(
+                    ComplianceCheckResult(
+                        rule=rule_cfg.rule,
+                        passed=passed,
+                        message=msg,
+                        standard=rule_cfg.standard,
+                        details={"clashes": clashes},
+                    )
+                )
+
+            elif "FLOOR_AREA" in r_code or "AREA_LIMIT" in r_code:
+                max_a = rule_cfg.threshold or 10000.0
+                tot_a = self.calculate_total_floor_area()
+                passed = tot_a <= max_a
+                msg = (
+                    f"Passed total floor area limit ({tot_a:.2f}m2 <= {max_a:.2f}m2)"
+                    if passed
+                    else f"Total floor area {tot_a:.2f}m2 exceeds limit {max_a:.2f}m2"
+                )
+                results.append(
+                    ComplianceCheckResult(
+                        rule=rule_cfg.rule,
+                        passed=passed,
+                        message=msg,
+                        standard=rule_cfg.standard,
+                        details={"total_area": tot_a, "limit": max_a},
+                    )
+                )
+
+        return results
+
 
 
 def calculate_clear_height(

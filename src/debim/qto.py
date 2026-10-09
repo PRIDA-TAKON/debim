@@ -373,6 +373,16 @@ class StairQTO(BaseModel):
     base_plates_steel_weight: float = 0.0
 
 
+class WallLayerQTO(BaseModel):
+    name: Optional[str] = None
+    material: str
+    thickness: float = 0.0              # m
+    area: float = 0.0                   # m²
+    volume: float = 0.0                 # m³
+    function: Optional[str] = "structure"
+    unit_cost_ref: Optional[str] = None
+
+
 class WallFinishesQTO(BaseModel):
     net_area_one_side: float = 0.0      # m²
     plaster_area: float = 0.0           # m²
@@ -489,6 +499,7 @@ class ElementQTO(BaseModel):
     substructure: Optional[SubstructureQTO] = None
     stair_assembly: Optional[StairQTO] = None
     wall_finishes: Optional[WallFinishesQTO] = None
+    wall_layers: Optional[List[WallLayerQTO]] = None
     roof: Optional[RoofQTO] = None
     curtain_wall: Optional[CurtainWallQTO] = None
     plate: Optional[PlateQTO] = None
@@ -1047,6 +1058,23 @@ def calculate_element_qto(
                 tile_area=int_tile + ext_tile,
             )
 
+        wall_layer_qtos = None
+        if elem.layers:
+            wall_layer_qtos = []
+            for lyr in elem.layers:
+                l_vol = net_one_side * lyr.thickness
+                wall_layer_qtos.append(
+                    WallLayerQTO(
+                        name=lyr.name,
+                        material=lyr.material,
+                        thickness=lyr.thickness,
+                        area=net_one_side,
+                        volume=l_vol,
+                        function=lyr.function,
+                        unit_cost_ref=lyr.unit_cost_ref,
+                    )
+                )
+
         return ElementQTO(
             tag=tag,
             element_class=elem.class_,
@@ -1056,6 +1084,7 @@ def calculate_element_qto(
             rebar_weights={},
             total_rebar_weight=0.0,
             wall_finishes=finishes_qto,
+            wall_layers=wall_layer_qtos,
         )
 
     elif isinstance(resolved, ResolvedSlab):
