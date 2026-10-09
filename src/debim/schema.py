@@ -2020,7 +2020,7 @@ class IfcCovering(BaseModel):
 RoadType = Literal["HIGHWAY", "CARRIAGEWAY", "ROUNDABOUT", "SERVICE_ROAD", "USERDEFINED"]
 BridgeType = Literal["GIRDER", "SLAB", "ARCH", "CABLE_STAYED", "USERDEFINED"]
 BridgePartType = Literal["SUBSTRUCTURE", "SUPERSTRUCTURE", "DECK", "PIER", "ABUTMENT", "FOUNDATION", "USERDEFINED", "NOTDEFINED"]
-MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "USERDEFINED"]
+MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "LOCK", "CANAL", "USERDEFINED"]
 BearingType = Literal["BRIDGEBEARING", "ELASTOMERIC", "POT", "SPHERICAL", "DISK", "ROLLER", "ROCKER", "USERDEFINED", "NOTDEFINED"]
 RailwayType = Literal["PASSENGER", "FREIGHT", "MIXED", "HIGH_SPEED", "LIGHT_RAIL", "METRO", "USERDEFINED"]
 RailwayPartType = Literal["TRACK", "SUBGRADE", "LINESIDE", "USERDEFINED"]
@@ -2449,6 +2449,11 @@ class IfcMarinePart(BaseModel):
     deck_thickness: float = 0.50
     deck_elevation: float = 0.0
     depth: float = 10.0
+    chamber_length: float = 100.0
+    chamber_width: float = 16.0
+    wall_height: float = 12.0
+    wall_thickness: float = 2.5
+    invert_thickness: float = 2.0
     piles: Optional[FootingPiles] = None
     placement: MarinePartPlacement = Field(default_factory=MarinePartPlacement)
     layer: Optional[str] = None
@@ -2457,6 +2462,14 @@ class IfcMarinePart(BaseModel):
     @classmethod
     def resolve_marine_part_fields(cls, data: Any) -> Any:
         if isinstance(data, dict):
+            ptype = str(data.get("predefined_type", "")).upper()
+            if ptype in ("LOCK", "CANAL"):
+                if "length" in data and "chamber_length" not in data:
+                    data["chamber_length"] = float(data["length"])
+                elif "chamber_length" in data and ("length" not in data or data.get("length") == 30.0):
+                    data["length"] = float(data["chamber_length"])
+                if "width" in data and "chamber_width" not in data:
+                    data["chamber_width"] = float(data["width"])
             if "thickness" in data and "deck_thickness" not in data:
                 data["deck_thickness"] = data["thickness"]
             if "elevation" in data and "deck_elevation" not in data:

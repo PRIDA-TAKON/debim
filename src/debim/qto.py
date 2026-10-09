@@ -482,6 +482,12 @@ class MarineQTO(BaseModel):
     pile_count: int = 0                  # Number of foundation piles
     pile_total_length: float = 0.0       # Total pile linear meters (m)
     depth: float = 0.0                   # Water depth / berth depth (m)
+    chamber_length: float = 0.0          # Lock chamber length (m)
+    chamber_width: float = 0.0           # Lock chamber width (m)
+    wall_height: float = 0.0             # Lock wall height (m)
+    wall_thickness: float = 0.0          # Lock wall thickness (m)
+    invert_thickness: float = 0.0        # Lock invert thickness (m)
+    chamber_water_volume: float = 0.0    # Lock chamber water retention volume (m3)
 
 
 class RailwayQTO(BaseModel):
@@ -1746,6 +1752,12 @@ def calculate_element_qto(
             pile_count=pile_cnt,
             pile_total_length=pile_len,
             depth=resolved.depth,
+            chamber_length=resolved.chamber_length,
+            chamber_width=resolved.chamber_width,
+            wall_height=resolved.wall_height,
+            wall_thickness=resolved.wall_thickness,
+            invert_thickness=resolved.invert_thickness,
+            chamber_water_volume=resolved.chamber_water_volume,
         )
         sub_qto = None
         if pile_cnt > 0:

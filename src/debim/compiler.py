@@ -975,14 +975,24 @@ class StepSerializer:
             px, py, pz = mp.position
             rel_z = float(pz + mp.deck_elevation - st_elev)
 
-            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
-            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
-            rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(mp.length), float(mp.width))
+            if mp.predefined_type.upper() in ("LOCK", "CANAL") and mp.u_channel_profile_points:
+                pt_objs = [self.create_entity("IfcCartesianPoint", (float(pt[0]), float(pt[1]))) for pt in mp.u_channel_profile_points]
+                pt_objs.append(pt_objs[0])
+                poly = self.create_entity("IfcPolyline", pt_objs)
+                prof = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, poly)
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, -float(mp.chamber_length) / 2.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", prof, axis3d, ext_dir, float(mp.chamber_length))
+            else:
+                pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(mp.length), float(mp.width))
 
-            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
-            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
-            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
-            solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(mp.deck_thickness))
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(mp.deck_thickness))
 
             shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
             prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
@@ -3384,16 +3394,30 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, mp.rotation_angle))
         ifcopenshell.api.run("geometry.edit_object_placement", model, product=mp_obj, matrix=mat)
 
-        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
-        prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(mp.length), float(mp.width))
-        pos3d = model.createIfcAxis2Placement3D(
-            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
-            model.createIfcDirection((0.0, 0.0, 1.0)),
-            model.createIfcDirection((1.0, 0.0, 0.0)),
-        )
-        solid = model.createIfcExtrudedAreaSolid(
-            prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(mp.deck_thickness)
-        )
+        if mp.predefined_type.upper() in ("LOCK", "CANAL") and mp.u_channel_profile_points:
+            pt_objs = [model.createIfcCartesianPoint((float(pt[0]), float(pt[1]))) for pt in mp.u_channel_profile_points]
+            pt_objs.append(pt_objs[0])
+            poly = model.createIfcPolyline(pt_objs)
+            prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly)
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, -float(mp.chamber_length) / 2.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(mp.chamber_length)
+            )
+        else:
+            pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+            prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(mp.length), float(mp.width))
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(mp.deck_thickness)
+            )
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
         ifcopenshell.api.run("geometry.assign_representation", model, product=mp_obj, representation=rep)
 
