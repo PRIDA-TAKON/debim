@@ -18,8 +18,13 @@ class Units(BaseModel):
 
 
 class ProjectInfo(BaseModel):
+    model_config = ConfigDict(extra="allow")
     id: str
     name: str
+    description: Optional[str] = None
+    organization: Optional[str] = None
+    author: Optional[str] = None
+    approved_by: Optional[str] = None
     units: Units = Field(default_factory=Units)
 
 

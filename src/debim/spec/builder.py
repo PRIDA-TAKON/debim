@@ -309,6 +309,17 @@ def build_specification_book(
     md_lines.append("## Project Information")
     md_lines.append("")
     md_lines.append(f"- **Building Name:** {proj_info.name} (`{proj_info.id}`)")
+    if getattr(proj_info, "description", None):
+        md_lines.append(f"- **Description:** {proj_info.description}")
+    if getattr(proj_info, "organization", None):
+        md_lines.append(f"- **Issuing Organization:** {proj_info.organization}")
+    if getattr(proj_info, "author", None):
+        md_lines.append(f"- **Architect / Designer:** {proj_info.author}")
+    engineer_val = getattr(proj_info, "engineer", None) or (proj_info.model_extra.get("engineer") if proj_info.model_extra else None)
+    if engineer_val:
+        md_lines.append(f"- **Certifying Engineer:** {engineer_val}")
+    if getattr(proj_info, "approved_by", None):
+        md_lines.append(f"- **Approved By:** {proj_info.approved_by}")
     if hasattr(manifest_obj, "spatial_structure") and manifest_obj.spatial_structure.storeys:
         storey_names = [s.name for s in manifest_obj.spatial_structure.storeys]
         md_lines.append(f"- **Storeys/Levels:** {', '.join(storey_names)}")
