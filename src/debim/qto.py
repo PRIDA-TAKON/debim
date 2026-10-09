@@ -31,6 +31,7 @@ from debim.resolver import (
     ResolvedElement,
     ResolvedGeotechnicalStratum,
     ResolvedSoil,
+    ResolvedMarinePart,
     ResolvedFlowController,
     ResolvedFooting,
     ResolvedLightFixture,
@@ -473,6 +474,16 @@ class BridgeQTO(BaseModel):
     pier_count: int = 2
 
 
+class MarineQTO(BaseModel):
+    length: float = 0.0                  # Berth/Wharf length (m)
+    width: float = 0.0                   # Berth/Wharf width (m)
+    deck_concrete_volume: float = 0.0    # Deck slab concrete volume (m3)
+    formwork_area: float = 0.0           # Deck formwork area (m2)
+    pile_count: int = 0                  # Number of foundation piles
+    pile_total_length: float = 0.0       # Total pile linear meters (m)
+    depth: float = 0.0                   # Water depth / berth depth (m)
+
+
 class RailwayQTO(BaseModel):
     track_length: float = 0.0            # Track corridor length (m)
     total_rail_length: float = 0.0       # Total parallel steel rails length (m)
@@ -527,6 +538,7 @@ class ElementQTO(BaseModel):
     alignment: Optional[AlignmentQTO] = None
     road: Optional[RoadQTO] = None
     bridge: Optional[BridgeQTO] = None
+    marine: Optional[MarineQTO] = None
     railway: Optional[RailwayQTO] = None
     mep: Optional[MepQTO] = None
 
@@ -1717,6 +1729,40 @@ def calculate_element_qto(
             concrete_volume=vol,
             formwork_area=formwork,
             bridge=bridge_qto,
+        )
+
+    elif isinstance(resolved, ResolvedMarinePart):
+        elem = resolved.element
+        vol = resolved.concrete_volume
+        formwork = resolved.formwork_area
+        pile_cnt = resolved.pile_count
+        pile_len = resolved.pile_total_length
+
+        marine_qto = MarineQTO(
+            length=resolved.length,
+            width=resolved.width,
+            deck_concrete_volume=vol,
+            formwork_area=formwork,
+            pile_count=pile_cnt,
+            pile_total_length=pile_len,
+            depth=resolved.depth,
+        )
+        sub_qto = None
+        if pile_cnt > 0:
+            sub_qto = SubstructureQTO(
+                pile_count=pile_cnt,
+                pile_total_length=pile_len,
+                pile_chipping_count=pile_cnt,
+            )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.length,
+            concrete_volume=vol,
+            formwork_area=formwork,
+            marine=marine_qto,
+            substructure=sub_qto,
         )
 
     elif isinstance(resolved, ResolvedRailway):

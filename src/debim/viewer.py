@@ -949,6 +949,48 @@ def generate_viewer_html(
                 "opacity": 0.70,
                 "layer": ew.layer,
             })
+    # Civil Marine Infrastructure Parts (IFC4.3)
+    for mp in getattr(resolved, "marine_parts", []) or []:
+        elements_data.append({
+            "tag": mp.tag,
+            "class": "IfcMarinePart",
+            "predefined_type": mp.predefined_type,
+            "material": mp.element.material or "Marine Reinforced Concrete",
+            "position": [mp.position[0], mp.position[1], mp.position[2] + mp.deck_elevation + mp.deck_thickness / 2.0],
+            "rotation": [0, 0, mp.rotation_angle],
+            "dimensions": {
+                "length": mp.length,
+                "width": mp.width,
+                "height": mp.deck_thickness,
+                "deck_thickness": mp.deck_thickness,
+                "depth": mp.depth,
+                "concrete_volume": mp.concrete_volume,
+                "formwork_area": mp.formwork_area,
+                "pile_count": mp.pile_count,
+            },
+            "color": "#0284C7",
+            "layer": mp.layer,
+        })
+        for pile in mp.piles:
+            elements_data.append({
+                "tag": pile.tag,
+                "class": "IfcPile",
+                "material": pile.material or mp.element.material or "Precast Concrete",
+                "position": [
+                    pile.position[0],
+                    pile.position[1],
+                    pile.position[2] - pile.length / 2.0,
+                ],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": pile.dimension,
+                    "depth": pile.dimension,
+                    "height": pile.length,
+                },
+                "color": "#64748B",
+                "layer": pile.layer,
+            })
+
     # Civil Infrastructure Bridge Parts (IFC4.3)
     for bp in getattr(resolved, "bridge_parts", []) or []:
         elements_data.append({
@@ -3975,7 +4017,14 @@ def generate_viewer_html(
             }}
 
             contentEl.innerHTML = `
-                <div style="margin-bottom: 8px;"><span class="badge">${{data.class}}</span></div>
+                <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <span class="badge" style="font-size: 0.8rem;">${{data.class}}</span>
+                    <a href="class_directory.html?class=${{encodeURIComponent(data.class)}}" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 0.73rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.35);">
+                        <span>📖</span>
+                        <span>คู่มือในสารบัญ</span>
+                        <span>↗</span>
+                    </a>
+                </div>
                 <div class="data-row"><span class="data-label">Tag</span><span class="data-value">${{data.tag}}</span></div>
                 <div class="data-row"><span class="data-label">Layer</span><span class="data-value">${{data.layer || 'general/other'}}</span></div>
                 ${{memberRow}}
