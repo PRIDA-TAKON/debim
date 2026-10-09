@@ -35,8 +35,32 @@ class Storey(BaseModel):
     height: float
 
 
+MarineFacilityType = Literal["PORT", "WATERWAY", "CANAL", "USERDEFINED"]
+
+
+class MarineFacilityPlacement(BaseModel):
+    storey: Optional[str] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    elevation: Optional[float] = None
+    boundary: Optional[List[Tuple[float, float]]] = None
+
+
+class IfcMarineFacility(BaseModel):
+    class_: Literal["IfcMarineFacility"] = Field(alias="class", default="IfcMarineFacility")
+    tag: str
+    name: Optional[str] = None
+    predefined_type: MarineFacilityType = "PORT"
+    elevation: Optional[float] = 0.0
+    boundary: Optional[List[Tuple[float, float]]] = None
+    placement: Optional[MarineFacilityPlacement] = None
+    layer: Optional[str] = None
+
+
 class SpatialStructure(BaseModel):
-    storeys: List[Storey]
+    storeys: List[Storey] = Field(default_factory=list)
+    marine_facilities: Optional[List[IfcMarineFacility]] = None
 
 
 class Grids(BaseModel):
@@ -2657,6 +2681,7 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcTrackElement",
     "IfcBridgePart",
     "IfcBearing",
+    "IfcMarineFacility",
     "IfcCustomElement",
 } | IFC4_DISTRIBUTION_CLASSES
 
@@ -2683,9 +2708,7 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksElement", "IfcEarthworksCut",
     "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
     "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
-    "IfcTrackElement", "IfcCustomElement", "IfcBuildingElementProxy"
-    "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksCut", "IfcEarthworksFill",
-    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcBridgePart", "IfcBearing",
+    "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcMarineFacility",
     "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
@@ -2748,6 +2771,7 @@ Element = Annotated[
         Annotated[IfcTrackElement, Tag("IfcTrackElement")],
         Annotated[IfcBridgePart, Tag("IfcBridgePart")],
         Annotated[IfcBearing, Tag("IfcBearing")],
+        Annotated[IfcMarineFacility, Tag("IfcMarineFacility")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -2787,6 +2811,7 @@ class ProjectManifest(BaseModel):
     materials: List[Material]
     elements: List[Element] = Field(default_factory=list)
     railways: List[Union[IfcRailway, IfcRailwayPart, IfcTrackElement]] = Field(default_factory=list)
+    marine_facilities: Optional[List[IfcMarineFacility]] = None
     proxies: List[IfcBuildingElementProxy] = Field(default_factory=list)
     systems: List[Union[IfcDistributionSystem, IfcBuiltSystem]] = Field(default_factory=list)
     connections: List[Tuple[str, str]] = Field(default_factory=list)
@@ -3393,6 +3418,8 @@ def derive_default_layer(elem) -> str:
         return "civil/infrastructure/bridges/parts"
     elif cls == "IfcBearing":
         return "civil/infrastructure/bridges/bearings"
+    elif cls == "IfcMarineFacility":
+        return "civil/marine/facility"
     elif cls == "IfcCustomElement":
         return "general/custom"
     elif cls == "IfcBuildingElementProxy" or isinstance(elem, IfcBuildingElementProxy):

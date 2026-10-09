@@ -877,6 +877,31 @@ class StepSerializer:
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        for mf in getattr(resolved, "marine_facilities", []) or []:
+            ptype = f".{mf.predefined_type.upper()}." if mf.predefined_type else ".PORT."
+            mf_pl_ref = self.create_entity("IfcLocalPlacement", site_pl_ref, axis_3d_zero)
+            elem_ref = self.create_entity(
+                "IfcMarineFacility",
+                generate_ifc_guid(),
+                None,
+                mf.name or mf.tag,
+                None,
+                f"IfcMarineFacility.{mf.predefined_type}",
+                mf_pl_ref,
+                None,
+                ptype,
+            )
+            element_tag_refs[mf.tag] = elem_ref
+            self.create_entity(
+                "IfcRelAggregates",
+                generate_ifc_guid(),
+                None,
+                None,
+                None,
+                site_ref,
+                [elem_ref],
+            )
+
         for rw in resolved.railways:
             st_id = rw.element.placement.storey
             elem_ref = self.create_entity(
@@ -2294,6 +2319,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             or resolved.bridges
             or getattr(resolved, "bridge_parts", [])
             or getattr(resolved, "bearings", [])
+            or getattr(resolved, "marine_facilities", [])
             or getattr(resolved, "railways", [])
             or getattr(resolved, "railway_parts", [])
             or getattr(resolved, "track_elements", [])
@@ -3377,6 +3403,33 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         )
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
         ifcopenshell.api.run("geometry.assign_representation", model, product=br_obj, representation=rep)
+
+    for mf in getattr(resolved, "marine_facilities", []) or []:
+        ptype = mf.predefined_type.upper() if mf.predefined_type else "PORT"
+        try:
+            mf_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcMarineFacility",
+                name=mf.name or mf.tag,
+                predefined_type=ptype,
+            )
+        except Exception:
+            mf_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=mf.name or mf.tag,
+            )
+            mf_obj.ObjectType = f"IfcMarineFacility.{ptype}"
+
+        try:
+            ifcopenshell.api.run("aggregate.assign_object", model, products=[mf_obj], relating_object=site)
+        except Exception:
+            pass
+
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=mf_obj, matrix=np.eye(4))
+        ifcopenshell_elem_objs[mf.tag] = mf_obj
 
     for rw in resolved.railways:
         try:

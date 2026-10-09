@@ -37,6 +37,7 @@ from debim.schema import (
     IfcFlowController,
     IfcFooting,
     IfcLightFixture,
+    IfcMarineFacility,
     IfcOutlet,
     IfcPipeSegment,
     IfcPlate,
@@ -1303,6 +1304,19 @@ class ResolvedBearing(BaseModel):
     layer: str = "civil/infrastructure/bridges/bearings"
 
 
+class ResolvedMarineFacility(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMarineFacility
+    name: Optional[str] = None
+    predefined_type: str = "PORT"
+    site_elevation: float = 0.0
+    boundary_coordinates: List[Tuple[float, float]] = Field(default_factory=list)
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "civil/marine/facility"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1344,6 +1358,7 @@ ResolvedElement = Union[
     ResolvedTrackElement,
     ResolvedBridgePart,
     ResolvedBearing,
+    ResolvedMarineFacility,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1399,6 +1414,7 @@ class ResolvedManifest(BaseModel):
     built_systems: List[ResolvedBuiltSystem] = []
     bridge_parts: List[ResolvedBridgePart] = []
     bearings: List[ResolvedBearing] = []
+    marine_facilities: List[ResolvedMarineFacility] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -5050,6 +5066,35 @@ class SpatialResolver:
             layer=derive_default_layer(bridge_part),
         )
 
+    def resolve_marine_facility(self, facility: IfcMarineFacility) -> ResolvedMarineFacility:
+        st_elev = 0.0
+        if facility.placement and facility.placement.storey and facility.placement.storey in self.storeys:
+            st_elev = self.storeys[facility.placement.storey].elevation
+
+        site_elev = facility.elevation if facility.elevation is not None else 0.0
+        if facility.placement and facility.placement.elevation is not None:
+            site_elev = facility.placement.elevation
+        elif facility.placement and facility.placement.offset_z:
+            site_elev = st_elev + facility.placement.offset_z
+        else:
+            site_elev = site_elev + st_elev
+
+        off_x = facility.placement.offset_x if facility.placement else 0.0
+        off_y = facility.placement.offset_y if facility.placement else 0.0
+
+        b_coords = facility.boundary or (facility.placement.boundary if facility.placement else None) or []
+
+        return ResolvedMarineFacility(
+            tag=facility.tag,
+            element=facility,
+            name=facility.name or facility.tag,
+            predefined_type=facility.predefined_type,
+            site_elevation=site_elev,
+            boundary_coordinates=b_coords,
+            position=(off_x, off_y, site_elev),
+            layer=derive_default_layer(facility),
+        )
+
     def resolve_bearing(self, bearing: IfcBearing) -> ResolvedBearing:
         z_base = self.get_storey(bearing.placement.storey).elevation if bearing.placement.storey else 0.0
 
@@ -5361,6 +5406,10 @@ class SpatialResolver:
                 r_br = self.resolve_bearing(elem)
                 resolved_manifest.bearings.append(r_br)
                 resolved_manifest.elements.append(r_br)
+            elif isinstance(elem, IfcMarineFacility):
+                r_mf = self.resolve_marine_facility(elem)
+                resolved_manifest.marine_facilities.append(r_mf)
+                resolved_manifest.elements.append(r_mf)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)
@@ -5369,6 +5418,19 @@ class SpatialResolver:
                 r_proxy = self.resolve_proxy(elem)
                 resolved_manifest.proxies.append(r_proxy)
                 resolved_manifest.elements.append(r_proxy)
+
+        # Resolve marine facilities from SpatialStructure or ProjectManifest
+        marine_facs = []
+        if self.manifest.spatial_structure and self.manifest.spatial_structure.marine_facilities:
+            marine_facs.extend(self.manifest.spatial_structure.marine_facilities)
+        if self.manifest.marine_facilities:
+            marine_facs.extend(self.manifest.marine_facilities)
+
+        for mf in marine_facs:
+            if not any(r.tag == mf.tag for r in resolved_manifest.marine_facilities):
+                r_mf = self.resolve_marine_facility(mf)
+                resolved_manifest.marine_facilities.append(r_mf)
+                resolved_manifest.elements.append(r_mf)
 
         for proxy_elem in self.manifest.proxies:
             r_proxy = self.resolve_proxy(proxy_elem)
