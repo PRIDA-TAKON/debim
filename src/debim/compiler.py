@@ -677,6 +677,41 @@ class StepSerializer:
         for cov in resolved.coverings:
             st_id = cov.element.placement.storey
             ptype = cov.covering_type.upper() if cov.covering_type else "CEILING"
+
+            st_pl_ref = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+
+            cx, cy, cz = cov.center
+            rel_z = float(cz - st_elev)
+
+            prod_shape_ref = None
+            if cov.polygon and len(cov.polygon) >= 3:
+                thick = float(cov.thickness)
+                # Extruded polygon shape (relative to centroid cx, cy)
+                pts_2d = [(float(p[0] - cx), float(p[1] - cy)) for p in cov.polygon]
+                poly_ref = self.create_polyline_2d(pts_2d)
+                prof_ref = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, poly_ref)
+
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", prof_ref, axis3d, ext_dir, thick)
+
+                shape_rep = self.create_entity(
+                    "IfcShapeRepresentation",
+                    body_context_ref,
+                    "Body",
+                    "SweptSolid",
+                    [solid],
+                )
+                prod_shape_ref = self.create_entity(
+                    "IfcProductDefinitionShape", None, None, [shape_rep]
+                )
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(cx), float(cy), rel_z))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
             elem_ref = self.create_entity(
                 "IfcCovering",
                 generate_ifc_guid(),
@@ -684,9 +719,10 @@ class StepSerializer:
                 cov.tag,
                 None,
                 None,
+                elem_pl,
+                prod_shape_ref,
                 None,
-                None,
-                ptype,
+                f".{ptype}.",
             )
             element_tag_refs[cov.tag] = elem_ref
             if st_id in storey_elements:
@@ -986,6 +1022,45 @@ class StepSerializer:
             st_id = cw.element.placement.storey
             raw_pred_type = cw.element.predefined_type
             pred_type = f".{raw_pred_type.upper()}." if raw_pred_type else None
+
+            st_pl_ref = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+
+            x1, y1, z1 = cw.start_point
+            x2, y2, z2 = cw.end_point
+            dx, dy = x2 - x1, y2 - y1
+            l_2d = math.hypot(dx, dy)
+            ux, uy = (dx / l_2d, dy / l_2d) if l_2d > 1e-6 else (1.0, 0.0)
+
+            rel_z = float(z1 - st_elev)
+            cx = (x1 + x2) / 2.0
+            cy = (y1 + y2) / 2.0
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(cx), float(cy), rel_z))
+            ref_dir = self.create_entity("IfcDirection", (round(ux, 6), round(uy, 6), 0.0))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, ref_dir)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
+            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+            rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(cw.length), float(cw.element.glass_thickness or 0.01))
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(cw.height))
+
+            shape_rep = self.create_entity(
+                "IfcShapeRepresentation",
+                body_context_ref,
+                "Body",
+                "SweptSolid",
+                [solid],
+            )
+            prod_shape_ref = self.create_entity(
+                "IfcProductDefinitionShape", None, None, [shape_rep]
+            )
+
             elem_ref = self.create_entity(
                 "IfcCurtainWall",
                 generate_ifc_guid(),
@@ -993,7 +1068,8 @@ class StepSerializer:
                 cw.tag,
                 None,
                 None,
-                None,
+                elem_pl,
+                prod_shape_ref,
                 None,
                 pred_type,
             )
@@ -1006,6 +1082,42 @@ class StepSerializer:
             st_id = plate.element.placement.storey
             raw_pred_type = plate.element.predefined_type
             pred_type = f".{raw_pred_type.upper()}." if raw_pred_type else None
+
+            st_pl_ref = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+
+            px, py, pz = plate.position
+            rel_z = float(pz - st_elev)
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
+            if plate.polygon and len(plate.polygon) >= 3:
+                pts_2d = [(float(p[0] - px), float(p[1] - py)) for p in plate.polygon]
+                poly_ref = self.create_polyline_2d(pts_2d)
+                prof_ref = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, poly_ref)
+            else:
+                pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                prof_ref = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(plate.width), float(plate.depth))
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", prof_ref, axis3d, ext_dir, float(plate.thickness))
+
+            shape_rep = self.create_entity(
+                "IfcShapeRepresentation",
+                body_context_ref,
+                "Body",
+                "SweptSolid",
+                [solid],
+            )
+            prod_shape_ref = self.create_entity(
+                "IfcProductDefinitionShape", None, None, [shape_rep]
+            )
+
             elem_ref = self.create_entity(
                 "IfcPlate",
                 generate_ifc_guid(),
@@ -1013,7 +1125,8 @@ class StepSerializer:
                 plate.tag,
                 None,
                 None,
-                None,
+                elem_pl,
+                prod_shape_ref,
                 None,
                 pred_type,
             )
@@ -1888,6 +2001,33 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id in storey_products:
             storey_products[st_id].append(cov_obj)
 
+        if cov.polygon and len(cov.polygon) >= 3:
+            thick = float(cov.thickness)
+            cz = float(cov.center[2])
+            mat = np.eye(4)
+            mat[2, 3] = cz
+            ifcopenshell.api.run(
+                "geometry.edit_object_placement",
+                model,
+                product=cov_obj,
+                matrix=mat,
+            )
+
+            pts_objs = [model.createIfcCartesianPoint((float(p[0]), float(p[1]))) for p in cov.polygon]
+            pts_objs.append(pts_objs[0])
+            poly_curve = model.createIfcPolyline(pts_objs)
+            prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly_curve)
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), thick
+            )
+            rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+            ifcopenshell.api.run("geometry.assign_representation", model, product=cov_obj, representation=rep)
+
     # 4. Stairs, Stair Flights, Ramps, Railings
     for stair in resolved.stairs:
         stair_obj = ifcopenshell.api.run(
@@ -2271,6 +2411,40 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id in storey_products:
             storey_products[st_id].append(cw_obj)
 
+        x1, y1, z1 = cw.start_point
+        x2, y2, z2 = cw.end_point
+        dx, dy = x2 - x1, y2 - y1
+        l_2d = math.hypot(dx, dy)
+        ux, uy = (dx / l_2d, dy / l_2d) if l_2d > 1e-6 else (1.0, 0.0)
+
+        mat = np.eye(4)
+        mat[0, 0] = ux
+        mat[0, 1] = -uy
+        mat[1, 0] = uy
+        mat[1, 1] = ux
+        mat[0, 3] = (x1 + x2) / 2.0
+        mat[1, 3] = (y1 + y2) / 2.0
+        mat[2, 3] = z1
+        ifcopenshell.api.run(
+            "geometry.edit_object_placement",
+            model,
+            product=cw_obj,
+            matrix=mat,
+        )
+
+        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+        rect_prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(cw.length), float(cw.element.glass_thickness or 0.01))
+        pos3d = model.createIfcAxis2Placement3D(
+            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            rect_prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(cw.height)
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=cw_obj, representation=rep)
+
     # 5.2 Plates
     for plate in resolved.plates:
         pred_type = plate.element.predefined_type if plate.element.predefined_type in ("CURTAIN_PANEL", "SHEET", "FLANGE_PLATE", "BASE_PLATE", "USERDEFINED") else "NOTDEFINED"
@@ -2284,6 +2458,36 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = plate.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(plate_obj)
+
+        px, py, pz = plate.position
+        rx, ry, rz = plate.rotation
+        mat = _build_transform_matrix((px, py, pz), (rx, ry, rz))
+        ifcopenshell.api.run(
+            "geometry.edit_object_placement",
+            model,
+            product=plate_obj,
+            matrix=mat,
+        )
+
+        if plate.polygon and len(plate.polygon) >= 3:
+            pts_objs = [model.createIfcCartesianPoint((float(p[0]), float(p[1]))) for p in plate.polygon]
+            pts_objs.append(pts_objs[0])
+            poly_curve = model.createIfcPolyline(pts_objs)
+            prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly_curve)
+        else:
+            pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+            prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(plate.width), float(plate.depth))
+
+        pos3d = model.createIfcAxis2Placement3D(
+            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(plate.thickness)
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=plate_obj, representation=rep)
 
     # 5.3 Civil Earthworks & Retaining Walls & Civil Infrastructure (IFC4.3)
     for cut in resolved.earthworks_cuts:

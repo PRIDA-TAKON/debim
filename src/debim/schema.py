@@ -1995,6 +1995,8 @@ class CoveringPlacement(BaseModel):
     offset_z: float = 0.0  # Mounting elevation above storey level
     area: Optional[float] = None  # Explicit area in m² if boundary not given
     length: Optional[float] = None  # Explicit length in meters (useful for SKIRTING)
+    boundary_offset: Optional[float] = None  # Inner/outer polygon offset in meters (e.g. -0.1)
+    clip_to_slab: Optional[bool] = False  # Automatically clip covering boundary to slab boundary
 
     @field_validator("boundary", mode="before")
     @classmethod
