@@ -616,6 +616,114 @@
       "title": "BeamWaypoint",
       "type": "object"
     },
+    "BearingPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation"
+        }
+      },
+      "title": "BearingPlacement",
+      "type": "object"
+    },
     "BoxProfile": {
       "properties": {
         "shape": {
@@ -638,6 +746,142 @@
         "depth"
       ],
       "title": "BoxProfile",
+      "type": "object"
+    },
+    "BridgePartPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "from_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From Grid"
+        },
+        "to_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To Grid"
+        },
+        "alignment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alignment"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        }
+      },
+      "title": "BridgePartPlacement",
       "type": "object"
     },
     "BridgePlacement": {
@@ -2372,6 +2616,95 @@
       "title": "IfcBeam",
       "type": "object"
     },
+    "IfcBearing": {
+      "properties": {
+        "class": {
+          "const": "IfcBearing",
+          "default": "IfcBearing",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "predefined_type": {
+          "default": "BRIDGEBEARING",
+          "enum": [
+            "BRIDGEBEARING",
+            "ELASTOMERIC",
+            "POT",
+            "SPHERICAL",
+            "DISK",
+            "ROLLER",
+            "ROCKER",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "bridge_part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bridge Part"
+        },
+        "width": {
+          "default": 0.5,
+          "title": "Width",
+          "type": "number"
+        },
+        "depth": {
+          "default": 0.5,
+          "title": "Depth",
+          "type": "number"
+        },
+        "height": {
+          "default": 0.2,
+          "title": "Height",
+          "type": "number"
+        },
+        "placement": {
+          "$ref": "#/$defs/BearingPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcBearing",
+      "type": "object"
+    },
     "IfcBridge": {
       "properties": {
         "class": {
@@ -2492,6 +2825,139 @@
         "placement"
       ],
       "title": "IfcBridge",
+      "type": "object"
+    },
+    "IfcBridgePart": {
+      "properties": {
+        "class": {
+          "const": "IfcBridgePart",
+          "default": "IfcBridgePart",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "predefined_type": {
+          "default": "SUPERSTRUCTURE",
+          "enum": [
+            "SUBSTRUCTURE",
+            "SUPERSTRUCTURE",
+            "DECK",
+            "PIER",
+            "ABUTMENT",
+            "FOUNDATION",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "bridge": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bridge"
+        },
+        "span_length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 20.0,
+          "title": "Span Length"
+        },
+        "part_width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 10.0,
+          "title": "Part Width"
+        },
+        "part_thickness": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.3,
+          "title": "Part Thickness"
+        },
+        "part_height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 2.0,
+          "title": "Part Height"
+        },
+        "placement": {
+          "$ref": "#/$defs/BridgePartPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcBridgePart",
       "type": "object"
     },
     "IfcBuildingElementProxy": {
@@ -5445,11 +5911,7 @@
             "TRACK",
             "SUBGRADE",
             "LINESIDE",
-            "STATION",
-            "STRUCTURE",
-            "TURNOUTSTRUCTURE",
-            "USERDEFINED",
-            "NOTDEFINED"
+            "USERDEFINED"
           ],
           "title": "Predefined Type",
           "type": "string"
@@ -6695,13 +7157,11 @@
             "RAIL",
             "SLEEPER",
             "TURNOUT",
-            "DERAILER",
             "SWITCH",
+            "DERAILER",
             "FASTENING",
-            "FROG",
-            "TRACKELEMENT",
-            "USERDEFINED",
-            "NOTDEFINED"
+            "BLOCK",
+            "USERDEFINED"
           ],
           "title": "Predefined Type",
           "type": "string"
@@ -10742,6 +11202,12 @@
           },
           {
             "$ref": "#/$defs/IfcTrackElement"
+          },
+          {
+            "$ref": "#/$defs/IfcBridgePart"
+          },
+          {
+            "$ref": "#/$defs/IfcBearing"
           },
           {
             "$ref": "#/$defs/IfcCustomElement"
