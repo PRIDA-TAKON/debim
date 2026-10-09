@@ -32,6 +32,7 @@ from debim.resolver import (
     ResolvedGeotechnicalStratum,
     ResolvedSoil,
     ResolvedMarinePart,
+    ResolvedMooringDevice,
     ResolvedFlowController,
     ResolvedFooting,
     ResolvedLightFixture,
@@ -484,6 +485,16 @@ class MarineQTO(BaseModel):
     depth: float = 0.0                   # Water depth / berth depth (m)
 
 
+class MooringDeviceQTO(BaseModel):
+    count: int = 1                       # Fender piece count
+    piece_count: int = 1                 # Fender piece count
+    fender_type: str = "ARCH"
+    height_mm: float = 800.0
+    length_mm: float = 1500.0
+    frontal_panel: bool = True
+    frontal_panel_area: float = 0.0      # Frontal steel panel contact area (m2)
+
+
 class RailwayQTO(BaseModel):
     track_length: float = 0.0            # Track corridor length (m)
     total_rail_length: float = 0.0       # Total parallel steel rails length (m)
@@ -539,6 +550,7 @@ class ElementQTO(BaseModel):
     road: Optional[RoadQTO] = None
     bridge: Optional[BridgeQTO] = None
     marine: Optional[MarineQTO] = None
+    mooring_device: Optional[MooringDeviceQTO] = None
     railway: Optional[RailwayQTO] = None
     mep: Optional[MepQTO] = None
 
@@ -1763,6 +1775,25 @@ def calculate_element_qto(
             formwork_area=formwork,
             marine=marine_qto,
             substructure=sub_qto,
+        )
+
+    elif isinstance(resolved, ResolvedMooringDevice):
+        elem = resolved.element
+        mooring_qto = MooringDeviceQTO(
+            count=1,
+            piece_count=1,
+            fender_type=resolved.fender_type,
+            height_mm=resolved.height_mm,
+            length_mm=resolved.length_mm,
+            frontal_panel=resolved.frontal_panel,
+            frontal_panel_area=resolved.frontal_panel_area,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.length_m,
+            mooring_device=mooring_qto,
         )
 
     elif isinstance(resolved, ResolvedRailway):

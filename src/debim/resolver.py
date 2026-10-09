@@ -18,6 +18,7 @@ from debim.schema import (
     IfcBridgePart,
     IfcBuildingElementProxy,
     IfcMarinePart,
+    IfcMooringDevice,
     IfcBuiltSystem,
     IfcCableCarrierSegment,
     IfcColumn,
@@ -1326,6 +1327,27 @@ class ResolvedMarinePart(BaseModel):
     layer: str = "civil/infrastructure/marine"
 
 
+class ResolvedMooringDevice(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMooringDevice
+    predefined_type: str = "FENDER"
+    fender_type: str = "ARCH"
+    height_mm: float = 800.0
+    length_mm: float = 1500.0
+    height_m: float = 0.80
+    length_m: float = 1.50
+    projection_m: float = 0.64
+    frontal_panel: bool = True
+    frontal_panel_area: float = 1.20
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    normal_vector: Tuple[float, float, float] = (0.0, -1.0, 0.0)
+    rotation: float = 0.0
+    quay_wall_tag: Optional[str] = None
+    layer: str = "civil/infrastructure/marine/fenders"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1368,6 +1390,7 @@ ResolvedElement = Union[
     ResolvedBridgePart,
     ResolvedBearing,
     ResolvedMarinePart,
+    ResolvedMooringDevice,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1424,6 +1447,7 @@ class ResolvedManifest(BaseModel):
     bridge_parts: List[ResolvedBridgePart] = []
     bearings: List[ResolvedBearing] = []
     marine_parts: List[ResolvedMarinePart] = []
+    mooring_devices: List[ResolvedMooringDevice] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -1444,6 +1468,7 @@ class SpatialResolver:
         self.storeys: Dict[str, Storey] = {
             s.id: s for s in manifest.spatial_structure.storeys
         }
+        self._resolved_marine_parts: Dict[str, ResolvedMarinePart] = {}
         self.axes_x: Dict[str, float] = manifest.grids.axes_x
         self.axes_y: Dict[str, float] = manifest.grids.axes_y
         self.walls_by_tag: Dict[str, ResolvedWall] = {}
@@ -5103,6 +5128,126 @@ class SpatialResolver:
             layer=derive_default_layer(bearing),
         )
 
+    def resolve_mooring_device(self, md: IfcMooringDevice) -> ResolvedMooringDevice:
+        z_base = self.get_storey(md.placement.storey).elevation if md.placement.storey else 0.0
+
+        height_m = md.height_mm / 1000.0
+        length_m = md.length_mm / 1000.0
+
+        if md.fender_type in ("CONE", "CELL"):
+            projection_m = height_m
+        elif md.fender_type == "CYLINDRICAL":
+            projection_m = height_m
+        else:  # ARCH
+            projection_m = height_m * 0.80
+
+        frontal_panel_area = (length_m * height_m) if md.frontal_panel else 0.0
+
+        quay_tag = md.quay_wall or md.marine_part or md.placement.quay_wall or md.placement.marine_part
+        quay_part = None
+        if quay_tag and hasattr(self, "_resolved_marine_parts"):
+            quay_part = self._resolved_marine_parts.get(quay_tag)
+
+        rot_deg = 0.0
+        if md.placement.rotation is not None:
+            if isinstance(md.placement.rotation, (int, float)):
+                rot_deg = float(md.placement.rotation)
+            elif isinstance(md.placement.rotation, (list, tuple)) and len(md.placement.rotation) >= 3:
+                rot_deg = float(md.placement.rotation[2])
+
+        pos = (0.0, 0.0, 0.0)
+        normal_vec = (0.0, -1.0, 0.0)
+
+        face = (md.placement.face or "FRONT").upper()
+
+        if quay_part:
+            qx, qy, qz = quay_part.position
+            L = quay_part.length
+            W = quay_part.width
+            deck_elev = quay_part.deck_elevation
+            z_mount = qz + deck_elev - (height_m / 2.0) + md.placement.offset_z
+
+            if face in ("FRONT", "SOUTH"):
+                pos = (
+                    qx + md.placement.offset_x,
+                    qy - W / 2.0 + md.placement.offset_y,
+                    z_mount,
+                )
+                normal_vec = (0.0, -1.0, 0.0)
+                rot_deg = 0.0
+            elif face in ("BACK", "NORTH"):
+                pos = (
+                    qx + md.placement.offset_x,
+                    qy + W / 2.0 + md.placement.offset_y,
+                    z_mount,
+                )
+                normal_vec = (0.0, 1.0, 0.0)
+                rot_deg = 180.0
+            elif face in ("LEFT", "WEST"):
+                pos = (
+                    qx - L / 2.0 + md.placement.offset_x,
+                    qy + md.placement.offset_y,
+                    z_mount,
+                )
+                normal_vec = (-1.0, 0.0, 0.0)
+                rot_deg = 270.0
+            elif face in ("RIGHT", "EAST"):
+                pos = (
+                    qx + L / 2.0 + md.placement.offset_x,
+                    qy + md.placement.offset_y,
+                    z_mount,
+                )
+                normal_vec = (1.0, 0.0, 0.0)
+                rot_deg = 90.0
+            else:
+                pos = (
+                    qx + md.placement.offset_x,
+                    qy - W / 2.0 + md.placement.offset_y,
+                    z_mount,
+                )
+                normal_vec = (0.0, -1.0, 0.0)
+                rot_deg = 0.0
+
+            if md.placement.rotation is not None:
+                rot_deg = float(md.placement.rotation) if isinstance(md.placement.rotation, (int, float)) else float(md.placement.rotation[2])
+        elif md.placement.position:
+            px, py, pz = md.placement.position
+            pos = (px, py, z_base + pz)
+            rad = math.radians(rot_deg)
+            normal_vec = (-math.sin(rad), -math.cos(rad), 0.0)
+        elif md.placement.grid:
+            gx, gy = self.get_grid_xy(md.placement.grid)
+            gx += md.placement.offset_x
+            gy += md.placement.offset_y
+            z = z_base + md.placement.offset_z
+            pos = (gx, gy, z)
+            rad = math.radians(rot_deg)
+            normal_vec = (-math.sin(rad), -math.cos(rad), 0.0)
+        else:
+            z = z_base + md.placement.offset_z
+            pos = (md.placement.offset_x, md.placement.offset_y, z)
+            rad = math.radians(rot_deg)
+            normal_vec = (-math.sin(rad), -math.cos(rad), 0.0)
+
+        return ResolvedMooringDevice(
+            tag=md.tag,
+            element=md,
+            predefined_type=md.predefined_type,
+            fender_type=md.fender_type,
+            height_mm=md.height_mm,
+            length_mm=md.length_mm,
+            height_m=height_m,
+            length_m=length_m,
+            projection_m=projection_m,
+            frontal_panel=md.frontal_panel,
+            frontal_panel_area=frontal_panel_area,
+            position=pos,
+            normal_vector=normal_vec,
+            rotation=rot_deg,
+            quay_wall_tag=quay_tag,
+            layer=derive_default_layer(md),
+        )
+
     def resolve_marine_part(self, marine_part: IfcMarinePart) -> ResolvedMarinePart:
         z_base = self.get_storey(marine_part.placement.storey).elevation if marine_part.placement.storey else 0.0
 
@@ -5517,8 +5662,13 @@ class SpatialResolver:
                 resolved_manifest.elements.append(r_br)
             elif isinstance(elem, IfcMarinePart):
                 r_mp = self.resolve_marine_part(elem)
+                self._resolved_marine_parts[r_mp.tag] = r_mp
                 resolved_manifest.marine_parts.append(r_mp)
                 resolved_manifest.elements.append(r_mp)
+            elif isinstance(elem, IfcMooringDevice):
+                r_md = self.resolve_mooring_device(elem)
+                resolved_manifest.mooring_devices.append(r_md)
+                resolved_manifest.elements.append(r_md)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)
