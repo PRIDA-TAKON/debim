@@ -33,23 +33,36 @@ svg:not(#measurement-layer) {
 
 /* Lineweights (1px = 1 SVG user unit = 1mm paper space) */
 .cut-heavy {
-  stroke: #000000;
-  fill: #000000;
+  stroke: #0f172a;
+  fill: #1e293b;
   stroke-width: 0.50px;
   stroke-linejoin: round;
   stroke-linecap: square;
 }
 
 .cut-medium {
-  stroke: #000000;
-  fill: none;
+  stroke: #1e293b;
+  fill: #64748b;
+  fill-opacity: 0.25;
   stroke-width: 0.35px;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
 
+.cut-concrete {
+  fill: url(#hatch-concrete), #1e293b;
+  stroke: #0f172a;
+  stroke-width: 0.50px;
+}
+
+.cut-wall {
+  fill: url(#hatch-wall), #64748b;
+  stroke: #334155;
+  stroke-width: 0.35px;
+}
+
 .projection {
-  stroke: #444444;
+  stroke: #475569;
   fill: none;
   stroke-width: 0.18px;
   stroke-linejoin: round;
@@ -57,25 +70,100 @@ svg:not(#measurement-layer) {
 }
 
 .grid-line {
-  stroke: #666666;
+  stroke: #64748b;
   fill: none;
   stroke-width: 0.18px;
   stroke-dasharray: 4px 1px 1px 1px;
 }
 
-/* Grid Bubbles */
-.grid-bubble {
-  fill: #ffffff;
+/* Level Markers & Elevation Annotations */
+.ground-line {
+  stroke: #000000;
+  stroke-width: 0.70px;
+  stroke-linecap: square;
+}
+
+.level-line {
+  stroke: #555555;
+  stroke-width: 0.18px;
+  stroke-dasharray: 3px 1px 1px 1px;
+}
+
+.level-symbol {
+  fill: #000000;
   stroke: #000000;
   stroke-width: 0.25px;
 }
 
-.grid-text {
+.level-text {
   fill: #000000;
+  font-family: 'Prompt', 'Sarabun', sans-serif;
+  font-size: 2.0px;
+  font-weight: 500;
+  dominant-baseline: central;
+}
+
+/* Grid Bubbles */
+.grid-bubble {
+  fill: #ffffff;
+  stroke: #0f172a;
+  stroke-width: 0.25px;
+}
+
+.grid-text {
+  fill: #0f172a;
   font-family: 'Prompt', 'Sarabun', sans-serif;
   font-size: 2.2px;
   font-weight: 600;
   text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* Section Callouts on Floor Plans */
+.section-callout-line {
+  stroke: #2563eb;
+  stroke-width: 0.35px;
+  stroke-dasharray: 5px 2px 1px 2px;
+}
+
+.section-callout-bubble {
+  fill: #ffffff;
+  stroke: #2563eb;
+  stroke-width: 0.35px;
+}
+
+.section-callout-arrow {
+  fill: #2563eb;
+  stroke: none;
+}
+
+.section-callout-text {
+  fill: #1e3a8a;
+  font-family: 'Prompt', 'Sarabun', sans-serif;
+  font-size: 2.2px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* Storey Level Markers in Section Views */
+.level-line {
+  stroke: #0f172a;
+  stroke-width: 0.20px;
+  stroke-dasharray: 6px 1px 1px 1px;
+}
+
+.level-symbol {
+  fill: #0f172a;
+  stroke: #0f172a;
+  stroke-width: 0.20px;
+}
+
+.level-marker-text {
+  fill: #0f172a;
+  font-family: 'Prompt', 'Sarabun', sans-serif;
+  font-size: 2.2px;
+  font-weight: 600;
   dominant-baseline: central;
 }
 
