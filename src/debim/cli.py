@@ -1562,5 +1562,506 @@ def spec_list(
     console.print(table)
 
 
+docs_app = typer.Typer(
+    help="Build and serve the debim Interactive Class Directory",
+    add_completion=False,
+)
+app.add_typer(docs_app, name="docs")
+
+
+def _generate_docs_bundle(output_dir: Path, schema_version: str = "IFC4") -> Path:
+    import json
+    from debim.schema_registry import SchemaEntityRegistry
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    registry = SchemaEntityRegistry(schema_version)
+
+    entities_dict = {}
+    decl_names = sorted([decl.name() for decl in registry.schema.entities()])
+
+    for name in decl_names:
+        info = registry.get_entity_info(name)
+        entities_dict[name] = {
+            "name": info.name,
+            "schema_version": info.schema_version,
+            "is_abstract": info.is_abstract,
+            "supertype": info.supertype,
+            "subtypes": info.subtypes,
+            "inheritance_chain": info.inheritance_chain,
+            "is_product": info.is_product,
+            "is_element": info.is_element,
+            "is_spatial": info.is_spatial,
+            "required_attributes": [a.model_dump() for a in info.required_attributes],
+            "attributes": [a.model_dump() for a in info.attributes],
+            "allowed_predefined_types": info.allowed_predefined_types,
+            "default_psets": info.default_psets,
+        }
+
+    json_path = output_dir / "entities.json"
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(entities_dict, f, indent=2, ensure_ascii=False)
+
+    entities_json_raw = json.dumps(entities_dict, ensure_ascii=False)
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>debim Interactive Class Directory ({schema_version})</title>
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }}
+        header {{
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }}
+        .logo-group {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }}
+        .logo {{
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }}
+        .badge {{
+            background: #1e293b;
+            color: #38bdf8;
+            border: 1px solid #38bdf8;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }}
+        .search-box {{
+            flex: 1;
+            max-width: 480px;
+            position: relative;
+        }}
+        .search-box input {{
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 8px 16px;
+            color: #ffffff;
+            font-size: 0.9rem;
+        }}
+        .search-box input:focus {{
+            outline: none;
+            border-color: #38bdf8;
+        }}
+        .main-container {{
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }}
+        .sidebar {{
+            width: 320px;
+            background: #1e293b;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+        }}
+        .category-filter {{
+            padding: 8px 12px;
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: #0f172a;
+        }}
+        .cat-btn {{
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            cursor: pointer;
+        }}
+        .cat-btn.active {{
+            background: #38bdf8;
+            color: #0f172a;
+            font-weight: 700;
+        }}
+        .class-list {{
+            overflow-y: auto;
+            flex: 1;
+        }}
+        .class-item {{
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.15s;
+        }}
+        .class-item:hover {{ background: rgba(255, 255, 255, 0.05); }}
+        .class-item.active {{
+            background: #334155;
+            border-left: 3px solid #38bdf8;
+        }}
+        .class-name {{ font-size: 0.88rem; font-weight: 600; color: #e2e8f0; }}
+        .tag-badge {{
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }}
+        .tag-abstract {{ background: #334155; color: #94a3b8; }}
+        .tag-element {{ background: #065f46; color: #34d399; }}
+        .tag-product {{ background: #1e3a8a; color: #60a5fa; }}
+        .tag-spatial {{ background: #581c87; color: #c084fc; }}
+        .content-panel {{
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            background: #0f172a;
+        }}
+        .detail-header {{
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }}
+        .detail-title {{
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }}
+        .chain {{
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 6px;
+        }}
+        .chain span {{ color: #cbd5e1; font-weight: 500; }}
+        .section-title {{
+            font-size: 1rem;
+            font-weight: 700;
+            color: #a78bfa;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }}
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+        }}
+        th, td {{
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }}
+        th {{
+            background: #1e293b;
+            color: #94a3b8;
+            font-weight: 600;
+        }}
+        .type-tag {{ color: #38bdf8; font-family: monospace; }}
+        .req-tag {{ color: #ef4444; font-weight: 600; }}
+        .opt-tag {{ color: #10b981; }}
+        .chip-list {{
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }}
+        .chip {{
+            background: #1e293b;
+            color: #f1f5f9;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-family: monospace;
+        }}
+        .yaml-block {{
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #38bdf8;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-group">
+            <span class="logo">debim</span>
+            <span class="badge">Interactive Class Directory</span>
+            <span class="badge" style="border-color:#a78bfa; color:#a78bfa;">{schema_version}</span>
+        </div>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Search {len(decl_names)} IFC classes (e.g. IfcWall, IfcBeam, IfcPump)..." oninput="filterClasses()">
+        </div>
+    </header>
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="category-filter">
+                <button class="cat-btn active" onclick="setCategory('ALL', this)">All ({len(decl_names)})</button>
+                <button class="cat-btn" onclick="setCategory('ELEMENT', this)">Elements</button>
+                <button class="cat-btn" onclick="setCategory('PRODUCT', this)">Products</button>
+                <button class="cat-btn" onclick="setCategory('SPATIAL', this)">Spatial</button>
+                <button class="cat-btn" onclick="setCategory('MEP', this)">MEP</button>
+            </div>
+            <div class="class-list" id="classList"></div>
+        </div>
+        <div class="content-panel" id="contentPanel">
+            <div style="color: #94a3b8; font-style: italic; margin-top: 40px; text-align: center;">Select an IFC Class from the sidebar to inspect details</div>
+        </div>
+    </div>
+
+    <script>
+        const entities = {entities_json_raw};
+        let currentCategory = 'ALL';
+        let currentSelected = null;
+
+        function renderSidebarList(filterText = '') {{
+            const listEl = document.getElementById('classList');
+            listEl.innerHTML = '';
+            const q = filterText.toLowerCase();
+
+            Object.keys(entities).sort().forEach(name => {{
+                const item = entities[name];
+                if (q && !name.toLowerCase().includes(q)) return;
+
+                if (currentCategory === 'ELEMENT' && !item.is_element) return;
+                if (currentCategory === 'PRODUCT' && !item.is_product) return;
+                if (currentCategory === 'SPATIAL' && !item.is_spatial) return;
+                if (currentCategory === 'MEP' && !item.inheritance_chain.includes('IfcDistributionElement')) return;
+
+                const div = document.createElement('div');
+                div.className = 'class-item' + (currentSelected === name ? ' active' : '');
+
+                let badgeHtml = '';
+                if (item.is_abstract) badgeHtml = '<span class="tag-badge tag-abstract">ABSTRACT</span>';
+                else if (item.is_element) badgeHtml = '<span class="tag-badge tag-element">ELEMENT</span>';
+                else if (item.is_product) badgeHtml = '<span class="tag-badge tag-product">PRODUCT</span>';
+                else if (item.is_spatial) badgeHtml = '<span class="tag-badge tag-spatial">SPATIAL</span>';
+
+                div.innerHTML = `<span class="class-name">${{name}}</span>${{badgeHtml}}`;
+                div.onclick = () => selectClass(name);
+                listEl.appendChild(div);
+            }});
+        }}
+
+        function setCategory(cat, btn) {{
+            currentCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderSidebarList(document.getElementById('searchInput').value);
+        }}
+
+        function filterClasses() {{
+            renderSidebarList(document.getElementById('searchInput').value);
+        }}
+
+        function selectClass(name) {{
+            currentSelected = name;
+            renderSidebarList(document.getElementById('searchInput').value);
+            const item = entities[name];
+            const panel = document.getElementById('contentPanel');
+
+            const chainStr = item.inheritance_chain.slice().reverse().map(c => `<span>${{c}}</span>`).join(' ➔ ');
+
+            let attrsHtml = '';
+            if (item.attributes.length > 0) {{
+                attrsHtml = `
+                    <div class="section-title">Class Attributes (${{item.attributes.length}})</div>
+                    <table>
+                        <thead><tr><th>Attribute Name</th><th>Type</th><th>Required/Optional</th></tr></thead>
+                        <tbody>
+                            ${{item.attributes.map(a => `
+                                <tr>
+                                    <td><strong>${{a.name}}</strong></td>
+                                    <td><span class="type-tag">${{a.type_name}}</span></td>
+                                    <td>${{a.optional ? '<span class="opt-tag">Optional</span>' : '<span class="req-tag">Required</span>'}}</td>
+                                </tr>
+                            `).join('')}}
+                        </tbody>
+                    </table>
+                `;
+            }}
+
+            let predefHtml = '';
+            if (item.allowed_predefined_types && item.allowed_predefined_types.length > 0) {{
+                predefHtml = `
+                    <div class="section-title">Predefined Types (${{item.allowed_predefined_types.length}})</div>
+                    <div class="chip-list">
+                        ${{item.allowed_predefined_types.map(t => `<span class="chip">${{t}}</span>`).join('')}}
+                    </div>
+                `;
+            }}
+
+            let psetsHtml = '';
+            if (item.default_psets && item.default_psets.length > 0) {{
+                psetsHtml = `
+                    <div class="section-title">buildingSMART bSDD Property Sets</div>
+                    <div class="chip-list">
+                        ${{item.default_psets.map(p => `<span class="chip" style="border-color:#a78bfa; color:#a78bfa;">${{p}}</span>`).join('')}}
+                    </div>
+                `;
+            }}
+
+            let subtypesHtml = '';
+            if (item.subtypes && item.subtypes.length > 0) {{
+                subtypesHtml = `
+                    <div class="section-title">Subtypes (${{item.subtypes.length}})</div>
+                    <div class="chip-list">
+                        ${{item.subtypes.map(s => `<span class="chip" style="cursor:pointer;" onclick="selectClass('${{s}}')">${{s}}</span>`).join('')}}
+                    </div>
+                `;
+            }}
+
+            const yamlSnippet = `elements:
+  - tag: ${{name.toUpperCase()}}-01
+    class: ${{name}}
+    material: CONCRETE_STANDARD
+    placement:
+      storey: Ground
+      grid: [A, 1]`;
+
+            panel.innerHTML = `
+                <div class="detail-header">
+                    <div class="detail-title">
+                        ${{name}}
+                        ${{item.is_abstract ? '<span class="tag-badge tag-abstract">ABSTRACT</span>' : ''}}
+                        ${{item.is_element ? '<span class="tag-badge tag-element">ELEMENT</span>' : ''}}
+                    </div>
+                    <div class="chain">Inheritance: ${{chainStr}}</div>
+                </div>
+
+                ${{attrsHtml}}
+                ${{predefHtml}}
+                ${{psetsHtml}}
+                ${{subtypesHtml}}
+
+                <div class="section-title">debim Declarative Building-as-Code Example</div>
+                <div class="yaml-block">${{yamlSnippet}}</div>
+            `;
+        }}
+
+        renderSidebarList();
+        const defaultClass = entities['IfcWall'] ? 'IfcWall' : Object.keys(entities)[0];
+        if (defaultClass) selectClass(defaultClass);
+    </script>
+</body>
+</html>"""
+
+    index_path = output_dir / "index.html"
+    index_path.write_text(html_content, encoding="utf-8")
+    return output_dir
+
+
+@docs_app.command(name="build")
+def docs_build_cmd(
+    output_dir: Path = typer.Option(
+        Path("dist/docs"), "--output-dir", "-o", help="Output directory for generated documentation site"
+    ),
+    schema_version: str = typer.Option(
+        "IFC4", "--schema-version", "-s", help="Target buildingSMART IFC Schema version (IFC4 or IFC4X3)"
+    ),
+):
+    """Generates the complete interactive debim Class Directory static site bundle into dist/docs/"""
+    console.print(f"[bold cyan]Building debim Class Directory ({schema_version}):[/bold cyan] -> [yellow]{output_dir}[/yellow]")
+    try:
+        out_p = _generate_docs_bundle(output_dir=output_dir, schema_version=schema_version)
+        files = list(out_p.glob("*"))
+        index_size = (out_p / "index.html").stat().st_size
+        json_size = (out_p / "entities.json").stat().st_size
+
+        console.print(
+            Panel(
+                f"[bold green]Interactive Class Directory Generated Successfully![/bold green]\n"
+                f"[bold cyan]Bundle Path:[/bold cyan] {out_p.resolve()}\n"
+                f"[bold cyan]Static Files Emitted:[/bold cyan] {len(files)} files\n"
+                f"[bold cyan]index.html Size:[/bold cyan] {index_size:,} bytes\n"
+                f"[bold cyan]entities.json Size:[/bold cyan] {json_size:,} bytes\n"
+                f"[dim]Run 'debim docs serve' to launch preview HTTP server.[/dim]",
+                title="[bold green]debim Documentation Engine[/bold green]",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Docs Build Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
+@docs_app.command(name="serve")
+def docs_serve_cmd(
+    docs_dir: Path = typer.Option(
+        Path("dist/docs"), "--docs-dir", "-d", help="Directory containing built docs site"
+    ),
+    port: int = typer.Option(
+        8000, "--port", "-p", help="Port to serve documentation HTTP preview"
+    ),
+    no_browser: bool = typer.Option(
+        False, "--no-browser", help="Do not open web browser automatically"
+    ),
+):
+    """Spins up a local HTTP server to preview the class encyclopedia in the browser"""
+    import http.server
+    import socketserver
+    import webbrowser
+
+    if not docs_dir.exists() or not (docs_dir / "index.html").exists():
+        console.print(f"[bold yellow]Documentation bundle not found in '{docs_dir}'. Building now...[/bold yellow]")
+        _generate_docs_bundle(output_dir=docs_dir)
+
+    url = f"http://localhost:{port}"
+    console.print(
+        Panel(
+            f"[bold green]Serving debim Class Directory at:[/bold green] [cyan bold]{url}[/cyan bold]\n"
+            f"[dim]Docs Directory:[/dim] [yellow]{docs_dir.resolve()}[/yellow]\n"
+            f"[dim]Press Ctrl+C in terminal to stop server.[/dim]",
+            title="[bold blue]debim Docs Live Preview[/bold blue]",
+        )
+    )
+
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=str(docs_dir.resolve()), **kwargs)
+
+        def log_message(self, format, *args):
+            pass
+
+    if not no_browser:
+        webbrowser.open(url)
+
+    try:
+        with socketserver.TCPServer(("0.0.0.0", port), Handler) as httpd:
+            httpd.serve_forever()
+    except KeyboardInterrupt:
+        console.print("\n[dim]Stopped docs preview server.[/dim]")
+
+
 if __name__ == "__main__":
     app()
