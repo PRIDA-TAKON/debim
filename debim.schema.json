@@ -2619,6 +2619,80 @@
       "title": "IfcBuildingElementProxy",
       "type": "object"
     },
+    "IfcBuiltSystem": {
+      "properties": {
+        "class": {
+          "const": "IfcBuiltSystem",
+          "default": "IfcBuiltSystem",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "system_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "TRACKSYSTEM",
+          "title": "System Type"
+        },
+        "predefined_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "TRACKSYSTEM",
+          "title": "Predefined Type"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Elements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "IfcBuiltSystem",
+      "type": "object"
+    },
     "IfcCableCarrierSegment": {
       "properties": {
         "class": {
@@ -5279,6 +5353,130 @@
       "title": "IfcRailing",
       "type": "object"
     },
+    "IfcRailway": {
+      "properties": {
+        "class": {
+          "const": "IfcRailway",
+          "default": "IfcRailway",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "predefined_type": {
+          "default": "RAILWAY",
+          "enum": [
+            "RAILWAY",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "track_gauge": {
+          "default": 1.435,
+          "title": "Track Gauge",
+          "type": "number"
+        },
+        "placement": {
+          "$ref": "#/$defs/RailwayPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcRailway",
+      "type": "object"
+    },
+    "IfcRailwayPart": {
+      "properties": {
+        "class": {
+          "const": "IfcRailwayPart",
+          "default": "IfcRailwayPart",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "predefined_type": {
+          "default": "TRACK",
+          "enum": [
+            "TRACK",
+            "SUBGRADE",
+            "LINESIDE",
+            "STATION",
+            "STRUCTURE",
+            "TURNOUTSTRUCTURE",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "placement": {
+          "$ref": "#/$defs/RailwayPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcRailwayPart",
+      "type": "object"
+    },
     "IfcRamp": {
       "properties": {
         "class": {
@@ -6465,6 +6663,136 @@
         "placement"
       ],
       "title": "IfcSwitchingDevice",
+      "type": "object"
+    },
+    "IfcTrackElement": {
+      "properties": {
+        "class": {
+          "const": "IfcTrackElement",
+          "default": "IfcTrackElement",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "predefined_type": {
+          "default": "RAIL",
+          "enum": [
+            "RAIL",
+            "SLEEPER",
+            "TURNOUT",
+            "DERAILER",
+            "SWITCH",
+            "FASTENING",
+            "FROG",
+            "TRACKELEMENT",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "rail_profile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "UIC60",
+          "title": "Rail Profile"
+        },
+        "rail_weight_kg_m": {
+          "default": 60.0,
+          "title": "Rail Weight Kg M",
+          "type": "number"
+        },
+        "gauge": {
+          "default": 1.435,
+          "title": "Gauge",
+          "type": "number"
+        },
+        "sleeper_spacing": {
+          "default": 0.6,
+          "title": "Sleeper Spacing",
+          "type": "number"
+        },
+        "sleeper_length": {
+          "default": 2.4,
+          "title": "Sleeper Length",
+          "type": "number"
+        },
+        "sleeper_width": {
+          "default": 0.28,
+          "title": "Sleeper Width",
+          "type": "number"
+        },
+        "sleeper_height": {
+          "default": 0.22,
+          "title": "Sleeper Height",
+          "type": "number"
+        },
+        "turnout_angle": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Turnout Angle"
+        },
+        "placement": {
+          "$ref": "#/$defs/RailwayPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcTrackElement",
       "type": "object"
     },
     "IfcUnitaryEquipment": {
@@ -8144,6 +8472,132 @@
         }
       },
       "title": "RailingPoint",
+      "type": "object"
+    },
+    "RailwayPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "from_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From Grid"
+        },
+        "to_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To Grid"
+        },
+        "alignment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alignment"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "points": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/AlignmentPoint"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Points"
+        }
+      },
+      "title": "RailwayPlacement",
       "type": "object"
     },
     "RampPlacement": {
@@ -10281,6 +10735,15 @@
             "$ref": "#/$defs/IfcBridge"
           },
           {
+            "$ref": "#/$defs/IfcRailway"
+          },
+          {
+            "$ref": "#/$defs/IfcRailwayPart"
+          },
+          {
+            "$ref": "#/$defs/IfcTrackElement"
+          },
+          {
             "$ref": "#/$defs/IfcCustomElement"
           },
           {
@@ -10289,6 +10752,23 @@
         ]
       },
       "title": "Elements",
+      "type": "array"
+    },
+    "railways": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/IfcRailway"
+          },
+          {
+            "$ref": "#/$defs/IfcRailwayPart"
+          },
+          {
+            "$ref": "#/$defs/IfcTrackElement"
+          }
+        ]
+      },
+      "title": "Railways",
       "type": "array"
     },
     "proxies": {
@@ -10300,7 +10780,14 @@
     },
     "systems": {
       "items": {
-        "$ref": "#/$defs/IfcDistributionSystem"
+        "anyOf": [
+          {
+            "$ref": "#/$defs/IfcDistributionSystem"
+          },
+          {
+            "$ref": "#/$defs/IfcBuiltSystem"
+          }
+        ]
       },
       "title": "Systems",
       "type": "array"
