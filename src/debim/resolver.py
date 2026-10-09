@@ -1315,6 +1315,13 @@ class ResolvedMarinePart(BaseModel):
     deck_thickness: float = 0.50
     deck_elevation: float = 0.0
     depth: float = 10.0
+    crest_width: float = 0.0
+    crest_elevation: float = 0.0
+    base_width: float = 0.0
+    slope_ratio: float = 1.5
+    armor_weight_tons: Optional[float] = None
+    core_rock_volume: float = 0.0
+    cross_section_area: float = 0.0
     position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     rotation_angle: float = 0.0
     deck_boundary: List[Tuple[float, float, float]] = Field(default_factory=list)
@@ -5138,10 +5145,35 @@ class SpatialResolver:
             pos = (marine_part.placement.offset_x, marine_part.placement.offset_y, z)
 
         L = marine_part.length
-        W = marine_part.width
-        t = marine_part.deck_thickness
-        deck_elev = marine_part.deck_elevation
+        ptype = marine_part.predefined_type.upper() if marine_part.predefined_type else "BERTH"
+
+        crest_w = marine_part.crest_width if marine_part.crest_width is not None else marine_part.width
+        crest_elev = marine_part.crest_elevation if marine_part.crest_elevation is not None else marine_part.deck_elevation
         depth = marine_part.depth
+        slope_r = marine_part.slope_ratio if marine_part.slope_ratio is not None else 1.5
+
+        if ptype in ("BREAKWATER", "REVETMENT"):
+            H = depth + crest_elev if (depth + crest_elev) > 0 else depth
+            if marine_part.base_width is not None:
+                base_w = marine_part.base_width
+            else:
+                base_w = crest_w + 2.0 * H * slope_r
+
+            xs_area = ((crest_w + base_w) / 2.0) * H
+            core_rock_vol = xs_area * L
+            conc_vol = 0.0
+            formwork = 0.0
+            W = crest_w
+            t = 0.0
+        else:
+            base_w = crest_w
+            H = depth
+            xs_area = crest_w * marine_part.deck_thickness
+            core_rock_vol = 0.0
+            W = marine_part.width
+            t = marine_part.deck_thickness
+            conc_vol = L * W * t
+            formwork = (L * W) + 2.0 * (L * t) + 2.0 * (W * t)
 
         rad = math.radians(rot_deg)
         cos_a = math.cos(rad)
@@ -5153,7 +5185,7 @@ class SpatialResolver:
             (L / 2.0, W / 2.0),
             (-L / 2.0, W / 2.0),
         ]
-        z_deck = pos[2] + deck_elev
+        z_deck = pos[2] + crest_elev
         deck_boundary = []
         for lx, ly in local_corners:
             gx = pos[0] + (lx * cos_a - ly * sin_a)
@@ -5208,8 +5240,6 @@ class SpatialResolver:
                     )
                     pile_idx += 1
 
-        conc_vol = L * W * t
-        formwork = (L * W) + 2.0 * (L * t) + 2.0 * (W * t)
         p_total_len = sum(p.length for p in resolved_piles)
 
         return ResolvedMarinePart(
@@ -5219,8 +5249,15 @@ class SpatialResolver:
             length=L,
             width=W,
             deck_thickness=t,
-            deck_elevation=deck_elev,
+            deck_elevation=crest_elev,
             depth=depth,
+            crest_width=crest_w,
+            crest_elevation=crest_elev,
+            base_width=base_w,
+            slope_ratio=slope_r,
+            armor_weight_tons=marine_part.armor_weight_tons,
+            core_rock_volume=core_rock_vol,
+            cross_section_area=xs_area,
             position=pos,
             rotation_angle=rot_deg,
             deck_boundary=deck_boundary,

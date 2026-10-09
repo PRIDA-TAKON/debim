@@ -973,16 +973,37 @@ class StepSerializer:
             st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
 
             px, py, pz = mp.position
-            rel_z = float(pz + mp.deck_elevation - st_elev)
+            ptype_str = mp.predefined_type.upper() if mp.predefined_type else "BERTH"
 
-            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
-            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
-            rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(mp.length), float(mp.width))
+            if ptype_str in ("BREAKWATER", "REVETMENT"):
+                rel_z = float(pz - st_elev)
+                H = float(mp.depth + mp.crest_elevation) if (mp.depth + mp.crest_elevation) > 0 else float(mp.depth)
+                top_w = float(mp.crest_width)
+                bot_w = float(mp.base_width)
 
-            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
-            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
-            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
-            solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(mp.deck_thickness))
+                # Trapezoid cross-section profile in 2D (Y is height/depth, X is width across profile)
+                # Extrusion direction along local +Z or local +X
+                p1 = self.create_entity("IfcCartesianPoint", (-bot_w / 2.0, 0.0))
+                p2 = self.create_entity("IfcCartesianPoint", (bot_w / 2.0, 0.0))
+                p3 = self.create_entity("IfcCartesianPoint", (top_w / 2.0, H))
+                p4 = self.create_entity("IfcCartesianPoint", (-top_w / 2.0, H))
+                polyline = self.create_entity("IfcPolyline", [p1, p2, p3, p4, p1])
+                prof = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, polyline)
+
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", prof, axis3d, ext_dir, float(mp.length))
+            else:
+                rel_z = float(pz + mp.deck_elevation - st_elev)
+                pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(mp.length), float(mp.width))
+
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(mp.deck_thickness if mp.deck_thickness > 0 else 1.0))
 
             shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
             prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
@@ -3380,20 +3401,47 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             ifcopenshell.api.run("spatial.assign_container", model, products=[mp_obj], relating_structure=default_storey_obj)
 
         px, py, pz = mp.position
-        pz += mp.deck_elevation
-        mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, mp.rotation_angle))
-        ifcopenshell.api.run("geometry.edit_object_placement", model, product=mp_obj, matrix=mat)
+        ptype_str = mp.predefined_type.upper() if mp.predefined_type else "BERTH"
 
-        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
-        prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(mp.length), float(mp.width))
-        pos3d = model.createIfcAxis2Placement3D(
-            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
-            model.createIfcDirection((0.0, 0.0, 1.0)),
-            model.createIfcDirection((1.0, 0.0, 0.0)),
-        )
-        solid = model.createIfcExtrudedAreaSolid(
-            prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(mp.deck_thickness)
-        )
+        if ptype_str in ("BREAKWATER", "REVETMENT"):
+            mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, mp.rotation_angle))
+            ifcopenshell.api.run("geometry.edit_object_placement", model, product=mp_obj, matrix=mat)
+
+            H = float(mp.depth + mp.crest_elevation) if (mp.depth + mp.crest_elevation) > 0 else float(mp.depth)
+            top_w = float(mp.crest_width)
+            bot_w = float(mp.base_width)
+
+            p1 = model.createIfcCartesianPoint((-bot_w / 2.0, 0.0))
+            p2 = model.createIfcCartesianPoint((bot_w / 2.0, 0.0))
+            p3 = model.createIfcCartesianPoint((top_w / 2.0, H))
+            p4 = model.createIfcCartesianPoint((-top_w / 2.0, H))
+            polyline = model.createIfcPolyline([p1, p2, p3, p4, p1])
+            prof = model.createIfcArbitraryClosedProfileDef("AREA", None, polyline)
+
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(mp.length)
+            )
+        else:
+            pz += mp.deck_elevation
+            mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, mp.rotation_angle))
+            ifcopenshell.api.run("geometry.edit_object_placement", model, product=mp_obj, matrix=mat)
+
+            pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+            prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(mp.length), float(mp.width))
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(mp.deck_thickness if mp.deck_thickness > 0 else 1.0)
+            )
+
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
         ifcopenshell.api.run("geometry.assign_representation", model, product=mp_obj, representation=rep)
 
