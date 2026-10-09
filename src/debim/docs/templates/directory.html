@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>debim BIM Class Directory & Encyclopedia</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- CDN Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Prompt', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0b1120;
+            color: #f8fafc;
+        }
+
+        /* App Container */
+        #app {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: 320px;
+            height: 100%;
+            background: #0f172a;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .brand {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-subtitle {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .search-box {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 12px;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .search-input:focus {
+            border-color: #38bdf8;
+        }
+
+        .nav-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .discipline-group-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #38bdf8;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .discipline-badge {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            font-size: 0.68rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .class-item {
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            margin-bottom: 4px;
+        }
+
+        .class-item:hover {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+
+        .class-item.active {
+            background: rgba(14, 165, 233, 0.18);
+            border-color: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+        }
+
+        .class-name {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .class-th-name {
+            font-size: 0.74rem;
+            color: #94a3b8;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Main Workspace */
+        #main {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #0f172a;
+        }
+
+        /* Header Title Bar */
+        .header-bar {
+            padding: 16px 24px;
+            background: #0f172a;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .active-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .active-class-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #ffffff;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-discipline {
+            background: #0284c7;
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-schema {
+            background: rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .active-class-desc {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        /* 6-Dimension View Tabs Bar */
+        .tab-bar {
+            display: flex;
+            background: #1e293b;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 0 16px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 12px 18px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab-btn:hover {
+            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            color: #38bdf8;
+            border-bottom-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        /* Tab Content Viewport Area */
+        .content-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab-view {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .tab-view.active {
+            display: flex;
+        }
+
+        /* 3D Viewport Styling */
+        #viewport-3d-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: #090d16;
+        }
+
+        #canvas-3d {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-overlay {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .tool-btn {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f8fafc;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tool-btn:hover {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+
+        .tool-btn.active {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #38bdf8;
+        }
+
+        .overlay-card {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.80rem;
+            z-index: 10;
+        }
+
+        .card-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 4px;
+        }
+
+        .card-label { color: #94a3b8; }
+        .card-val { color: #38bdf8; font-weight: 600; }
+
+        /* 2D Blueprint Styling */
+        #blueprint-container {
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow: auto;
+        }
+
+        .svg-wrapper {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+            max-width: 600px;
+            max-height: 500px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Rosetta Stone Split View */
+        .rosetta-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            background: #0f172a;
+        }
+
+        .code-panel {
+            flex: 1;
+            height: 100%;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .code-header {
+            padding: 10px 16px;
+            background: #0f172a;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #38bdf8;
+        }
+
+        .code-content {
+            flex: 1;
+            padding: 16px;
+            overflow: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: #38bdf8;
+            white-space: pre;
+        }
+
+        /* BOQ & QTO Table */
+        .boq-container {
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            overflow-y: auto;
+            background: #0f172a;
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            background: #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table-custom th, .table-custom td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .table-custom th {
+            background: #0f172a;
+            color: #38bdf8;
+            font-weight: 700;
+        }
+
+        .table-custom tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Thai Specifications Tab */
+        .specs-container {
+            width: 100%;
+            height: 100%;
+            padding: 24px;
+            overflow-y: auto;
+            background: #0f172a;
+            font-family: 'Sarabun', sans-serif;
+            line-height: 1.7;
+        }
+
+        .spec-section {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .spec-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .spec-body {
+            font-size: 0.95rem;
+            color: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <span>📚</span> debim Class Encyclopedia
+                </div>
+                <div class="brand-subtitle">Interactive 6D BIM Class Directory</div>
+            </div>
+
+            <div class="search-box">
+                <input type="text" class="search-input" id="search-input" placeholder="🔍 Search e.g. Column, Wall..." oninput="filterClasses(this.value)">
+            </div>
+
+            <div class="nav-list" id="nav-list">
+                <!-- Dynamically rendered nav items grouped by discipline -->
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div id="main">
+            <!-- Header Title Bar -->
+            <div class="header-bar">
+                <div>
+                    <div class="active-title-group">
+                        <span class="active-class-title" id="title-class">IfcColumn</span>
+                        <span class="badge-discipline" id="badge-discipline">Structure</span>
+                        <span class="badge-schema" id="badge-schema">IFC4</span>
+                    </div>
+                    <div class="active-class-th-name" style="font-size: 0.9rem; color: #cbd5e1; margin-top: 4px;" id="title-th-name">เสาคอนกรีตเสริมเหล็ก</div>
+                    <div class="active-class-desc" id="title-desc">องค์อาคารรับแรงอัดแนวแกนและแรงดัด</div>
+                </div>
+            </div>
+
+            <!-- 6-Dimension View Tabs -->
+            <div class="tab-bar">
+                <button class="tab-btn active" onclick="switchTab('3d')">
+                    <span>🧊</span> 3D Viewport
+                </button>
+                <button class="tab-btn" onclick="switchTab('2d')">
+                    <span>📐</span> 2D Blueprint
+                </button>
+                <button class="tab-btn" onclick="switchTab('rosetta')">
+                    <span>📜</span> Rosetta Stone (.debim vs STEP)
+                </button>
+                <button class="tab-btn" onclick="switchTab('boq')">
+                    <span>📊</span> BOQ & QTO Table
+                </button>
+                <button class="tab-btn" onclick="switchTab('specs')">
+                    <span>🇹🇭</span> Thai Specifications
+                </button>
+            </div>
+
+            <!-- Content Viewport -->
+            <div class="content-area">
+                <!-- 3D Viewport Tab -->
+                <div class="tab-view active" id="tab-3d">
+                    <div id="viewport-3d-container">
+                        <canvas id="canvas-3d"></canvas>
+                        <div class="controls-overlay">
+                            <button class="tool-btn" id="wireframe-btn" onclick="toggleWireframe()">Wireframe</button>
+                            <button class="tool-btn" id="bbox-btn" onclick="toggleBBox()">Bounding Box</button>
+                            <button class="tool-btn" onclick="reset3DCamera()">Reset Camera</button>
+                        </div>
+                        <div class="overlay-card" id="card-3d-info">
+                            <div class="card-row"><span class="card-label">Predefined Types:</span><span class="card-val" id="card-types">-</span></div>
+                            <div class="card-row"><span class="card-label">bSDD Property Sets:</span><span class="card-val" id="card-psets">-</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2D Blueprint Tab -->
+                <div class="tab-view" id="tab-2d">
+                    <div id="blueprint-container">
+                        <div class="svg-wrapper" id="svg-wrapper">
+                            <!-- 2D SVG injected here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rosetta Stone Tab -->
+                <div class="tab-view" id="tab-rosetta">
+                    <div class="rosetta-container">
+                        <div class="code-panel">
+                            <div class="code-header">
+                                <span>📄 Declarative .debim YAML</span>
+                            </div>
+                            <div class="code-content" id="code-yaml"># YAML code here</div>
+                        </div>
+                        <div class="code-panel">
+                            <div class="code-header">
+                                <span>🏛️ Compiled IFC4 STEP (ISO-10303-21)</span>
+                            </div>
+                            <div class="code-content" id="code-step" style="color: #4ade80;">/* STEP code here */</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOQ & QTO Tab -->
+                <div class="tab-view" id="tab-boq">
+                    <div class="boq-container">
+                        <h3 style="color: #38bdf8; margin-bottom: 12px;">📊 Quantitative Take-Off & Cost Breakdown</h3>
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Description</th>
+                                    <th>Formula / Calculation</th>
+                                    <th>Qty</th>
+                                    <th>Unit</th>
+                                    <th>Mat Rate</th>
+                                    <th>Labor Rate</th>
+                                    <th>Total Amount (THB)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="boq-tbody">
+                                <!-- BOQ rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Thai Specifications Tab -->
+                <div class="tab-view" id="tab-specs">
+                    <div class="specs-container">
+                        <div class="spec-section">
+                            <div class="spec-title">
+                                <span>🧱</span> 1. ข้อกำหนดทั่วไปและวัสดุ (General & Materials)
+                            </div>
+                            <div class="spec-body" id="spec-mat">ข้อกำหนดวัสดุ</div>
+                        </div>
+                        <div class="spec-section">
+                            <div class="spec-title">
+                                <span>🔨</span> 2. ข้อกำหนดการฝีมือและการติดตั้ง (Workmanship & Installation)
+                            </div>
+                            <div class="spec-body" id="spec-work">ข้อกำหนดการติดตั้ง</div>
+                        </div>
+                        <div class="spec-section">
+                            <div class="spec-title">
+                                <span>🔍</span> 3. ข้อกำหนดการทดสอบและตรวจรับ (Testing & Quality Inspection)
+                            </div>
+                            <div class="spec-body" id="spec-test">ข้อกำหนดการทดสอบ</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Injected Class Directory Data
+        const classesData = __CLASS_DIRECTORY_JSON__;
+
+        let activeClassIndex = 0;
+        let scene, camera, renderer, controls;
+        let currentMesh = null;
+        let wireframeMode = false;
+        let bboxMode = false;
+        let bboxHelper = null;
+
+        // Init App
+        function init() {
+            renderNavList(classesData);
+            init3DScene();
+            if (classesData.length > 0) {
+                selectClass(0);
+            }
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // Render Nav List in Sidebar
+        function renderNavList(data) {
+            const navEl = document.getElementById('nav-list');
+            navEl.innerHTML = '';
+
+            const disciplines = ['Structure', 'Architecture', 'MEP', 'Civil'];
+            const icons = {'Structure': '🏗️', 'Architecture': '🏛️', 'MEP': '⚡', 'Civil': '🌉'};
+
+            disciplines.forEach(disc => {
+                const filtered = data.filter(item => item.discipline === disc);
+                if (filtered.length === 0) return;
+
+                const groupEl = document.createElement('div');
+                groupEl.innerHTML = `
+                    <div class="discipline-group-title">
+                        <span>${icons[disc] || '📂'} ${disc}</span>
+                        <span class="discipline-badge">${filtered.length}</span>
+                    </div>
+                `;
+
+                filtered.forEach(item => {
+                    const idx = data.indexOf(item);
+                    const itemEl = document.createElement('div');
+                    itemEl.className = `class-item ${idx === activeClassIndex ? 'active' : ''}`;
+                    itemEl.dataset.index = idx;
+                    itemEl.onclick = () => selectClass(idx);
+                    itemEl.innerHTML = `
+                        <div class="class-name">${item.class_name}</div>
+                        <div class="class-th-name">${item.name_th}</div>
+                    `;
+                    groupEl.appendChild(itemEl);
+                });
+
+                navEl.appendChild(groupEl);
+            });
+        }
+
+        // Filter Nav Items via Search Input
+        function filterClasses(query) {
+            const q = query.toLowerCase().trim();
+            const items = document.querySelectorAll('.class-item');
+            items.forEach(item => {
+                const idx = parseInt(item.dataset.index);
+                const classObj = classesData[idx];
+                const match = !q || classObj.class_name.toLowerCase().includes(q) || classObj.name_th.toLowerCase().includes(q) || classObj.discipline.toLowerCase().includes(q);
+                item.style.display = match ? 'block' : 'none';
+            });
+        }
+
+        // Select Class & Update All 6-Dimension Views
+        function selectClass(index) {
+            if (index < 0 || index >= classesData.length) return;
+            activeClassIndex = index;
+            const item = classesData[index];
+
+            // Highlight nav item
+            document.querySelectorAll('.class-item').forEach((el, i) => {
+                el.classList.toggle('active', parseInt(el.dataset.index) === index);
+            });
+
+            // Header info
+            document.getElementById('title-class').textContent = item.class_name;
+            document.getElementById('title-th-name').textContent = item.name_th;
+            document.getElementById('title-desc').textContent = item.description;
+            document.getElementById('badge-discipline').textContent = item.discipline;
+            document.getElementById('badge-schema').textContent = item.schema_version;
+
+            // Overlay info
+            document.getElementById('card-types').textContent = (item.predefined_types || []).join(', ');
+            document.getElementById('card-psets').textContent = (item.bsdd_psets || []).join(', ');
+
+            // 2D SVG
+            document.getElementById('svg-wrapper').innerHTML = item.sample_2d_svg || '<p>No 2D preview</p>';
+
+            // Rosetta Stone Code Snippets
+            document.getElementById('code-yaml').textContent = item.debim_yaml || '';
+            document.getElementById('code-step').textContent = item.ifc_step || '';
+
+            // BOQ Table
+            renderBOQTable(item.qto_boq || []);
+
+            // Thai Specs
+            const specs = item.thai_specs || {};
+            document.getElementById('spec-mat').textContent = specs.materials || 'ไม่มีข้อมูล';
+            document.getElementById('spec-work').textContent = specs.workmanship || 'ไม่มีข้อมูล';
+            document.getElementById('spec-test').textContent = specs.testing || 'ไม่มีข้อมูล';
+
+            // 3D Model
+            update3DModel(item.sample_3d);
+        }
+
+        // Render BOQ Table
+        function renderBOQTable(boqItems) {
+            const tbody = document.getElementById('boq-tbody');
+            tbody.innerHTML = '';
+
+            let grandTotal = 0;
+            boqItems.forEach(row => {
+                const matTot = row.quantity * (row.mat_rate || 0);
+                const labTot = row.quantity * (row.labor_rate || 0);
+                const total = matTot + labTot;
+                grandTotal += total;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-family:'JetBrains Mono',monospace; color:#38bdf8;">${row.code}</td>
+                    <td style="font-weight:600;">${row.name}</td>
+                    <td style="color:#94a3b8; font-size:0.80rem;">${row.formula}</td>
+                    <td>${row.quantity.toFixed(2)}</td>
+                    <td>${row.unit}</td>
+                    <td>${(row.mat_rate||0).toLocaleString()}</td>
+                    <td>${(row.labor_rate||0).toLocaleString()}</td>
+                    <td style="font-weight:700; color:#4ade80;">${total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (boqItems.length > 0) {
+                const totalTr = document.createElement('tr');
+                totalTr.style.background = 'rgba(56, 189, 248, 0.1)';
+                totalTr.innerHTML = `
+                    <td colspan="7" style="text-align:right; font-weight:700; color:#38bdf8;">Total Amount (THB):</td>
+                    <td style="font-size:1.0rem; font-weight:700; color:#4ade80;">฿${grandTotal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+                `;
+                tbody.appendChild(totalTr);
+            }
+        }
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
+
+            const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+            if (targetBtn) targetBtn.classList.add('active');
+
+            const targetView = document.getElementById(`tab-${tabId}`);
+            if (targetView) targetView.classList.add('active');
+
+            if (tabId === '3d' && renderer) {
+                onWindowResize();
+            }
+        }
+
+        // Initialize Three.js 3D Scene
+        function init3DScene() {
+            const container = document.getElementById('viewport-3d-container');
+            const canvas = document.getElementById('canvas-3d');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x090d16);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.set(3, 3, 3);
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Lighting
+            const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambient);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(5, 10, 7);
+            scene.add(dirLight);
+
+            const gridHelper = new THREE.GridHelper(10, 10, 0x334155, 0x1e293b);
+            gridHelper.position.y = -0.01;
+            scene.add(gridHelper);
+
+            animate();
+        }
+
+        // Update 3D Model Shape
+        function update3DModel(sample3d) {
+            if (currentMesh) {
+                scene.remove(currentMesh);
+                currentMesh = null;
+            }
+            if (bboxHelper) {
+                scene.remove(bboxHelper);
+                bboxHelper = null;
+            }
+
+            if (!sample3d) return;
+
+            let geom;
+            const col = sample3d.color || "#38bdf8";
+
+            if (sample3d.shape === 'cylinder') {
+                geom = new THREE.CylinderGeometry(sample3d.radius||0.2, sample3d.radius||0.2, sample3d.height||2, 32);
+            } else if (sample3d.shape === 'pipe') {
+                geom = new THREE.CylinderGeometry(sample3d.radius||0.05, sample3d.radius||0.05, sample3d.length||3, 16);
+                geom.rotateZ(Math.PI/2);
+            } else {
+                geom = new THREE.BoxGeometry(sample3d.width||1, sample3d.height||1, sample3d.depth||1);
+            }
+
+            const mat = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(col),
+                wireframe: wireframeMode,
+                roughness: 0.4,
+                metalness: 0.2
+            });
+
+            currentMesh = new THREE.Mesh(geom, mat);
+            currentMesh.position.y = (sample3d.height || 1) / 2.0;
+            scene.add(currentMesh);
+
+            if (bboxMode) {
+                bboxHelper = new THREE.BoxHelper(currentMesh, 0xf59e0b);
+                scene.add(bboxHelper);
+            }
+
+            reset3DCamera();
+        }
+
+        function toggleWireframe() {
+            wireframeMode = !wireframeMode;
+            document.getElementById('wireframe-btn').classList.toggle('active', wireframeMode);
+            if (currentMesh && currentMesh.material) {
+                currentMesh.material.wireframe = wireframeMode;
+            }
+        }
+
+        function toggleBBox() {
+            bboxMode = !bboxMode;
+            document.getElementById('bbox-btn').classList.toggle('active', bboxMode);
+            if (currentMesh) {
+                if (bboxMode) {
+                    if (!bboxHelper) {
+                        bboxHelper = new THREE.BoxHelper(currentMesh, 0xf59e0b);
+                        scene.add(bboxHelper);
+                    }
+                } else if (bboxHelper) {
+                    scene.remove(bboxHelper);
+                    bboxHelper = null;
+                }
+            }
+        }
+
+        function reset3DCamera() {
+            if (!currentMesh) return;
+            camera.position.set(3, 2.5, 3);
+            controls.target.set(0, currentMesh.position.y, 0);
+            controls.update();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls) controls.update();
+            if (renderer && scene && camera) renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('viewport-3d-container');
+            if (!container || !renderer || !camera) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

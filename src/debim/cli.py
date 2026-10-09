@@ -1562,5 +1562,40 @@ def spec_list(
     console.print(table)
 
 
+docs_app = typer.Typer(
+    help="BIM Class Directory & Encyclopedia Documentation Engine",
+    add_completion=False,
+)
+app.add_typer(docs_app, name="docs")
+
+
+@docs_app.command(name="directory")
+@docs_app.command(name="view")
+def docs_directory_cmd(
+    output: Path = typer.Option(
+        Path("dist/class_directory.html"), "--output", "-o", help="Output Class Directory HTML webpage path"
+    ),
+):
+    """Export and view interactive BIM Class Directory and Encyclopedia web application."""
+    console.print(f"[bold green]Generating BIM Class Directory Webpage:[/bold green] -> [cyan]{output}[/cyan]")
+    try:
+        from debim.docs import export_class_directory
+
+        out_path = export_class_directory(output)
+        file_size = out_path.stat().st_size
+        console.print(
+            Panel(
+                f"[bold green]Class Directory Web Application Exported Successfully![/bold green]\n"
+                f"[bold cyan]Output HTML File:[/bold cyan] {out_path}\n"
+                f"[bold cyan]File Size:[/bold cyan] {file_size:,} bytes\n"
+                f"[dim]Open in web browser for interactive 6D BIM class inspection & encyclopedia search.[/dim]",
+                title="[bold green]debim Documentation Engine[/bold green]",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Docs Directory Export Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
 if __name__ == "__main__":
     app()
