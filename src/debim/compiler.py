@@ -851,7 +851,7 @@ class StepSerializer:
 
             pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
             axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
-            ext_dir = self.create_entity("IfcDirection", (1.0, 0.0, 0.0))
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
             solid = self.create_entity("IfcExtrudedAreaSolid", ifc_prof, axis3d, ext_dir, float(beam.span_length))
 
             shape_rep = self.create_entity(
@@ -869,13 +869,45 @@ class StepSerializer:
             st_elev = storey_elevations.get(st_id, 0.0)
 
             px, py, pz = beam.start_point
-            b_depth = getattr(prof, "depth", getattr(prof, "overall_depth", 0.3))
-            rel_z = float(pz - st_elev - b_depth / 2.0)
-
-            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
             dx, dy, dz = beam.direction_vector_3d
-            ref_dir = self.create_entity("IfcDirection", (round(dx, 6), round(dy, 6), round(dz, 6)))
-            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, ref_dir)
+
+            # z_axis along beam span direction
+            z_len = math.sqrt(dx * dx + dy * dy + dz * dz)
+            if z_len > 1e-6:
+                zx, zy, zz = dx / z_len, dy / z_len, dz / z_len
+            else:
+                zx, zy, zz = 1.0, 0.0, 0.0
+
+            # y_axis along perpendicular up/depth direction
+            dot_up = zz  # dot((zx, zy, zz), (0, 0, 1))
+            if abs(dot_up) < 0.99:
+                yrx, yry, yrz = -zx * zz, -zy * zz, 1.0 - zz * zz
+            else:
+                yrx, yry, yrz = -zx * zy, 1.0 - zy * zy, -zz * zy
+            y_len = math.sqrt(yrx * yrx + yry * yry + yrz * yrz)
+            if y_len > 1e-6:
+                yx, yy, yz = yrx / y_len, yry / y_len, yrz / y_len
+            else:
+                yx, yy, yz = 0.0, 1.0, 0.0
+
+            # x_axis = y_axis x z_axis
+            xx = yy * zz - yz * zy
+            xy = yz * zx - yx * zz
+            xz = yx * zy - yy * zx
+            x_len = math.sqrt(xx * xx + xy * xy + xz * xz)
+            if x_len > 1e-6:
+                xx, xy, xz = xx / x_len, xy / x_len, xz / x_len
+
+            b_depth = getattr(prof, "depth", getattr(prof, "overall_depth", 0.3))
+            ox = px - yx * (b_depth / 2.0)
+            oy = py - yy * (b_depth / 2.0)
+            oz = pz - yz * (b_depth / 2.0)
+            rel_z = float(oz - st_elev)
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(ox), float(oy), rel_z))
+            axis_dir = self.create_entity("IfcDirection", (round(zx, 6), round(zy, 6), round(zz, 6)))
+            ref_dir = self.create_entity("IfcDirection", (round(xx, 6), round(xy, 6), round(xz, 6)))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, axis_dir, ref_dir)
             elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
 
             elem_ref = self.create_entity(
@@ -1992,39 +2024,37 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
 
         px, py, pz = beam.start_point
         dx, dy, dz = beam.direction_vector_3d
-        x_axis = np.array([dx, dy, dz], dtype=float)
+        z_axis = np.array([dx, dy, dz], dtype=float)
+        z_norm = np.linalg.norm(z_axis)
+        if z_norm > 1e-6:
+            z_axis /= z_norm
+        else:
+            z_axis = np.array([1, 0, 0], dtype=float)
+
+        up = np.array([0.0, 0.0, 1.0], dtype=float)
+        if abs(np.dot(z_axis, up)) < 0.99:
+            y_raw = up - np.dot(up, z_axis) * z_axis
+            y_axis = y_raw / np.linalg.norm(y_raw)
+        else:
+            y_raw = np.array([0.0, 1.0, 0.0], dtype=float) - np.dot(np.array([0.0, 1.0, 0.0]), z_axis) * z_axis
+            y_axis = y_raw / np.linalg.norm(y_raw)
+
+        x_axis = np.cross(y_axis, z_axis)
         x_norm = np.linalg.norm(x_axis)
         if x_norm > 1e-6:
             x_axis /= x_norm
-        else:
-            x_axis = np.array([1, 0, 0], dtype=float)
 
-        if abs(x_axis[2]) < 0.9:
-            z_axis = np.array([0, 0, 1], dtype=float)
-            y_axis = np.cross(z_axis, x_axis)
-            y_norm = np.linalg.norm(y_axis)
-            if y_norm > 1e-6:
-                y_axis /= y_norm
-            else:
-                y_axis = np.array([0, 1, 0], dtype=float)
-            z_axis = np.cross(x_axis, y_axis)
-        else:
-            y_axis = np.array([0, 1, 0], dtype=float)
-            z_axis = np.cross(x_axis, y_axis)
-            z_norm = np.linalg.norm(z_axis)
-            if z_norm > 1e-6:
-                z_axis /= z_norm
-            else:
-                z_axis = np.array([0, 0, 1], dtype=float)
-            y_axis = np.cross(z_axis, x_axis)
+        prof = beam.element.profile
+        b_depth = float(getattr(prof, "depth", getattr(prof, "overall_depth", 0.3)))
+        origin = np.array([px, py, pz], dtype=float) - y_axis * (b_depth / 2.0)
 
         mat = np.eye(4)
         mat[:3, 0] = x_axis
         mat[:3, 1] = y_axis
         mat[:3, 2] = z_axis
-        mat[0, 3] = px
-        mat[1, 3] = py
-        mat[2, 3] = pz
+        mat[0, 3] = float(origin[0])
+        mat[1, 3] = float(origin[1])
+        mat[2, 3] = float(origin[2])
 
         ifcopenshell.api.run(
             "geometry.edit_object_placement",
@@ -2033,7 +2063,6 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             matrix=mat,
         )
 
-        prof = beam.element.profile
         pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
         ifc_prof = _create_ifcopenshell_profile(model, prof, beam.tag, pos2d)
 
@@ -2044,7 +2073,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 model.createIfcDirection((0.0, 0.0, 1.0)),
                 model.createIfcDirection((1.0, 0.0, 0.0)),
             ),
-            model.createIfcDirection((1.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
             float(beam.span_length),
         )
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])

@@ -2,7 +2,7 @@
 2D HTML Blueprint Viewer Exporter Engine for debim.
 Generates standalone lightweight 2D HTML blueprint viewer decoupled from 3D WebGL runtime.
 Provides collapsible sheet navigator drawer, pan & pinch-to-zoom, digital measurement ruler,
-layer visibility toggles, and one-click native print styling.
+layer visibility toggles, sections navigation, and one-click native print styling.
 """
 
 import json
@@ -32,7 +32,8 @@ def generate_2d_viewer_html(
 ) -> str:
     """
     Generate a self-contained, standalone 2D web viewer HTML string
-    embedding compiled SVG architectural sheets with zero 3D runtime dependencies.
+    embedding compiled SVG architectural sheets (Plans, Elevations, Sections)
+    with zero 3D runtime dependencies.
     """
     if isinstance(manifest_or_resolved, (str, Path)):
         manifest_path = Path(manifest_or_resolved)
@@ -59,7 +60,7 @@ def generate_2d_viewer_html(
             sheets_dir_or_configs = Path("sheets")
 
     if sheets_dir_or_configs is None:
-        # Fallback: auto-generate sheet configs for each storey
+        # Fallback: auto-generate sheet configs for floor plans, elevations & sections
         configs = []
         storeys = manifest_obj.spatial_structure.storeys or []
         if storeys:
@@ -69,6 +70,7 @@ def generate_2d_viewer_html(
                     SheetConfig(
                         id=sheet_id,
                         title=f"{storey.name} Plan",
+                        view_type="plan",
                         storey_id=storey.id,
                         scale=100,
                         paper_size="A3",
@@ -76,7 +78,54 @@ def generate_2d_viewer_html(
                     )
                 )
         else:
-            configs.append(SheetConfig(id="A-101", title="Floor Plan"))
+            configs.append(SheetConfig(id="A-101", title="Floor Plan", view_type="plan"))
+
+        # Add default elevation sheets (A-201..A-204)
+        elevation_specs = [
+            ("A-201", "รูปด้าน 1 (Front Elevation)", "FRONT"),
+            ("A-202", "รูปด้าน 2 (Rear Elevation)", "REAR"),
+            ("A-203", "รูปด้าน 3 (Right Elevation)", "RIGHT"),
+            ("A-204", "รูปด้าน 4 (Left Elevation)", "LEFT"),
+        ]
+        for elev_id, elev_title, elev_dir in elevation_specs:
+            configs.append(
+                SheetConfig(
+                    id=elev_id,
+                    title=elev_title,
+                    view_type="ELEVATION",
+                    elevation_direction=elev_dir,
+                    scale=100,
+                    paper_size="A3",
+                    orientation="landscape",
+                )
+            )
+
+        # Add default Architectural Section sheets (A-301..A-302)
+        configs.append(
+            SheetConfig(
+                id="A-301",
+                title="Section A-A / รูปตัด A-A",
+                view_type="section",
+                section_id="A-A",
+                section_axis="Y",
+                scale=100,
+                paper_size="A3",
+                orientation="landscape",
+            )
+        )
+        configs.append(
+            SheetConfig(
+                id="A-302",
+                title="Section B-B / รูปตัด B-B",
+                view_type="section",
+                section_id="B-B",
+                section_axis="X",
+                scale=100,
+                paper_size="A3",
+                orientation="landscape",
+            )
+        )
+
         rendered_sheets = render_sheet_set(resolved, configs)
     else:
         rendered_sheets = render_sheet_set(resolved, sheets_dir_or_configs)
@@ -88,6 +137,7 @@ def generate_2d_viewer_html(
             {
                 "id": cfg.id,
                 "title": cfg.title,
+                "view_type": cfg.view_type,
                 "paper_size": cfg.paper_size,
                 "orientation": cfg.orientation,
                 "scale": cfg.scale,
