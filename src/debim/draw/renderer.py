@@ -1,7 +1,8 @@
 """
 2D SVG Architectural Sheet Builder Engine for debim.
-Converts 2D projection primitives into production-ready SVG and print-ready sheets
-using CSS Paged Media, Thai Google Fonts, Annotative Scaling, Dimensions, and Title Blocks.
+Converts 2D projection primitives (Floor Plans and Architectural Sections) into production-ready SVG
+and print-ready sheets using CSS Paged Media, CAD Hatching, Thai Google Fonts,
+Annotative Scaling, Level Dimensions, Section Callouts, and Title Blocks.
 """
 
 from datetime import datetime, timezone
@@ -18,6 +19,13 @@ from debim.draw.projection import (
     GridLine2D,
     ProjectionElement,
     slice_storey,
+)
+from debim.draw.section import (
+    SectionCutElement,
+    SectionCutPlaneResult,
+    SectionProjectionElement,
+    StoreyLevelMarker,
+    slice_section,
 )
 from debim.resolver import ResolvedManifest, resolve_manifest
 from debim.schema import ProjectManifest, load_manifest
@@ -42,6 +50,8 @@ class VisibilityFilter(BaseModel):
     show_title_block: bool = True
     show_sheet_index: bool = True
     show_room_tags: bool = True
+    show_level_markers: bool = True
+    show_section_callouts: bool = True
 
 
 class SheetIndexItem(BaseModel):
@@ -64,11 +74,17 @@ class SheetConfig(BaseModel):
     """Sheet specification model."""
     id: str = "A-101"
     title: str = "Ground Floor Plan"
+    view_type: Literal["plan", "section"] = "plan"
     paper_size: Literal["A4", "A3", "A2", "A1", "A0"] = "A3"
     orientation: Literal["landscape", "portrait"] = "landscape"
     scale: int = 100  # Scale ratio 1:S e.g. 100 for 1:100, 50 for 1:50
     storey_id: Optional[str] = None
     cut_offset_z: float = 1.20
+    # Section specific parameters
+    section_id: Optional[str] = "A-A"
+    section_axis: Optional[Literal["X", "Y"]] = "Y"
+    section_position: Optional[float] = None
+    section_grid_id: Optional[str] = None
     crop: Optional[Union[CropBox, Dict[str, float], Tuple[float, float, float, float], List[float]]] = None
     visibility: VisibilityFilter = Field(default_factory=VisibilityFilter)
     margin_mm: float = 10.0
@@ -152,539 +168,6 @@ def _get_embedded_css() -> str:
     return "/* Fallback Sheet CSS */"
 
 
-class SheetRenderer:
-    """
-    2D Architectural Sheet Rendering Engine.
-    Converts 2D projection primitives into production-ready SVG and PDF-ready sheets.
-    """
-
-    def __init__(
-        self,
-        manifest_or_resolved: Union[ProjectManifest, ResolvedManifest, Path, str],
-        sheet_config: Optional[Union[SheetConfig, dict, Path, str]] = None,
-    ):
-        if isinstance(manifest_or_resolved, (str, Path)):
-            manifest_path = Path(manifest_or_resolved)
-            if manifest_path.exists():
-                manifest_obj = load_manifest(manifest_path)
-                self.resolved = resolve_manifest(manifest_obj)
-            else:
-                raise FileNotFoundError(f"Manifest path not found: {manifest_path}")
-        elif isinstance(manifest_or_resolved, ProjectManifest):
-            self.resolved = resolve_manifest(manifest_or_resolved)
-        elif isinstance(manifest_or_resolved, ResolvedManifest):
-            self.resolved = manifest_or_resolved
-        else:
-            raise TypeError(f"Invalid manifest type: {type(manifest_or_resolved)}")
-
-        if sheet_config is None:
-            self.config = SheetConfig()
-        else:
-            self.config = load_sheet_config(sheet_config)
-
-    def render_svg(self) -> str:
-        """Full SVG sheet DOM generator."""
-        cfg = self.config
-        manifest = self.resolved.manifest
-        proj = manifest.project
-
-        # 1. Determine Storey ID
-        storey_id = cfg.storey_id
-        if not storey_id:
-            if manifest.spatial_structure.storeys:
-                ground_storeys = [s for s in manifest.spatial_structure.storeys if s.elevation >= 0.0]
-                if ground_storeys:
-                    storey_id = ground_storeys[0].id
-                else:
-                    storey_id = manifest.spatial_structure.storeys[0].id
-            else:
-                raise ValueError("No storeys defined in project manifest.")
-
-        # 2. Slice Storey Geometry via debim.draw.projection
-        cut_result: CutPlaneResult = slice_storey(self.resolved, storey_id, cut_offset_z=cfg.cut_offset_z)
-
-        # 3. Determine Paper Dimensions & Layout Geometry (mm)
-        paper_w, paper_h = cfg.get_paper_dimensions_mm()
-        margin = cfg.margin_mm
-
-        # Layout Areas:
-        printable_x = margin
-        printable_y = margin
-        printable_w = paper_w - 2 * margin
-        printable_h = paper_h - 2 * margin
-
-        # Right Title Block Width & Area (if enabled)
-        title_block_width = 75.0 if printable_w >= 300.0 else 55.0
-        if cfg.visibility.show_title_block:
-            drawing_w = printable_w - title_block_width - 5.0
-            title_x = printable_x + printable_w - title_block_width
-            title_y = printable_y
-            title_h = printable_h
-        else:
-            drawing_w = printable_w
-            title_x = 0.0
-            title_y = 0.0
-            title_h = 0.0
-
-        drawing_h = printable_h
-        drawing_cx = printable_x + drawing_w / 2.0
-        drawing_cy = printable_y + drawing_h / 2.0
-
-        # 4. Model Bounds & Crop Box
-        if cfg.crop:
-            if isinstance(cfg.crop, CropBox):
-                cb = cfg.crop
-            else:
-                cb = CropBox.model_validate(cfg.crop)
-            min_x, min_y, max_x, max_y = cb.min_x, cb.min_y, cb.max_x, cb.max_y
-        else:
-            min_x, min_y, max_x, max_y = cut_result.bounds
-
-        model_cx = (min_x + max_x) / 2.0
-        model_cy = (min_y + max_y) / 2.0
-
-        # Coordinate Transformer instance
-        transformer = CoordinateTransformer(
-            model_center=(model_cx, model_cy),
-            viewport_center=(drawing_cx, drawing_cy),
-            scale=cfg.scale,
-        )
-
-        # Project Name
-        proj_name = cfg.project_name or proj.name
-        date_str = cfg.date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-        # 5. Build SVG Elements
-        embedded_css = _get_embedded_css()
-
-        svg_lines = [
-            '<?xml version="1.0" encoding="UTF-8"?>',
-            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {paper_w:.1f} {paper_h:.1f}" width="{paper_w:.1f}mm" height="{paper_h:.1f}mm">',
-            '  <defs>',
-            '    <style type="text/css"><![CDATA[',
-            f'{embedded_css}',
-            '    ]]></style>',
-            '  </defs>',
-            '  <!-- Background -->',
-            f'  <rect x="0" y="0" width="{paper_w:.1f}" height="{paper_h:.1f}" fill="#ffffff" />',
-            '  <!-- Outer Sheet Border & Margin -->',
-            f'  <rect x="{printable_x:.1f}" y="{printable_y:.1f}" width="{printable_w:.1f}" height="{printable_h:.1f}" class="sheet-border" />',
-        ]
-
-        # Inner Margin Line
-        inner_m = 2.0
-        svg_lines.append(
-            f'  <rect x="{printable_x + inner_m:.1f}" y="{printable_y + inner_m:.1f}" width="{printable_w - 2*inner_m:.1f}" height="{printable_h - 2*inner_m:.1f}" class="sheet-inner-border" />'
-        )
-
-        # Group for Model Geometry
-        svg_lines.append('  <g id="drawing-viewport">')
-
-        # 6. Render Low Projection Elements (.projection)
-        if cfg.visibility.show_projection:
-            svg_lines.append('    <!-- Projection Elements -->')
-            for pe in cut_result.projection_elements:
-                d_str = transformer.polygon_to_paper_path(pe.polygon_coords)
-                if d_str:
-                    svg_lines.append(
-                        f'    <path d="{d_str}" class="projection" fill-rule="evenodd" data-tag="{pe.tag}" data-class="{pe.element_class}" />'
-                    )
-
-        # 7. Render Cut Medium Elements (.cut-medium)
-        if cfg.visibility.show_cut_medium:
-            svg_lines.append('    <!-- Cut Medium Elements -->')
-            for ce in cut_result.medium_cut_elements:
-                d_str = transformer.polygon_to_paper_path(ce.polygon_coords)
-                if d_str:
-                    svg_lines.append(
-                        f'    <path d="{d_str}" class="cut-medium" fill-rule="evenodd" data-tag="{ce.tag}" data-class="{ce.element_class}" />'
-                    )
-
-        # 8. Render Cut Heavy Elements (.cut-heavy)
-        if cfg.visibility.show_cut_heavy:
-            svg_lines.append('    <!-- Cut Heavy Elements -->')
-            for ce in cut_result.heavy_cut_elements:
-                d_str = transformer.polygon_to_paper_path(ce.polygon_coords)
-                if d_str:
-                    svg_lines.append(
-                        f'    <path d="{d_str}" class="cut-heavy" fill-rule="evenodd" data-tag="{ce.tag}" data-class="{ce.element_class}" />'
-                    )
-
-        # 9. Render Grid Lines & Bubbles (.grid-line, .grid-bubble, .grid-text)
-        if cfg.visibility.show_grid:
-            svg_lines.append('    <!-- Grid Lines & Bubbles -->')
-
-            # Annotative Paper Offsets (mm on paper space)
-            dim1_offset_mm = 8.0    # Bay/Grid dimension offset from building envelope
-            dim2_offset_mm = 15.0   # Overall envelope dimension offset from building envelope
-            bubble_offset_mm = 23.0 # Grid bubble offset from building envelope
-            ext_other_mm = 8.0      # Offset for sides without dimensions
-            bubble_r_mm = 3.6       # Grid bubble radius (diameter 7.2mm)
-
-            x_grids = [g for g in cut_result.grid_lines if g.axis == "X" and "-" not in g.id]
-            y_grids = [g for g in cut_result.grid_lines if g.axis == "Y" and "-" not in g.id]
-
-            all_model_x = [g.position for g in x_grids] or [min_x, max_x]
-            all_model_y = [g.position for g in y_grids] or [min_y, max_y]
-
-            min_gx, max_gx = min(all_model_x), max(all_model_x)
-            min_gy, max_gy = min(all_model_y), max(all_model_y)
-
-            # Model coordinate extents derived from constant paper offsets
-            y_top_m = max_gy + transformer.mm_to_model(bubble_offset_mm)
-            y_bot_m = min_gy - transformer.mm_to_model(ext_other_mm)
-            x_left_m = min_gx - transformer.mm_to_model(bubble_offset_mm)
-            x_right_m = max_gx + transformer.mm_to_model(ext_other_mm)
-
-            # Draw X Grids (Vertical lines)
-            for g in x_grids:
-                p_top = transformer.to_paper(g.position, y_top_m)
-                p_bot = transformer.to_paper(g.position, y_bot_m)
-
-                svg_lines.append(
-                    f'    <line x1="{p_bot[0]}" y1="{p_bot[1]}" x2="{p_top[0]}" y2="{p_top[1]}" class="grid-line" />'
-                )
-
-                svg_lines.append(
-                    f'    <circle cx="{p_top[0]}" cy="{p_top[1]}" r="{bubble_r_mm}" class="grid-bubble" />'
-                )
-                svg_lines.append(
-                    f'    <text x="{p_top[0]}" y="{p_top[1]}" class="grid-text">{g.id}</text>'
-                )
-
-                svg_lines.append(
-                    f'    <circle cx="{p_bot[0]}" cy="{p_bot[1]}" r="{bubble_r_mm}" class="grid-bubble" />'
-                )
-                svg_lines.append(
-                    f'    <text x="{p_bot[0]}" y="{p_bot[1]}" class="grid-text">{g.id}</text>'
-                )
-
-            # Draw Y Grids (Horizontal lines)
-            for g in y_grids:
-                p_left = transformer.to_paper(x_left_m, g.position)
-                p_right = transformer.to_paper(x_right_m, g.position)
-
-                svg_lines.append(
-                    f'    <line x1="{p_left[0]}" y1="{p_left[1]}" x2="{p_right[0]}" y2="{p_right[1]}" class="grid-line" />'
-                )
-
-                svg_lines.append(
-                    f'    <circle cx="{p_left[0]}" cy="{p_left[1]}" r="{bubble_r_mm}" class="grid-bubble" />'
-                )
-                svg_lines.append(
-                    f'    <text x="{p_left[0]}" y="{p_left[1]}" class="grid-text">{g.id}</text>'
-                )
-
-                svg_lines.append(
-                    f'    <circle cx="{p_right[0]}" cy="{p_right[1]}" r="{bubble_r_mm}" class="grid-bubble" />'
-                )
-                svg_lines.append(
-                    f'    <text x="{p_right[0]}" y="{p_right[1]}" class="grid-text">{g.id}</text>'
-                )
-
-        # 10. Render Automatic Dimensions (.dimension-line, .dimension-text, .text-mask)
-        if cfg.visibility.show_dimensions and cfg.visibility.show_grid:
-            svg_lines.append('    <!-- Automatic Dimensions -->')
-
-            x_grids_sorted = sorted([g for g in cut_result.grid_lines if g.axis == "X" and "-" not in g.id], key=lambda g: g.position)
-            y_grids_sorted = sorted([g for g in cut_result.grid_lines if g.axis == "Y" and "-" not in g.id], key=lambda g: g.position)
-
-            tick_len_mm = 1.8
-
-            # X-Axis Dimension Strings (above building, between roof and top bubbles)
-            if len(x_grids_sorted) >= 2:
-                dim_y_m = max_gy + transformer.mm_to_model(dim1_offset_mm)
-                dim_y_p = transformer.to_paper(0, dim_y_m)[1]
-
-                for i in range(len(x_grids_sorted) - 1):
-                    g1, g2 = x_grids_sorted[i], x_grids_sorted[i + 1]
-                    p1 = transformer.to_paper(g1.position, dim_y_m)
-                    p2 = transformer.to_paper(g2.position, dim_y_m)
-                    dist_m = abs(g2.position - g1.position)
-
-                    svg_lines.append(
-                        f'    <line x1="{p1[0]}" y1="{dim_y_p}" x2="{p2[0]}" y2="{dim_y_p}" class="dimension-line" />'
-                    )
-
-                    svg_lines.append(
-                        f'    <line x1="{p1[0] - tick_len_mm/2}" y1="{dim_y_p + tick_len_mm/2}" x2="{p1[0] + tick_len_mm/2}" y2="{dim_y_p - tick_len_mm/2}" class="dimension-tick" />'
-                    )
-                    svg_lines.append(
-                        f'    <line x1="{p2[0] - tick_len_mm/2}" y1="{dim_y_p + tick_len_mm/2}" x2="{p2[0] + tick_len_mm/2}" y2="{dim_y_p - tick_len_mm/2}" class="dimension-tick" />'
-                    )
-
-                    mid_x = (p1[0] + p2[0]) / 2.0
-                    val_str = f"{dist_m:.2f}"
-                    text_w_mm = len(val_str) * 1.5 + 2.0
-                    text_h_mm = 2.4
-
-                    svg_lines.append(
-                        f'    <rect x="{mid_x - text_w_mm/2:.2f}" y="{dim_y_p - text_h_mm/2:.2f}" width="{text_w_mm:.2f}" height="{text_h_mm:.2f}" class="text-mask" />'
-                    )
-                    svg_lines.append(
-                        f'    <text x="{mid_x:.2f}" y="{dim_y_p:.2f}" class="dimension-text">{val_str}</text>'
-                    )
-
-                # Overall Envelope Dimension (further above bay dims)
-                dim_overall_y_m = max_gy + transformer.mm_to_model(dim2_offset_mm)
-                dim_overall_y_p = transformer.to_paper(0, dim_overall_y_m)[1]
-
-                p_start = transformer.to_paper(x_grids_sorted[0].position, dim_overall_y_m)
-                p_end = transformer.to_paper(x_grids_sorted[-1].position, dim_overall_y_m)
-                total_dist_m = abs(x_grids_sorted[-1].position - x_grids_sorted[0].position)
-
-                svg_lines.append(
-                    f'    <line x1="{p_start[0]}" y1="{dim_overall_y_p}" x2="{p_end[0]}" y2="{dim_overall_y_p}" class="dimension-line" />'
-                )
-                svg_lines.append(
-                    f'    <line x1="{p_start[0] - tick_len_mm/2}" y1="{dim_overall_y_p + tick_len_mm/2}" x2="{p_start[0] + tick_len_mm/2}" y2="{dim_overall_y_p - tick_len_mm/2}" class="dimension-tick" />'
-                )
-                svg_lines.append(
-                    f'    <line x1="{p_end[0] - tick_len_mm/2}" y1="{dim_overall_y_p + tick_len_mm/2}" x2="{p_end[0] + tick_len_mm/2}" y2="{dim_overall_y_p - tick_len_mm/2}" class="dimension-tick" />'
-                )
-
-                mid_x_overall = (p_start[0] + p_end[0]) / 2.0
-                val_overall_str = f"{total_dist_m:.2f}"
-                text_w_overall = len(val_overall_str) * 1.5 + 2.0
-
-                svg_lines.append(
-                    f'    <rect x="{mid_x_overall - text_w_overall/2:.2f}" y="{dim_overall_y_p - text_h_mm/2:.2f}" width="{text_w_overall:.2f}" height="{text_h_mm:.2f}" class="text-mask" />'
-                )
-                svg_lines.append(
-                    f'    <text x="{mid_x_overall:.2f}" y="{dim_overall_y_p:.2f}" class="dimension-text">{val_overall_str}</text>'
-                )
-
-            # Y-Axis Dimension Strings (left of building, between wall and left bubbles)
-            if len(y_grids_sorted) >= 2:
-                dim_x_m = min_gx - transformer.mm_to_model(dim1_offset_mm)
-                dim_x_p = transformer.to_paper(dim_x_m, 0)[0]
-
-                for i in range(len(y_grids_sorted) - 1):
-                    g1, g2 = y_grids_sorted[i], y_grids_sorted[i + 1]
-                    p1 = transformer.to_paper(dim_x_m, g1.position)
-                    p2 = transformer.to_paper(dim_x_m, g2.position)
-                    dist_m = abs(g2.position - g1.position)
-
-                    svg_lines.append(
-                        f'    <line x1="{dim_x_p}" y1="{p1[1]}" x2="{dim_x_p}" y2="{p2[1]}" class="dimension-line" />'
-                    )
-                    svg_lines.append(
-                        f'    <line x1="{dim_x_p - tick_len_mm/2}" y1="{p1[1] + tick_len_mm/2}" x2="{dim_x_p + tick_len_mm/2}" y2="{p1[1] - tick_len_mm/2}" class="dimension-tick" />'
-                    )
-                    svg_lines.append(
-                        f'    <line x1="{dim_x_p - tick_len_mm/2}" y1="{p2[1] + tick_len_mm/2}" x2="{dim_x_p + tick_len_mm/2}" y2="{p2[1] - tick_len_mm/2}" class="dimension-tick" />'
-                    )
-
-                    mid_y = (p1[1] + p2[1]) / 2.0
-                    val_str = f"{dist_m:.2f}"
-                    text_w_mm = len(val_str) * 1.5 + 2.0
-                    text_h_mm = 2.4
-
-                    svg_lines.append(
-                        f'    <rect x="{dim_x_p - text_w_mm/2:.2f}" y="{mid_y - text_h_mm/2:.2f}" width="{text_w_mm:.2f}" height="{text_h_mm:.2f}" class="text-mask" transform="rotate(-90, {dim_x_p:.2f}, {mid_y:.2f})" />'
-                    )
-                    svg_lines.append(
-                        f'    <text x="{dim_x_p:.2f}" y="{mid_y:.2f}" class="dimension-text" transform="rotate(-90, {dim_x_p:.2f}, {mid_y:.2f})">{val_str}</text>'
-                    )
-
-                # Overall Y Envelope Dimension
-                dim_overall_x_m = min_gx - transformer.mm_to_model(dim2_offset_mm)
-                dim_overall_x_p = transformer.to_paper(dim_overall_x_m, 0)[0]
-
-                p_start_y = transformer.to_paper(dim_overall_x_m, y_grids_sorted[0].position)
-                p_end_y = transformer.to_paper(dim_overall_x_m, y_grids_sorted[-1].position)
-                total_y_dist = abs(y_grids_sorted[-1].position - y_grids_sorted[0].position)
-
-                svg_lines.append(
-                    f'    <line x1="{dim_overall_x_p}" y1="{p_start_y[1]}" x2="{dim_overall_x_p}" y2="{p_end_y[1]}" class="dimension-line" />'
-                )
-                svg_lines.append(
-                    f'    <line x1="{dim_overall_x_p - tick_len_mm/2}" y1="{p_start_y[1] + tick_len_mm/2}" x2="{dim_overall_x_p + tick_len_mm/2}" y2="{p_start_y[1] - tick_len_mm/2}" class="dimension-tick" />'
-                )
-                svg_lines.append(
-                    f'    <line x1="{dim_overall_x_p - tick_len_mm/2}" y1="{p_end_y[1] + tick_len_mm/2}" x2="{dim_overall_x_p + tick_len_mm/2}" y2="{p_end_y[1] - tick_len_mm/2}" class="dimension-tick" />'
-                )
-
-                mid_y_overall = (p_start_y[1] + p_end_y[1]) / 2.0
-                val_y_overall_str = f"{total_y_dist:.2f}"
-                text_w_y_overall = len(val_y_overall_str) * 1.5 + 2.0
-
-                svg_lines.append(
-                    f'    <rect x="{dim_overall_x_p - text_w_y_overall/2:.2f}" y="{mid_y_overall - text_h_mm/2:.2f}" width="{text_w_y_overall:.2f}" height="{text_h_mm:.2f}" class="text-mask" transform="rotate(-90, {dim_overall_x_p:.2f}, {mid_y_overall:.2f})" />'
-                )
-                svg_lines.append(
-                    f'    <text x="{dim_overall_x_p:.2f}" y="{mid_y_overall:.2f}" class="dimension-text" transform="rotate(-90, {dim_overall_x_p:.2f}, {mid_y_overall:.2f})">{val_y_overall_str}</text>'
-                )
-
-        # 11. Render Room Tags / Labels (.room-tag, .text-mask)
-        if cfg.visibility.show_room_tags:
-            svg_lines.append('    <!-- Room Tags / Storey Label -->')
-            tag_p = transformer.to_paper(model_cx, model_cy)
-            room_label = cut_result.storey_name or cut_result.storey_id
-            text_w = len(room_label) * 2.4 + 4.0
-            text_h = 4.5
-
-            svg_lines.append(
-                f'    <rect x="{tag_p[0] - text_w/2:.2f}" y="{tag_p[1] - text_h/2:.2f}" width="{text_w:.2f}" height="{text_h:.2f}" class="text-mask" />'
-            )
-            svg_lines.append(
-                f'    <text x="{tag_p[0]:.2f}" y="{tag_p[1]:.2f}" class="room-tag">{room_label}</text>'
-            )
-
-        svg_lines.append('  </g> <!-- End drawing-viewport -->')
-
-        # 12. Title Block & Sheet Index Table
-        if cfg.visibility.show_title_block:
-            svg_lines.append('  <!-- Standard Architectural Title Block -->')
-            svg_lines.append(
-                f'  <g id="title-block" transform="translate({title_x:.1f}, {title_y:.1f})">'
-            )
-            svg_lines.append(
-                f'    <rect x="0" y="0" width="{title_block_width:.1f}" height="{title_h:.1f}" class="title-block-container" />'
-            )
-
-            curr_y = 6.0
-
-            # Project Title Header Box
-            svg_lines.append(
-                f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">PROJECT / โครงการ</text>'
-            )
-            curr_y += 3.5
-            display_proj = (proj_name[:26] + "...") if len(proj_name) > 28 else proj_name
-            svg_lines.append(
-                f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-title">{display_proj}</text>'
-            )
-            curr_y += 6.5
-            svg_lines.append(
-                f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
-            )
-            curr_y += 3.0
-
-            # Sheet Title Box
-            svg_lines.append(
-                f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">DRAWING TITLE / ชื่อแบบ</text>'
-            )
-            curr_y += 3.5
-            svg_lines.append(
-                f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-title">{cfg.title}</text>'
-            )
-            curr_y += 6.5
-            svg_lines.append(
-                f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
-            )
-            curr_y += 3.0
-
-            # Details Grid: Sheet No, Scale, Date, Rev, Client, Architect
-            details = [
-                ("SHEET NO. / เลขที่แบบ", cfg.id),
-                ("SCALE / มาตราส่วน", f"1:{cfg.scale}"),
-                ("DATE / วันที่", date_str),
-                ("REVISION / แก้ไขครั้งที่", cfg.revision),
-                ("CLIENT / เจ้าของโครงการ", cfg.client_name),
-                ("ARCHITECT / สถาปนิก", cfg.architect_name),
-            ]
-
-            for lbl, val in details:
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">{lbl}</text>'
-                )
-                curr_y += 3.2
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-text">{val}</text>'
-                )
-                curr_y += 4.5
-                svg_lines.append(
-                    f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
-                )
-                curr_y += 2.5
-
-            # Sheet Index Table (if enabled & provided)
-            if cfg.visibility.show_sheet_index and cfg.sheet_index:
-                curr_y += 1.0
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-title">SHEET INDEX /สารบัญแบบ</text>'
-                )
-                curr_y += 4.5
-
-                # Table Header
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-header">NO.</text>'
-                )
-                svg_lines.append(
-                    f'    <text x="18.0" y="{curr_y:.1f}" class="sheet-index-header">TITLE</text>'
-                )
-                svg_lines.append(
-                    f'    <text x="{title_block_width - 15.0:.1f}" y="{curr_y:.1f}" class="sheet-index-header">SCALE</text>'
-                )
-                curr_y += 3.2
-                svg_lines.append(
-                    f'    <line x1="5.0" y1="{curr_y:.1f}" x2="{title_block_width - 5.0:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
-                )
-                curr_y += 2.5
-
-                for idx_item in cfg.sheet_index:
-                    if curr_y > title_h - 45.0:
-                        break
-                    svg_lines.append(
-                        f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">{idx_item.sheet_no}</text>'
-                    )
-                    svg_lines.append(
-                        f'    <text x="18.0" y="{curr_y:.1f}" class="sheet-index-cell">{idx_item.title[:20]}</text>'
-                    )
-                    svg_lines.append(
-                        f'    <text x="{title_block_width - 15.0:.1f}" y="{curr_y:.1f}" class="sheet-index-cell">{idx_item.scale}</text>'
-                    )
-                    curr_y += 4.0
-
-            # General Notes & Professional Stamp Box
-            if curr_y < title_h - 40.0:
-                curr_y += 3.0
-                svg_lines.append(
-                    f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
-                )
-                curr_y += 3.0
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">GENERAL NOTES / ข้อกำหนดทั่วไป</text>'
-                )
-                curr_y += 3.5
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">1. DO NOT SCALE DRAWINGS / ห้ามวัดขนาดจากแบบ</text>'
-                )
-                curr_y += 3.5
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">2. ALL DIMENSIONS IN METERS / หน่วยวัดเป็นเมตร</text>'
-                )
-                curr_y += 3.5
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">3. VERIFY ALL DIMS ON SITE / ตรวจขนาดจริงหน้างาน</text>'
-                )
-                curr_y += 4.5
-                svg_lines.append(
-                    f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
-                )
-                curr_y += 3.0
-                svg_lines.append(
-                    f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">PROFESSIONAL STAMP & SIGNATURE</text>'
-                )
-
-            # Footer debim Engine Tag
-            svg_lines.append(
-                f'    <text x="5.0" y="{title_h - 4.0:.1f}" class="title-block-label">GENERATED BY debim ARCHITECTURAL ENGINE</text>'
-            )
-
-            svg_lines.append('  </g> <!-- End title-block -->')
-
-        svg_lines.append('</svg>')
-        return "\n".join(svg_lines)
-
-    def save_svg(self, output_path: Union[str, Path]) -> Path:
-        out_p = Path(output_path)
-        out_p.parent.mkdir(parents=True, exist_ok=True)
-        svg_content = self.render_svg()
-        out_p.write_text(svg_content, encoding="utf-8")
-        return out_p
-
-
 class CoordinateTransformer:
     """Maps 2D BIM model coordinates (meters) to paper coordinates (millimeters)."""
 
@@ -728,6 +211,591 @@ class CoordinateTransformer:
         return " ".join(path_parts)
 
 
+class SheetRenderer:
+    """
+    2D Architectural Sheet Rendering Engine.
+    Converts 2D projection primitives (Plans & Sections) into production-ready SVG and PDF-ready sheets.
+    """
+
+    def __init__(
+        self,
+        manifest_or_resolved: Union[ProjectManifest, ResolvedManifest, Path, str],
+        sheet_config: Optional[Union[SheetConfig, dict, Path, str]] = None,
+    ):
+        if isinstance(manifest_or_resolved, (str, Path)):
+            manifest_path = Path(manifest_or_resolved)
+            if manifest_path.exists():
+                manifest_obj = load_manifest(manifest_path)
+                self.resolved = resolve_manifest(manifest_obj)
+            else:
+                raise FileNotFoundError(f"Manifest path not found: {manifest_path}")
+        elif isinstance(manifest_or_resolved, ProjectManifest):
+            self.resolved = resolve_manifest(manifest_or_resolved)
+        elif isinstance(manifest_or_resolved, ResolvedManifest):
+            self.resolved = manifest_or_resolved
+        else:
+            raise TypeError(f"Invalid manifest type: {type(manifest_or_resolved)}")
+
+        if sheet_config is None:
+            self.config = SheetConfig()
+        else:
+            self.config = load_sheet_config(sheet_config)
+
+    def render_svg(self) -> str:
+        """Full SVG sheet DOM generator."""
+        cfg = self.config
+        manifest = self.resolved.manifest
+        proj = manifest.project
+
+        # Determine if this is a section view
+        is_section_sheet = (cfg.view_type == "section") or cfg.id.startswith("A-3")
+
+        if is_section_sheet:
+            return self._render_section_svg()
+        else:
+            return self._render_plan_svg()
+
+    def _render_plan_svg(self) -> str:
+        """Render 2D Floor Plan sheet."""
+        cfg = self.config
+        manifest = self.resolved.manifest
+        proj = manifest.project
+
+        # 1. Determine Storey ID
+        storey_id = cfg.storey_id
+        if not storey_id:
+            if manifest.spatial_structure.storeys:
+                ground_storeys = [s for s in manifest.spatial_structure.storeys if s.elevation >= 0.0]
+                if ground_storeys:
+                    storey_id = ground_storeys[0].id
+                else:
+                    storey_id = manifest.spatial_structure.storeys[0].id
+            else:
+                raise ValueError("No storeys defined in project manifest.")
+
+        cut_result: CutPlaneResult = slice_storey(self.resolved, storey_id, cut_offset_z=cfg.cut_offset_z)
+
+        # Paper Dimensions & Layout Geometry (mm)
+        paper_w, paper_h = cfg.get_paper_dimensions_mm()
+        margin = cfg.margin_mm
+
+        printable_x = margin
+        printable_y = margin
+        printable_w = paper_w - 2 * margin
+        printable_h = paper_h - 2 * margin
+
+        title_block_width = 75.0 if printable_w >= 300.0 else 55.0
+        if cfg.visibility.show_title_block:
+            drawing_w = printable_w - title_block_width - 5.0
+            title_x = printable_x + printable_w - title_block_width
+            title_y = printable_y
+            title_h = printable_h
+        else:
+            drawing_w = printable_w
+            title_x = 0.0
+            title_y = 0.0
+            title_h = 0.0
+
+        drawing_h = printable_h
+        drawing_cx = printable_x + drawing_w / 2.0
+        drawing_cy = printable_y + drawing_h / 2.0
+
+        if cfg.crop:
+            cb = cfg.crop if isinstance(cfg.crop, CropBox) else CropBox.model_validate(cfg.crop)
+            min_x, min_y, max_x, max_y = cb.min_x, cb.min_y, cb.max_x, cb.max_y
+        else:
+            min_x, min_y, max_x, max_y = cut_result.bounds
+
+        model_cx = (min_x + max_x) / 2.0
+        model_cy = (min_y + max_y) / 2.0
+
+        transformer = CoordinateTransformer(
+            model_center=(model_cx, model_cy),
+            viewport_center=(drawing_cx, drawing_cy),
+            scale=cfg.scale,
+        )
+
+        proj_name = cfg.project_name or proj.name
+        date_str = cfg.date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        embedded_css = _get_embedded_css()
+
+        svg_lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {paper_w:.1f} {paper_h:.1f}" width="{paper_w:.1f}mm" height="{paper_h:.1f}mm">',
+            '  <defs>',
+            '    <style type="text/css"><![CDATA[',
+            f'{embedded_css}',
+            '    ]]></style>',
+            '  </defs>',
+            '  <!-- Background -->',
+            f'  <rect x="0" y="0" width="{paper_w:.1f}" height="{paper_h:.1f}" fill="#ffffff" />',
+            '  <!-- Outer Sheet Border & Margin -->',
+            f'  <rect x="{printable_x:.1f}" y="{printable_y:.1f}" width="{printable_w:.1f}" height="{printable_h:.1f}" class="sheet-border" />',
+        ]
+
+        inner_m = 2.0
+        svg_lines.append(
+            f'  <rect x="{printable_x + inner_m:.1f}" y="{printable_y + inner_m:.1f}" width="{printable_w - 2*inner_m:.1f}" height="{printable_h - 2*inner_m:.1f}" class="sheet-inner-border" />'
+        )
+
+        svg_lines.append('  <g id="drawing-viewport">')
+
+        # Projection Elements
+        if cfg.visibility.show_projection:
+            svg_lines.append('    <!-- Projection Elements -->')
+            for pe in cut_result.projection_elements:
+                d_str = transformer.polygon_to_paper_path(pe.polygon_coords)
+                if d_str:
+                    svg_lines.append(
+                        f'    <path d="{d_str}" class="projection" fill-rule="evenodd" data-tag="{pe.tag}" data-class="{pe.element_class}" />'
+                    )
+
+        # Cut Medium Elements
+        if cfg.visibility.show_cut_medium:
+            svg_lines.append('    <!-- Cut Medium Elements -->')
+            for ce in cut_result.medium_cut_elements:
+                d_str = transformer.polygon_to_paper_path(ce.polygon_coords)
+                if d_str:
+                    svg_lines.append(
+                        f'    <path d="{d_str}" class="cut-medium" fill-rule="evenodd" data-tag="{ce.tag}" data-class="{ce.element_class}" />'
+                    )
+
+        # Cut Heavy Elements
+        if cfg.visibility.show_cut_heavy:
+            svg_lines.append('    <!-- Cut Heavy Elements -->')
+            for ce in cut_result.heavy_cut_elements:
+                d_str = transformer.polygon_to_paper_path(ce.polygon_coords)
+                if d_str:
+                    svg_lines.append(
+                        f'    <path d="{d_str}" class="cut-heavy" fill-rule="evenodd" data-tag="{ce.tag}" data-class="{ce.element_class}" />'
+                    )
+
+        # Grid Lines & Bubbles
+        dim1_offset_mm = 8.0
+        dim2_offset_mm = 15.0
+        bubble_offset_mm = 23.0
+        ext_other_mm = 8.0
+        bubble_r_mm = 3.6
+
+        x_grids = [g for g in cut_result.grid_lines if g.axis == "X" and "-" not in g.id]
+        y_grids = [g for g in cut_result.grid_lines if g.axis == "Y" and "-" not in g.id]
+
+        all_model_x = [g.position for g in x_grids] or [min_x, max_x]
+        all_model_y = [g.position for g in y_grids] or [min_y, max_y]
+
+        min_gx, max_gx = min(all_model_x), max(all_model_x)
+        min_gy, max_gy = min(all_model_y), max(all_model_y)
+
+        y_top_m = max_gy + transformer.mm_to_model(bubble_offset_mm)
+        y_bot_m = min_gy - transformer.mm_to_model(ext_other_mm)
+        x_left_m = min_gx - transformer.mm_to_model(bubble_offset_mm)
+        x_right_m = max_gx + transformer.mm_to_model(ext_other_mm)
+
+        if cfg.visibility.show_grid:
+            svg_lines.append('    <!-- Grid Lines & Bubbles -->')
+            for g in x_grids:
+                p_top = transformer.to_paper(g.position, y_top_m)
+                p_bot = transformer.to_paper(g.position, y_bot_m)
+
+                svg_lines.append(f'    <line x1="{p_bot[0]}" y1="{p_bot[1]}" x2="{p_top[0]}" y2="{p_top[1]}" class="grid-line" />')
+                svg_lines.append(f'    <circle cx="{p_top[0]}" cy="{p_top[1]}" r="{bubble_r_mm}" class="grid-bubble" />')
+                svg_lines.append(f'    <text x="{p_top[0]}" y="{p_top[1]}" class="grid-text">{g.id}</text>')
+                svg_lines.append(f'    <circle cx="{p_bot[0]}" cy="{p_bot[1]}" r="{bubble_r_mm}" class="grid-bubble" />')
+                svg_lines.append(f'    <text x="{p_bot[0]}" y="{p_bot[1]}" class="grid-text">{g.id}</text>')
+
+            for g in y_grids:
+                p_left = transformer.to_paper(x_left_m, g.position)
+                p_right = transformer.to_paper(x_right_m, g.position)
+
+                svg_lines.append(f'    <line x1="{p_left[0]}" y1="{p_left[1]}" x2="{p_right[0]}" y2="{p_right[1]}" class="grid-line" />')
+                svg_lines.append(f'    <circle cx="{p_left[0]}" cy="{p_left[1]}" r="{bubble_r_mm}" class="grid-bubble" />')
+                svg_lines.append(f'    <text x="{p_left[0]}" y="{p_left[1]}" class="grid-text">{g.id}</text>')
+                svg_lines.append(f'    <circle cx="{p_right[0]}" cy="{p_right[1]}" r="{bubble_r_mm}" class="grid-bubble" />')
+                svg_lines.append(f'    <text x="{p_right[0]}" y="{p_right[1]}" class="grid-text">{g.id}</text>')
+
+        # Automatic Dimensions (.dimension-line, .dimension-text, .text-mask)
+        if cfg.visibility.show_dimensions and cfg.visibility.show_grid:
+            svg_lines.append('    <!-- Automatic Dimensions -->')
+
+            x_grids_sorted = sorted([g for g in cut_result.grid_lines if g.axis == "X" and "-" not in g.id], key=lambda g: g.position)
+            y_grids_sorted = sorted([g for g in cut_result.grid_lines if g.axis == "Y" and "-" not in g.id], key=lambda g: g.position)
+
+            tick_len_mm = 1.8
+
+            # X-Axis Dimension Strings
+            if len(x_grids_sorted) >= 2:
+                dim_y_m = max_gy + transformer.mm_to_model(dim1_offset_mm)
+                dim_y_p = transformer.to_paper(0, dim_y_m)[1]
+
+                for i in range(len(x_grids_sorted) - 1):
+                    g1, g2 = x_grids_sorted[i], x_grids_sorted[i + 1]
+                    p1 = transformer.to_paper(g1.position, dim_y_m)
+                    p2 = transformer.to_paper(g2.position, dim_y_m)
+                    dist_m = abs(g2.position - g1.position)
+
+                    svg_lines.append(f'    <line x1="{p1[0]}" y1="{dim_y_p}" x2="{p2[0]}" y2="{dim_y_p}" class="dimension-line" />')
+                    svg_lines.append(f'    <line x1="{p1[0] - tick_len_mm/2}" y1="{dim_y_p + tick_len_mm/2}" x2="{p1[0] + tick_len_mm/2}" y2="{dim_y_p - tick_len_mm/2}" class="dimension-tick" />')
+                    svg_lines.append(f'    <line x1="{p2[0] - tick_len_mm/2}" y1="{dim_y_p + tick_len_mm/2}" x2="{p2[0] + tick_len_mm/2}" y2="{dim_y_p - tick_len_mm/2}" class="dimension-tick" />')
+
+                    mid_x = (p1[0] + p2[0]) / 2.0
+                    val_str = f"{dist_m:.2f}"
+                    text_w_mm = len(val_str) * 1.5 + 2.0
+                    text_h_mm = 2.4
+
+                    svg_lines.append(f'    <rect x="{mid_x - text_w_mm/2:.2f}" y="{dim_y_p - text_h_mm/2:.2f}" width="{text_w_mm:.2f}" height="{text_h_mm:.2f}" class="text-mask" />')
+                    svg_lines.append(f'    <text x="{mid_x:.2f}" y="{dim_y_p:.2f}" class="dimension-text">{val_str}</text>')
+
+                # Overall Envelope Dimension
+                dim_overall_y_m = max_gy + transformer.mm_to_model(dim2_offset_mm)
+                dim_overall_y_p = transformer.to_paper(0, dim_overall_y_m)[1]
+
+                p_start = transformer.to_paper(x_grids_sorted[0].position, dim_overall_y_m)
+                p_end = transformer.to_paper(x_grids_sorted[-1].position, dim_overall_y_m)
+                total_dist_m = abs(x_grids_sorted[-1].position - x_grids_sorted[0].position)
+
+                svg_lines.append(f'    <line x1="{p_start[0]}" y1="{dim_overall_y_p}" x2="{p_end[0]}" y2="{dim_overall_y_p}" class="dimension-line" />')
+                svg_lines.append(f'    <line x1="{p_start[0] - tick_len_mm/2}" y1="{dim_overall_y_p + tick_len_mm/2}" x2="{p_start[0] + tick_len_mm/2}" y2="{dim_overall_y_p - tick_len_mm/2}" class="dimension-tick" />')
+                svg_lines.append(f'    <line x1="{p_end[0] - tick_len_mm/2}" y1="{dim_overall_y_p + tick_len_mm/2}" x2="{p_end[0] + tick_len_mm/2}" y2="{dim_overall_y_p - tick_len_mm/2}" class="dimension-tick" />')
+
+                mid_x_overall = (p_start[0] + p_end[0]) / 2.0
+                val_overall_str = f"{total_dist_m:.2f}"
+                text_w_overall = len(val_overall_str) * 1.5 + 2.0
+
+                svg_lines.append(f'    <rect x="{mid_x_overall - text_w_overall/2:.2f}" y="{dim_overall_y_p - text_h_mm/2:.2f}" width="{text_w_overall:.2f}" height="{text_h_mm:.2f}" class="text-mask" />')
+                svg_lines.append(f'    <text x="{mid_x_overall:.2f}" y="{dim_overall_y_p:.2f}" class="dimension-text">{val_overall_str}</text>')
+
+            # Y-Axis Dimension Strings
+            if len(y_grids_sorted) >= 2:
+                dim_x_m = min_gx - transformer.mm_to_model(dim1_offset_mm)
+                dim_x_p = transformer.to_paper(dim_x_m, 0)[0]
+
+                for i in range(len(y_grids_sorted) - 1):
+                    g1, g2 = y_grids_sorted[i], y_grids_sorted[i + 1]
+                    p1 = transformer.to_paper(dim_x_m, g1.position)
+                    p2 = transformer.to_paper(dim_x_m, g2.position)
+                    dist_m = abs(g2.position - g1.position)
+
+                    svg_lines.append(f'    <line x1="{dim_x_p}" y1="{p1[1]}" x2="{dim_x_p}" y2="{p2[1]}" class="dimension-line" />')
+                    svg_lines.append(f'    <line x1="{dim_x_p - tick_len_mm/2}" y1="{p1[1] + tick_len_mm/2}" x2="{dim_x_p + tick_len_mm/2}" y2="{p1[1] - tick_len_mm/2}" class="dimension-tick" />')
+                    svg_lines.append(f'    <line x1="{dim_x_p - tick_len_mm/2}" y1="{p2[1] + tick_len_mm/2}" x2="{dim_x_p + tick_len_mm/2}" y2="{p2[1] - tick_len_mm/2}" class="dimension-tick" />')
+
+                    mid_y = (p1[1] + p2[1]) / 2.0
+                    val_str = f"{dist_m:.2f}"
+                    text_w_mm = len(val_str) * 1.5 + 2.0
+                    text_h_mm = 2.4
+
+                    svg_lines.append(f'    <rect x="{dim_x_p - text_w_mm/2:.2f}" y="{mid_y - text_h_mm/2:.2f}" width="{text_w_mm:.2f}" height="{text_h_mm:.2f}" class="text-mask" transform="rotate(-90, {dim_x_p:.2f}, {mid_y:.2f})" />')
+                    svg_lines.append(f'    <text x="{dim_x_p:.2f}" y="{mid_y:.2f}" class="dimension-text" transform="rotate(-90, {dim_x_p:.2f}, {mid_y:.2f})">{val_str}</text>')
+
+                # Overall Y Envelope Dimension
+                dim_overall_x_m = min_gx - transformer.mm_to_model(dim2_offset_mm)
+                dim_overall_x_p = transformer.to_paper(dim_overall_x_m, 0)[0]
+
+                p_start_y = transformer.to_paper(dim_overall_x_m, y_grids_sorted[0].position)
+                p_end_y = transformer.to_paper(dim_overall_x_m, y_grids_sorted[-1].position)
+                total_y_dist = abs(y_grids_sorted[-1].position - y_grids_sorted[0].position)
+
+                svg_lines.append(f'    <line x1="{dim_overall_x_p}" y1="{p_start_y[1]}" x2="{dim_overall_x_p}" y2="{p_end_y[1]}" class="dimension-line" />')
+                svg_lines.append(f'    <line x1="{dim_overall_x_p - tick_len_mm/2}" y1="{p_start_y[1] + tick_len_mm/2}" x2="{dim_overall_x_p + tick_len_mm/2}" y2="{p_start_y[1] - tick_len_mm/2}" class="dimension-tick" />')
+                svg_lines.append(f'    <line x1="{dim_overall_x_p - tick_len_mm/2}" y1="{p_end_y[1] + tick_len_mm/2}" x2="{dim_overall_x_p + tick_len_mm/2}" y2="{p_end_y[1] - tick_len_mm/2}" class="dimension-tick" />')
+
+                mid_y_overall = (p_start_y[1] + p_end_y[1]) / 2.0
+                val_y_overall_str = f"{total_y_dist:.2f}"
+                text_w_y_overall = len(val_y_overall_str) * 1.5 + 2.0
+
+                svg_lines.append(f'    <rect x="{dim_overall_x_p - text_w_y_overall/2:.2f}" y="{mid_y_overall - text_h_mm/2:.2f}" width="{text_w_y_overall:.2f}" height="{text_h_mm:.2f}" class="text-mask" transform="rotate(-90, {dim_overall_x_p:.2f}, {mid_y_overall:.2f})" />')
+                svg_lines.append(f'    <text x="{dim_overall_x_p:.2f}" y="{mid_y_overall:.2f}" class="dimension-text" transform="rotate(-90, {dim_overall_x_p:.2f}, {mid_y_overall:.2f})">{val_y_overall_str}</text>')
+
+        # Section Callouts on Floor Plan
+        if cfg.visibility.show_section_callouts:
+            svg_lines.append('    <!-- Section Callout Symbols (A-A / B-B) -->')
+
+            mid_x = (min_x + max_x) / 2.0
+            mid_y = (min_y + max_y) / 2.0
+
+            sec_a_p1 = transformer.to_paper(min_x - 1.5, mid_y)
+            sec_a_p2 = transformer.to_paper(max_x + 1.5, mid_y)
+
+            svg_lines.append(f'    <line x1="{sec_a_p1[0]}" y1="{sec_a_p1[1]}" x2="{sec_a_p2[0]}" y2="{sec_a_p2[1]}" class="section-callout-line" />')
+            svg_lines.append(f'    <circle cx="{sec_a_p1[0]}" cy="{sec_a_p1[1]}" r="4.0" class="section-callout-bubble" />')
+            svg_lines.append(f'    <line x1="{sec_a_p1[0] - 4.0}" y1="{sec_a_p1[1]}" x2="{sec_a_p1[0] + 4.0}" y2="{sec_a_p1[1]}" class="section-callout-line" />')
+            svg_lines.append(f'    <text x="{sec_a_p1[0]}" y="{sec_a_p1[1] - 1.8}" class="section-callout-text">A</text>')
+            svg_lines.append(f'    <text x="{sec_a_p1[0]}" y="{sec_a_p1[1] + 2.2}" class="section-callout-text" style="font-size: 1.6px;">A-301</text>')
+            svg_lines.append(f'    <polygon points="{sec_a_p1[0]},{sec_a_p1[1] - 4.2} {sec_a_p1[0] - 2.0},{sec_a_p1[1] - 7.0} {sec_a_p1[0] + 2.0},{sec_a_p1[1] - 7.0}" class="section-callout-arrow" />')
+
+            svg_lines.append(f'    <circle cx="{sec_a_p2[0]}" cy="{sec_a_p2[1]}" r="4.0" class="section-callout-bubble" />')
+            svg_lines.append(f'    <line x1="{sec_a_p2[0] - 4.0}" y1="{sec_a_p2[1]}" x2="{sec_a_p2[0] + 4.0}" y2="{sec_a_p2[1]}" class="section-callout-line" />')
+            svg_lines.append(f'    <text x="{sec_a_p2[0]}" y="{sec_a_p2[1] - 1.8}" class="section-callout-text">A</text>')
+            svg_lines.append(f'    <text x="{sec_a_p2[0]}" y="{sec_a_p2[1] + 2.2}" class="section-callout-text" style="font-size: 1.6px;">A-301</text>')
+            svg_lines.append(f'    <polygon points="{sec_a_p2[0]},{sec_a_p2[1] - 4.2} {sec_a_p2[0] - 2.0},{sec_a_p2[1] - 7.0} {sec_a_p2[0] + 2.0},{sec_a_p2[1] - 7.0}" class="section-callout-arrow" />')
+
+            sec_b_p1 = transformer.to_paper(mid_x, min_y - 1.5)
+            sec_b_p2 = transformer.to_paper(mid_x, max_y + 1.5)
+
+            svg_lines.append(f'    <line x1="{sec_b_p1[0]}" y1="{sec_b_p1[1]}" x2="{sec_b_p2[0]}" y2="{sec_b_p2[1]}" class="section-callout-line" />')
+            svg_lines.append(f'    <circle cx="{sec_b_p1[0]}" cy="{sec_b_p1[1]}" r="4.0" class="section-callout-bubble" />')
+            svg_lines.append(f'    <line x1="{sec_b_p1[0] - 4.0}" y1="{sec_b_p1[1]}" x2="{sec_b_p1[0] + 4.0}" y2="{sec_b_p1[1]}" class="section-callout-line" />')
+            svg_lines.append(f'    <text x="{sec_b_p1[0]}" y="{sec_b_p1[1] - 1.8}" class="section-callout-text">B</text>')
+            svg_lines.append(f'    <text x="{sec_b_p1[0]}" y="{sec_b_p1[1] + 2.2}" class="section-callout-text" style="font-size: 1.6px;">A-302</text>')
+            svg_lines.append(f'    <polygon points="{sec_b_p1[0] + 4.2},{sec_b_p1[1]} {sec_b_p1[0] + 7.0},{sec_b_p1[1] - 2.0} {sec_b_p1[0] + 7.0},{sec_b_p1[1] + 2.0}" class="section-callout-arrow" />')
+
+            svg_lines.append(f'    <circle cx="{sec_b_p2[0]}" cy="{sec_b_p2[1]}" r="4.0" class="section-callout-bubble" />')
+            svg_lines.append(f'    <line x1="{sec_b_p2[0] - 4.0}" y1="{sec_b_p2[1]}" x2="{sec_b_p2[0] + 4.0}" y2="{sec_b_p2[1]}" class="section-callout-line" />')
+            svg_lines.append(f'    <text x="{sec_b_p2[0]}" y="{sec_b_p2[1] - 1.8}" class="section-callout-text">B</text>')
+            svg_lines.append(f'    <text x="{sec_b_p2[0]}" y="{sec_b_p2[1] + 2.2}" class="section-callout-text" style="font-size: 1.6px;">A-302</text>')
+            svg_lines.append(f'    <polygon points="{sec_b_p2[0] + 4.2},{sec_b_p2[1]} {sec_b_p2[0] + 7.0},{sec_b_p2[1] - 2.0} {sec_b_p2[0] + 7.0},{sec_b_p2[1] + 2.0}" class="section-callout-arrow" />')
+
+        # Room Tags / Storey Label
+        if cfg.visibility.show_room_tags:
+            tag_p = transformer.to_paper(model_cx, model_cy)
+            room_label = cut_result.storey_name or cut_result.storey_id
+            text_w = len(room_label) * 2.4 + 4.0
+            text_h = 4.5
+
+            svg_lines.append(f'    <rect x="{tag_p[0] - text_w/2:.2f}" y="{tag_p[1] - text_h/2:.2f}" width="{text_w:.2f}" height="{text_h:.2f}" class="text-mask" />')
+            svg_lines.append(f'    <text x="{tag_p[0]:.2f}" y="{tag_p[1]:.2f}" class="room-tag">{room_label}</text>')
+
+        svg_lines.append('  </g> <!-- End drawing-viewport -->')
+
+        # Title Block
+        if cfg.visibility.show_title_block:
+            svg_lines.append(self._render_title_block_svg(title_x, title_y, title_block_width, title_h, proj_name, date_str))
+
+        svg_lines.append('</svg>')
+        return "\n".join(svg_lines)
+
+    def _render_section_svg(self) -> str:
+        """Render 2D Architectural Section sheet (รูปตัด A-A, B-B)."""
+        cfg = self.config
+        manifest = self.resolved.manifest
+        proj = manifest.project
+
+        sec_id = cfg.section_id or ("B-B" if cfg.id == "A-302" else "A-A")
+        sec_axis = cfg.section_axis or ("X" if sec_id == "B-B" else "Y")
+
+        sec_result: SectionCutPlaneResult = slice_section(
+            self.resolved,
+            section_id=sec_id,
+            plane_axis=sec_axis,
+            position=cfg.section_position,
+            grid_id=cfg.section_grid_id,
+            title=cfg.title,
+        )
+
+        paper_w, paper_h = cfg.get_paper_dimensions_mm()
+        margin = cfg.margin_mm
+
+        printable_x = margin
+        printable_y = margin
+        printable_w = paper_w - 2 * margin
+        printable_h = paper_h - 2 * margin
+
+        title_block_width = 75.0 if printable_w >= 300.0 else 55.0
+        if cfg.visibility.show_title_block:
+            drawing_w = printable_w - title_block_width - 5.0
+            title_x = printable_x + printable_w - title_block_width
+            title_y = printable_y
+            title_h = printable_h
+        else:
+            drawing_w = printable_w
+            title_x = 0.0
+            title_y = 0.0
+            title_h = 0.0
+
+        drawing_h = printable_h
+        drawing_cx = printable_x + drawing_w / 2.0
+        drawing_cy = printable_y + drawing_h / 2.0
+
+        min_u, min_z, max_u, max_z = sec_result.bounds
+        model_cx = (min_u + max_u) / 2.0
+        model_cy = (min_z + max_z) / 2.0
+
+        transformer = CoordinateTransformer(
+            model_center=(model_cx, model_cy),
+            viewport_center=(drawing_cx, drawing_cy),
+            scale=cfg.scale,
+        )
+
+        proj_name = cfg.project_name or proj.name
+        date_str = cfg.date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        embedded_css = _get_embedded_css()
+
+        svg_lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {paper_w:.1f} {paper_h:.1f}" width="{paper_w:.1f}mm" height="{paper_h:.1f}mm">',
+            '  <defs>',
+            '    <style type="text/css"><![CDATA[',
+            f'{embedded_css}',
+            '    ]]></style>',
+            '    <!-- CAD Hatch Patterns -->',
+            '    <pattern id="hatch-concrete" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">',
+            '      <line x1="0" y1="0" x2="0" y2="6" stroke="#0f172a" stroke-width="0.6" />',
+            '      <circle cx="3" cy="3" r="0.6" fill="#0f172a" />',
+            '    </pattern>',
+            '    <pattern id="hatch-wall" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">',
+            '      <line x1="0" y1="0" x2="0" y2="8" stroke="#334155" stroke-width="0.4" />',
+            '      <line x1="3" y1="0" x2="3" y2="8" stroke="#334155" stroke-width="0.4" />',
+            '    </pattern>',
+            '  </defs>',
+            '  <!-- Background -->',
+            f'  <rect x="0" y="0" width="{paper_w:.1f}" height="{paper_h:.1f}" fill="#ffffff" />',
+            f'  <rect x="{printable_x:.1f}" y="{printable_y:.1f}" width="{printable_w:.1f}" height="{printable_h:.1f}" class="sheet-border" />',
+        ]
+
+        inner_m = 2.0
+        svg_lines.append(f'  <rect x="{printable_x + inner_m:.1f}" y="{printable_y + inner_m:.1f}" width="{printable_w - 2*inner_m:.1f}" height="{printable_h - 2*inner_m:.1f}" class="sheet-inner-border" />')
+
+        svg_lines.append('  <g id="drawing-viewport">')
+
+        # Background Projection Elements
+        if cfg.visibility.show_projection:
+            svg_lines.append('    <!-- Background Projection Elements -->')
+            for pe in sec_result.projection_elements:
+                d_str = transformer.polygon_to_paper_path(pe.polygon_coords)
+                if d_str:
+                    svg_lines.append(f'    <path d="{d_str}" class="projection" fill-rule="evenodd" data-tag="{pe.tag}" data-class="{pe.element_class}" />')
+
+        # Cut Elements with CAD Hatching
+        if cfg.visibility.show_cut_heavy or cfg.visibility.show_cut_medium:
+            svg_lines.append('    <!-- Cut Cross-Section Elements with CAD Hatching -->')
+            for ce in sec_result.cut_elements:
+                d_str = transformer.polygon_to_paper_path(ce.polygon_coords)
+                if d_str:
+                    hatch_cls = "cut-concrete" if ce.hatch_pattern == "concrete" else ("cut-wall" if ce.hatch_pattern == "wall" else "cut-heavy")
+                    svg_lines.append(f'    <path d="{d_str}" class="{hatch_cls}" fill-rule="evenodd" data-tag="{ce.tag}" data-class="{ce.element_class}" data-hatch="{ce.hatch_pattern}" />')
+
+        # Storey Level Markers (Elevation markers)
+        if cfg.visibility.show_level_markers:
+            svg_lines.append('    <!-- Storey Level Markers & Elevations -->')
+            for lm in sec_result.level_markers:
+                p_left = transformer.to_paper(min_u, lm.elevation)
+                p_right = transformer.to_paper(max_u, lm.elevation)
+
+                # Dashed Level Line
+                svg_lines.append(f'    <line x1="{p_left[0]}" y1="{p_left[1]}" x2="{p_right[0] + 15.0}" y2="{p_right[1]}" class="level-line" />')
+                # Inverted Target Triangle Symbol (∇)
+                sym_x = p_right[0] + 2.0
+                sym_y = p_right[1]
+                svg_lines.append(f'    <polygon points="{sym_x},{sym_y} {sym_x + 3.0},{sym_y - 3.0} {sym_x - 3.0},{sym_y - 3.0}" class="level-symbol" />')
+                # Level Text Annotation
+                svg_lines.append(f'    <text x="{sym_x + 4.5}" y="{sym_y}" class="level-marker-text">{lm.display_text}</text>')
+
+        # Perpendicular Grid Lines along Section Horizontal Axis U
+        if cfg.visibility.show_grid:
+            svg_lines.append('    <!-- Perpendicular Section Grid Lines -->')
+            for g in sec_result.grid_lines:
+                gx = g["position"]
+                gid = g["id"]
+                p_bot = transformer.to_paper(gx, min_z)
+                p_top = transformer.to_paper(gx, max_z + 1.0)
+
+                svg_lines.append(f'    <line x1="{p_bot[0]}" y1="{p_bot[1]}" x2="{p_top[0]}" y2="{p_top[1]}" class="grid-line" />')
+                svg_lines.append(f'    <circle cx="{p_top[0]}" cy="{p_top[1]}" r="3.6" class="grid-bubble" />')
+                svg_lines.append(f'    <text x="{p_top[0]}" y="{p_top[1]}" class="grid-text">{gid}</text>')
+                svg_lines.append(f'    <circle cx="{p_bot[0]}" cy="{p_bot[1]}" r="3.6" class="grid-bubble" />')
+                svg_lines.append(f'    <text x="{p_bot[0]}" y="{p_bot[1]}" class="grid-text">{gid}</text>')
+
+        svg_lines.append('  </g> <!-- End drawing-viewport -->')
+
+        # Title Block
+        if cfg.visibility.show_title_block:
+            svg_lines.append(self._render_title_block_svg(title_x, title_y, title_block_width, title_h, proj_name, date_str))
+
+        svg_lines.append('</svg>')
+        return "\n".join(svg_lines)
+
+    def _render_title_block_svg(
+        self, title_x: float, title_y: float, title_block_width: float, title_h: float, proj_name: str, date_str: str
+    ) -> str:
+        """Render Standard Architectural Title Block."""
+        cfg = self.config
+        lines = [
+            '  <!-- Standard Architectural Title Block -->',
+            f'  <g id="title-block" transform="translate({title_x:.1f}, {title_y:.1f})">',
+            f'    <rect x="0" y="0" width="{title_block_width:.1f}" height="{title_h:.1f}" class="title-block-container" />',
+        ]
+
+        curr_y = 6.0
+        lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">PROJECT / โครงการ</text>')
+        curr_y += 3.5
+        display_proj = (proj_name[:26] + "...") if len(proj_name) > 28 else proj_name
+        lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-title">{display_proj}</text>')
+        curr_y += 6.5
+        lines.append(f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />')
+        curr_y += 3.0
+
+        lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">DRAWING TITLE / ชื่อแบบ</text>')
+        curr_y += 3.5
+        lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-title">{cfg.title}</text>')
+        curr_y += 6.5
+        lines.append(f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />')
+        curr_y += 3.0
+
+        details = [
+            ("SHEET NO. / เลขที่แบบ", cfg.id),
+            ("SCALE / มาตราส่วน", f"1:{cfg.scale}"),
+            ("DATE / วันที่", date_str),
+            ("REVISION / แก้ไขครั้งที่", cfg.revision),
+            ("CLIENT / เจ้าของโครงการ", cfg.client_name),
+            ("ARCHITECT / สถาปนิก", cfg.architect_name),
+        ]
+
+        for lbl, val in details:
+            lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">{lbl}</text>')
+            curr_y += 3.2
+            lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-text">{val}</text>')
+            curr_y += 4.5
+            lines.append(f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />')
+            curr_y += 2.5
+
+        if cfg.visibility.show_sheet_index and cfg.sheet_index:
+            curr_y += 1.0
+            lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-title">SHEET INDEX /สารบัญแบบ</text>')
+            curr_y += 4.5
+
+            lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-header">NO.</text>')
+            lines.append(f'    <text x="18.0" y="{curr_y:.1f}" class="sheet-index-header">TITLE</text>')
+            lines.append(f'    <text x="{title_block_width - 15.0:.1f}" y="{curr_y:.1f}" class="sheet-index-header">SCALE</text>')
+            curr_y += 3.2
+            lines.append(f'    <line x1="5.0" y1="{curr_y:.1f}" x2="{title_block_width - 5.0:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />')
+            curr_y += 2.5
+
+            for idx_item in cfg.sheet_index:
+                if curr_y > title_h - 45.0:
+                    break
+                lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">{idx_item.sheet_no}</text>')
+                lines.append(f'    <text x="18.0" y="{curr_y:.1f}" class="sheet-index-cell">{idx_item.title[:20]}</text>')
+                lines.append(f'    <text x="{title_block_width - 15.0:.1f}" y="{curr_y:.1f}" class="sheet-index-cell">{idx_item.scale}</text>')
+                curr_y += 4.0
+
+        if curr_y < title_h - 40.0:
+            curr_y += 3.0
+            lines.append(f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />')
+            curr_y += 3.0
+            lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">GENERAL NOTES / ข้อกำหนดทั่วไป</text>')
+            curr_y += 3.5
+            lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">1. DO NOT SCALE DRAWINGS / ห้ามวัดขนาดจากแบบ</text>')
+            curr_y += 3.5
+            lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">2. ALL DIMENSIONS IN METERS / หน่วยวัดเป็นเมตร</text>')
+            curr_y += 3.5
+            lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">3. VERIFY ALL DIMS ON SITE / ตรวจขนาดจริงหน้างาน</text>')
+            curr_y += 4.5
+            lines.append(f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_block_width:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />')
+            curr_y += 3.0
+            lines.append(f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">PROFESSIONAL STAMP & SIGNATURE</text>')
+
+        lines.append(f'    <text x="5.0" y="{title_h - 4.0:.1f}" class="title-block-label">GENERATED BY debim ARCHITECTURAL ENGINE</text>')
+        lines.append('  </g> <!-- End title-block -->')
+        return "\n".join(lines)
+
+    def save_svg(self, output_path: Union[str, Path]) -> Path:
+        out_p = Path(output_path)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        svg_content = self.render_svg()
+        out_p.write_text(svg_content, encoding="utf-8")
+        return out_p
+
+
 def render_sheet(
     manifest_or_resolved: Union[ProjectManifest, ResolvedManifest, Path, str],
     sheet_config: Optional[Union[SheetConfig, dict, Path, str]] = None,
@@ -768,7 +836,6 @@ def render_sheet_set(
         for item in sheets_dir_or_configs:
             configs.append(load_sheet_config(item))
 
-    # Auto populate sheet_index across set if not explicitly set
     sheet_index_items = [
         SheetIndexItem(
             sheet_no=cfg.id,

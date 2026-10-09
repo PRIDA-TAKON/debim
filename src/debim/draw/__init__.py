@@ -1,5 +1,5 @@
 """
-2D Architectural Blueprint Projection & Rendering Engine for debim.
+2D Architectural Blueprint Projection, Section Slicing & Rendering Engine for debim.
 """
 
 from debim.draw.dxf import export_2d_dxf
@@ -21,6 +21,14 @@ from debim.draw.renderer import (
     render_sheet,
     render_sheet_set,
 )
+from debim.draw.section import (
+    SectionCutElement,
+    SectionCutPlaneResult,
+    SectionProjectionElement,
+    StoreyLevelMarker,
+    project_2d_section,
+    slice_section,
+)
 from debim.draw.viewer_2d import (
     export_2d_viewer,
     generate_2d_viewer_html,
@@ -33,6 +41,12 @@ __all__ = [
     "CutPlaneResult",
     "slice_storey",
     "project_2d_floor_plan",
+    "SectionCutElement",
+    "SectionProjectionElement",
+    "StoreyLevelMarker",
+    "SectionCutPlaneResult",
+    "slice_section",
+    "project_2d_section",
     "SheetConfig",
     "SheetRenderer",
     "VisibilityFilter",
