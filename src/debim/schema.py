@@ -2768,6 +2768,7 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcLightFixture", "IfcSwitchingDevice", "IfcOutlet", "IfcAirTerminal", "IfcDamper",
     "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksElement", "IfcEarthworksCut",
     "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
+    "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
     "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcMarineFacility",
     "IfcMarinePart", "IfcCustomElement", "IfcBuildingElementProxy"
 }
