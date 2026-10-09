@@ -1817,6 +1817,43 @@ class SpatialResolver:
             for grid_pt in covering.placement.boundary:
                 x, y = self.get_grid_xy(grid_pt)
                 pts_2d.append((x, y))
+
+            # Perform polygon offset or slab clipping using Shapely if requested or needed
+            offset_dist = getattr(covering.placement, "boundary_offset", None)
+            clip_to_slab = getattr(covering.placement, "clip_to_slab", False)
+
+            from shapely.geometry import Polygon
+            if len(pts_2d) >= 3:
+                poly_shape = Polygon(pts_2d)
+
+                # Apply clip to slab boundary on same storey if specified
+                if clip_to_slab:
+                    for elem in self.manifest.elements:
+                        if isinstance(elem, IfcSlab) and elem.placement.storey == covering.placement.storey:
+                            slab_pts = [self.get_grid_xy(pt) for pt in elem.placement.boundary]
+                            if len(slab_pts) >= 3:
+                                slab_poly = Polygon(slab_pts)
+                                poly_shape = poly_shape.intersection(slab_poly)
+                                break
+
+                # Apply boundary offset if specified (e.g. -0.05m clearance)
+                if offset_dist is not None and abs(offset_dist) > 1e-5:
+                    buffered = poly_shape.buffer(offset_dist, join_style="mitre")
+                    if not buffered.is_empty:
+                        poly_shape = buffered
+
+                if poly_shape.geom_type == "Polygon":
+                    ext_coords = list(poly_shape.exterior.coords)[:-1]
+                    if ext_coords:
+                        pts_2d = [(float(pt[0]), float(pt[1])) for pt in ext_coords]
+                elif poly_shape.geom_type == "MultiPolygon":
+                    # Take largest polygon if multi-polygon
+                    largest = max(poly_shape.geoms, key=lambda g: g.area)
+                    ext_coords = list(largest.exterior.coords)[:-1]
+                    if ext_coords:
+                        pts_2d = [(float(pt[0]), float(pt[1])) for pt in ext_coords]
+
+            for x, y in pts_2d:
                 poly_3d.append((x, y, z))
 
             n = len(pts_2d)

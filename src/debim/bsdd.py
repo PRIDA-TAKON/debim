@@ -141,6 +141,37 @@ BSDD_STANDARD_PSETS: Dict[str, Dict[str, Dict[str, Any]]] = {
         "NominalCapacity": {"type": "Float"},
         "RefrigerantClass": {"type": "String"},
     },
+    "Pset_PumpTypeCommon": {
+        "Reference": {"type": "String"},
+        "Status": {"type": "String"},
+        "FlowRate": {"type": "Float"},
+        "ImpellerDiameter": {"type": "Float"},
+    },
+    "Pset_BoilerTypeCommon": {
+        "Reference": {"type": "String"},
+        "Status": {"type": "String"},
+        "NominalCapacity": {"type": "Float"},
+        "EnergySource": {"type": "String"},
+    },
+    "Pset_FanTypeCommon": {
+        "Reference": {"type": "String"},
+        "Status": {"type": "String"},
+        "NominalAirFlowRate": {"type": "Float"},
+        "OperationMode": {"type": "String"},
+    },
+    "Pset_SpaceCommon": {
+        "Reference": {"type": "String"},
+        "IsExternal": {"type": "Boolean"},
+        "Category": {"type": "String"},
+        "FloorCovering": {"type": "String"},
+        "WallCovering": {"type": "String"},
+        "CeilingCovering": {"type": "String"},
+    },
+    "Pset_BuildingElementProxyCommon": {
+        "Reference": {"type": "String"},
+        "IsExternal": {"type": "Boolean"},
+        "FireRating": {"type": "String"},
+    },
 }
 
 
