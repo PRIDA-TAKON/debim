@@ -2044,7 +2044,7 @@ class IfcCovering(BaseModel):
 RoadType = Literal["HIGHWAY", "CARRIAGEWAY", "ROUNDABOUT", "SERVICE_ROAD", "USERDEFINED"]
 BridgeType = Literal["GIRDER", "SLAB", "ARCH", "CABLE_STAYED", "USERDEFINED"]
 BridgePartType = Literal["SUBSTRUCTURE", "SUPERSTRUCTURE", "DECK", "PIER", "ABUTMENT", "FOUNDATION", "USERDEFINED", "NOTDEFINED"]
-MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "BREAKWATER", "REVETMENT", "USERDEFINED"]
+MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "BREAKWATER", "REVETMENT", "SEAWALL", "GROYNE", "USERDEFINED"]
 BearingType = Literal["BRIDGEBEARING", "ELASTOMERIC", "POT", "SPHERICAL", "DISK", "ROLLER", "ROCKER", "USERDEFINED", "NOTDEFINED"]
 RailwayType = Literal["PASSENGER", "FREIGHT", "MIXED", "HIGH_SPEED", "LIGHT_RAIL", "METRO", "USERDEFINED"]
 RailwayPartType = Literal["TRACK", "SUBGRADE", "LINESIDE", "USERDEFINED"]
@@ -2473,9 +2473,11 @@ class IfcMarinePart(BaseModel):
     deck_thickness: float = 0.50
     deck_elevation: float = 0.0
     depth: float = 10.0
+    wall_height: Optional[float] = None
     crest_width: Optional[float] = None
     crest_elevation: Optional[float] = None
     base_width: Optional[float] = None
+    parapet_height: Optional[float] = None
     slope_ratio: Optional[float] = None
     armor_weight_tons: Optional[float] = None
     piles: Optional[FootingPiles] = None
@@ -2494,6 +2496,10 @@ class IfcMarinePart(BaseModel):
                 data["width"] = data["crest_width"]
             if "crest_elevation" in data and "deck_elevation" not in data:
                 data["deck_elevation"] = data["crest_elevation"]
+            if "height" in data and "wall_height" not in data:
+                data["wall_height"] = data["height"]
+            if "base_width" not in data and "width" in data:
+                data["base_width"] = data["width"]
             if "pile_count" in data and "piles" not in data:
                 data["piles"] = {
                     "count": data["pile_count"],
@@ -2501,6 +2507,15 @@ class IfcMarinePart(BaseModel):
                     "spacing": data.get("pile_spacing"),
                 }
         return data
+
+    @model_validator(mode="after")
+    def validate_seawall_params(self) -> "IfcMarinePart":
+        if self.predefined_type in ("SEAWALL", "GROYNE"):
+            if self.wall_height is None or self.crest_width is None or self.base_width is None:
+                raise ValueError(
+                    f"Marine part '{self.tag}' of type '{self.predefined_type}' requires 'wall_height', 'crest_width', and 'base_width'."
+                )
+        return self
 
 
 # Civil Earthworks & Retaining Structures

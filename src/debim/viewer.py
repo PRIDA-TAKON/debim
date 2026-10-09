@@ -973,6 +973,29 @@ def generate_viewer_html(
                 "color": "#475569",
                 "layer": mp.layer,
             })
+        elif mp.predefined_type in ("SEAWALL", "GROYNE"):
+            elements_data.append({
+                "tag": mp.tag,
+                "class": "IfcMarinePart",
+                "predefined_type": mp.predefined_type,
+                "material": mp.element.material or "Marine Concrete Seawall",
+                "position": [mp.position[0], mp.position[1], mp.position[2] + mp.deck_elevation],
+                "rotation": [0, 0, mp.rotation_angle],
+                "dimensions": {
+                    "length": mp.length,
+                    "width": mp.base_width,
+                    "height": mp.wall_height,
+                    "wall_height": mp.wall_height,
+                    "crest_width": mp.crest_width,
+                    "base_width": mp.base_width,
+                    "parapet_height": mp.parapet_height,
+                    "concrete_volume": mp.concrete_volume,
+                    "formwork_area": mp.formwork_area,
+                    "foundation_key_trench_volume": mp.foundation_key_trench_volume,
+                },
+                "color": "#0284C7",
+                "layer": mp.layer,
+            })
         else:
             elements_data.append({
                 "tag": mp.tag,
