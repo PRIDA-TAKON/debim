@@ -32,6 +32,7 @@ from debim.resolver import (
     ResolvedGeotechnicalStratum,
     ResolvedSoil,
     ResolvedMarinePart,
+    ResolvedNavigationElement,
     ResolvedFlowController,
     ResolvedFooting,
     ResolvedLightFixture,
@@ -484,6 +485,15 @@ class MarineQTO(BaseModel):
     depth: float = 0.0                   # Water depth / berth depth (m)
 
 
+class NavigationQTO(BaseModel):
+    count: int = 1
+    anchor_chain_length: float = 0.0     # Anchor chain length (m)
+    focal_height: float = 0.0            # Focal height above water (m)
+    nominal_range_nm: float = 0.0        # Nominal visual light range (NM)
+    light_color: str = "GREEN"
+    predefined_type: str = "BUOY"
+
+
 class RailwayQTO(BaseModel):
     track_length: float = 0.0            # Track corridor length (m)
     total_rail_length: float = 0.0       # Total parallel steel rails length (m)
@@ -539,6 +549,7 @@ class ElementQTO(BaseModel):
     road: Optional[RoadQTO] = None
     bridge: Optional[BridgeQTO] = None
     marine: Optional[MarineQTO] = None
+    navigation: Optional[NavigationQTO] = None
     railway: Optional[RailwayQTO] = None
     mep: Optional[MepQTO] = None
 
@@ -594,6 +605,8 @@ class ProjectQTO(BaseModel):
     total_road_subbase_volume: float = 0.0
     total_bridge_concrete_volume: float = 0.0
     total_bridge_formwork_area: float = 0.0
+    total_navigation_elements_count: int = 0
+    total_anchor_chain_length: float = 0.0
     total_railway_track_length: float = 0.0
     total_railway_rail_length: float = 0.0
     total_railway_rail_weight_kg: float = 0.0
@@ -1765,6 +1778,23 @@ def calculate_element_qto(
             substructure=sub_qto,
         )
 
+    elif isinstance(resolved, ResolvedNavigationElement):
+        elem = resolved.element
+        nav_qto = NavigationQTO(
+            count=1,
+            anchor_chain_length=resolved.anchor_chain_length,
+            focal_height=resolved.focal_height,
+            nominal_range_nm=resolved.nominal_range_nm,
+            light_color=resolved.light_color,
+            predefined_type=resolved.predefined_type,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            navigation=nav_qto,
+        )
+
     elif isinstance(resolved, ResolvedRailway):
         elem = resolved.element
         rw_qto = RailwayQTO(
@@ -2252,6 +2282,8 @@ def calculate_qto(
     total_road_subbase_vol = 0.0
     total_bridge_conc_vol = 0.0
     total_bridge_formwork = 0.0
+    total_nav_cnt = 0
+    total_nav_chain_len = 0.0
     total_railway_track_length = 0.0
     total_railway_rail_length = 0.0
     total_railway_rail_weight_kg = 0.0
@@ -2444,6 +2476,10 @@ def calculate_qto(
             total_bridge_conc_vol += eqto.bridge.total_concrete_volume
             total_bridge_formwork += eqto.bridge.formwork_area
 
+        if eqto.navigation:
+            total_nav_cnt += eqto.navigation.count
+            total_nav_chain_len += eqto.navigation.anchor_chain_length
+
         if eqto.railway:
             total_railway_track_length += eqto.railway.track_length
             total_railway_rail_length += eqto.railway.total_rail_length
@@ -2565,6 +2601,8 @@ def calculate_qto(
         total_road_subbase_volume=total_road_subbase_vol,
         total_bridge_concrete_volume=total_bridge_conc_vol,
         total_bridge_formwork_area=total_bridge_formwork,
+        total_navigation_elements_count=total_nav_cnt,
+        total_anchor_chain_length=total_nav_chain_len,
         total_railway_track_length=total_railway_track_length,
         total_railway_rail_length=total_railway_rail_length,
         total_railway_rail_weight_kg=total_railway_rail_weight_kg,

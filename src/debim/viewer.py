@@ -991,6 +991,35 @@ def generate_viewer_html(
                 "layer": pile.layer,
             })
 
+    # Maritime Navigation Elements (IFC4.3)
+    light_colors = {
+        "RED": "#EF4444",
+        "GREEN": "#10B981",
+        "WHITE": "#F8FAFC",
+        "YELLOW": "#F59E0B",
+    }
+    for nav in getattr(resolved, "navigation_elements", []) or []:
+        c = light_colors.get(nav.light_color.upper(), "#10B981")
+        elements_data.append({
+            "tag": nav.tag,
+            "class": "IfcNavigationElement",
+            "predefined_type": nav.predefined_type,
+            "material": nav.element.material or f"NavAid {nav.light_color}",
+            "position": [nav.position[0], nav.position[1], nav.position[2] + nav.focal_height / 2.0],
+            "rotation": [0, 0, nav.rotation_angle],
+            "dimensions": {
+                "width": nav.buoy_diameter,
+                "depth": nav.buoy_diameter,
+                "height": nav.focal_height,
+                "focal_height": nav.focal_height,
+                "light_color": nav.light_color,
+                "nominal_range_nm": nav.nominal_range_nm,
+                "anchor_chain_length": nav.anchor_chain_length,
+            },
+            "color": c,
+            "layer": nav.layer,
+        })
+
     # Civil Infrastructure Bridge Parts (IFC4.3)
     for bp in getattr(resolved, "bridge_parts", []) or []:
         elements_data.append({

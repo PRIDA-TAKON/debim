@@ -18,6 +18,7 @@ from debim.schema import (
     IfcBridgePart,
     IfcBuildingElementProxy,
     IfcMarinePart,
+    IfcNavigationElement,
     IfcBuiltSystem,
     IfcCableCarrierSegment,
     IfcColumn,
@@ -1326,6 +1327,23 @@ class ResolvedMarinePart(BaseModel):
     layer: str = "civil/infrastructure/marine"
 
 
+class ResolvedNavigationElement(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcNavigationElement
+    predefined_type: str = "BUOY"
+    focal_height: float = 5.0
+    light_color: str = "GREEN"
+    nominal_range_nm: float = 6.0
+    anchor_chain_length: float = 20.0
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    rotation_angle: float = 0.0
+    mast_height: float = 5.0
+    buoy_diameter: float = 2.0
+    layer: str = "civil/infrastructure/marine/navigation"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1368,6 +1386,7 @@ ResolvedElement = Union[
     ResolvedBridgePart,
     ResolvedBearing,
     ResolvedMarinePart,
+    ResolvedNavigationElement,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1424,6 +1443,7 @@ class ResolvedManifest(BaseModel):
     bridge_parts: List[ResolvedBridgePart] = []
     bearings: List[ResolvedBearing] = []
     marine_parts: List[ResolvedMarinePart] = []
+    navigation_elements: List[ResolvedNavigationElement] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -5232,6 +5252,62 @@ class SpatialResolver:
             layer=marine_part.layer or derive_default_layer(marine_part),
         )
 
+    def resolve_navigation_element(self, nav_elem: IfcNavigationElement) -> ResolvedNavigationElement:
+        z_base = self.get_storey(nav_elem.placement.storey).elevation if nav_elem.placement.storey else 0.0
+
+        rot_deg = 0.0
+        if nav_elem.placement.rotation is not None:
+            if isinstance(nav_elem.placement.rotation, (int, float)):
+                rot_deg = float(nav_elem.placement.rotation)
+            elif isinstance(nav_elem.placement.rotation, (list, tuple)) and len(nav_elem.placement.rotation) >= 3:
+                rot_deg = float(nav_elem.placement.rotation[2])
+
+        if nav_elem.placement.position:
+            px, py, pz = nav_elem.placement.position
+            pos = (px, py, z_base + pz)
+        elif nav_elem.placement.from_grid and nav_elem.placement.to_grid:
+            x1, y1 = self.get_grid_xy(nav_elem.placement.from_grid)
+            x2, y2 = self.get_grid_xy(nav_elem.placement.to_grid)
+            x1 += nav_elem.placement.offset_x
+            y1 += nav_elem.placement.offset_y
+            x2 += nav_elem.placement.offset_x
+            y2 += nav_elem.placement.offset_y
+            z = z_base + nav_elem.placement.offset_z
+            pos = ((x1 + x2) / 2.0, (y1 + y2) / 2.0, z)
+            if nav_elem.placement.rotation is None:
+                rot_deg = math.degrees(math.atan2(y2 - y1, x2 - x1))
+        elif nav_elem.placement.grid:
+            gx, gy = self.get_grid_xy(nav_elem.placement.grid)
+            gx += nav_elem.placement.offset_x
+            gy += nav_elem.placement.offset_y
+            z = z_base + nav_elem.placement.offset_z
+            pos = (gx, gy, z)
+        else:
+            z = z_base + nav_elem.placement.offset_z
+            pos = (nav_elem.placement.offset_x, nav_elem.placement.offset_y, z)
+
+        fh = nav_elem.focal_height
+        chain_len = nav_elem.anchor_chain_length if nav_elem.anchor_chain_length is not None else 20.0
+        ptype = nav_elem.predefined_type.upper()
+
+        buoy_dia = 2.0 if ptype == "BUOY" else 1.0
+        mast_h = fh if ptype in ("BEACON", "LIGHT") else max(1.5, fh * 0.5)
+
+        return ResolvedNavigationElement(
+            tag=nav_elem.tag,
+            element=nav_elem,
+            predefined_type=nav_elem.predefined_type,
+            focal_height=fh,
+            light_color=nav_elem.light_color,
+            nominal_range_nm=nav_elem.nominal_range_nm,
+            anchor_chain_length=chain_len,
+            position=pos,
+            rotation_angle=rot_deg,
+            mast_height=mast_h,
+            buoy_diameter=buoy_dia,
+            layer=nav_elem.layer or derive_default_layer(nav_elem),
+        )
+
 
     def _resolve_element_ports(self, elem, host_pos: Tuple[float, float, float], rot_deg: float = 0.0) -> List[ResolvedPort]:
         resolved_ports = []
@@ -5519,6 +5595,10 @@ class SpatialResolver:
                 r_mp = self.resolve_marine_part(elem)
                 resolved_manifest.marine_parts.append(r_mp)
                 resolved_manifest.elements.append(r_mp)
+            elif isinstance(elem, IfcNavigationElement):
+                r_nav = self.resolve_navigation_element(elem)
+                resolved_manifest.navigation_elements.append(r_nav)
+                resolved_manifest.elements.append(r_nav)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)
