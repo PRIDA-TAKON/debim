@@ -2063,6 +2063,78 @@ class AlignmentPlacement(BaseModel):
         return v
 
 
+class AlignmentHorizontalSegment(BaseModel):
+    segment_type: Literal["LINE", "CIRCULARARC", "CLOTHOID"] = "LINE"
+    start_point: Tuple[float, float] = (0.0, 0.0)
+    start_direction: float = 0.0  # Heading angle in radians or degrees
+    start_radius_of_curvature: float = 0.0  # 0.0 represents infinite/straight
+    end_radius_of_curvature: float = 0.0
+    segment_length: float = 0.0
+    clothoid_constant: Optional[float] = None
+
+    @field_validator("start_point", mode="before")
+    @classmethod
+    def convert_tuple_2d(cls, v):
+        if isinstance(v, (list, tuple)):
+            return (float(v[0]), float(v[1]))
+        return v
+
+
+class AlignmentVerticalSegment(BaseModel):
+    segment_type: Literal["LINE", "PARABOLA", "CIRCULARARC"] = "LINE"
+    start_dist_along: float = 0.0
+    horizontal_length: float = 0.0
+    start_height: float = 0.0
+    start_gradient: float = 0.0  # dz/ds slope
+    end_gradient: Optional[float] = None
+    radius_of_curvature: Optional[float] = None
+
+
+class AlignmentCantSegment(BaseModel):
+    segment_type: Literal["CONSTANTCANT", "LINEARTRANSITION"] = "CONSTANTCANT"
+    start_dist_along: float = 0.0
+    horizontal_length: float = 0.0
+    start_cant: float = 0.0  # Cant offset in meters or angle
+    end_cant: Optional[float] = None
+
+
+class IfcAlignmentHorizontal(BaseModel):
+    class_: Literal["IfcAlignmentHorizontal"] = Field(alias="class", default="IfcAlignmentHorizontal")
+    tag: Optional[str] = None
+    segments: List[AlignmentHorizontalSegment] = Field(default_factory=list)
+
+
+class IfcAlignmentVertical(BaseModel):
+    class_: Literal["IfcAlignmentVertical"] = Field(alias="class", default="IfcAlignmentVertical")
+    tag: Optional[str] = None
+    segments: List[AlignmentVerticalSegment] = Field(default_factory=list)
+
+
+class IfcAlignmentCant(BaseModel):
+    class_: Literal["IfcAlignmentCant"] = Field(alias="class", default="IfcAlignmentCant")
+    tag: Optional[str] = None
+    segments: List[AlignmentCantSegment] = Field(default_factory=list)
+
+
+class CorridorCrossSection(BaseModel):
+    name: str = "carriageway"
+    points: List[Tuple[float, float]] = Field(default_factory=list)  # (u, v) local 2D offsets
+    material: Optional[str] = None
+
+    @field_validator("points", mode="before")
+    @classmethod
+    def convert_points_list(cls, v):
+        if isinstance(v, list):
+            res = []
+            for pt in v:
+                if isinstance(pt, (list, tuple)) and len(pt) >= 2:
+                    res.append((float(pt[0]), float(pt[1])))
+                else:
+                    res.append(pt)
+            return res
+        return v
+
+
 class IfcAlignment(BaseModel):
     class_: Literal["IfcAlignment"] = Field(alias="class", default="IfcAlignment")
     tag: str
@@ -2072,6 +2144,10 @@ class IfcAlignment(BaseModel):
     end_chainage: Optional[float] = None
     design_speed_kmh: Optional[float] = None
     placement: AlignmentPlacement
+    horizontal: Optional[IfcAlignmentHorizontal] = None
+    vertical: Optional[IfcAlignmentVertical] = None
+    cant: Optional[IfcAlignmentCant] = None
+    cross_sections: Optional[List[CorridorCrossSection]] = None
     layer: Optional[str] = None
 
 
@@ -2245,8 +2321,17 @@ class IfcBuiltSystem(BaseModel):
 
 # Civil Earthworks & Retaining Structures
 
-EarthworksCutType = Literal["TRENCH", "DREDGING", "CUT", "BASEMENT_EXCAVATION", "USERDEFINED"]
-EarthworksFillType = Literal["EMBANKMENT", "BACKFILL", "SLOPE_FILL", "SUBGRADE", "USERDEFINED"]
+EarthworksElementType = Literal["RETAINING_STRUCTURE", "PAVEMENT", "GABION", "REINFORCED_SOIL", "BERM", "TERRACE", "DRAINAGE", "USERDEFINED", "NOTDEFINED"]
+EarthworksCutType = Literal[
+    "EXCAVATION", "CUT", "CUTTING", "TRENCH", "BASEMENT_EXCAVATION", "BASE_EXCAVATION",
+    "DREDGING", "OVEREXCAVATION", "PAVEMENTMILLING", "STEPEXCAVATION", "TOPSOILREMOVAL",
+    "USERDEFINED", "NOTDEFINED"
+]
+EarthworksFillType = Literal[
+    "EMBANKMENT", "BACKFILL", "BERM", "SLOPE_FILL", "SLOPEFILL", "SUBGRADE", "SUBGRADEBED",
+    "COUNTERWEIGHT", "TRANSITIONSECTION", "USERDEFINED", "NOTDEFINED"
+]
+GeotechnicalStratumType = Literal["SOLID", "VOID", "WATER", "SOIL", "ROCK", "CLAY", "SAND", "GRAVEL", "SILT", "USERDEFINED", "NOTDEFINED"]
 RetainingWallType = Literal["CANTILEVER_WALL", "GRAVITY_WALL", "SHEET_PILE_WALL", "DIAPHRAGM_WALL", "USERDEFINED"]
 
 
@@ -2272,6 +2357,20 @@ class EarthworksPlacement(BaseModel):
         if isinstance(v, list):
             return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
         return v
+
+
+class IfcEarthworksElement(BaseModel):
+    class_: Literal["IfcEarthworksElement"] = Field(alias="class", default="IfcEarthworksElement")
+    tag: str
+    predefined_type: EarthworksElementType = "RETAINING_STRUCTURE"
+    material: Optional[str] = None
+    width: Optional[float] = None
+    depth: Optional[float] = None  # Height/depth (m)
+    length: Optional[float] = None
+    volume: Optional[float] = None
+    surface_area: Optional[float] = None
+    placement: EarthworksPlacement
+    layer: Optional[str] = None
 
 
 class IfcEarthworksCut(BaseModel):
@@ -2301,6 +2400,41 @@ class IfcEarthworksFill(BaseModel):
     fill_volume: Optional[float] = None  # Loose or baseline volume (m3)
     compacted_volume: Optional[float] = None  # Compacted volume (m3)
     surface_area: Optional[float] = None  # Surface area (m2)
+    placement: EarthworksPlacement
+    layer: Optional[str] = None
+
+
+class IfcGeotechnicalStratum(BaseModel):
+    class_: Literal["IfcGeotechnicalStratum"] = Field(alias="class", default="IfcGeotechnicalStratum")
+    tag: str
+    predefined_type: GeotechnicalStratumType = "SOLID"
+    material: Optional[str] = None
+    soil_type: Optional[str] = "clay"  # clay, sand, silt, gravel, rock
+    top_elevation: Optional[float] = None
+    bottom_elevation: Optional[float] = None
+    thickness: Optional[float] = None  # Stratum thickness (m)
+    width: Optional[float] = None
+    length: Optional[float] = None
+    volume: Optional[float] = None
+    area: Optional[float] = None
+    placement: EarthworksPlacement
+    layer: Optional[str] = None
+
+
+class IfcSoil(BaseModel):
+    class_: Literal["IfcSoil"] = Field(alias="class", default="IfcSoil")
+    tag: str
+    material: Optional[str] = None
+    soil_type: Optional[str] = "topsoil"  # topsoil, clay, sand, gravel
+    density_kg_m3: float = 1800.0  # Soil density kg/m3
+    bearing_capacity_kpa: Optional[float] = None  # Allowable bearing capacity in kPa
+    moisture_content_percent: Optional[float] = None
+    thickness: Optional[float] = None  # Stratum thickness (m)
+    depth: Optional[float] = None
+    width: Optional[float] = None
+    length: Optional[float] = None
+    volume: Optional[float] = None
+    area: Optional[float] = None
     placement: EarthworksPlacement
     layer: Optional[str] = None
 
@@ -2418,8 +2552,11 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcDamper",
     "IfcFlowController",
     "IfcUnitaryEquipment",
+    "IfcEarthworksElement",
     "IfcEarthworksCut",
     "IfcEarthworksFill",
+    "IfcGeotechnicalStratum",
+    "IfcSoil",
     "IfcRetainingWall",
     "IfcAlignment",
     "IfcRoad",
@@ -2450,8 +2587,9 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcCurtainWall", "IfcPlate", "IfcPipeSegment", "IfcCableCarrierSegment", "IfcDuctSegment",
     "IfcSanitaryTerminal", "IfcWasteTerminal", "IfcDistributionBoard", "IfcElectricDistributionBoard",
     "IfcLightFixture", "IfcSwitchingDevice", "IfcOutlet", "IfcAirTerminal", "IfcDamper",
-    "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksCut", "IfcEarthworksFill",
-    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
+    "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksElement", "IfcEarthworksCut",
+    "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
+    "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
     "IfcTrackElement", "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
@@ -2500,8 +2638,11 @@ Element = Annotated[
         Annotated[IfcDamper, Tag("IfcDamper")],
         Annotated[IfcFlowController, Tag("IfcFlowController")],
         Annotated[IfcUnitaryEquipment, Tag("IfcUnitaryEquipment")],
+        Annotated[IfcEarthworksElement, Tag("IfcEarthworksElement")],
         Annotated[IfcEarthworksCut, Tag("IfcEarthworksCut")],
         Annotated[IfcEarthworksFill, Tag("IfcEarthworksFill")],
+        Annotated[IfcGeotechnicalStratum, Tag("IfcGeotechnicalStratum")],
+        Annotated[IfcSoil, Tag("IfcSoil")],
         Annotated[IfcRetainingWall, Tag("IfcRetainingWall")],
         Annotated[IfcAlignment, Tag("IfcAlignment")],
         Annotated[IfcRoad, Tag("IfcRoad")],
@@ -2882,7 +3023,7 @@ class ProjectManifest(BaseModel):
                             f"Element '{elem.tag}' references unknown Y grid '{gy}'"
                         )
 
-            elif isinstance(elem, (IfcEarthworksCut, IfcEarthworksFill)):
+            elif isinstance(elem, (IfcEarthworksElement, IfcEarthworksCut, IfcEarthworksFill, IfcGeotechnicalStratum, IfcSoil)):
                 if elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -3124,10 +3265,16 @@ def derive_default_layer(elem) -> str:
         return "mep/hvac/equipment"
     elif cls == "IfcUnitaryEquipment":
         return "mep/hvac/equipment"
+    elif cls == "IfcEarthworksElement":
+        return "civil/earthworks/elements"
     elif cls == "IfcEarthworksCut":
         return "civil/earthworks/cut"
     elif cls == "IfcEarthworksFill":
         return "civil/earthworks/fill"
+    elif cls == "IfcGeotechnicalStratum":
+        return "civil/geotechnical/strata"
+    elif cls == "IfcSoil":
+        return "civil/geotechnical/soil"
     elif cls == "IfcRetainingWall":
         return "civil/structures/retaining_walls"
     elif cls == "IfcAlignment":

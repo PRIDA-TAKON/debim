@@ -714,7 +714,27 @@ def generate_viewer_html(
 
     # Civil Infrastructure Alignments (IFC4.3)
     for align in resolved.alignments:
-        if align.points_3d and len(align.points_3d) >= 2:
+        if align.swept_solids:
+            for s_idx, solid in enumerate(align.swept_solids):
+                s_name = solid.get("name", "corridor")
+                color = "#F59E0B" if "carriageway" in s_name else ("#64748B" if "curb" in s_name else "#10B981")
+                elements_data.append({
+                    "tag": f"{align.tag}-{s_name}",
+                    "class": "IfcAlignment",
+                    "predefined_type": align.predefined_type,
+                    "geometry_type": "triangulated_mesh",
+                    "vertices": solid["vertices"],
+                    "faces": solid["faces"],
+                    "color": color,
+                    "layer": align.layer,
+                    "dimensions": {
+                        "total_length": align.total_length,
+                        "start_chainage": align.start_chainage,
+                        "end_chainage": align.end_chainage,
+                        "cross_section": s_name,
+                    },
+                })
+        elif align.points_3d and len(align.points_3d) >= 2:
             elements_data.append({
                 "tag": align.tag,
                 "class": "IfcAlignment",
@@ -886,6 +906,50 @@ def generate_viewer_html(
                 "layer": bridge.layer,
             })
 
+    # Civil Earthworks Elements
+    for ew in resolved.earthworks_elements:
+        cz = ew.position[2] + ew.depth / 2.0
+        if ew.polygon and len(ew.polygon) >= 3:
+            elements_data.append({
+                "tag": ew.tag,
+                "class": "IfcEarthworksElement",
+                "predefined_type": ew.predefined_type,
+                "material": ew.element.material or "Earthworks Element",
+                "geometry_type": "polygon",
+                "points": ew.polygon,
+                "color": "#A16207",
+                "transparent": True,
+                "opacity": 0.70,
+                "layer": ew.layer,
+                "dimensions": {
+                    "width": ew.width,
+                    "length": ew.length,
+                    "depth": ew.depth,
+                    "volume": ew.volume,
+                    "surface_area": ew.surface_area,
+                },
+            })
+        else:
+            elements_data.append({
+                "tag": ew.tag,
+                "class": "IfcEarthworksElement",
+                "predefined_type": ew.predefined_type,
+                "material": ew.element.material or "Earthworks Element",
+                "position": [ew.position[0], ew.position[1], cz],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": ew.width,
+                    "depth": ew.length,
+                    "height": ew.depth,
+                    "volume": ew.volume,
+                    "surface_area": ew.surface_area,
+                },
+                "color": "#A16207",
+                "transparent": True,
+                "opacity": 0.70,
+                "layer": ew.layer,
+            })
+
     # Civil Earthworks Cut
     for cut in resolved.earthworks_cuts:
         cz = cut.position[2] - cut.depth / 2.0
@@ -974,6 +1038,96 @@ def generate_viewer_html(
                 "transparent": True,
                 "opacity": 0.85,
                 "layer": fill.layer,
+            })
+
+    # Geotechnical Strata
+    for strat in resolved.geotechnical_strata:
+        cz = strat.position[2] - strat.thickness / 2.0
+        if strat.polygon and len(strat.polygon) >= 3:
+            elements_data.append({
+                "tag": strat.tag,
+                "class": "IfcGeotechnicalStratum",
+                "predefined_type": strat.predefined_type,
+                "material": strat.element.material or f"Soil Stratum ({strat.soil_type})",
+                "geometry_type": "polygon",
+                "points": strat.polygon,
+                "color": "#78350F",
+                "transparent": True,
+                "opacity": 0.60,
+                "layer": strat.layer,
+                "dimensions": {
+                    "width": strat.width,
+                    "length": strat.length,
+                    "thickness": strat.thickness,
+                    "volume": strat.volume,
+                    "area": strat.area,
+                },
+            })
+        else:
+            elements_data.append({
+                "tag": strat.tag,
+                "class": "IfcGeotechnicalStratum",
+                "predefined_type": strat.predefined_type,
+                "material": strat.element.material or f"Soil Stratum ({strat.soil_type})",
+                "position": [strat.position[0], strat.position[1], cz],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": strat.width,
+                    "depth": strat.length,
+                    "height": strat.thickness,
+                    "volume": strat.volume,
+                    "area": strat.area,
+                },
+                "color": "#78350F",
+                "transparent": True,
+                "opacity": 0.60,
+                "layer": strat.layer,
+            })
+
+    # Soil
+    for soil in resolved.soils:
+        cz = soil.position[2] - soil.thickness / 2.0
+        if soil.polygon and len(soil.polygon) >= 3:
+            elements_data.append({
+                "tag": soil.tag,
+                "class": "IfcSoil",
+                "soil_type": soil.soil_type,
+                "material": soil.element.material or f"Soil ({soil.soil_type})",
+                "geometry_type": "polygon",
+                "points": soil.polygon,
+                "color": "#9A3412",
+                "transparent": True,
+                "opacity": 0.65,
+                "layer": soil.layer,
+                "dimensions": {
+                    "width": soil.width,
+                    "length": soil.length,
+                    "thickness": soil.thickness,
+                    "volume": soil.volume,
+                    "area": soil.area,
+                    "density_kg_m3": soil.density_kg_m3,
+                },
+            })
+        else:
+            elements_data.append({
+                "tag": soil.tag,
+                "class": "IfcSoil",
+                "soil_type": soil.soil_type,
+                "material": soil.element.material or f"Soil ({soil.soil_type})",
+                "position": [soil.position[0], soil.position[1], cz],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": soil.width,
+                    "depth": soil.length,
+                    "height": soil.thickness,
+                    "volume": soil.volume,
+                    "area": soil.area,
+                    "density_kg_m3": soil.density_kg_m3,
+                },
+                "color": "#9A3412",
+                "transparent": True,
+                "opacity": 0.65,
+                "layer": soil.layer,
             })
 
     # Civil Retaining Walls
@@ -2897,7 +3051,24 @@ def generate_viewer_html(
                 return;
             }}
 
-            if (data.geometry_type === "swept_disk") {{
+            if (data.geometry_type === "triangulated_mesh") {{
+                const geom = new THREE.BufferGeometry();
+                const verts = new Float32Array(data.vertices.flat());
+                geom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+                if (data.faces && data.faces.length > 0) {{
+                    const indices = new Uint32Array(data.faces.flat().map(i => i - 1));
+                    geom.setIndex(new THREE.BufferAttribute(indices, 1));
+                }}
+                geom.computeVertexNormals();
+
+                const mat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color(data.color || "#F59E0B"),
+                    roughness: 0.5,
+                    metalness: 0.1,
+                    side: THREE.DoubleSide
+                }});
+                object3D = new THREE.Mesh(geom, mat);
+            }} else if (data.geometry_type === "swept_disk") {{
                 const points = data.points.map(p => new THREE.Vector3(...p));
                 const curve = new THREE.CatmullRomCurve3(points);
                 const tubeGeom = new THREE.TubeGeometry(curve, 64, data.radius, 16, false);

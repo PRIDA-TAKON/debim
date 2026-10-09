@@ -1,5 +1,113 @@
 {
   "$defs": {
+    "AlignmentCantSegment": {
+      "properties": {
+        "segment_type": {
+          "default": "CONSTANTCANT",
+          "enum": [
+            "CONSTANTCANT",
+            "LINEARTRANSITION"
+          ],
+          "title": "Segment Type",
+          "type": "string"
+        },
+        "start_dist_along": {
+          "default": 0.0,
+          "title": "Start Dist Along",
+          "type": "number"
+        },
+        "horizontal_length": {
+          "default": 0.0,
+          "title": "Horizontal Length",
+          "type": "number"
+        },
+        "start_cant": {
+          "default": 0.0,
+          "title": "Start Cant",
+          "type": "number"
+        },
+        "end_cant": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Cant"
+        }
+      },
+      "title": "AlignmentCantSegment",
+      "type": "object"
+    },
+    "AlignmentHorizontalSegment": {
+      "properties": {
+        "segment_type": {
+          "default": "LINE",
+          "enum": [
+            "LINE",
+            "CIRCULARARC",
+            "CLOTHOID"
+          ],
+          "title": "Segment Type",
+          "type": "string"
+        },
+        "start_point": {
+          "default": [
+            0.0,
+            0.0
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Start Point",
+          "type": "array"
+        },
+        "start_direction": {
+          "default": 0.0,
+          "title": "Start Direction",
+          "type": "number"
+        },
+        "start_radius_of_curvature": {
+          "default": 0.0,
+          "title": "Start Radius Of Curvature",
+          "type": "number"
+        },
+        "end_radius_of_curvature": {
+          "default": 0.0,
+          "title": "End Radius Of Curvature",
+          "type": "number"
+        },
+        "segment_length": {
+          "default": 0.0,
+          "title": "Segment Length",
+          "type": "number"
+        },
+        "clothoid_constant": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clothoid Constant"
+        }
+      },
+      "title": "AlignmentHorizontalSegment",
+      "type": "object"
+    },
     "AlignmentPlacement": {
       "properties": {
         "storey": {
@@ -106,6 +214,66 @@
         "y"
       ],
       "title": "AlignmentPoint",
+      "type": "object"
+    },
+    "AlignmentVerticalSegment": {
+      "properties": {
+        "segment_type": {
+          "default": "LINE",
+          "enum": [
+            "LINE",
+            "PARABOLA",
+            "CIRCULARARC"
+          ],
+          "title": "Segment Type",
+          "type": "string"
+        },
+        "start_dist_along": {
+          "default": 0.0,
+          "title": "Start Dist Along",
+          "type": "number"
+        },
+        "horizontal_length": {
+          "default": 0.0,
+          "title": "Horizontal Length",
+          "type": "number"
+        },
+        "start_height": {
+          "default": 0.0,
+          "title": "Start Height",
+          "type": "number"
+        },
+        "start_gradient": {
+          "default": 0.0,
+          "title": "Start Gradient",
+          "type": "number"
+        },
+        "end_gradient": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Gradient"
+        },
+        "radius_of_curvature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Radius Of Curvature"
+        }
+      },
+      "title": "AlignmentVerticalSegment",
       "type": "object"
     },
     "ArbitraryProfile": {
@@ -890,6 +1058,46 @@
       "title": "ComplianceRule",
       "type": "object"
     },
+    "CorridorCrossSection": {
+      "properties": {
+        "name": {
+          "default": "carriageway",
+          "title": "Name",
+          "type": "string"
+        },
+        "points": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Points",
+          "type": "array"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        }
+      },
+      "title": "CorridorCrossSection",
+      "type": "object"
+    },
     "CoveringPlacement": {
       "properties": {
         "boundary": {
@@ -949,6 +1157,30 @@
           ],
           "default": null,
           "title": "Length"
+        },
+        "boundary_offset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boundary Offset"
+        },
+        "clip_to_slab": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": false,
+          "title": "Clip To Slab"
         }
       },
       "required": [
@@ -1863,6 +2095,54 @@
         "placement": {
           "$ref": "#/$defs/AlignmentPlacement"
         },
+        "horizontal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IfcAlignmentHorizontal"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "vertical": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IfcAlignmentVertical"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "cant": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IfcAlignmentCant"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "cross_sections": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/CorridorCrossSection"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cross Sections"
+        },
         "layer": {
           "anyOf": [
             {
@@ -1881,6 +2161,99 @@
         "placement"
       ],
       "title": "IfcAlignment",
+      "type": "object"
+    },
+    "IfcAlignmentCant": {
+      "properties": {
+        "class": {
+          "const": "IfcAlignmentCant",
+          "default": "IfcAlignmentCant",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/AlignmentCantSegment"
+          },
+          "title": "Segments",
+          "type": "array"
+        }
+      },
+      "title": "IfcAlignmentCant",
+      "type": "object"
+    },
+    "IfcAlignmentHorizontal": {
+      "properties": {
+        "class": {
+          "const": "IfcAlignmentHorizontal",
+          "default": "IfcAlignmentHorizontal",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/AlignmentHorizontalSegment"
+          },
+          "title": "Segments",
+          "type": "array"
+        }
+      },
+      "title": "IfcAlignmentHorizontal",
+      "type": "object"
+    },
+    "IfcAlignmentVertical": {
+      "properties": {
+        "class": {
+          "const": "IfcAlignmentVertical",
+          "default": "IfcAlignmentVertical",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/AlignmentVerticalSegment"
+          },
+          "title": "Segments",
+          "type": "array"
+        }
+      },
+      "title": "IfcAlignmentVertical",
       "type": "object"
     },
     "IfcBeam": {
@@ -2211,6 +2584,20 @@
             "type": "object"
           },
           "title": "Properties"
+        },
+        "ports": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/IfcDistributionPort"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ports"
         },
         "layer": {
           "anyOf": [
@@ -3071,6 +3458,80 @@
       "title": "IfcDistributionPort",
       "type": "object"
     },
+    "IfcDistributionSystem": {
+      "properties": {
+        "class": {
+          "const": "IfcDistributionSystem",
+          "default": "IfcDistributionSystem",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "system_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Type"
+        },
+        "predefined_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predefined Type"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Elements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "IfcDistributionSystem",
+      "type": "object"
+    },
     "IfcDoor": {
       "properties": {
         "class": {
@@ -3254,11 +3715,19 @@
         "predefined_type": {
           "default": "CUT",
           "enum": [
-            "TRENCH",
-            "DREDGING",
+            "EXCAVATION",
             "CUT",
+            "CUTTING",
+            "TRENCH",
             "BASEMENT_EXCAVATION",
-            "USERDEFINED"
+            "BASE_EXCAVATION",
+            "DREDGING",
+            "OVEREXCAVATION",
+            "PAVEMENTMILLING",
+            "STEPEXCAVATION",
+            "TOPSOILREMOVAL",
+            "USERDEFINED",
+            "NOTDEFINED"
           ],
           "title": "Predefined Type",
           "type": "string"
@@ -3358,6 +3827,129 @@
       "title": "IfcEarthworksCut",
       "type": "object"
     },
+    "IfcEarthworksElement": {
+      "properties": {
+        "class": {
+          "const": "IfcEarthworksElement",
+          "default": "IfcEarthworksElement",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "predefined_type": {
+          "default": "RETAINING_STRUCTURE",
+          "enum": [
+            "RETAINING_STRUCTURE",
+            "PAVEMENT",
+            "GABION",
+            "REINFORCED_SOIL",
+            "BERM",
+            "TERRACE",
+            "DRAINAGE",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        },
+        "depth": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depth"
+        },
+        "length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Length"
+        },
+        "volume": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Volume"
+        },
+        "surface_area": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Surface Area"
+        },
+        "placement": {
+          "$ref": "#/$defs/EarthworksPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcEarthworksElement",
+      "type": "object"
+    },
     "IfcEarthworksFill": {
       "properties": {
         "class": {
@@ -3375,9 +3967,15 @@
           "enum": [
             "EMBANKMENT",
             "BACKFILL",
+            "BERM",
             "SLOPE_FILL",
+            "SLOPEFILL",
             "SUBGRADE",
-            "USERDEFINED"
+            "SUBGRADEBED",
+            "COUNTERWEIGHT",
+            "TRANSITIONSECTION",
+            "USERDEFINED",
+            "NOTDEFINED"
           ],
           "title": "Predefined Type",
           "type": "string"
@@ -3911,6 +4509,167 @@
       "title": "IfcFooting",
       "type": "object"
     },
+    "IfcGeotechnicalStratum": {
+      "properties": {
+        "class": {
+          "const": "IfcGeotechnicalStratum",
+          "default": "IfcGeotechnicalStratum",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "predefined_type": {
+          "default": "SOLID",
+          "enum": [
+            "SOLID",
+            "VOID",
+            "WATER",
+            "SOIL",
+            "ROCK",
+            "CLAY",
+            "SAND",
+            "GRAVEL",
+            "SILT",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "soil_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "clay",
+          "title": "Soil Type"
+        },
+        "top_elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Elevation"
+        },
+        "bottom_elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bottom Elevation"
+        },
+        "thickness": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thickness"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        },
+        "length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Length"
+        },
+        "volume": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Volume"
+        },
+        "area": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Area"
+        },
+        "placement": {
+          "$ref": "#/$defs/EarthworksPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcGeotechnicalStratum",
+      "type": "object"
+    },
     "IfcLightFixture": {
       "properties": {
         "class": {
@@ -4206,12 +4965,16 @@
           "enum": [
             "COLD_WATER",
             "HOT_WATER",
+            "CHILLED_WATER",
+            "HEATING",
             "SOIL",
             "WASTE",
             "VENT",
             "DRAINAGE",
             "REFRIGERANT",
-            "CONDENSATE"
+            "CONDENSATE",
+            "GAS",
+            "FIRE_PROTECTION"
           ],
           "title": "System Type",
           "type": "string"
@@ -5141,6 +5904,166 @@
         "placement"
       ],
       "title": "IfcSlab",
+      "type": "object"
+    },
+    "IfcSoil": {
+      "properties": {
+        "class": {
+          "const": "IfcSoil",
+          "default": "IfcSoil",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "soil_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "topsoil",
+          "title": "Soil Type"
+        },
+        "density_kg_m3": {
+          "default": 1800.0,
+          "title": "Density Kg M3",
+          "type": "number"
+        },
+        "bearing_capacity_kpa": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bearing Capacity Kpa"
+        },
+        "moisture_content_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Moisture Content Percent"
+        },
+        "thickness": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thickness"
+        },
+        "depth": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depth"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        },
+        "length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Length"
+        },
+        "volume": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Volume"
+        },
+        "area": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Area"
+        },
+        "placement": {
+          "$ref": "#/$defs/EarthworksPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcSoil",
       "type": "object"
     },
     "IfcStair": {
@@ -6144,6 +7067,18 @@
         "unit_cost_ref": {
           "title": "Unit Cost Ref",
           "type": "string"
+        },
+        "spec": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spec"
         }
       },
       "required": [
@@ -6595,6 +7530,7 @@
       "type": "object"
     },
     "ProjectInfo": {
+      "additionalProperties": true,
       "properties": {
         "id": {
           "title": "Id",
@@ -6603,6 +7539,54 @@
         "name": {
           "title": "Name",
           "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "organization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Organization"
+        },
+        "author": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author"
+        },
+        "approved_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved By"
         },
         "units": {
           "$ref": "#/$defs/Units"
@@ -9270,10 +10254,19 @@
             "$ref": "#/$defs/IfcUnitaryEquipment"
           },
           {
+            "$ref": "#/$defs/IfcEarthworksElement"
+          },
+          {
             "$ref": "#/$defs/IfcEarthworksCut"
           },
           {
             "$ref": "#/$defs/IfcEarthworksFill"
+          },
+          {
+            "$ref": "#/$defs/IfcGeotechnicalStratum"
+          },
+          {
+            "$ref": "#/$defs/IfcSoil"
           },
           {
             "$ref": "#/$defs/IfcRetainingWall"
@@ -9303,6 +10296,13 @@
         "$ref": "#/$defs/IfcBuildingElementProxy"
       },
       "title": "Proxies",
+      "type": "array"
+    },
+    "systems": {
+      "items": {
+        "$ref": "#/$defs/IfcDistributionSystem"
+      },
+      "title": "Systems",
       "type": "array"
     },
     "connections": {

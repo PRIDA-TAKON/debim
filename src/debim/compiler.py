@@ -754,6 +754,23 @@ class StepSerializer:
                     storey_elements[st_id].append(p_ref)
 
         # 5.3 Civil Earthworks & Retaining Walls & Civil Infrastructure (IFC4.3)
+        for ew in resolved.earthworks_elements:
+            st_id = ew.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcGeographicElement",
+                generate_ifc_guid(),
+                None,
+                ew.tag,
+                None,
+                f"IfcEarthworksElement.{ew.predefined_type}",
+                None,
+                None,
+                ".USERDEFINED.",
+            )
+            element_tag_refs[ew.tag] = elem_ref
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
         for cut in resolved.earthworks_cuts:
             st_id = cut.element.placement.storey
             elem_ref = self.create_entity(
@@ -768,6 +785,40 @@ class StepSerializer:
                 ".USERDEFINED.",
             )
             element_tag_refs[cut.tag] = elem_ref
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for strat in resolved.geotechnical_strata:
+            st_id = strat.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcGeographicElement",
+                generate_ifc_guid(),
+                None,
+                strat.tag,
+                None,
+                f"IfcGeotechnicalStratum.{strat.predefined_type}",
+                None,
+                None,
+                ".USERDEFINED.",
+            )
+            element_tag_refs[strat.tag] = elem_ref
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for soil in resolved.soils:
+            st_id = soil.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcGeographicElement",
+                generate_ifc_guid(),
+                None,
+                soil.tag,
+                None,
+                f"IfcSoil.{soil.soil_type}",
+                None,
+                None,
+                ".USERDEFINED.",
+            )
+            element_tag_refs[soil.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -2936,31 +2987,106 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         ifcopenshell.api.run("geometry.assign_representation", model, product=plate_obj, representation=rep)
 
     # 5.3 Civil Earthworks & Retaining Walls & Civil Infrastructure (IFC4.3)
+    for ew in resolved.earthworks_elements:
+        ew_cls = "IfcEarthworksElement" if hasattr(model, "schema") and model.schema in ("IFC4X3", "IFC4X3_ADD2") else "IfcGeographicElement"
+        try:
+            ew_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class=ew_cls,
+                name=ew.tag,
+            )
+        except Exception:
+            ew_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcGeographicElement",
+                name=ew.tag,
+                predefined_type="USERDEFINED",
+            )
+        ew_obj.ObjectType = f"IfcEarthworksElement.{ew.predefined_type}"
+        st_id = ew.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(ew_obj)
+
     for cut in resolved.earthworks_cuts:
-        cut_obj = ifcopenshell.api.run(
-            "root.create_entity",
-            model,
-            ifc_class="IfcGeographicElement",
-            name=cut.tag,
-            predefined_type="USERDEFINED",
-        )
+        cut_cls = "IfcEarthworksCut" if hasattr(model, "schema") and model.schema in ("IFC4X3", "IFC4X3_ADD2") else "IfcGeographicElement"
+        try:
+            cut_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class=cut_cls,
+                name=cut.tag,
+            )
+        except Exception:
+            cut_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcGeographicElement",
+                name=cut.tag,
+                predefined_type="USERDEFINED",
+            )
         cut_obj.ObjectType = f"IfcEarthworksCut.{cut.predefined_type}"
         st_id = cut.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(cut_obj)
 
     for fill in resolved.earthworks_fills:
-        fill_obj = ifcopenshell.api.run(
-            "root.create_entity",
-            model,
-            ifc_class="IfcGeographicElement",
-            name=fill.tag,
-            predefined_type="USERDEFINED",
-        )
+        fill_cls = "IfcEarthworksFill" if hasattr(model, "schema") and model.schema in ("IFC4X3", "IFC4X3_ADD2") else "IfcGeographicElement"
+        try:
+            fill_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class=fill_cls,
+                name=fill.tag,
+            )
+        except Exception:
+            fill_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcGeographicElement",
+                name=fill.tag,
+                predefined_type="USERDEFINED",
+            )
         fill_obj.ObjectType = f"IfcEarthworksFill.{fill.predefined_type}"
         st_id = fill.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(fill_obj)
+
+    for strat in resolved.geotechnical_strata:
+        strat_cls = "IfcGeotechnicalStratum" if hasattr(model, "schema") and model.schema in ("IFC4X3", "IFC4X3_ADD2") else "IfcGeographicElement"
+        try:
+            strat_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class=strat_cls,
+                name=strat.tag,
+            )
+        except Exception:
+            strat_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcGeographicElement",
+                name=strat.tag,
+                predefined_type="USERDEFINED",
+            )
+        strat_obj.ObjectType = f"IfcGeotechnicalStratum.{strat.predefined_type}"
+        st_id = strat.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(strat_obj)
+
+    for soil in resolved.soils:
+        soil_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcGeographicElement",
+            name=soil.tag,
+            predefined_type="USERDEFINED",
+        )
+        soil_obj.ObjectType = f"IfcSoil.{soil.soil_type}"
+        st_id = soil.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(soil_obj)
 
     for rw in resolved.retaining_walls:
         rw_obj = ifcopenshell.api.run(
@@ -2990,6 +3116,25 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 name=align.tag,
             )
             align_obj.ObjectType = f"IfcAlignment.{align.predefined_type}"
+
+        if align.swept_solids:
+            rep_items = []
+            for solid in align.swept_solids:
+                verts = solid["vertices"]
+                faces = solid["faces"]
+                if verts and faces:
+                    pts = model.createIfcCartesianPointList3D([list(v) for v in verts])
+                    tfs = model.createIfcTriangulatedFaceSet(Coordinates=pts, CoordIndex=[list(f) for f in faces])
+                    rep_items.append(tfs)
+            if rep_items:
+                rep = model.createIfcShapeRepresentation(
+                    ContextOfItems=body_context,
+                    RepresentationIdentifier="Body",
+                    RepresentationType="Tessellation",
+                    Items=rep_items,
+                )
+                ifcopenshell.api.run("geometry.assign_representation", model, product=align_obj, representation=rep)
+
         st_id = align.element.placement.storey
         if st_id and st_id in storey_products:
             storey_products[st_id].append(align_obj)

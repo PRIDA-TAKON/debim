@@ -23,9 +23,12 @@ from debim.resolver import (
     ResolvedDistributionBoard,
     ResolvedDoor,
     ResolvedDuctSegment,
+    ResolvedEarthworksElement,
     ResolvedEarthworksCut,
     ResolvedEarthworksFill,
     ResolvedElement,
+    ResolvedGeotechnicalStratum,
+    ResolvedSoil,
     ResolvedFlowController,
     ResolvedFooting,
     ResolvedLightFixture,
@@ -1533,6 +1536,21 @@ def calculate_element_qto(
             plate=pl_qto,
         )
 
+    elif isinstance(resolved, ResolvedEarthworksElement):
+        elem = resolved.element
+        ew_qto = EarthworksQTO(
+            type="CUT" if "CUT" in str(resolved.predefined_type).upper() else "FILL",
+            volume=resolved.volume,
+            surface_area=resolved.surface_area,
+            depth=resolved.depth,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            earthworks=ew_qto,
+        )
+
     elif isinstance(resolved, ResolvedEarthworksCut):
         elem = resolved.element
         ew_qto = EarthworksQTO(
@@ -1540,6 +1558,36 @@ def calculate_element_qto(
             volume=resolved.cut_volume,
             footprint_area=resolved.footprint_area,
             depth=resolved.depth,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            earthworks=ew_qto,
+        )
+
+    elif isinstance(resolved, ResolvedGeotechnicalStratum):
+        elem = resolved.element
+        ew_qto = EarthworksQTO(
+            type="FILL" if resolved.predefined_type in ("SOLID", "SOIL", "ROCK") else "CUT",
+            volume=resolved.volume,
+            surface_area=resolved.area,
+            depth=resolved.thickness,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            earthworks=ew_qto,
+        )
+
+    elif isinstance(resolved, ResolvedSoil):
+        elem = resolved.element
+        ew_qto = EarthworksQTO(
+            type="FILL",
+            volume=resolved.volume,
+            surface_area=resolved.area,
+            depth=resolved.thickness,
         )
         return ElementQTO(
             tag=tag,
