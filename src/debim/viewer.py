@@ -4,6 +4,7 @@ Lightweight 3D Web Viewer generator and local HTTP preview server for debim.
 
 import json
 import math
+import re
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -18,6 +19,77 @@ from debim.resolver import (
     resolve_manifest,
 )
 from debim.schema import ProjectManifest, load_manifest
+
+
+def parse_framing_profile(profile: Optional[str], length: float) -> Dict[str, Any]:
+    """Parse roof framing member profile string into viewer 3D profile dimensions."""
+    if not profile:
+        return {
+            "shape": "USHAPE",
+            "depth": 0.15,
+            "width": 0.05,
+            "flange_width": 0.05,
+            "web_thickness": 0.0032,
+            "flange_thickness": 0.0032,
+            "length": length,
+        }
+
+    s = profile.strip().upper().replace(" ", "")
+    is_double = s.startswith("2")
+    if is_double:
+        s = re.sub(r"^2[-_]?", "", s)
+    s = s.replace("-", "")
+
+    # C or U profile e.g. C150X50X20X3.2 or 2C150X50X20X3.2
+    m = re.match(r"^[CU]?([0-9.]+)[X*]([0-9.]+)[X*]([0-9.]+)[X*]([0-9.]+)$", s)
+    if m:
+        d, bf, lip, t = map(float, m.groups())
+        f_w = (bf * 2.0 if is_double else bf) / 1000.0
+        return {
+            "shape": "ISHAPE" if is_double else "USHAPE",
+            "depth": d / 1000.0,
+            "width": f_w,
+            "flange_width": f_w,
+            "web_thickness": t / 1000.0,
+            "flange_thickness": t / 1000.0,
+            "length": length,
+        }
+
+    # 3 params e.g. SHS50X50X2.3 or RHS100X50X3.2 or L50X50X4 or C150X50X3.2
+    m = re.match(r"^(?:SHS|RHS|BOX|L|C|U)?([0-9.]+)[X*]([0-9.]+)[X*]([0-9.]+)$", s)
+    if m:
+        p1, p2, t = map(float, m.groups())
+        if "L" in s[:2]:
+            shape = "LSHAPE"
+        elif any(k in s[:4] for k in ("SHS", "RHS", "BOX")):
+            shape = "RHS"
+        elif "C" in s[:2] or "U" in s[:2]:
+            shape = "ISHAPE" if is_double else "USHAPE"
+        else:
+            shape = "RHS"
+
+        w = (p2 * 2.0 if is_double else p2) / 1000.0
+        return {
+            "shape": shape,
+            "depth": p1 / 1000.0,
+            "width": w,
+            "flange_width": w,
+            "thickness": t / 1000.0,
+            "wall_thickness": t / 1000.0,
+            "web_thickness": t / 1000.0,
+            "flange_thickness": t / 1000.0,
+            "length": length,
+        }
+
+    return {
+        "shape": "ISHAPE" if is_double else "USHAPE",
+        "depth": 0.15,
+        "width": 0.10 if is_double else 0.05,
+        "flange_width": 0.10 if is_double else 0.05,
+        "web_thickness": 0.0032,
+        "flange_thickness": 0.0032,
+        "length": length,
+    }
 
 
 def extract_profile_viewer_dim(prof: Any, length_or_height: float, is_column: bool = True) -> Dict[str, Any]:
@@ -522,21 +594,29 @@ def generate_viewer_html(
             })
 
         for member in roof.framing_members:
+            p1 = member.start_point
+            p2 = member.end_point
+            length = member.length or math.dist(p1, p2)
+            if length <= 1e-4:
+                continue
+            cx = (p1[0] + p2[0]) / 2.0
+            cy = (p1[1] + p2[1]) / 2.0
+            cz = (p1[2] + p2[2]) / 2.0
+            dir_v = [(p2[0] - p1[0]) / length, (p2[1] - p1[1]) / length, (p2[2] - p1[2]) / length]
+            dim = parse_framing_profile(member.profile, length)
+
             elements_data.append({
                 "tag": member.tag,
                 "class": "IfcRoofFraming",
-                "geometry_type": "line",
-                "points": [member.start_point, member.end_point],
-                "color": member.color,
-                "linewidth": 3 if member.member_type in ("RIDGE_BEAM", "HIP_RAFTER", "KING_POST", "WALL_PLATE") else 2,
+                "material": member.material or "STEEL_SS400",
+                "position": [cx, cy, cz],
+                "direction_vector_3d": dir_v,
+                "dimensions": dim,
+                "color": member.color or "#64748B",
                 "layer": f"{roof.layer}/framing",
                 "member_type": member.member_type,
-                "member_name": member.member_type.replace("_", " ").title(),
-                "material": member.material or "STEEL_SS400",
+                "member_name": getattr(member, "name_th", None) or member.member_type.replace("_", " ").title(),
                 "profile": member.profile,
-                "dimensions": {
-                    "length": member.length,
-                },
             })
 
         for ridge in roof.ridges:
@@ -554,6 +634,38 @@ def generate_viewer_html(
                     "length": ridge.length,
                 },
             })
+
+        # Generate 3D Fascia Boards along eaves perimeter
+        if getattr(roof, "footprint_polygon", None) and len(roof.footprint_polygon) >= 3:
+            poly = roof.footprint_polygon
+            n_pts = len(poly)
+            for f_idx in range(n_pts):
+                p1 = poly[f_idx]
+                p2 = poly[(f_idx + 1) % n_pts]
+                f_len = math.dist(p1, p2)
+                if f_len <= 1e-4:
+                    continue
+                cx = (p1[0] + p2[0]) / 2.0
+                cy = (p1[1] + p2[1]) / 2.0
+                cz = (p1[2] + p2[2]) / 2.0 - 0.10
+                dir_v = [(p2[0] - p1[0]) / f_len, (p2[1] - p1[1]) / f_len, (p2[2] - p1[2]) / f_len]
+
+                elements_data.append({
+                    "tag": f"{roof.tag}-Fascia-{f_idx+1}",
+                    "class": "IfcFasciaBoard",
+                    "material": "Timber / Fiber Cement Fascia",
+                    "position": [cx, cy, cz],
+                    "direction_vector_3d": dir_v,
+                    "dimensions": {
+                        "length": f_len,
+                        "width": 0.02,
+                        "height": 0.20,
+                        "depth": 0.02,
+                    },
+                    "color": "#8B4513",
+                    "layer": f"{roof.layer}/fascia",
+                    "member_name": "ไม้เชิงชาย (Fascia Board)",
+                })
 
     # Curtain Walls
     for cw in resolved.curtain_walls:
@@ -2483,7 +2595,7 @@ def generate_viewer_html(
                 }} else {{
                     geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
                 }}
-            }} else if (data.class === "IfcBeam") {{
+            }} else if (data.class === "IfcBeam" || data.class === "IfcRoofFraming" || data.class === "IfcFasciaBoard") {{
                 if (dim.shape === "CIRCULAR" || dim.shape === "CHS") {{
                     geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
@@ -2491,6 +2603,18 @@ def generate_viewer_html(
                     geometry = new THREE.CylinderGeometry(1, 1, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
                     geometry.scale(1, dim.semi_major_axis, dim.semi_minor_axis);
+                }} else if (dim.shape === "RHS" || dim.shape === "SHS" || dim.shape === "RECTANGLE_HOLLOW" || dim.shape === "BOX_HOLLOW") {{
+                    const d = dim.depth || 0.10, w = dim.width || 0.05, t = dim.wall_thickness || dim.thickness || 0.0032;
+                    const s = new THREE.Shape();
+                    s.moveTo(-w/2, -d/2); s.lineTo(w/2, -d/2); s.lineTo(w/2, d/2); s.lineTo(-w/2, d/2); s.closePath();
+                    if (t > 0 && t < Math.min(w, d) / 2) {{
+                        const hole = new THREE.Path();
+                        hole.moveTo(-w/2 + t, -d/2 + t); hole.lineTo(w/2 - t, -d/2 + t); hole.lineTo(w/2 - t, d/2 - t); hole.lineTo(-w/2 + t, d/2 - t); hole.closePath();
+                        s.holes.push(hole);
+                    }}
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
+                    geometry.center();
+                    geometry.rotateY(Math.PI / 2);
                 }} else if (dim.shape === "ISHAPE" || dim.shape === "I" || dim.shape === "H") {{
                     const w = dim.overall_width || dim.width || 0.2;
                     const d = dim.overall_depth || dim.depth || 0.2;
@@ -2563,10 +2687,10 @@ def generate_viewer_html(
                         geometry.center();
                         geometry.rotateY(Math.PI / 2);
                     }} else {{
-                        geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
+                        geometry = new THREE.BoxGeometry(dim.length, dim.width || 0.05, dim.depth || 0.15);
                     }}
                 }} else {{
-                    geometry = new THREE.BoxGeometry(dim.length, dim.width, dim.depth);
+                    geometry = new THREE.BoxGeometry(dim.length, dim.width || dim.thickness || 0.02, dim.height || dim.depth || 0.20);
                 }}
             }} else if (data.class === "IfcSlab") {{
                 if (dim.polygon && dim.polygon.length >= 3) {{
@@ -2608,10 +2732,11 @@ def generate_viewer_html(
                 geometry = new THREE.BoxGeometry(dim.width || 1, dim.depth || 1, dim.height || 1);
             }}
 
+            const isFraming = data.class === "IfcRoofFraming" || (data.material && data.material.includes("STEEL"));
             const matOptions = {{
                 color: new THREE.Color(data.color || "#808080"),
-                roughness: 0.5,
-                metalness: 0.1
+                roughness: isFraming ? 0.3 : 0.5,
+                metalness: isFraming ? 0.6 : 0.1
             }};
             if (data.transparent) {{
                 matOptions.transparent = true;
@@ -2629,7 +2754,7 @@ def generate_viewer_html(
                     const defaultDir = new THREE.Vector3(0, 0, 1);
                     const q = new THREE.Quaternion().setFromUnitVectors(defaultDir, dir);
                     mesh.quaternion.copy(q);
-                }} else if (data.class === "IfcBeam") {{
+                }} else if (data.class === "IfcBeam" || data.class === "IfcRoofFraming" || data.class === "IfcFasciaBoard") {{
                     const defaultDir = new THREE.Vector3(1, 0, 0);
                     const q = new THREE.Quaternion().setFromUnitVectors(defaultDir, dir);
                     mesh.quaternion.copy(q);
