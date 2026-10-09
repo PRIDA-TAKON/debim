@@ -433,9 +433,12 @@ def test_ifc4_reference_certification_schema_and_spatial_containment(
     assert len(model.by_type("IfcDistributionPort")) >= 2
     assert len(model.by_type("IfcRelConnectsPorts")) == 1
 
-    # Civil Infrastructure (Earthworks as IfcGeographicElement + Road/Bridge as proxies or entities)
+    # Civil Infrastructure (Earthworks as IfcGeographicElement/IfcEarthworksElement + Road/Bridge as proxies or entities)
     civil_entities = (
         list(model.by_type("IfcGeographicElement"))
+        + list(model.by_type("IfcEarthworksElement"))
+        + list(model.by_type("IfcEarthworksCut"))
+        + list(model.by_type("IfcEarthworksFill"))
         + list(model.by_type("IfcRoad"))
         + list(model.by_type("IfcBridge"))
         + list(model.by_type("IfcAlignment"))
