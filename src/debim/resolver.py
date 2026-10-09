@@ -13,7 +13,9 @@ from debim.schema import (
     IfcAirTerminal,
     IfcAlignment,
     IfcBeam,
+    IfcBearing,
     IfcBridge,
+    IfcBridgePart,
     IfcBuildingElementProxy,
     IfcCableCarrierSegment,
     IfcColumn,
@@ -1145,6 +1147,37 @@ class ResolvedBridge(BaseModel):
     layer: str = "civil/infrastructure/bridges"
 
 
+class ResolvedBridgePart(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcBridgePart
+    predefined_type: str = "SUPERSTRUCTURE"
+    bridge_tag: Optional[str] = None
+    span_length: float = 20.0
+    width: float = 10.0
+    thickness: float = 0.30
+    height: float = 2.0
+    concrete_volume: float = 0.0
+    formwork_area: float = 0.0
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "civil/infrastructure/bridges/parts"
+
+
+class ResolvedBearing(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcBearing
+    predefined_type: str = "BRIDGEBEARING"
+    bridge_part_tag: Optional[str] = None
+    width: float = 0.50
+    depth: float = 0.50
+    height: float = 0.20
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "civil/infrastructure/bridges/bearings"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1178,6 +1211,8 @@ ResolvedElement = Union[
     ResolvedAlignment,
     ResolvedRoad,
     ResolvedBridge,
+    ResolvedBridgePart,
+    ResolvedBearing,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1224,6 +1259,8 @@ class ResolvedManifest(BaseModel):
     alignments: List[ResolvedAlignment] = []
     roads: List[ResolvedRoad] = []
     bridges: List[ResolvedBridge] = []
+    bridge_parts: List[ResolvedBridgePart] = []
+    bearings: List[ResolvedBearing] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -4524,6 +4561,87 @@ class SpatialResolver:
             layer=derive_default_layer(bridge),
         )
 
+    def resolve_bridge_part(self, bridge_part: IfcBridgePart) -> ResolvedBridgePart:
+        z_base = self.get_storey(bridge_part.placement.storey).elevation if bridge_part.placement.storey else 0.0
+
+        if bridge_part.placement.position:
+            px, py, pz = bridge_part.placement.position
+            pos = (px, py, z_base + pz)
+            span = bridge_part.span_length or 20.0
+        elif bridge_part.placement.from_grid and bridge_part.placement.to_grid:
+            x1, y1 = self.get_grid_xy(bridge_part.placement.from_grid)
+            x2, y2 = self.get_grid_xy(bridge_part.placement.to_grid)
+            x1 += bridge_part.placement.offset_x
+            y1 += bridge_part.placement.offset_y
+            x2 += bridge_part.placement.offset_x
+            y2 += bridge_part.placement.offset_y
+            z = z_base + bridge_part.placement.offset_z
+            span = math.hypot(x2 - x1, y2 - y1)
+            if span <= 0:
+                span = bridge_part.span_length or 20.0
+            pos = ((x1 + x2) / 2.0, (y1 + y2) / 2.0, z)
+        elif bridge_part.placement.grid:
+            gx, gy = self.get_grid_xy(bridge_part.placement.grid)
+            gx += bridge_part.placement.offset_x
+            gy += bridge_part.placement.offset_y
+            z = z_base + bridge_part.placement.offset_z
+            pos = (gx, gy, z)
+            span = bridge_part.span_length or 20.0
+        else:
+            z = z_base + bridge_part.placement.offset_z
+            pos = (bridge_part.placement.offset_x, bridge_part.placement.offset_y, z)
+            span = bridge_part.span_length or 20.0
+
+        width = bridge_part.part_width or 10.0
+        thick = bridge_part.part_thickness or 0.30
+        height = bridge_part.part_height or 2.0
+
+        conc_vol = span * width * thick
+        formwork = (span * width) + (2.0 * span * thick) + (2.0 * width * thick)
+
+        return ResolvedBridgePart(
+            tag=bridge_part.tag,
+            element=bridge_part,
+            predefined_type=bridge_part.predefined_type,
+            bridge_tag=bridge_part.bridge,
+            span_length=span,
+            width=width,
+            thickness=thick,
+            height=height,
+            concrete_volume=conc_vol,
+            formwork_area=formwork,
+            position=pos,
+            layer=derive_default_layer(bridge_part),
+        )
+
+    def resolve_bearing(self, bearing: IfcBearing) -> ResolvedBearing:
+        z_base = self.get_storey(bearing.placement.storey).elevation if bearing.placement.storey else 0.0
+
+        if bearing.placement.position:
+            px, py, pz = bearing.placement.position
+            pos = (px, py, z_base + pz)
+        elif bearing.placement.grid:
+            gx, gy = self.get_grid_xy(bearing.placement.grid)
+            gx += bearing.placement.offset_x
+            gy += bearing.placement.offset_y
+            z = z_base + bearing.placement.offset_z
+            pos = (gx, gy, z)
+        else:
+            z = z_base + bearing.placement.offset_z
+            pos = (bearing.placement.offset_x, bearing.placement.offset_y, z)
+
+        return ResolvedBearing(
+            tag=bearing.tag,
+            element=bearing,
+            predefined_type=bearing.predefined_type,
+            bridge_part_tag=bearing.bridge_part,
+            width=bearing.width,
+            depth=bearing.depth,
+            height=bearing.height,
+            position=pos,
+            layer=derive_default_layer(bearing),
+        )
+
 
     def _resolve_element_ports(self, elem, host_pos: Tuple[float, float, float], rot_deg: float = 0.0) -> List[ResolvedPort]:
         resolved_ports = []
@@ -4763,6 +4881,14 @@ class SpatialResolver:
                 r_bridge = self.resolve_bridge(elem)
                 resolved_manifest.bridges.append(r_bridge)
                 resolved_manifest.elements.append(r_bridge)
+            elif isinstance(elem, IfcBridgePart):
+                r_bp = self.resolve_bridge_part(elem)
+                resolved_manifest.bridge_parts.append(r_bp)
+                resolved_manifest.elements.append(r_bp)
+            elif isinstance(elem, IfcBearing):
+                r_br = self.resolve_bearing(elem)
+                resolved_manifest.bearings.append(r_br)
+                resolved_manifest.elements.append(r_br)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

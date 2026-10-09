@@ -13,7 +13,9 @@ from debim.resolver import (
     ResolvedAirTerminal,
     ResolvedAlignment,
     ResolvedBeam,
+    ResolvedBearing,
     ResolvedBridge,
+    ResolvedBridgePart,
     ResolvedCableCarrierSegment,
     ResolvedColumn,
     ResolvedCovering,
@@ -1648,6 +1650,44 @@ def calculate_element_qto(
             concrete_volume=vol,
             formwork_area=formwork,
             bridge=bridge_qto,
+        )
+
+    elif isinstance(resolved, ResolvedBridgePart):
+        elem = resolved.element
+        vol = resolved.concrete_volume
+        formwork = resolved.formwork_area
+
+        bridge_qto = BridgeQTO(
+            span_length=resolved.span_length,
+            deck_width=resolved.width,
+            deck_concrete_volume=vol,
+            total_concrete_volume=vol,
+            formwork_area=formwork,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.span_length,
+            concrete_volume=vol,
+            formwork_area=formwork,
+            bridge=bridge_qto,
+        )
+
+    elif isinstance(resolved, ResolvedBearing):
+        elem = resolved.element
+        vol = resolved.width * resolved.depth * resolved.height
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            mep=MepQTO(
+                system_type="BEARING",
+                fixture_type=resolved.predefined_type,
+                count=1,
+                width=resolved.width,
+                height=resolved.height,
+            ),
         )
 
     elif isinstance(resolved, ResolvedTerminal):
