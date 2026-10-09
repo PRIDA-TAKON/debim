@@ -5374,6 +5374,108 @@
       "title": "IfcLightFixture",
       "type": "object"
     },
+    "IfcMarineFacility": {
+      "properties": {
+        "class": {
+          "const": "IfcMarineFacility",
+          "default": "IfcMarineFacility",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "predefined_type": {
+          "default": "PORT",
+          "enum": [
+            "PORT",
+            "WATERWAY",
+            "CANAL",
+            "USERDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.0,
+          "title": "Elevation"
+        },
+        "boundary": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boundary"
+        },
+        "placement": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MarineFacilityPlacement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcMarineFacility",
+      "type": "object"
+    },
     "IfcMarinePart": {
       "properties": {
         "class": {
@@ -7944,6 +8046,76 @@
       "title": "LandingEdgeBeamConfig",
       "type": "object"
     },
+    "MarineFacilityPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Elevation"
+        },
+        "boundary": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boundary"
+        }
+      },
+      "title": "MarineFacilityPlacement",
+      "type": "object"
+    },
     "MarinePartPlacement": {
       "properties": {
         "storey": {
@@ -10412,11 +10584,23 @@
           },
           "title": "Storeys",
           "type": "array"
+        },
+        "marine_facilities": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/IfcMarineFacility"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Marine Facilities"
         }
       },
-      "required": [
-        "storeys"
-      ],
       "title": "SpatialStructure",
       "type": "object"
     },
@@ -11480,6 +11664,9 @@
             "$ref": "#/$defs/IfcBearing"
           },
           {
+            "$ref": "#/$defs/IfcMarineFacility"
+          },
+          {
             "$ref": "#/$defs/IfcMarinePart"
           },
           {
@@ -11509,6 +11696,21 @@
       },
       "title": "Railways",
       "type": "array"
+    },
+    "marine_facilities": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/IfcMarineFacility"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Marine Facilities"
     },
     "proxies": {
       "items": {
