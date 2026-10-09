@@ -3,6 +3,15 @@
 """
 
 from debim.draw.dxf import export_2d_dxf
+from debim.draw.elevation import (
+    ElevationDirection,
+    ElevationElement,
+    ElevationGridLine2D,
+    ElevationResult,
+    LevelMarker2D,
+    normalize_direction,
+    project_2d_elevation,
+)
 from debim.draw.projection import (
     CutElement,
     CutPlaneResult,
@@ -31,6 +40,13 @@ __all__ = [
     "ProjectionElement",
     "GridLine2D",
     "CutPlaneResult",
+    "ElevationDirection",
+    "ElevationElement",
+    "LevelMarker2D",
+    "ElevationGridLine2D",
+    "ElevationResult",
+    "normalize_direction",
+    "project_2d_elevation",
     "slice_storey",
     "project_2d_floor_plan",
     "SheetConfig",
