@@ -949,6 +949,30 @@
           ],
           "default": null,
           "title": "Length"
+        },
+        "boundary_offset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boundary Offset"
+        },
+        "clip_to_slab": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": false,
+          "title": "Clip To Slab"
         }
       },
       "required": [
@@ -2212,6 +2236,20 @@
           },
           "title": "Properties"
         },
+        "ports": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/IfcDistributionPort"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ports"
+        },
         "layer": {
           "anyOf": [
             {
@@ -3069,6 +3107,80 @@
         "port_id"
       ],
       "title": "IfcDistributionPort",
+      "type": "object"
+    },
+    "IfcDistributionSystem": {
+      "properties": {
+        "class": {
+          "const": "IfcDistributionSystem",
+          "default": "IfcDistributionSystem",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "system_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Type"
+        },
+        "predefined_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predefined Type"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Elements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "IfcDistributionSystem",
       "type": "object"
     },
     "IfcDoor": {
@@ -4206,12 +4318,16 @@
           "enum": [
             "COLD_WATER",
             "HOT_WATER",
+            "CHILLED_WATER",
+            "HEATING",
             "SOIL",
             "WASTE",
             "VENT",
             "DRAINAGE",
             "REFRIGERANT",
-            "CONDENSATE"
+            "CONDENSATE",
+            "GAS",
+            "FIRE_PROTECTION"
           ],
           "title": "System Type",
           "type": "string"
@@ -6144,6 +6260,18 @@
         "unit_cost_ref": {
           "title": "Unit Cost Ref",
           "type": "string"
+        },
+        "spec": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spec"
         }
       },
       "required": [
@@ -6595,6 +6723,7 @@
       "type": "object"
     },
     "ProjectInfo": {
+      "additionalProperties": true,
       "properties": {
         "id": {
           "title": "Id",
@@ -6603,6 +6732,54 @@
         "name": {
           "title": "Name",
           "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "organization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Organization"
+        },
+        "author": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author"
+        },
+        "approved_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved By"
         },
         "units": {
           "$ref": "#/$defs/Units"
@@ -9303,6 +9480,13 @@
         "$ref": "#/$defs/IfcBuildingElementProxy"
       },
       "title": "Proxies",
+      "type": "array"
+    },
+    "systems": {
+      "items": {
+        "$ref": "#/$defs/IfcDistributionSystem"
+      },
+      "title": "Systems",
       "type": "array"
     },
     "connections": {
