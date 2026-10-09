@@ -927,6 +927,10 @@ def generate_viewer_html(
                     "depth": ew.depth,
                     "volume": ew.volume,
                     "surface_area": ew.surface_area,
+                    "soil_nail_count": ew.soil_nail_count,
+                    "total_drilling_depth": ew.total_drilling_depth,
+                    "grout_volume": ew.grout_volume,
+                    "facing_shotcrete_area": ew.facing_shotcrete_area,
                 },
             })
         else:
@@ -943,11 +947,32 @@ def generate_viewer_html(
                     "height": ew.depth,
                     "volume": ew.volume,
                     "surface_area": ew.surface_area,
+                    "soil_nail_count": ew.soil_nail_count,
+                    "total_drilling_depth": ew.total_drilling_depth,
+                    "grout_volume": ew.grout_volume,
+                    "facing_shotcrete_area": ew.facing_shotcrete_area,
                 },
                 "color": "#A16207",
                 "transparent": True,
                 "opacity": 0.70,
                 "layer": ew.layer,
+            })
+
+        for nail in ew.soil_nails:
+            elements_data.append({
+                "tag": nail["tag"],
+                "class": "IfcEarthworksElement",
+                "predefined_type": "SOIL_NAILING",
+                "geometry_type": "line",
+                "points": [nail["start_point"], nail["end_point"]],
+                "color": "#DC2626",
+                "linewidth": 3,
+                "layer": f"{ew.layer}/soil_nails",
+                "material": "Steel Rebar / Rock Bolt",
+                "dimensions": {
+                    "length": nail["length"],
+                    "inclination_deg": nail["inclination_deg"],
+                },
             })
     # Civil Marine Infrastructure Parts (IFC4.3)
     for mp in getattr(resolved, "marine_parts", []) or []:

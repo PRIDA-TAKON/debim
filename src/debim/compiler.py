@@ -762,6 +762,46 @@ class StepSerializer:
         # 5.3 Civil Earthworks & Retaining Walls & Civil Infrastructure (IFC4.3)
         for ew in resolved.earthworks_elements:
             st_id = ew.element.placement.storey
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+            st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
+
+            px, py, pz = ew.position
+            rel_z = float(pz - st_elev)
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, elem_axis)
+
+            rep_items = []
+            if ew.polygon and len(ew.polygon) >= 3:
+                pts_2d = [(float(p[0] - px), float(p[1] - py)) for p in ew.polygon]
+                poly_ref = self.create_polyline_2d(pts_2d)
+                prof_ref = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, poly_ref)
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                facing_thick = (
+                    ew.element.slope_stabilization.shotcrete_thickness
+                    if ew.element.slope_stabilization
+                    else 0.10
+                )
+                solid = self.create_entity("IfcExtrudedAreaSolid", prof_ref, axis3d, ext_dir, float(facing_thick))
+                rep_items.append(solid)
+
+            for nail in ew.soil_nails:
+                s_pt = nail["start_point"]
+                e_pt = nail["end_point"]
+                pt1 = self.create_entity("IfcCartesianPoint", (float(s_pt[0] - px), float(s_pt[1] - py), float(s_pt[2] - pz)))
+                pt2 = self.create_entity("IfcCartesianPoint", (float(e_pt[0] - px), float(e_pt[1] - py), float(e_pt[2] - pz)))
+                poly = self.create_entity("IfcPolyline", [pt1, pt2])
+                swept = self.create_entity("IfcSweptDiskSolid", poly, 0.025, None, None, None)
+                rep_items.append(swept)
+
+            prod_shape_ref = None
+            if rep_items:
+                shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", rep_items)
+                prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
             elem_ref = self.create_entity(
                 "IfcGeographicElement",
                 generate_ifc_guid(),
@@ -769,8 +809,8 @@ class StepSerializer:
                 ew.tag,
                 None,
                 f"IfcEarthworksElement.{ew.predefined_type}",
-                None,
-                None,
+                elem_pl,
+                prod_shape_ref,
                 ".USERDEFINED.",
             )
             element_tag_refs[ew.tag] = elem_ref
@@ -3172,6 +3212,44 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = ew.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(ew_obj)
+
+        px, py, pz = ew.position
+        mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, 0.0))
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=ew_obj, matrix=mat)
+
+        rep_items = []
+        if ew.polygon and len(ew.polygon) >= 3:
+            pts_objs = [model.createIfcCartesianPoint((float(p[0] - px), float(p[1] - py))) for p in ew.polygon]
+            pts_objs.append(pts_objs[0])
+            poly_curve = model.createIfcPolyline(pts_objs)
+            prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly_curve)
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            facing_thick = (
+                ew.element.slope_stabilization.shotcrete_thickness
+                if ew.element.slope_stabilization
+                else 0.10
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(facing_thick)
+            )
+            rep_items.append(solid)
+
+        for nail in ew.soil_nails:
+            s_pt = nail["start_point"]
+            e_pt = nail["end_point"]
+            p1 = model.createIfcCartesianPoint((float(s_pt[0] - px), float(s_pt[1] - py), float(s_pt[2] - pz)))
+            p2 = model.createIfcCartesianPoint((float(e_pt[0] - px), float(e_pt[1] - py), float(e_pt[2] - pz)))
+            polyline = model.createIfcPolyline([p1, p2])
+            swept = model.createIfcSweptDiskSolid(polyline, 0.025, None, None, None)
+            rep_items.append(swept)
+
+        if rep_items:
+            rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", rep_items)
+            ifcopenshell.api.run("geometry.assign_representation", model, product=ew_obj, representation=rep)
 
     for cut in resolved.earthworks_cuts:
         cut_cls = "IfcEarthworksCut" if hasattr(model, "schema") and model.schema in ("IFC4X3", "IFC4X3_ADD2") else "IfcGeographicElement"

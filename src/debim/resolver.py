@@ -1062,6 +1062,11 @@ class ResolvedEarthworksElement(BaseModel):
     depth: float  # Height/depth (m)
     volume: float  # m3
     surface_area: float  # m2
+    soil_nail_count: int = 0
+    total_drilling_depth: float = 0.0  # m
+    grout_volume: float = 0.0  # m3
+    facing_shotcrete_area: float = 0.0  # m2
+    soil_nails: List[Dict[str, Any]] = Field(default_factory=list)
     polygon: List[Tuple[float, float, float]] = Field(default_factory=list)
     layer: str = "civil/earthworks/elements"
 
@@ -4399,6 +4404,49 @@ class SpatialResolver:
         s_area = elem.surface_area if elem.surface_area is not None else calc_area
         vol = elem.volume if elem.volume is not None else (s_area * depth)
 
+        soil_nail_count = 0
+        total_drilling_depth = 0.0
+        grout_volume = 0.0
+        facing_shotcrete_area = 0.0
+        soil_nails = []
+
+        ptype_upper = str(elem.predefined_type).upper()
+        if ptype_upper in ("SOIL_NAILING", "ROCK_BOLT") or elem.slope_stabilization is not None:
+            from debim.schema import SlopeStabilizationConfig
+            cfg = elem.slope_stabilization or SlopeStabilizationConfig()
+
+            facing_shotcrete_area = s_area
+
+            # Grid of soil nails across slope face (width w, length/depth l)
+            sp_x = max(0.1, cfg.spacing_x)
+            sp_y = max(0.1, cfg.spacing_y)
+            n_x = max(1, int(round(w / sp_x)))
+            n_y = max(1, int(round(l / sp_y)))
+            soil_nail_count = n_x * n_y
+
+            total_drilling_depth = soil_nail_count * cfg.nail_length
+            grout_volume = soil_nail_count * math.pi * ((cfg.hole_diameter / 2.0) ** 2) * cfg.nail_length
+
+            # Generate 3D soil nail coordinates
+            incl_rad = math.radians(cfg.inclination_deg)
+            for iy in range(n_y):
+                fy = pos[1] - l / 2.0 + (iy + 0.5) * (l / n_y)
+                for ix in range(n_x):
+                    fx = pos[0] - w / 2.0 + (ix + 0.5) * (w / n_x)
+                    fz = pos[2]
+                    start_pt = (round(fx, 4), round(fy, 4), round(fz, 4))
+                    dx = 0.0
+                    dy = math.cos(incl_rad) * cfg.nail_length
+                    dz = -math.sin(incl_rad) * cfg.nail_length
+                    end_pt = (round(fx + dx, 4), round(fy + dy, 4), round(fz + dz, 4))
+                    soil_nails.append({
+                        "tag": f"{elem.tag}-NAIL-{len(soil_nails) + 1}",
+                        "start_point": start_pt,
+                        "end_point": end_pt,
+                        "length": cfg.nail_length,
+                        "inclination_deg": cfg.inclination_deg,
+                    })
+
         return ResolvedEarthworksElement(
             tag=elem.tag,
             element=elem,
@@ -4409,6 +4457,11 @@ class SpatialResolver:
             depth=depth,
             volume=vol,
             surface_area=s_area,
+            soil_nail_count=soil_nail_count,
+            total_drilling_depth=total_drilling_depth,
+            grout_volume=grout_volume,
+            facing_shotcrete_area=facing_shotcrete_area,
+            soil_nails=soil_nails,
             polygon=poly_3d,
             layer=derive_default_layer(elem),
         )
