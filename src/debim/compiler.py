@@ -11,6 +11,7 @@ import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from debim.bsdd import BSDD_STANDARD_PSETS
 from debim.resolver import (
     ResolvedBeam,
     ResolvedColumn,
@@ -28,6 +29,243 @@ from debim.resolver import (
     resolve_manifest,
 )
 from debim.schema import ProjectManifest, RevolvedAreaSolid, SweptDiskSolid, load_manifest
+from debim.schema_registry import SchemaEntityRegistry
+
+_SCHEMA_REGISTRY: Optional[SchemaEntityRegistry] = None
+
+
+def get_schema_registry() -> SchemaEntityRegistry:
+    """Get or lazily initialize the singleton SchemaEntityRegistry."""
+    global _SCHEMA_REGISTRY
+    if _SCHEMA_REGISTRY is None:
+        _SCHEMA_REGISTRY = SchemaEntityRegistry("IFC4")
+    return _SCHEMA_REGISTRY
+
+
+def generate_fallback_solid_ifcopenshell(
+    model: Any,
+    product_obj: Any,
+    body_context: Any,
+    dimensions: Tuple[float, float, float] = (0.5, 0.5, 0.5),
+    shared_profile: Any = None,
+    shared_pos3d: Any = None,
+    shared_ext_dir: Any = None,
+) -> Any:
+    """Generate an oriented 3D bounding box solid representation using IfcExtrudedAreaSolid for any long-tail entity."""
+    w, d, h = float(dimensions[0]), float(dimensions[1]), float(dimensions[2])
+    w = max(w, 0.05)
+    d = max(d, 0.05)
+    h = max(h, 0.05)
+
+    if shared_profile is None:
+        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+        profile = model.createIfcRectangleProfileDef("AREA", None, pos2d, w, d)
+    else:
+        profile = shared_profile
+
+    if shared_pos3d is None:
+        pos3d = model.createIfcAxis2Placement3D(
+            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+        )
+    else:
+        pos3d = shared_pos3d
+
+    ext_dir = shared_ext_dir if shared_ext_dir is not None else model.createIfcDirection((0.0, 0.0, 1.0))
+
+    solid = model.createIfcExtrudedAreaSolid(
+        profile, pos3d, ext_dir, h
+    )
+    rep = model.createIfcShapeRepresentation(
+        body_context, "Body", "SweptSolid", [solid]
+    )
+    if hasattr(product_obj, "Representation"):
+        prod_shape = model.createIfcProductDefinitionShape(Representations=[rep])
+        product_obj.Representation = prod_shape
+    return rep
+
+
+def bind_default_psets_ifcopenshell(
+    model: Any,
+    product_obj: Any,
+    entity_class: str,
+    custom_properties: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> List[Any]:
+    """Automatically bind default Pset_*Common property sets via bSDD definitions."""
+    reg = get_schema_registry()
+    default_psets = reg.get_default_psets(entity_class)
+    bound_psets = []
+
+    all_psets: Dict[str, Dict[str, Any]] = {}
+
+    for pset_name in default_psets:
+        schema_props = BSDD_STANDARD_PSETS.get(pset_name, {})
+        default_props = {}
+        for prop_name, prop_spec in schema_props.items():
+            prop_type = prop_spec.get("type")
+            if prop_name == "Reference":
+                default_props[prop_name] = getattr(product_obj, "Name", None) or "DEFAULT"
+            elif prop_name == "Status":
+                default_props[prop_name] = "NEW"
+            elif prop_type == "Boolean":
+                default_props[prop_name] = False
+            elif prop_type in ("Float", "Real"):
+                default_props[prop_name] = 0.0
+            elif prop_type == "Integer":
+                default_props[prop_name] = 0
+            else:
+                default_props[prop_name] = "UNSPECIFIED"
+        all_psets[pset_name] = default_props
+
+    if custom_properties:
+        for pset_name, props in custom_properties.items():
+            if pset_name in all_psets:
+                all_psets[pset_name].update(props)
+            else:
+                all_psets[pset_name] = dict(props)
+
+    for pset_name, props in all_psets.items():
+        try:
+            prop_objs = []
+            for p_key, p_val in props.items():
+                if isinstance(p_val, bool):
+                    v_obj = model.createIfcBoolean(p_val)
+                elif isinstance(p_val, int):
+                    v_obj = model.createIfcInteger(p_val)
+                elif isinstance(p_val, float):
+                    v_obj = model.createIfcReal(float(p_val))
+                else:
+                    v_obj = model.createIfcLabel(str(p_val))
+                psv = model.createIfcPropertySingleValue(p_key, None, v_obj, None)
+                prop_objs.append(psv)
+
+            pset_obj = model.createIfcPropertySet(
+                generate_ifc_guid(),
+                None,
+                pset_name,
+                None,
+                prop_objs,
+            )
+            model.createIfcRelDefinesByProperties(
+                generate_ifc_guid(),
+                None,
+                None,
+                None,
+                [product_obj],
+                pset_obj,
+            )
+            bound_psets.append(pset_obj)
+        except Exception:
+            pass
+
+    return bound_psets
+
+
+def generate_fallback_solid_step(
+    serializer: "StepSerializer",
+    body_context_ref: str,
+    dimensions: Tuple[float, float, float] = (0.5, 0.5, 0.5),
+) -> str:
+    """Generate an oriented 3D bounding box solid representation in STEP for long-tail entities."""
+    w = max(float(dimensions[0]), 0.05)
+    d = max(float(dimensions[1]), 0.05)
+    h = max(float(dimensions[2]), 0.05)
+
+    pos2d = serializer.create_entity("IfcCartesianPoint", (0.0, 0.0))
+    axis2d = serializer.create_entity("IfcAxis2Placement2D", pos2d, None)
+    rec_prof = serializer.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, w, d)
+
+    pos3d = serializer.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+    axis3d = serializer.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+    ext_dir = serializer.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+    solid = serializer.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, h)
+
+    shape_rep = serializer.create_entity(
+        "IfcShapeRepresentation",
+        body_context_ref,
+        "Body",
+        "SweptSolid",
+        [solid],
+    )
+    return serializer.create_entity(
+        "IfcProductDefinitionShape", None, None, [shape_rep]
+    )
+
+
+def bind_default_psets_step(
+    serializer: "StepSerializer",
+    product_ref: str,
+    entity_class: str,
+    custom_properties: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> List[str]:
+    """Automatically bind default Pset_*Common property sets via bSDD definitions in STEP serializer."""
+    reg = get_schema_registry()
+    default_psets = reg.get_default_psets(entity_class)
+    bound_psets = []
+
+    all_psets: Dict[str, Dict[str, Any]] = {}
+
+    for pset_name in default_psets:
+        schema_props = BSDD_STANDARD_PSETS.get(pset_name, {})
+        default_props = {}
+        for prop_name, prop_spec in schema_props.items():
+            prop_type = prop_spec.get("type")
+            if prop_name == "Reference":
+                default_props[prop_name] = "DEFAULT"
+            elif prop_name == "Status":
+                default_props[prop_name] = "NEW"
+            elif prop_type == "Boolean":
+                default_props[prop_name] = False
+            elif prop_type in ("Float", "Real"):
+                default_props[prop_name] = 0.0
+            elif prop_type == "Integer":
+                default_props[prop_name] = 0
+            else:
+                default_props[prop_name] = "UNSPECIFIED"
+        all_psets[pset_name] = default_props
+
+    if custom_properties:
+        for pset_name, props in custom_properties.items():
+            if pset_name in all_psets:
+                all_psets[pset_name].update(props)
+            else:
+                all_psets[pset_name] = dict(props)
+
+    for pset_name, props in all_psets.items():
+        prop_refs = []
+        for p_key, p_val in props.items():
+            if isinstance(p_val, bool):
+                v_ref = serializer.create_entity("IfcBoolean", p_val)
+            elif isinstance(p_val, int):
+                v_ref = serializer.create_entity("IfcInteger", p_val)
+            elif isinstance(p_val, float):
+                v_ref = serializer.create_entity("IfcReal", float(p_val))
+            else:
+                v_ref = serializer.create_entity("IfcLabel", str(p_val))
+            psv = serializer.create_entity("IfcPropertySingleValue", p_key, None, v_ref, None)
+            prop_refs.append(psv)
+
+        pset_ref = serializer.create_entity(
+            "IfcPropertySet",
+            generate_ifc_guid(),
+            None,
+            pset_name,
+            None,
+            prop_refs,
+        )
+        serializer.create_entity(
+            "IfcRelDefinesByProperties",
+            generate_ifc_guid(),
+            None,
+            None,
+            None,
+            [product_ref],
+            pset_ref,
+        )
+        bound_psets.append(pset_ref)
+
+    return bound_psets
 
 
 def _build_transform_matrix(
@@ -1453,38 +1691,8 @@ class StepSerializer:
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(proxy_ref)
 
-            if proxy.properties:
-                for pset_name, pset_props in proxy.properties.items():
-                    prop_refs = []
-                    for p_key, p_val in pset_props.items():
-                        if isinstance(p_val, bool):
-                            v_ref = self.create_entity("IfcBoolean", p_val)
-                        elif isinstance(p_val, int):
-                            v_ref = self.create_entity("IfcInteger", p_val)
-                        elif isinstance(p_val, float):
-                            v_ref = self.create_entity("IfcReal", float(p_val))
-                        else:
-                            v_ref = self.create_entity("IfcLabel", str(p_val))
-                        psv = self.create_entity("IfcPropertySingleValue", p_key, None, v_ref, None)
-                        prop_refs.append(psv)
-
-                    pset_ref = self.create_entity(
-                        "IfcPropertySet",
-                        generate_ifc_guid(),
-                        None,
-                        pset_name,
-                        None,
-                        prop_refs,
-                    )
-                    self.create_entity(
-                        "IfcRelDefinesByProperties",
-                        generate_ifc_guid(),
-                        None,
-                        None,
-                        None,
-                        [proxy_ref],
-                        pset_ref,
-                    )
+            # Automatically bind default bSDD Psets + custom properties
+            bind_default_psets_step(self, proxy_ref, target_entity, proxy.properties)
 
         # Spatial containment (IfcRelContainedInSpatialStructure)
         for st_id, elem_refs in storey_elements.items():
@@ -2714,25 +2922,8 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             representation=rep,
         )
 
-        # Property Sets
-        if proxy.properties:
-            for pset_name, pset_props in proxy.properties.items():
-                try:
-                    pset_obj = ifcopenshell.api.run(
-                        "pset.add_pset",
-                        model,
-                        product=proxy_obj,
-                        name=pset_name,
-                    )
-                    if pset_props:
-                        ifcopenshell.api.run(
-                            "pset.edit_pset",
-                            model,
-                            pset=pset_obj,
-                            properties=pset_props,
-                        )
-                except Exception:
-                    pass
+        # Automatically bind default bSDD Psets + custom properties
+        bind_default_psets_ifcopenshell(model, proxy_obj, ifc_cls, proxy.properties)
 
     # Assign containment
     for st_id, products in storey_products.items():
