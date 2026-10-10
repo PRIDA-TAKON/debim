@@ -3321,6 +3321,49 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id in storey_products:
             storey_products[st_id].append(ew_obj)
 
+        px, py, pz = ew.position
+        mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, 0.0))
+        ifcopenshell.api.run(
+            "geometry.edit_object_placement",
+            model,
+            product=ew_obj,
+            matrix=mat,
+        )
+
+        if ew.tiers:
+            solids = []
+            for t in ew.tiers:
+                tx, ty, tz = t["position"]
+                rel_x = tx - px
+                rel_y = ty - py
+                rel_z = tz - pz - t["height"] / 2.0
+                pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((float(rel_x), float(rel_y))))
+                prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(t["length"]), float(t["width"]))
+                pos3d = model.createIfcAxis2Placement3D(
+                    model.createIfcCartesianPoint((0.0, 0.0, float(rel_z))),
+                    model.createIfcDirection((0.0, 0.0, 1.0)),
+                    model.createIfcDirection((1.0, 0.0, 0.0)),
+                )
+                solid = model.createIfcExtrudedAreaSolid(
+                    prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(t["height"])
+                )
+                solids.append(solid)
+            rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", solids)
+            ifcopenshell.api.run("geometry.assign_representation", model, product=ew_obj, representation=rep)
+        else:
+            pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+            prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(ew.length), float(ew.width))
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(ew.depth)
+            )
+            rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+            ifcopenshell.api.run("geometry.assign_representation", model, product=ew_obj, representation=rep)
+
     for cut in resolved.earthworks_cuts:
         cut_cls = "IfcEarthworksCut" if hasattr(model, "schema") and model.schema in ("IFC4X3", "IFC4X3_ADD2") else "IfcGeographicElement"
         try:

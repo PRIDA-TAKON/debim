@@ -2642,7 +2642,10 @@ class IfcNavigationElement(BaseModel):
 
 # Civil Earthworks & Retaining Structures
 
-EarthworksElementType = Literal["RETAINING_STRUCTURE", "PAVEMENT", "GABION", "REINFORCED_SOIL", "BERM", "TERRACE", "DRAINAGE", "USERDEFINED", "NOTDEFINED"]
+EarthworksElementType = Literal[
+    "RETAINING_STRUCTURE", "PAVEMENT", "GABION", "CRIB_WALL", "REINFORCED_SOIL",
+    "BERM", "TERRACE", "DRAINAGE", "USERDEFINED", "NOTDEFINED"
+]
 EarthworksCutType = Literal[
     "EXCAVATION", "CUT", "CUTTING", "TRENCH", "BASEMENT_EXCAVATION", "BASE_EXCAVATION",
     "DREDGING", "OVEREXCAVATION", "PAVEMENTMILLING", "STEPEXCAVATION", "TOPSOILREMOVAL",
@@ -2688,6 +2691,11 @@ class IfcEarthworksElement(BaseModel):
     width: Optional[float] = None
     depth: Optional[float] = None  # Height/depth (m)
     length: Optional[float] = None
+    height: Optional[float] = None  # Height of element (m)
+    base_thickness: Optional[float] = None  # Base thickness / width at bottom (m)
+    step_batter: float = 0.0  # Horizontal step back per tier (m), e.g. 0.10m
+    tier_height: Optional[float] = None  # Height of individual tiers (m), default e.g. 1.0m
+    mesh_wire_dia_mm: Optional[float] = None  # Wire mesh diameter for gabion cages (mm)
     volume: Optional[float] = None
     surface_area: Optional[float] = None
     placement: EarthworksPlacement
