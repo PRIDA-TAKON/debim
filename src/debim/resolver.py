@@ -1344,11 +1344,19 @@ class ResolvedMarinePart(BaseModel):
     invert_thickness: float = 2.0
     chamber_water_volume: float = 0.0
     u_channel_profile_points: List[Tuple[float, float]] = Field(default_factory=list)
+    dock_length: float = 0.0
+    dock_width: float = 0.0
+    dock_depth: float = 0.0
+    floor_slope: float = 0.0
+    sill_elevation: float = 0.0
     position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     rotation_angle: float = 0.0
     deck_boundary: List[Tuple[float, float, float]] = Field(default_factory=list)
     piles: List[ResolvedPile] = Field(default_factory=list)
     concrete_volume: float = 0.0
+    dock_floor_concrete_volume: float = 0.0
+    dock_wall_concrete_volume: float = 0.0
+    basin_excavation_volume: float = 0.0
     formwork_area: float = 0.0
     foundation_key_trench_volume: float = 0.0
     wall_profile_points: List[Tuple[float, float]] = Field(default_factory=list)
@@ -5399,6 +5407,15 @@ class SpatialResolver:
         water_vol = 0.0
         u_profile: List[Tuple[float, float]] = []
 
+        dock_L = marine_part.dock_length or L
+        dock_W = marine_part.dock_width or W
+        dock_D = marine_part.dock_depth or depth
+        slope = marine_part.floor_slope or 0.0
+        sill_elev = marine_part.sill_elevation or 0.0
+        dock_floor_conc = 0.0
+        dock_wall_conc = 0.0
+        basin_excav = 0.0
+
         if ptype in ("LOCK", "CANAL"):
             L = chamber_L
             outer_W = chamber_W + 2.0 * wall_T
@@ -5432,6 +5449,16 @@ class SpatialResolver:
 
             # Formwork calculation for lock chamber
             formwork = ((chamber_W + 2.0 * wall_H) * chamber_L) + (2.0 * total_H * chamber_L) + (2.0 * section_area) + (outer_W * chamber_L)
+        elif ptype in ("DRYDOCK", "SLIPWAY"):
+            inclined_length = dock_L * math.sqrt(1.0 + slope * slope) if slope > 0 else dock_L
+            dock_floor_conc = inclined_length * dock_W * t
+            wall_thk = t
+            dock_wall_conc = (2.0 * dock_L + dock_W) * dock_D * wall_thk
+            conc_vol = dock_floor_conc + dock_wall_conc
+
+            avg_depth = dock_D + 0.5 * slope * dock_L
+            basin_excav = dock_L * dock_W * avg_depth
+            formwork = (dock_L * dock_W) + 2.0 * (dock_L * dock_D) + (dock_W * dock_D)
         p_total_len = sum(p.length for p in resolved_piles)
 
         return ResolvedMarinePart(
@@ -5457,11 +5484,19 @@ class SpatialResolver:
             invert_thickness=invert_T,
             chamber_water_volume=water_vol,
             u_channel_profile_points=u_profile,
+            dock_length=dock_L,
+            dock_width=dock_W,
+            dock_depth=dock_D,
+            floor_slope=slope,
+            sill_elevation=sill_elev,
             position=pos,
             rotation_angle=rot_deg,
             deck_boundary=deck_boundary,
             piles=resolved_piles,
             concrete_volume=conc_vol,
+            dock_floor_concrete_volume=dock_floor_conc,
+            dock_wall_concrete_volume=dock_wall_conc,
+            basin_excavation_volume=basin_excav,
             formwork_area=formwork,
             pile_count=len(resolved_piles),
             pile_total_length=p_total_len,

@@ -2044,7 +2044,7 @@ class IfcCovering(BaseModel):
 RoadType = Literal["HIGHWAY", "CARRIAGEWAY", "ROUNDABOUT", "SERVICE_ROAD", "USERDEFINED"]
 BridgeType = Literal["GIRDER", "SLAB", "ARCH", "CABLE_STAYED", "USERDEFINED"]
 BridgePartType = Literal["SUBSTRUCTURE", "SUPERSTRUCTURE", "DECK", "PIER", "ABUTMENT", "FOUNDATION", "USERDEFINED", "NOTDEFINED"]
-MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "BREAKWATER", "REVETMENT", "SEAWALL", "GROYNE", "LOCK", "CANAL", "USERDEFINED"]
+MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "BREAKWATER", "REVETMENT", "SEAWALL", "GROYNE", "LOCK", "CANAL", "DRYDOCK", "SLIPWAY", "USERDEFINED"]
 BearingType = Literal["BRIDGEBEARING", "ELASTOMERIC", "POT", "SPHERICAL", "DISK", "ROLLER", "ROCKER", "USERDEFINED", "NOTDEFINED"]
 RailwayType = Literal["PASSENGER", "FREIGHT", "MIXED", "HIGH_SPEED", "LIGHT_RAIL", "METRO", "USERDEFINED"]
 RailwayPartType = Literal["TRACK", "SUBGRADE", "LINESIDE", "USERDEFINED"]
@@ -2484,6 +2484,11 @@ class IfcMarinePart(BaseModel):
     chamber_width: float = 16.0
     wall_thickness: float = 2.5
     invert_thickness: float = 2.0
+    dock_length: Optional[float] = None
+    dock_width: Optional[float] = None
+    dock_depth: Optional[float] = None
+    floor_slope: Optional[float] = None
+    sill_elevation: Optional[float] = None
     piles: Optional[FootingPiles] = None
     placement: MarinePartPlacement = Field(default_factory=MarinePartPlacement)
     layer: Optional[str] = None
@@ -2504,12 +2509,24 @@ class IfcMarinePart(BaseModel):
                 data["deck_thickness"] = data["thickness"]
             if "elevation" in data and "deck_elevation" not in data:
                 data["deck_elevation"] = data["elevation"]
-            ptype = str(data.get("predefined_type", "")).upper()
             if ptype in ("SEAWALL", "GROYNE"):
                 if "height" in data and "wall_height" not in data:
                     data["wall_height"] = data["height"]
                 if "base_width" not in data and "width" in data:
                     data["base_width"] = data["width"]
+            elif ptype in ("DRYDOCK", "SLIPWAY"):
+                if "dock_length" in data and "length" not in data:
+                    data["length"] = data["dock_length"]
+                elif "length" in data and "dock_length" not in data:
+                    data["dock_length"] = data["length"]
+                if "dock_width" in data and "width" not in data:
+                    data["width"] = data["dock_width"]
+                elif "width" in data and "dock_width" not in data:
+                    data["dock_width"] = data["width"]
+                if "dock_depth" in data and "depth" not in data:
+                    data["depth"] = data["dock_depth"]
+                elif "depth" in data and "dock_depth" not in data:
+                    data["dock_depth"] = data["depth"]
             else:
                 if "crest_width" in data and "width" not in data:
                     data["width"] = data["crest_width"]
@@ -2524,12 +2541,27 @@ class IfcMarinePart(BaseModel):
         return data
 
     @model_validator(mode="after")
-    def validate_seawall_params(self) -> "IfcMarinePart":
+    def validate_marine_part_params(self) -> "IfcMarinePart":
         if self.predefined_type in ("SEAWALL", "GROYNE"):
             if self.wall_height is None or self.crest_width is None or self.base_width is None:
                 raise ValueError(
                     f"Marine part '{self.tag}' of type '{self.predefined_type}' requires 'wall_height', 'crest_width', and 'base_width'."
                 )
+        if self.dock_length is None:
+            self.dock_length = self.length
+        elif self.length == 30.0 and self.dock_length != 30.0:
+            self.length = self.dock_length
+
+        if self.dock_width is None:
+            self.dock_width = self.width
+        elif self.width == 12.0 and self.dock_width != 12.0:
+            self.width = self.dock_width
+
+        if self.dock_depth is None:
+            self.dock_depth = self.depth
+        elif self.depth == 10.0 and self.dock_depth != 10.0:
+            self.depth = self.dock_depth
+
         return self
 
 
