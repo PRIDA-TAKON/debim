@@ -343,6 +343,8 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcMooringDevice"
     if "marine" in l or "berth" in l or "quay" in l or "jetty" in l:
         return "IfcMarinePart"
+    if "navigation" in l or "buoy" in l or "beacon" in l or "navaid" in l:
+        return "IfcNavigationElement"
     if "chimney" in l:
         return "IfcChimney"
     if "accessory" in l or "accessories" in l or "accessor" in l:
@@ -1107,6 +1109,45 @@ class StepSerializer:
                 element_tag_refs[pile.tag] = p_ref
                 if st_id and st_id in storey_elements:
                     storey_elements[st_id].append(p_ref)
+
+        for nav in getattr(resolved, "navigation_elements", []) or []:
+            st_id = nav.element.placement.storey if nav.element and nav.element.placement else None
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+            st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
+
+            px, py, pz = nav.position
+            rel_z = float(pz - st_elev)
+
+            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+            prof = self.create_entity("IfcCircleProfileDef", ".AREA.", None, axis2d, float(nav.buoy_diameter / 2.0))
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", prof, axis3d, ext_dir, float(nav.focal_height))
+
+            shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
+            prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, elem_axis)
+
+            ptype = f".{nav.predefined_type.upper()}." if nav.predefined_type else ".BUOY."
+            elem_ref = self.create_entity(
+                "IfcNavigationElement",
+                generate_ifc_guid(),
+                None,
+                nav.tag,
+                None,
+                f"IfcNavigationElement.{nav.predefined_type}",
+                elem_pl,
+                prod_shape_ref,
+                ptype,
+            )
+            element_tag_refs[nav.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
 
         for br in getattr(resolved, "bearings", []) or []:
             st_id = br.element.placement.storey
@@ -3618,6 +3659,52 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 storey_products[st_id].append(pile_obj)
             elif default_storey_obj:
                 ifcopenshell.api.run("spatial.assign_container", model, products=[pile_obj], relating_structure=default_storey_obj)
+
+    for nav in getattr(resolved, "navigation_elements", []) or []:
+        try:
+            nav_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcNavigationElement",
+                name=nav.tag,
+                predefined_type=nav.predefined_type.upper(),
+            )
+        except Exception:
+            nav_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=nav.tag,
+            )
+            nav_obj.ObjectType = f"IfcNavigationElement.{nav.predefined_type}"
+
+        st_id = nav.element.placement.storey if nav.element and nav.element.placement else None
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(nav_obj)
+        elif default_storey_obj:
+            ifcopenshell.api.run("spatial.assign_container", model, products=[nav_obj], relating_structure=default_storey_obj)
+
+        px, py, pz = nav.position
+        mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, nav.rotation_angle))
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=nav_obj, matrix=mat)
+
+        try:
+            r = float(nav.buoy_diameter / 2.0)
+            h = float(nav.focal_height)
+            pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+            prof = model.createIfcCircleProfileDef("AREA", None, pos2d, r)
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), h
+            )
+            rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+            ifcopenshell.api.run("geometry.assign_representation", model, product=nav_obj, representation=rep)
+        except Exception:
+            pass
 
     bridge_part_objs: Dict[str, Any] = {}
     for bp in getattr(resolved, "bridge_parts", []) or []:

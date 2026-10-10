@@ -2047,6 +2047,8 @@ BridgePartType = Literal["SUBSTRUCTURE", "SUPERSTRUCTURE", "DECK", "PIER", "ABUT
 MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "BREAKWATER", "REVETMENT", "SEAWALL", "GROYNE", "LOCK", "CANAL", "DRYDOCK", "SLIPWAY", "USERDEFINED"]
 MooringDeviceType = Literal["BOLLARD", "CLEAT", "FENDER", "MOORING_RING", "MOORING_HOOK", "CATWAY", "USERDEFINED", "NOTDEFINED"]
 FenderType = Literal["ARCH", "CONE", "CYLINDRICAL", "CELL"]
+NavigationElementType = Literal["BUOY", "BEACON", "LIGHT", "MARKER", "USERDEFINED", "NOTDEFINED"]
+LightColorType = Literal["RED", "GREEN", "WHITE", "YELLOW"]
 BearingType = Literal["BRIDGEBEARING", "ELASTOMERIC", "POT", "SPHERICAL", "DISK", "ROLLER", "ROCKER", "USERDEFINED", "NOTDEFINED"]
 RailwayType = Literal["PASSENGER", "FREIGHT", "MIXED", "HIGH_SPEED", "LIGHT_RAIL", "METRO", "USERDEFINED"]
 RailwayPartType = Literal["TRACK", "SUBGRADE", "LINESIDE", "USERDEFINED"]
@@ -2624,6 +2626,20 @@ class IfcMooringDevice(BaseModel):
         return data
 
 
+class IfcNavigationElement(BaseModel):
+    class_: Literal["IfcNavigationElement"] = Field(alias="class", default="IfcNavigationElement")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = None
+    predefined_type: NavigationElementType = "BUOY"
+    focal_height: float = 5.0
+    light_color: LightColorType = "GREEN"
+    nominal_range_nm: float = 6.0
+    anchor_chain_length: Optional[float] = 20.0
+    placement: MarinePartPlacement = Field(default_factory=MarinePartPlacement)
+    layer: Optional[str] = None
+
+
 # Civil Earthworks & Retaining Structures
 
 EarthworksElementType = Literal["RETAINING_STRUCTURE", "PAVEMENT", "GABION", "REINFORCED_SOIL", "BERM", "TERRACE", "DRAINAGE", "USERDEFINED", "NOTDEFINED"]
@@ -2874,6 +2890,7 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcMarineFacility",
     "IfcMarinePart",
     "IfcMooringDevice",
+    "IfcNavigationElement",
     "IfcCustomElement",
 } | IFC4_DISTRIBUTION_CLASSES
 
@@ -2901,7 +2918,7 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
     "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
     "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcMarineFacility",
-    "IfcMarinePart", "IfcMooringDevice", "IfcCustomElement", "IfcBuildingElementProxy"
+    "IfcMarinePart", "IfcMooringDevice", "IfcNavigationElement", "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
 
@@ -2966,6 +2983,7 @@ Element = Annotated[
         Annotated[IfcMarineFacility, Tag("IfcMarineFacility")],
         Annotated[IfcMarinePart, Tag("IfcMarinePart")],
         Annotated[IfcMooringDevice, Tag("IfcMooringDevice")],
+        Annotated[IfcNavigationElement, Tag("IfcNavigationElement")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -3215,7 +3233,7 @@ class ProjectManifest(BaseModel):
                     if gy not in grid_y_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcBridgePart, IfcBearing, IfcMarinePart, IfcMooringDevice, IfcRailway, IfcRailwayPart, IfcTrackElement)):
+            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcBridgePart, IfcBearing, IfcMarinePart, IfcMooringDevice, IfcNavigationElement, IfcRailway, IfcRailwayPart, IfcTrackElement)):
                 if getattr(elem.placement, "storey", None) and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -3614,6 +3632,8 @@ def derive_default_layer(elem) -> str:
         return "civil/infrastructure/marine"
     elif cls == "IfcMooringDevice":
         return "civil/infrastructure/marine/fenders"
+    elif cls == "IfcNavigationElement":
+        return "civil/infrastructure/marine/navigation"
     elif cls == "IfcBearing":
         return "civil/infrastructure/bridges/bearings"
     elif cls == "IfcMarineFacility":
