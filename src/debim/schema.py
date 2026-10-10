@@ -2492,14 +2492,17 @@ class IfcMarinePart(BaseModel):
                 data["deck_thickness"] = data["thickness"]
             if "elevation" in data and "deck_elevation" not in data:
                 data["deck_elevation"] = data["elevation"]
-            if "crest_width" in data and "width" not in data:
-                data["width"] = data["crest_width"]
-            if "crest_elevation" in data and "deck_elevation" not in data:
-                data["deck_elevation"] = data["crest_elevation"]
-            if "height" in data and "wall_height" not in data:
-                data["wall_height"] = data["height"]
-            if "base_width" not in data and "width" in data:
-                data["base_width"] = data["width"]
+            ptype = str(data.get("predefined_type", "")).upper()
+            if ptype in ("SEAWALL", "GROYNE"):
+                if "height" in data and "wall_height" not in data:
+                    data["wall_height"] = data["height"]
+                if "base_width" not in data and "width" in data:
+                    data["base_width"] = data["width"]
+            else:
+                if "crest_width" in data and "width" not in data:
+                    data["width"] = data["crest_width"]
+                if "crest_elevation" in data and "deck_elevation" not in data:
+                    data["deck_elevation"] = data["crest_elevation"]
             if "pile_count" in data and "piles" not in data:
                 data["piles"] = {
                     "count": data["pile_count"],
