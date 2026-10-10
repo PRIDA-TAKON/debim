@@ -1231,6 +1231,34 @@ def generate_viewer_html(
             "layer": br.layer,
         })
 
+    # Stormwater Box & Drainage Culverts (IFC4.3 IfcDistributionFlowElement)
+    for dfe in getattr(resolved, "distribution_flow_elements", []) or []:
+        cx = (dfe.start_point[0] + dfe.end_point[0]) / 2.0
+        cy = (dfe.start_point[1] + dfe.end_point[1]) / 2.0
+        cz = (dfe.start_point[2] + dfe.end_point[2]) / 2.0 + dfe.outer_height / 2.0
+        elements_data.append({
+            "tag": dfe.tag,
+            "class": "IfcDistributionFlowElement",
+            "predefined_type": dfe.predefined_type,
+            "material": dfe.element.material or "Reinforced Concrete C30/37",
+            "position": [cx, cy, cz],
+            "rotation": [0, 0, dfe.rotation],
+            "direction_vector_3d": dfe.direction_vector_3d,
+            "dimensions": {
+                "width": dfe.outer_width,
+                "depth": dfe.outer_height,
+                "length": dfe.length,
+                "internal_span": dfe.internal_span,
+                "internal_rise": dfe.internal_rise,
+                "wall_thickness": dfe.wall_thickness,
+                "slab_thickness": dfe.slab_thickness,
+                "cell_count": dfe.cell_count,
+                "slope_percent": dfe.slope_percent,
+            },
+            "color": "#0284C7",
+            "layer": dfe.layer,
+        })
+
     # Civil Earthworks Cut
     for cut in resolved.earthworks_cuts:
         cz = cut.position[2] - cut.depth / 2.0

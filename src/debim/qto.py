@@ -23,6 +23,7 @@ from debim.resolver import (
     ResolvedCustomElement,
     ResolvedDamper,
     ResolvedDistributionBoard,
+    ResolvedDistributionFlowElement,
     ResolvedDoor,
     ResolvedDuctSegment,
     ResolvedEarthworksElement,
@@ -534,6 +535,18 @@ class NavigationQTO(BaseModel):
     predefined_type: str = "BUOY"
 
 
+class DistributionFlowElementQTO(BaseModel):
+    count: int = 1                       # Culvert count
+    length: float = 0.0                  # Culvert barrel length (m)
+    predefined_type: str = "CULVERT"
+    internal_span: float = 2.0           # Clear span (m)
+    internal_rise: float = 2.0           # Clear rise (m)
+    cell_count: int = 1                  # Number of cells
+    concrete_volume: float = 0.0         # Concrete volume (m3)
+    formwork_area: float = 0.0           # Formwork area (m2)
+    hydraulic_flow_area: float = 0.0     # Clear waterway / hydraulic flow cross-section area (m2)
+
+
 class RailwayQTO(BaseModel):
     track_length: float = 0.0            # Track corridor length (m)
     total_rail_length: float = 0.0       # Total parallel steel rails length (m)
@@ -591,6 +604,7 @@ class ElementQTO(BaseModel):
     marine: Optional[MarineQTO] = None
     mooring_device: Optional[MooringDeviceQTO] = None
     navigation: Optional[NavigationQTO] = None
+    distribution_flow: Optional[DistributionFlowElementQTO] = None
     railway: Optional[RailwayQTO] = None
     mep: Optional[MepQTO] = None
 
@@ -711,6 +725,12 @@ class ProjectQTO(BaseModel):
     total_mooring_cleats_count: int = 0
     total_mooring_fenders_count: int = 0
     total_mooring_capacity_tons: float = 0.0
+    # Drainage & Culvert Totals
+    total_culverts_count: int = 0
+    total_culvert_length: float = 0.0
+    total_culvert_concrete_volume: float = 0.0
+    total_culvert_formwork_area: float = 0.0
+    total_culvert_hydraulic_area: float = 0.0
 
 
     def get_element(self, tag: str) -> Optional[ElementQTO]:
@@ -1898,6 +1918,29 @@ def calculate_element_qto(
             navigation=nav_qto,
         )
 
+    elif isinstance(resolved, ResolvedDistributionFlowElement):
+        elem = resolved.element
+        dfe_qto = DistributionFlowElementQTO(
+            count=1,
+            length=resolved.length,
+            predefined_type=resolved.predefined_type,
+            internal_span=resolved.internal_span,
+            internal_rise=resolved.internal_rise,
+            cell_count=resolved.cell_count,
+            concrete_volume=resolved.concrete_volume,
+            formwork_area=resolved.formwork_area,
+            hydraulic_flow_area=resolved.hydraulic_flow_area,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.length,
+            concrete_volume=resolved.concrete_volume,
+            formwork_area=resolved.formwork_area,
+            distribution_flow=dfe_qto,
+        )
+
     elif isinstance(resolved, ResolvedRailway):
         elem = resolved.element
         rw_qto = RailwayQTO(
@@ -2466,6 +2509,11 @@ def calculate_qto(
     total_mooring_cleat_cnt = 0
     total_mooring_fender_cnt = 0
     total_mooring_cap_tons = 0.0
+    total_culverts_cnt = 0
+    total_culvert_len = 0.0
+    total_culvert_conc_vol = 0.0
+    total_culvert_formwork = 0.0
+    total_culvert_flow_area = 0.0
 
     # Build material category lookup
     material_categories = {
@@ -2616,6 +2664,15 @@ def calculate_qto(
                 total_mooring_cap_tons += eqto.mooring_device.capacity_tons
             elif m_ptype == "FENDER":
                 total_mooring_fender_cnt += eqto.mooring_device.count
+
+        if eqto.distribution_flow:
+            total_culverts_cnt += eqto.distribution_flow.count
+            total_culvert_len += eqto.distribution_flow.length
+            total_culvert_conc_vol += eqto.distribution_flow.concrete_volume
+            total_culvert_formwork += eqto.distribution_flow.formwork_area
+            total_culvert_flow_area += eqto.distribution_flow.hydraulic_flow_area
+            total_conc_vol += eqto.distribution_flow.concrete_volume
+            total_formwork += eqto.distribution_flow.formwork_area
 
         if eqto.railway:
             total_railway_track_length += eqto.railway.track_length
@@ -2797,5 +2854,9 @@ def calculate_qto(
         total_dead_end_ports_count=total_dead_ends,
         total_network_connections_count=total_net_conns,
         total_connected_path_length=total_path_len,
-
+        total_culverts_count=total_culverts_cnt,
+        total_culvert_length=total_culvert_len,
+        total_culvert_concrete_volume=total_culvert_conc_vol,
+        total_culvert_formwork_area=total_culvert_formwork,
+        total_culvert_hydraulic_area=total_culvert_flow_area,
     )

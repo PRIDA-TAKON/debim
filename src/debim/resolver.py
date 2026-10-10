@@ -26,9 +26,10 @@ from debim.schema import (
     IfcCovering,
     IfcCurtainWall,
     IfcCustomElement,
-    IfcDistributionPort,
     IfcDamper,
     IfcDistributionBoard,
+    IfcDistributionFlowElement,
+    IfcDistributionPort,
     IfcDoor,
     IfcDuctSegment,
     IfcEarthworksElement,
@@ -1423,6 +1424,46 @@ class ResolvedNavigationElement(BaseModel):
     layer: str = "civil/infrastructure/marine/navigation"
 
 
+class ResolvedDistributionFlowElement(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcDistributionFlowElement
+    predefined_type: str = "CULVERT"
+    internal_span: float = 2.0
+    internal_rise: float = 2.0
+    wall_thickness: float = 0.25
+    slab_thickness: float = 0.25
+    cell_count: int = 1
+    outer_width: float = 2.50
+    outer_height: float = 2.50
+    length: float = 10.0
+    slope_pct: float = 0.5
+    concrete_volume: float = 0.0
+    formwork_area: float = 0.0
+    hydraulic_flow_area: float = 0.0
+    start_point: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    end_point: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    rotation_angle: float = 0.0
+    layer: str = "civil/infrastructure/drainage"
+
+    @property
+    def rotation(self) -> float:
+        return self.rotation_angle
+
+    @property
+    def slope_percent(self) -> float:
+        return self.slope_pct
+
+    @property
+    def direction_vector_3d(self) -> Tuple[float, float, float]:
+        dx = self.end_point[0] - self.start_point[0]
+        dy = self.end_point[1] - self.start_point[1]
+        dz = self.end_point[2] - self.start_point[2]
+        return (dx, dy, dz)
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1468,6 +1509,7 @@ ResolvedElement = Union[
     ResolvedMarinePart,
     ResolvedMooringDevice,
     ResolvedNavigationElement,
+    ResolvedDistributionFlowElement,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1527,6 +1569,7 @@ class ResolvedManifest(BaseModel):
     marine_parts: List[ResolvedMarinePart] = []
     mooring_devices: List[ResolvedMooringDevice] = []
     navigation_elements: List[ResolvedNavigationElement] = []
+    distribution_flow_elements: List[ResolvedDistributionFlowElement] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -5899,6 +5942,142 @@ class SpatialResolver:
             layer=nav_elem.layer or derive_default_layer(nav_elem),
         )
 
+    def resolve_distribution_flow_element(self, dfe: IfcDistributionFlowElement) -> ResolvedDistributionFlowElement:
+        z_base = self.get_storey(dfe.placement.storey).elevation if dfe.placement.storey else 0.0
+
+        p = dfe.placement
+        span = float(dfe.internal_span)
+        rise = float(dfe.internal_rise)
+        t_wall = float(dfe.wall_thickness)
+        t_slab = float(dfe.slab_thickness)
+        cells = max(1, int(dfe.cell_count))
+
+        outer_w = float(cells * span + (cells + 1) * t_wall)
+        outer_h = float(rise + 2.0 * t_slab)
+        void_area = float(cells * (span * rise))
+        outer_area = outer_w * outer_h
+        conc_sec_area = outer_area - void_area
+
+        rot_deg = 0.0
+        if p.rotation is not None:
+            if isinstance(p.rotation, (int, float)):
+                rot_deg = float(p.rotation)
+            elif isinstance(p.rotation, (list, tuple)) and len(p.rotation) >= 3:
+                rot_deg = float(p.rotation[2])
+
+        slope_val = dfe.slope_pct
+        if p.start_point and p.end_point:
+            z1 = float(z_base + (p.inlet_elevation if p.inlet_elevation is not None else p.start_point[2]))
+            z2 = float(z_base + (p.outlet_elevation if p.outlet_elevation is not None else p.end_point[2]))
+            s_pt = (float(p.start_point[0]), float(p.start_point[1]), z1)
+            e_pt = (float(p.end_point[0]), float(p.end_point[1]), z2)
+            dx = e_pt[0] - s_pt[0]
+            dy = e_pt[1] - s_pt[1]
+            dz = z2 - z1
+            plan_len = float(math.hypot(dx, dy))
+            length = float(math.sqrt(dx * dx + dy * dy + dz * dz))
+            rot_deg = float(math.degrees(math.atan2(dy, dx)))
+            pos = ((s_pt[0] + e_pt[0]) / 2.0, (s_pt[1] + e_pt[1]) / 2.0, (s_pt[2] + e_pt[2]) / 2.0)
+            if plan_len > 1e-6:
+                slope_val = abs(dz) / plan_len * 100.0
+        elif p.from_grid and p.to_grid:
+            x1, y1 = self.get_grid_xy(p.from_grid)
+            x2, y2 = self.get_grid_xy(p.to_grid)
+            x1 += p.offset_x
+            y1 += p.offset_y
+            x2 += p.offset_x
+            y2 += p.offset_y
+            dx = x2 - x1
+            dy = y2 - y1
+            plan_len = float(math.hypot(dx, dy))
+            rot_deg = float(math.degrees(math.atan2(dy, dx)))
+            z1 = float(z_base + (p.inlet_elevation if p.inlet_elevation is not None else p.offset_z))
+            if p.outlet_elevation is not None:
+                z2 = float(z_base + p.outlet_elevation)
+            else:
+                z2 = float(z1 - (plan_len * (dfe.slope_pct / 100.0)))
+            dz = z2 - z1
+            length = float(math.sqrt(dx * dx + dy * dy + dz * dz))
+            s_pt = (x1, y1, z1)
+            e_pt = (x2, y2, z2)
+            pos = ((x1 + x2) / 2.0, (y1 + y2) / 2.0, (z1 + z2) / 2.0)
+            if plan_len > 1e-6:
+                slope_val = abs(dz) / plan_len * 100.0
+        elif p.grid:
+            gx, gy = self.get_grid_xy(p.grid)
+            gx += p.offset_x
+            gy += p.offset_y
+            length = float(dfe.length if dfe.length is not None else 10.0)
+            rad = math.radians(rot_deg)
+            z1 = float(z_base + (p.inlet_elevation if p.inlet_elevation is not None else p.offset_z))
+            if p.outlet_elevation is not None:
+                z2 = float(z_base + p.outlet_elevation)
+                dz = z2 - z1
+                if length > 1e-6:
+                    slope_val = abs(dz) / length * 100.0
+            else:
+                z2 = float(z1 - (length * (dfe.slope_pct / 100.0)))
+            s_pt = (gx, gy, z1)
+            e_pt = (gx + length * math.cos(rad), gy + length * math.sin(rad), z2)
+            pos = ((s_pt[0] + e_pt[0]) / 2.0, (s_pt[1] + e_pt[1]) / 2.0, (s_pt[2] + e_pt[2]) / 2.0)
+        elif p.position:
+            px, py, pz = p.position
+            length = float(dfe.length if dfe.length is not None else 10.0)
+            rad = math.radians(rot_deg)
+            z1 = float(z_base + (p.inlet_elevation if p.inlet_elevation is not None else pz))
+            if p.outlet_elevation is not None:
+                z2 = float(z_base + p.outlet_elevation)
+                dz = z2 - z1
+                if length > 1e-6:
+                    slope_val = abs(dz) / length * 100.0
+            else:
+                z2 = float(z1 - (length * (dfe.slope_pct / 100.0)))
+            s_pt = (px, py, z1)
+            e_pt = (px + length * math.cos(rad), py + length * math.sin(rad), z2)
+            pos = ((s_pt[0] + e_pt[0]) / 2.0, (s_pt[1] + e_pt[1]) / 2.0, (s_pt[2] + e_pt[2]) / 2.0)
+        else:
+            length = float(dfe.length if dfe.length is not None else 10.0)
+            rad = math.radians(rot_deg)
+            z1 = float(z_base + (p.inlet_elevation if p.inlet_elevation is not None else p.offset_z))
+            if p.outlet_elevation is not None:
+                z2 = float(z_base + p.outlet_elevation)
+                dz = z2 - z1
+                if length > 1e-6:
+                    slope_val = abs(dz) / length * 100.0
+            else:
+                z2 = float(z1 - (length * (dfe.slope_pct / 100.0)))
+            s_pt = (p.offset_x, p.offset_y, z1)
+            e_pt = (p.offset_x + length * math.cos(rad), p.offset_y + length * math.sin(rad), z2)
+            pos = ((s_pt[0] + e_pt[0]) / 2.0, (s_pt[1] + e_pt[1]) / 2.0, (s_pt[2] + e_pt[2]) / 2.0)
+
+        conc_vol = float(conc_sec_area * length)
+        internal_perim = float(2.0 * (span + rise) * cells)
+        external_perim = float(2.0 * (outer_w + outer_h))
+        formwork = float((internal_perim + external_perim) * length)
+
+        return ResolvedDistributionFlowElement(
+            tag=dfe.tag,
+            element=dfe,
+            predefined_type=dfe.predefined_type,
+            internal_span=span,
+            internal_rise=rise,
+            wall_thickness=t_wall,
+            slab_thickness=t_slab,
+            cell_count=cells,
+            outer_width=outer_w,
+            outer_height=outer_h,
+            length=length,
+            slope_pct=slope_val,
+            concrete_volume=conc_vol,
+            formwork_area=formwork,
+            hydraulic_flow_area=void_area,
+            start_point=s_pt,
+            end_point=e_pt,
+            position=pos,
+            rotation_angle=rot_deg,
+            layer=derive_default_layer(dfe),
+        )
+
 
     def _resolve_element_ports(self, elem, host_pos: Tuple[float, float, float], rot_deg: float = 0.0) -> List[ResolvedPort]:
         resolved_ports = []
@@ -6199,6 +6378,10 @@ class SpatialResolver:
                 r_nav = self.resolve_navigation_element(elem)
                 resolved_manifest.navigation_elements.append(r_nav)
                 resolved_manifest.elements.append(r_nav)
+            elif isinstance(elem, IfcDistributionFlowElement):
+                r_dfe = self.resolve_distribution_flow_element(elem)
+                resolved_manifest.distribution_flow_elements.append(r_dfe)
+                resolved_manifest.elements.append(r_dfe)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

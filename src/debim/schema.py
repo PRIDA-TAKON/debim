@@ -2670,6 +2670,74 @@ class IfcNavigationElement(BaseModel):
     layer: Optional[str] = None
 
 
+DistributionFlowElementType = Literal[
+    "CULVERT", "DRAINAGE_CHANNEL", "GULLY", "INLET", "OUTLET", "MANHOLE", "USERDEFINED", "NOTDEFINED"
+]
+
+
+class CulvertPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    grid_start: Optional[Tuple[str, str]] = None
+    grid_end: Optional[Tuple[str, str]] = None
+    start_point: Optional[Tuple[float, float, float]] = None
+    end_point: Optional[Tuple[float, float, float]] = None
+    inlet_elevation: Optional[float] = None
+    outlet_elevation: Optional[float] = None
+    position: Optional[Tuple[float, float, float]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    rotation: Optional[Union[float, Tuple[float, float, float]]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def sync_grid_aliases(cls, data):
+        if isinstance(data, dict):
+            if "grid_start" in data and "from_grid" not in data:
+                data["from_grid"] = data["grid_start"]
+            elif "from_grid" in data and "grid_start" not in data:
+                data["grid_start"] = data["from_grid"]
+            if "grid_end" in data and "to_grid" not in data:
+                data["to_grid"] = data["grid_end"]
+            elif "to_grid" in data and "grid_end" not in data:
+                data["grid_end"] = data["to_grid"]
+        return data
+
+    @field_validator("grid", "from_grid", "to_grid", "grid_start", "grid_end", mode="before")
+    @classmethod
+    def convert_culvert_grid(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("start_point", "end_point", "position", "rotation", mode="before")
+    @classmethod
+    def convert_culvert_pos(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(float(x) for x in v)
+        return v
+
+
+class IfcDistributionFlowElement(BaseModel):
+    class_: Literal["IfcDistributionFlowElement"] = Field(alias="class", default="IfcDistributionFlowElement")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = None
+    predefined_type: DistributionFlowElementType = "CULVERT"
+    internal_span: float = 2.0
+    internal_rise: float = 2.0
+    wall_thickness: float = 0.25
+    slab_thickness: float = 0.25
+    length: Optional[float] = None
+    slope_pct: float = 0.5
+    cell_count: int = 1
+    placement: CulvertPlacement = Field(default_factory=CulvertPlacement)
+    layer: Optional[str] = None
+
+
 # Civil Earthworks & Retaining Structures
 
 EarthworksElementType = Literal[
@@ -2972,7 +3040,7 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
     "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
     "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcMarineFacility",
-    "IfcMarinePart", "IfcMooringDevice", "IfcNavigationElement", "IfcCustomElement", "IfcBuildingElementProxy"
+    "IfcMarinePart", "IfcMooringDevice", "IfcNavigationElement", "IfcDistributionFlowElement", "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
 
@@ -3038,6 +3106,7 @@ Element = Annotated[
         Annotated[IfcMarinePart, Tag("IfcMarinePart")],
         Annotated[IfcMooringDevice, Tag("IfcMooringDevice")],
         Annotated[IfcNavigationElement, Tag("IfcNavigationElement")],
+        Annotated[IfcDistributionFlowElement, Tag("IfcDistributionFlowElement")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -3287,7 +3356,7 @@ class ProjectManifest(BaseModel):
                     if gy not in grid_y_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcBridgePart, IfcBearing, IfcMarinePart, IfcMooringDevice, IfcNavigationElement, IfcRailway, IfcRailwayPart, IfcTrackElement)):
+            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcBridgePart, IfcBearing, IfcMarinePart, IfcMooringDevice, IfcNavigationElement, IfcDistributionFlowElement, IfcRailway, IfcRailwayPart, IfcTrackElement)):
                 if getattr(elem.placement, "storey", None) and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -3691,6 +3760,11 @@ def derive_default_layer(elem) -> str:
         return "civil/infrastructure/marine/fenders"
     elif cls == "IfcNavigationElement":
         return "civil/infrastructure/marine/navigation"
+    elif cls == "IfcDistributionFlowElement":
+        ptype = str(getattr(elem, "predefined_type", "")).upper()
+        if ptype in ("CULVERT", "DRAINAGE_CHANNEL"):
+            return "civil/infrastructure/drainage"
+        return "civil/infrastructure/mep/flow"
     elif cls == "IfcBearing":
         return "civil/infrastructure/bridges/bearings"
     elif cls == "IfcMarineFacility":

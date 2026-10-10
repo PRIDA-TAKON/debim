@@ -1278,6 +1278,47 @@ class StepSerializer:
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        for dfe in getattr(resolved, "distribution_flow_elements", []) or []:
+            st_id = dfe.element.placement.storey
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+            st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
+
+            px, py, pz = dfe.start_point
+            rel_z = float(pz - st_elev)
+
+            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+            rec_prof = self.create_entity(
+                "IfcRectangleProfileDef", ".AREA.", None, axis2d, float(dfe.outer_width), float(dfe.outer_height)
+            )
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(dfe.length))
+
+            shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
+            prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, elem_axis)
+
+            ptype = f".{dfe.predefined_type.upper()}." if dfe.predefined_type else ".USERDEFINED."
+            elem_ref = self.create_entity(
+                "IfcDistributionFlowElement",
+                generate_ifc_guid(),
+                None,
+                dfe.tag,
+                None,
+                f"IfcDistributionFlowElement.{dfe.predefined_type}",
+                elem_pl,
+                prod_shape_ref,
+                ptype,
+            )
+            element_tag_refs[dfe.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
         for fill in resolved.earthworks_fills:
             st_id = fill.element.placement.storey
             elem_ref = self.create_entity(
@@ -3947,6 +3988,75 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             )
             rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
             ifcopenshell.api.run("geometry.assign_representation", model, product=md_obj, representation=rep)
+
+    for dfe in getattr(resolved, "distribution_flow_elements", []) or []:
+        ptype = dfe.predefined_type.upper() if dfe.predefined_type else "USERDEFINED"
+        try:
+            dfe_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcDistributionFlowElement",
+                name=dfe.tag,
+                predefined_type=ptype,
+            )
+        except Exception:
+            dfe_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=dfe.tag,
+            )
+            dfe_obj.ObjectType = f"IfcDistributionFlowElement.{ptype}"
+
+        ifcopenshell_elem_objs[dfe.tag] = dfe_obj
+        st_id = dfe.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(dfe_obj)
+
+        px, py, pz = dfe.start_point
+        dx, dy, dz = dfe.direction_vector_3d
+        z_axis = np.array([dx, dy, dz], dtype=float)
+        z_norm = np.linalg.norm(z_axis)
+        if z_norm > 1e-6:
+            z_axis /= z_norm
+        else:
+            z_axis = np.array([1, 0, 0], dtype=float)
+
+        up = np.array([0.0, 0.0, 1.0], dtype=float)
+        if abs(np.dot(z_axis, up)) < 0.99:
+            y_raw = up - np.dot(up, z_axis) * z_axis
+            y_axis = y_raw / np.linalg.norm(y_raw)
+        else:
+            y_raw = np.array([0.0, 1.0, 0.0], dtype=float) - np.dot(np.array([0.0, 1.0, 0.0]), z_axis) * z_axis
+            y_axis = y_raw / np.linalg.norm(y_raw)
+
+        x_axis = np.cross(y_axis, z_axis)
+        x_norm = np.linalg.norm(x_axis)
+        if x_norm > 1e-6:
+            x_axis /= x_norm
+
+        mat = np.eye(4)
+        mat[:3, 0] = x_axis
+        mat[:3, 1] = y_axis
+        mat[:3, 2] = z_axis
+        mat[0, 3] = float(px)
+        mat[1, 3] = float(py)
+        mat[2, 3] = float(pz)
+
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=dfe_obj, matrix=mat)
+
+        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+        prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(dfe.outer_width), float(dfe.outer_height))
+        pos3d = model.createIfcAxis2Placement3D(
+            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(dfe.length)
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=dfe_obj, representation=rep)
 
     for br in getattr(resolved, "bearings", []) or []:
         try:
