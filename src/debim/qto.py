@@ -492,6 +492,11 @@ class MarineQTO(BaseModel):
     core_rock_volume: float = 0.0        # Core rock fill volume (m3)
     armor_rock_tonnage: float = 0.0      # Armor layer rock tonnage (ton)
     foundation_key_trench_volume: float = 0.0 # Foundation key trench volume (m3)
+    chamber_length: float = 0.0          # Lock chamber length (m)
+    chamber_width: float = 0.0           # Lock chamber width (m)
+    wall_thickness: float = 0.0          # Lock wall thickness (m)
+    invert_thickness: float = 0.0        # Lock invert thickness (m)
+    chamber_water_volume: float = 0.0    # Lock chamber water retention volume (m3)
 
 
 class RailwayQTO(BaseModel):
@@ -1768,6 +1773,11 @@ def calculate_element_qto(
             core_rock_volume=resolved.core_rock_volume,
             armor_rock_tonnage=armor_tonnage,
             foundation_key_trench_volume=resolved.foundation_key_trench_volume,
+            chamber_length=resolved.chamber_length,
+            chamber_width=resolved.chamber_width,
+            wall_thickness=resolved.wall_thickness,
+            invert_thickness=resolved.invert_thickness,
+            chamber_water_volume=resolved.chamber_water_volume,
         )
         sub_qto = None
         if pile_cnt > 0:

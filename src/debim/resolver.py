@@ -1338,6 +1338,12 @@ class ResolvedMarinePart(BaseModel):
     armor_weight_tons: Optional[float] = None
     core_rock_volume: float = 0.0
     cross_section_area: float = 0.0
+    chamber_length: float = 100.0
+    chamber_width: float = 16.0
+    wall_thickness: float = 2.5
+    invert_thickness: float = 2.0
+    chamber_water_volume: float = 0.0
+    u_channel_profile_points: List[Tuple[float, float]] = Field(default_factory=list)
     position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     rotation_angle: float = 0.0
     deck_boundary: List[Tuple[float, float, float]] = Field(default_factory=list)
@@ -5384,6 +5390,48 @@ class SpatialResolver:
                     )
                     pile_idx += 1
 
+        chamber_L = getattr(marine_part, "chamber_length", 100.0) or 100.0
+        chamber_W = getattr(marine_part, "chamber_width", 16.0) or 16.0
+        wall_H = marine_part.wall_height if marine_part.wall_height is not None else (12.0 if ptype in ("LOCK", "CANAL") else 0.0)
+        wall_T = getattr(marine_part, "wall_thickness", 2.5) or 2.5
+        invert_T = getattr(marine_part, "invert_thickness", 2.0) or 2.0
+
+        water_vol = 0.0
+        u_profile: List[Tuple[float, float]] = []
+
+        if ptype in ("LOCK", "CANAL"):
+            L = chamber_L
+            outer_W = chamber_W + 2.0 * wall_T
+            total_H = wall_H + invert_T
+            W = outer_W
+
+            # 2D U-channel profile coordinates in local XY plane centered at (0,0)
+            x_left_out = -outer_W / 2.0
+            x_right_out = outer_W / 2.0
+            x_left_in = -chamber_W / 2.0
+            x_right_in = chamber_W / 2.0
+
+            y_bottom_out = -total_H / 2.0
+            y_top = total_H / 2.0
+            y_invert_top = y_bottom_out + invert_T
+
+            u_profile = [
+                (x_left_out, y_bottom_out),
+                (x_right_out, y_bottom_out),
+                (x_right_out, y_top),
+                (x_right_in, y_top),
+                (x_right_in, y_invert_top),
+                (x_left_in, y_invert_top),
+                (x_left_in, y_top),
+                (x_left_out, y_top),
+            ]
+
+            section_area = (outer_W * total_H) - (chamber_W * wall_H)
+            conc_vol = section_area * chamber_L
+            water_vol = chamber_L * chamber_W * wall_H
+
+            # Formwork calculation for lock chamber
+            formwork = ((chamber_W + 2.0 * wall_H) * chamber_L) + (2.0 * total_H * chamber_L) + (2.0 * section_area) + (outer_W * chamber_L)
         p_total_len = sum(p.length for p in resolved_piles)
 
         return ResolvedMarinePart(
@@ -5402,6 +5450,13 @@ class SpatialResolver:
             armor_weight_tons=marine_part.armor_weight_tons,
             core_rock_volume=core_rock_vol,
             cross_section_area=xs_area,
+            chamber_length=chamber_L,
+            chamber_width=chamber_W,
+            wall_height=wall_H,
+            wall_thickness=wall_T,
+            invert_thickness=invert_T,
+            chamber_water_volume=water_vol,
+            u_channel_profile_points=u_profile,
             position=pos,
             rotation_angle=rot_deg,
             deck_boundary=deck_boundary,

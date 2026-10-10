@@ -996,6 +996,34 @@ def generate_viewer_html(
                 "color": "#0284C7",
                 "layer": mp.layer,
             })
+        elif mp.predefined_type.upper() in ("LOCK", "CANAL"):
+            total_h = mp.wall_height + mp.invert_thickness
+            elements_data.append({
+                "tag": mp.tag,
+                "class": "IfcMarinePart",
+                "predefined_type": mp.predefined_type,
+                "material": mp.element.material or "Marine Reinforced Concrete",
+                "position": [mp.position[0], mp.position[1], mp.position[2] + mp.deck_elevation + total_h / 2.0],
+                "rotation": [0, 0, mp.rotation_angle],
+                "dimensions": {
+                    "length": mp.length,
+                    "width": mp.width,
+                    "height": total_h,
+                    "deck_thickness": mp.deck_thickness,
+                    "depth": mp.depth,
+                    "chamber_length": mp.chamber_length,
+                    "chamber_width": mp.chamber_width,
+                    "wall_height": mp.wall_height,
+                    "wall_thickness": mp.wall_thickness,
+                    "invert_thickness": mp.invert_thickness,
+                    "chamber_water_volume": mp.chamber_water_volume,
+                    "concrete_volume": mp.concrete_volume,
+                    "formwork_area": mp.formwork_area,
+                    "pile_count": mp.pile_count,
+                },
+                "color": "#0284C7",
+                "layer": mp.layer,
+            })
         else:
             elements_data.append({
                 "tag": mp.tag,

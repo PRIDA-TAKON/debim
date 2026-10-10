@@ -1007,33 +1007,46 @@ class StepSerializer:
                 bot_w = float(mp.base_width)
 
                 # Trapezoid cross-section profile in 2D (Y is height/depth, X is width across profile)
-                # Extrusion direction along local +Z or local +X
                 p1 = self.create_entity("IfcCartesianPoint", (-bot_w / 2.0, 0.0))
                 p2 = self.create_entity("IfcCartesianPoint", (bot_w / 2.0, 0.0))
                 p3 = self.create_entity("IfcCartesianPoint", (top_w / 2.0, H))
                 p4 = self.create_entity("IfcCartesianPoint", (-top_w / 2.0, H))
                 polyline = self.create_entity("IfcPolyline", [p1, p2, p3, p4, p1])
                 prof_ref = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, polyline)
-                ext_height = float(mp.length)
-            elif mp.predefined_type in ("SEAWALL", "GROYNE") and mp.wall_profile_points:
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", prof_ref, axis3d, ext_dir, float(mp.length))
+            elif mp.predefined_type.upper() in ("LOCK", "CANAL") and getattr(mp, "u_channel_profile_points", None):
+                rel_z = float(pz + mp.deck_elevation - st_elev)
+                pt_objs = [self.create_entity("IfcCartesianPoint", (float(pt[0]), float(pt[1]))) for pt in mp.u_channel_profile_points]
+                pt_objs.append(pt_objs[0])
+                poly = self.create_entity("IfcPolyline", pt_objs)
+                prof_ref = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, poly)
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, -float(mp.chamber_length) / 2.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", prof_ref, axis3d, ext_dir, float(mp.chamber_length))
+            elif mp.predefined_type in ("SEAWALL", "GROYNE") and getattr(mp, "wall_profile_points", None):
                 rel_z = float(pz + mp.deck_elevation - st_elev)
                 pts_refs = [self.create_cartesian_point_2d(float(p[0]), float(p[1])) for p in mp.wall_profile_points]
                 if mp.wall_profile_points[0] != mp.wall_profile_points[-1]:
                     pts_refs.append(pts_refs[0])
                 poly_ref = self.create_entity("IfcPolyline", pts_refs)
                 prof_ref = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, poly_ref)
-                ext_height = float(mp.length)
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", prof_ref, axis3d, ext_dir, float(mp.length))
             else:
                 rel_z = float(pz + mp.deck_elevation - st_elev)
                 pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
                 axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
                 prof_ref = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(mp.length), float(mp.width))
-                ext_height = float(mp.deck_thickness if mp.deck_thickness > 0 else 1.0)
-
-            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
-            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
-            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
-            solid = self.create_entity("IfcExtrudedAreaSolid", prof_ref, axis3d, ext_dir, ext_height)
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", prof_ref, axis3d, ext_dir, float(mp.deck_thickness if mp.deck_thickness > 0 else 1.0))
 
             shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
             prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
@@ -3475,7 +3488,24 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             solid = model.createIfcExtrudedAreaSolid(
                 prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(mp.length)
             )
-        elif mp.predefined_type in ("SEAWALL", "GROYNE") and mp.wall_profile_points:
+        elif mp.predefined_type.upper() in ("LOCK", "CANAL") and getattr(mp, "u_channel_profile_points", None):
+            pz += mp.deck_elevation
+            mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, mp.rotation_angle))
+            ifcopenshell.api.run("geometry.edit_object_placement", model, product=mp_obj, matrix=mat)
+
+            pt_objs = [model.createIfcCartesianPoint((float(pt[0]), float(pt[1]))) for pt in mp.u_channel_profile_points]
+            pt_objs.append(pt_objs[0])
+            poly = model.createIfcPolyline(pt_objs)
+            prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly)
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, -float(mp.chamber_length) / 2.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(mp.chamber_length)
+            )
+        elif mp.predefined_type in ("SEAWALL", "GROYNE") and getattr(mp, "wall_profile_points", None):
             pz += mp.deck_elevation
             mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, mp.rotation_angle))
             ifcopenshell.api.run("geometry.edit_object_placement", model, product=mp_obj, matrix=mat)
