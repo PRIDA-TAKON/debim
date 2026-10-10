@@ -1387,6 +1387,11 @@ class ResolvedMooringDevice(BaseModel):
     element: IfcMooringDevice
     predefined_type: str = "FENDER"
     fender_type: str = "ARCH"
+    bollard_type: Optional[str] = None
+    capacity_tons: float = 0.0
+    base_plate_width: float = 0.60
+    base_plate_length: float = 0.60
+    anchor_bolts_count: int = 4
     height_mm: float = 800.0
     length_mm: float = 1500.0
     height_m: float = 0.80
@@ -5365,53 +5370,103 @@ class SpatialResolver:
 
         face = (md.placement.face or "FRONT").upper()
 
+        ptype = str(md.predefined_type).upper()
+        cap_tons = md.capacity_tons or (50.0 if ptype == "BOLLARD" else (10.0 if ptype == "CLEAT" else 0.0))
+        base_w = md.base_plate_width or (0.60 if ptype == "BOLLARD" else (0.30 if ptype == "CLEAT" else 0.60))
+        base_l = md.base_plate_length or (0.60 if ptype == "BOLLARD" else (0.50 if ptype == "CLEAT" else 0.60))
+        bolts_cnt = md.anchor_bolts_count or (4 if ptype == "BOLLARD" else (2 if ptype == "CLEAT" else 4))
+        bollard_t = md.bollard_type or (("TEE" if ptype == "BOLLARD" else "CLEAT") if ptype in ("BOLLARD", "CLEAT") else None)
+
         if quay_part:
             qx, qy, qz = quay_part.position
             L = quay_part.length
             W = quay_part.width
             deck_elev = quay_part.deck_elevation
-            z_mount = qz + deck_elev - (height_m / 2.0) + md.placement.offset_z
 
-            if face in ("FRONT", "SOUTH"):
-                pos = (
-                    qx + md.placement.offset_x,
-                    qy - W / 2.0 + md.placement.offset_y,
-                    z_mount,
-                )
-                normal_vec = (0.0, -1.0, 0.0)
-                rot_deg = 0.0
-            elif face in ("BACK", "NORTH"):
-                pos = (
-                    qx + md.placement.offset_x,
-                    qy + W / 2.0 + md.placement.offset_y,
-                    z_mount,
-                )
-                normal_vec = (0.0, 1.0, 0.0)
-                rot_deg = 180.0
-            elif face in ("LEFT", "WEST"):
-                pos = (
-                    qx - L / 2.0 + md.placement.offset_x,
-                    qy + md.placement.offset_y,
-                    z_mount,
-                )
-                normal_vec = (-1.0, 0.0, 0.0)
-                rot_deg = 270.0
-            elif face in ("RIGHT", "EAST"):
-                pos = (
-                    qx + L / 2.0 + md.placement.offset_x,
-                    qy + md.placement.offset_y,
-                    z_mount,
-                )
-                normal_vec = (1.0, 0.0, 0.0)
-                rot_deg = 90.0
+            if ptype in ("BOLLARD", "CLEAT"):
+                z_mount = qz + deck_elev + md.placement.offset_z
+                if face in ("FRONT", "SOUTH"):
+                    pos = (
+                        qx + md.placement.offset_x,
+                        qy - W / 2.0 + (base_w / 2.0) + md.placement.offset_y,
+                        z_mount,
+                    )
+                    normal_vec = (0.0, -1.0, 0.0)
+                    rot_deg = 0.0
+                elif face in ("BACK", "NORTH"):
+                    pos = (
+                        qx + md.placement.offset_x,
+                        qy + W / 2.0 - (base_w / 2.0) + md.placement.offset_y,
+                        z_mount,
+                    )
+                    normal_vec = (0.0, 1.0, 0.0)
+                    rot_deg = 180.0
+                elif face in ("LEFT", "WEST"):
+                    pos = (
+                        qx - L / 2.0 + (base_l / 2.0) + md.placement.offset_x,
+                        qy + md.placement.offset_y,
+                        z_mount,
+                    )
+                    normal_vec = (-1.0, 0.0, 0.0)
+                    rot_deg = 270.0
+                elif face in ("RIGHT", "EAST"):
+                    pos = (
+                        qx + L / 2.0 - (base_l / 2.0) + md.placement.offset_x,
+                        qy + md.placement.offset_y,
+                        z_mount,
+                    )
+                    normal_vec = (1.0, 0.0, 0.0)
+                    rot_deg = 90.0
+                else:
+                    pos = (
+                        qx + md.placement.offset_x,
+                        qy - W / 2.0 + (base_w / 2.0) + md.placement.offset_y,
+                        z_mount,
+                    )
+                    normal_vec = (0.0, -1.0, 0.0)
+                    rot_deg = 0.0
             else:
-                pos = (
-                    qx + md.placement.offset_x,
-                    qy - W / 2.0 + md.placement.offset_y,
-                    z_mount,
-                )
-                normal_vec = (0.0, -1.0, 0.0)
-                rot_deg = 0.0
+                z_mount = qz + deck_elev - (height_m / 2.0) + md.placement.offset_z
+                if face in ("FRONT", "SOUTH"):
+                    pos = (
+                        qx + md.placement.offset_x,
+                        qy - W / 2.0 + md.placement.offset_y,
+                        z_mount,
+                    )
+                    normal_vec = (0.0, -1.0, 0.0)
+                    rot_deg = 0.0
+                elif face in ("BACK", "NORTH"):
+                    pos = (
+                        qx + md.placement.offset_x,
+                        qy + W / 2.0 + md.placement.offset_y,
+                        z_mount,
+                    )
+                    normal_vec = (0.0, 1.0, 0.0)
+                    rot_deg = 180.0
+                elif face in ("LEFT", "WEST"):
+                    pos = (
+                        qx - L / 2.0 + md.placement.offset_x,
+                        qy + md.placement.offset_y,
+                        z_mount,
+                    )
+                    normal_vec = (-1.0, 0.0, 0.0)
+                    rot_deg = 270.0
+                elif face in ("RIGHT", "EAST"):
+                    pos = (
+                        qx + L / 2.0 + md.placement.offset_x,
+                        qy + md.placement.offset_y,
+                        z_mount,
+                    )
+                    normal_vec = (1.0, 0.0, 0.0)
+                    rot_deg = 90.0
+                else:
+                    pos = (
+                        qx + md.placement.offset_x,
+                        qy - W / 2.0 + md.placement.offset_y,
+                        z_mount,
+                    )
+                    normal_vec = (0.0, -1.0, 0.0)
+                    rot_deg = 0.0
 
             if md.placement.rotation is not None:
                 rot_deg = float(md.placement.rotation) if isinstance(md.placement.rotation, (int, float)) else float(md.placement.rotation[2])
@@ -5439,6 +5494,11 @@ class SpatialResolver:
             element=md,
             predefined_type=md.predefined_type,
             fender_type=md.fender_type,
+            bollard_type=bollard_t,
+            capacity_tons=cap_tons,
+            base_plate_width=base_w,
+            base_plate_length=base_l,
+            anchor_bolts_count=bolts_cnt,
             height_mm=md.height_mm,
             length_mm=md.length_mm,
             height_m=height_m,

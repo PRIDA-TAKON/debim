@@ -2047,6 +2047,7 @@ BridgePartType = Literal["SUBSTRUCTURE", "SUPERSTRUCTURE", "DECK", "PIER", "ABUT
 MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "BREAKWATER", "REVETMENT", "SEAWALL", "GROYNE", "LOCK", "CANAL", "DRYDOCK", "SLIPWAY", "USERDEFINED"]
 MooringDeviceType = Literal["BOLLARD", "CLEAT", "FENDER", "MOORING_RING", "MOORING_HOOK", "CATWAY", "USERDEFINED", "NOTDEFINED"]
 FenderType = Literal["ARCH", "CONE", "CYLINDRICAL", "CELL"]
+BollardType = Literal["TEE", "PILLAR", "STAGHORN", "KIDNEY", "DOUBLE_BITT", "CLEAT", "USERDEFINED"]
 NavigationElementType = Literal["BUOY", "BEACON", "LIGHT", "MARKER", "USERDEFINED", "NOTDEFINED"]
 LightColorType = Literal["RED", "GREEN", "WHITE", "YELLOW"]
 BearingType = Literal["BRIDGEBEARING", "ELASTOMERIC", "POT", "SPHERICAL", "DISK", "ROLLER", "ROCKER", "USERDEFINED", "NOTDEFINED"]
@@ -2603,6 +2604,11 @@ class IfcMooringDevice(BaseModel):
     material: Optional[str] = None
     predefined_type: MooringDeviceType = "FENDER"
     fender_type: FenderType = "ARCH"
+    bollard_type: Optional[BollardType] = None
+    capacity_tons: Optional[float] = None
+    base_plate_width: Optional[float] = None
+    base_plate_length: Optional[float] = None
+    anchor_bolts_count: Optional[int] = None
     height_mm: float = 800.0
     length_mm: float = 1500.0
     frontal_panel: bool = True
@@ -2623,6 +2629,30 @@ class IfcMooringDevice(BaseModel):
                     data["placement"] = {"quay_wall": quay}
                 elif isinstance(data.get("placement"), dict) and "quay_wall" not in data["placement"]:
                     data["placement"]["quay_wall"] = quay
+
+            ptype = str(data.get("predefined_type", "")).upper()
+            if ptype == "BOLLARD":
+                if "capacity_tons" not in data or data["capacity_tons"] is None:
+                    data["capacity_tons"] = 50.0
+                if "base_plate_width" not in data or data["base_plate_width"] is None:
+                    data["base_plate_width"] = 0.60
+                if "base_plate_length" not in data or data["base_plate_length"] is None:
+                    data["base_plate_length"] = 0.60
+                if "anchor_bolts_count" not in data or data["anchor_bolts_count"] is None:
+                    data["anchor_bolts_count"] = 4
+                if "bollard_type" not in data or data["bollard_type"] is None:
+                    data["bollard_type"] = "TEE"
+            elif ptype == "CLEAT":
+                if "capacity_tons" not in data or data["capacity_tons"] is None:
+                    data["capacity_tons"] = 10.0
+                if "base_plate_width" not in data or data["base_plate_width"] is None:
+                    data["base_plate_width"] = 0.30
+                if "base_plate_length" not in data or data["base_plate_length"] is None:
+                    data["base_plate_length"] = 0.50
+                if "anchor_bolts_count" not in data or data["anchor_bolts_count"] is None:
+                    data["anchor_bolts_count"] = 2
+                if "bollard_type" not in data or data["bollard_type"] is None:
+                    data["bollard_type"] = "CLEAT"
         return data
 
 
@@ -3655,6 +3685,9 @@ def derive_default_layer(elem) -> str:
     elif cls == "IfcMarinePart":
         return "civil/infrastructure/marine"
     elif cls == "IfcMooringDevice":
+        ptype = str(getattr(elem, "predefined_type", "")).upper()
+        if ptype in ("BOLLARD", "CLEAT"):
+            return "civil/infrastructure/marine/bollards"
         return "civil/infrastructure/marine/fenders"
     elif cls == "IfcNavigationElement":
         return "civil/infrastructure/marine/navigation"

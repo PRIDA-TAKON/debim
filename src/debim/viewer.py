@@ -1176,27 +1176,40 @@ def generate_viewer_html(
             "layer": bp.layer,
         })
 
-    # Civil Marine Infrastructure Mooring Devices / Fenders (IFC4.3)
+    # Civil Marine Infrastructure Mooring Devices / Fenders / Bollards / Cleats (IFC4.3)
     for md in getattr(resolved, "mooring_devices", []) or []:
+        is_bollard = str(md.predefined_type).upper() in ("BOLLARD", "CLEAT")
+        h_val = float(md.height_m if md.height_m and md.height_m > 0 else 0.60) if is_bollard else md.height_m
+        mat_default = "Cast Steel Grade 60-40-18" if is_bollard else "EPDM Marine Rubber"
+        color_default = "#475569" if is_bollard else "#111827"
+        w_val = float(md.base_plate_length) if is_bollard else md.length_m
+        d_val = float(md.base_plate_width) if is_bollard else md.projection_m
+
         elements_data.append({
             "tag": md.tag,
             "class": "IfcMooringDevice",
             "predefined_type": md.predefined_type,
             "fender_type": md.fender_type,
-            "material": md.element.material or "EPDM Marine Rubber",
-            "position": [md.position[0], md.position[1], md.position[2] + md.height_m / 2.0],
+            "bollard_type": md.bollard_type,
+            "capacity_tons": md.capacity_tons,
+            "anchor_bolts_count": md.anchor_bolts_count,
+            "material": md.element.material or mat_default,
+            "position": [md.position[0], md.position[1], md.position[2] + h_val / 2.0],
             "rotation": [0, 0, md.rotation],
             "dimensions": {
-                "width": md.length_m,
-                "depth": md.projection_m,
-                "height": md.height_m,
+                "width": w_val,
+                "depth": d_val,
+                "height": h_val,
                 "fender_type": md.fender_type,
+                "bollard_type": md.bollard_type,
+                "capacity_tons": md.capacity_tons,
+                "anchor_bolts_count": md.anchor_bolts_count,
                 "height_mm": md.height_mm,
                 "length_mm": md.length_mm,
                 "frontal_panel": md.frontal_panel,
                 "frontal_panel_area": md.frontal_panel_area,
             },
-            "color": "#111827",
+            "color": color_default,
             "layer": md.layer,
         })
 

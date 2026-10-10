@@ -512,9 +512,13 @@ class MarineQTO(BaseModel):
 
 
 class MooringDeviceQTO(BaseModel):
-    count: int = 1                       # Fender piece count
-    piece_count: int = 1                 # Fender piece count
+    count: int = 1                       # Fender / Bollard / Cleat piece count
+    piece_count: int = 1                 # Piece count
+    predefined_type: str = "FENDER"
     fender_type: str = "ARCH"
+    bollard_type: Optional[str] = None
+    capacity_tons: float = 0.0           # Safe Working Load (SWL) capacity (tons)
+    anchor_bolts_count: int = 0          # Number of anchor bolts
     height_mm: float = 800.0
     length_mm: float = 1500.0
     frontal_panel: bool = True
@@ -701,6 +705,12 @@ class ProjectQTO(BaseModel):
     total_dampers_count: int = 0
     total_flow_controllers_count: int = 0
     total_unitary_equipment_count: int = 0
+    # Mooring Totals
+    total_mooring_devices_count: int = 0
+    total_mooring_bollards_count: int = 0
+    total_mooring_cleats_count: int = 0
+    total_mooring_fenders_count: int = 0
+    total_mooring_capacity_tons: float = 0.0
 
 
     def get_element(self, tag: str) -> Optional[ElementQTO]:
@@ -1854,7 +1864,11 @@ def calculate_element_qto(
         mooring_qto = MooringDeviceQTO(
             count=1,
             piece_count=1,
+            predefined_type=resolved.predefined_type,
             fender_type=resolved.fender_type,
+            bollard_type=resolved.bollard_type,
+            capacity_tons=resolved.capacity_tons,
+            anchor_bolts_count=resolved.anchor_bolts_count,
             height_mm=resolved.height_mm,
             length_mm=resolved.length_mm,
             frontal_panel=resolved.frontal_panel,
@@ -2447,6 +2461,11 @@ def calculate_qto(
     total_dampers = 0
     total_flow_controllers = 0
     total_unitary_eqs = 0
+    total_mooring_dev_cnt = 0
+    total_mooring_bollard_cnt = 0
+    total_mooring_cleat_cnt = 0
+    total_mooring_fender_cnt = 0
+    total_mooring_cap_tons = 0.0
 
     # Build material category lookup
     material_categories = {
@@ -2586,6 +2605,18 @@ def calculate_qto(
             total_nav_cnt += eqto.navigation.count
             total_nav_chain_len += eqto.navigation.anchor_chain_length
 
+        if eqto.mooring_device:
+            total_mooring_dev_cnt += eqto.mooring_device.count
+            m_ptype = str(eqto.mooring_device.predefined_type).upper()
+            if m_ptype == "BOLLARD":
+                total_mooring_bollard_cnt += eqto.mooring_device.count
+                total_mooring_cap_tons += eqto.mooring_device.capacity_tons
+            elif m_ptype == "CLEAT":
+                total_mooring_cleat_cnt += eqto.mooring_device.count
+                total_mooring_cap_tons += eqto.mooring_device.capacity_tons
+            elif m_ptype == "FENDER":
+                total_mooring_fender_cnt += eqto.mooring_device.count
+
         if eqto.railway:
             total_railway_track_length += eqto.railway.track_length
             total_railway_rail_length += eqto.railway.total_rail_length
@@ -2716,6 +2747,11 @@ def calculate_qto(
         total_bridge_formwork_area=total_bridge_formwork,
         total_navigation_elements_count=total_nav_cnt,
         total_anchor_chain_length=total_nav_chain_len,
+        total_mooring_devices_count=total_mooring_dev_cnt,
+        total_mooring_bollards_count=total_mooring_bollard_cnt,
+        total_mooring_cleats_count=total_mooring_cleat_cnt,
+        total_mooring_fenders_count=total_mooring_fender_cnt,
+        total_mooring_capacity_tons=total_mooring_cap_tons,
         total_railway_track_length=total_railway_track_length,
         total_railway_rail_length=total_railway_rail_length,
         total_railway_rail_weight_kg=total_railway_rail_weight_kg,

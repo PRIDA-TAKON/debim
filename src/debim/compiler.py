@@ -1237,14 +1237,23 @@ class StepSerializer:
             px, py, pz = md.position
             rel_z = float(pz - st_elev)
 
-            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
-            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
-            rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(md.length_m), float(md.projection_m))
-
-            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
-            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
-            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
-            solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(md.height_m))
+            if md.predefined_type in ("BOLLARD", "CLEAT"):
+                pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(md.base_plate_length), float(md.base_plate_width))
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                h_post = float(md.height_m if md.height_m and md.height_m > 0 else 0.60)
+                solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, h_post)
+            else:
+                pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(md.length_m), float(md.projection_m))
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(md.height_m))
 
             shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
             prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
@@ -3900,18 +3909,44 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, md.rotation))
         ifcopenshell.api.run("geometry.edit_object_placement", model, product=md_obj, matrix=mat)
 
-        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
-        prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(md.length_m), float(md.projection_m))
-        pos3d = model.createIfcAxis2Placement3D(
-            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
-            model.createIfcDirection((0.0, 0.0, 1.0)),
-            model.createIfcDirection((1.0, 0.0, 0.0)),
-        )
-        solid = model.createIfcExtrudedAreaSolid(
-            prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(md.height_m)
-        )
-        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
-        ifcopenshell.api.run("geometry.assign_representation", model, product=md_obj, representation=rep)
+        if md.predefined_type in ("BOLLARD", "CLEAT"):
+            pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+            prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(md.base_plate_length), float(md.base_plate_width))
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            base_solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), 0.05
+            )
+            post_r = float(md.base_plate_width * 0.35)
+            pos2d_c = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+            prof_c = model.createIfcCircleProfileDef("AREA", None, pos2d_c, post_r)
+            pos3d_c = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.05)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            h_post = float(md.height_m if md.height_m and md.height_m > 0 else 0.60)
+            post_solid = model.createIfcExtrudedAreaSolid(
+                prof_c, pos3d_c, model.createIfcDirection((0.0, 0.0, 1.0)), h_post
+            )
+            rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [base_solid, post_solid])
+            ifcopenshell.api.run("geometry.assign_representation", model, product=md_obj, representation=rep)
+        else:
+            pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+            prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(md.length_m), float(md.projection_m))
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(md.height_m)
+            )
+            rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+            ifcopenshell.api.run("geometry.assign_representation", model, product=md_obj, representation=rep)
 
     for br in getattr(resolved, "bearings", []) or []:
         try:
