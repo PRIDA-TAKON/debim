@@ -2644,7 +2644,7 @@ class IfcNavigationElement(BaseModel):
 
 EarthworksElementType = Literal[
     "RETAINING_STRUCTURE", "PAVEMENT", "GABION", "CRIB_WALL", "REINFORCED_SOIL",
-    "BERM", "TERRACE", "DRAINAGE", "USERDEFINED", "NOTDEFINED"
+    "BERM", "TERRACE", "DRAINAGE", "SOIL_NAILING", "ROCK_BOLT", "USERDEFINED", "NOTDEFINED"
 ]
 EarthworksCutType = Literal[
     "EXCAVATION", "CUT", "CUTTING", "TRENCH", "BASEMENT_EXCAVATION", "BASE_EXCAVATION",
@@ -2683,6 +2683,15 @@ class EarthworksPlacement(BaseModel):
         return v
 
 
+class SlopeStabilizationConfig(BaseModel):
+    nail_length: float = 6.0
+    spacing_x: float = 1.5
+    spacing_y: float = 1.5
+    inclination_deg: float = 15.0
+    shotcrete_thickness: float = 0.10
+    hole_diameter: float = 0.10
+
+
 class IfcEarthworksElement(BaseModel):
     class_: Literal["IfcEarthworksElement"] = Field(alias="class", default="IfcEarthworksElement")
     tag: str
@@ -2698,8 +2707,15 @@ class IfcEarthworksElement(BaseModel):
     mesh_wire_dia_mm: Optional[float] = None  # Wire mesh diameter for gabion cages (mm)
     volume: Optional[float] = None
     surface_area: Optional[float] = None
+    slope_stabilization: Optional[SlopeStabilizationConfig] = None
     placement: EarthworksPlacement
     layer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def resolve_slope_stabilization(self) -> "IfcEarthworksElement":
+        if self.slope_stabilization is None and str(self.predefined_type).upper() in ("SOIL_NAILING", "ROCK_BOLT"):
+            self.slope_stabilization = SlopeStabilizationConfig()
+        return self
 
 
 class IfcEarthworksCut(BaseModel):

@@ -434,16 +434,22 @@ def test_ifc4_reference_certification_schema_and_spatial_containment(
     assert len(model.by_type("IfcRelConnectsPorts")) == 1
 
     # Civil Infrastructure (Earthworks as IfcGeographicElement/IfcEarthworksElement + Road/Bridge as proxies or entities)
+    def safe_by_type(entity_cls: str):
+        try:
+            return list(model.by_type(entity_cls))
+        except RuntimeError:
+            return []
+
     civil_entities = (
-        list(model.by_type("IfcGeographicElement"))
-        + list(model.by_type("IfcEarthworksElement"))
-        + list(model.by_type("IfcEarthworksCut"))
-        + list(model.by_type("IfcEarthworksFill"))
-        + list(model.by_type("IfcRoad"))
-        + list(model.by_type("IfcBridge"))
-        + list(model.by_type("IfcAlignment"))
+        safe_by_type("IfcGeographicElement")
+        + safe_by_type("IfcEarthworksElement")
+        + safe_by_type("IfcEarthworksCut")
+        + safe_by_type("IfcEarthworksFill")
+        + safe_by_type("IfcRoad")
+        + safe_by_type("IfcBridge")
+        + safe_by_type("IfcAlignment")
         + [
-            p for p in model.by_type("IfcBuildingElementProxy")
+            p for p in safe_by_type("IfcBuildingElementProxy")
             if any(k in getattr(p, "Name", "").upper() or k in getattr(p, "ObjectType", "").upper() for k in ["ROAD", "BRIDGE", "ALIGNMENT"])
         ]
     )

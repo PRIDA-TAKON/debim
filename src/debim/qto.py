@@ -443,6 +443,10 @@ class EarthworksQTO(BaseModel):
     gabion_stone_fill_volume: float = 0.0  # Gabion rock stone fill volume (m3)
     wire_mesh_cage_area: float = 0.0       # Wire mesh cage surface area (m2)
     geotextile_area: float = 0.0           # Geotextile filter fabric area (m2)
+    soil_nail_count: int = 0
+    total_drilling_depth: float = 0.0     # m
+    grout_volume: float = 0.0            # m3
+    facing_shotcrete_area: float = 0.0   # m2
 
 
 class RetainingWallQTO(BaseModel):
@@ -633,6 +637,10 @@ class ProjectQTO(BaseModel):
     total_geotextile_area: float = 0.0
     total_retaining_wall_concrete_volume: float = 0.0
     total_retaining_wall_formwork_area: float = 0.0
+    total_soil_nail_count: int = 0
+    total_drilling_depth: float = 0.0
+    total_grout_volume: float = 0.0
+    total_facing_shotcrete_area: float = 0.0
     # Civil Infrastructure Totals (IFC4.3)
     total_alignment_length: float = 0.0
     total_road_surface_area: float = 0.0
@@ -1602,13 +1610,17 @@ def calculate_element_qto(
     elif isinstance(resolved, ResolvedEarthworksElement):
         elem = resolved.element
         ew_qto = EarthworksQTO(
-            type="FILL" if resolved.predefined_type in ("GABION", "CRIB_WALL", "REINFORCED_SOIL", "BERM", "TERRACE") else ("CUT" if "CUT" in str(resolved.predefined_type).upper() else "FILL"),
+            type="CUT" if "CUT" in str(resolved.predefined_type).upper() else ("SOIL_NAILING" if str(resolved.predefined_type).upper() in ("SOIL_NAILING", "ROCK_BOLT") else ("FILL" if resolved.predefined_type in ("GABION", "CRIB_WALL", "REINFORCED_SOIL", "BERM", "TERRACE") else "FILL")),
             volume=resolved.volume,
             surface_area=resolved.surface_area,
             depth=resolved.depth,
             gabion_stone_fill_volume=resolved.gabion_stone_fill_volume,
             wire_mesh_cage_area=resolved.wire_mesh_cage_area,
             geotextile_area=resolved.geotextile_area,
+            soil_nail_count=resolved.soil_nail_count,
+            total_drilling_depth=resolved.total_drilling_depth,
+            grout_volume=resolved.grout_volume,
+            facing_shotcrete_area=resolved.facing_shotcrete_area,
         )
         return ElementQTO(
             tag=tag,
@@ -2353,6 +2365,10 @@ def calculate_qto(
     total_geotextile_area_val = 0.0
     total_rw_conc_vol = 0.0
     total_rw_formwork = 0.0
+    total_soil_nail_count = 0
+    total_drilling_depth = 0.0
+    total_grout_volume = 0.0
+    total_facing_shotcrete_area = 0.0
 
     # Civil Infrastructure Totals (IFC4.3)
     total_alignment_len = 0.0
@@ -2538,12 +2554,16 @@ def calculate_qto(
         if eqto.earthworks:
             if eqto.earthworks.type == "CUT":
                 total_cut_vol += eqto.earthworks.volume
-            elif eqto.earthworks.type == "FILL":
+            elif eqto.earthworks.type in ("FILL", "SOIL_NAILING"):
                 total_fill_vol += eqto.earthworks.volume
                 total_compacted_fill_vol += eqto.earthworks.compacted_volume
             total_gabion_stone_vol += eqto.earthworks.gabion_stone_fill_volume
             total_wire_mesh_area += eqto.earthworks.wire_mesh_cage_area
             total_geotextile_area_val += eqto.earthworks.geotextile_area
+            total_soil_nail_count += eqto.earthworks.soil_nail_count
+            total_drilling_depth += eqto.earthworks.total_drilling_depth
+            total_grout_volume += eqto.earthworks.grout_volume
+            total_facing_shotcrete_area += eqto.earthworks.facing_shotcrete_area
 
         if eqto.retaining_wall:
             total_rw_conc_vol += eqto.retaining_wall.concrete_volume
@@ -2683,6 +2703,10 @@ def calculate_qto(
         total_geotextile_area=total_geotextile_area_val,
         total_retaining_wall_concrete_volume=total_rw_conc_vol,
         total_retaining_wall_formwork_area=total_rw_formwork,
+        total_soil_nail_count=total_soil_nail_count,
+        total_drilling_depth=total_drilling_depth,
+        total_grout_volume=total_grout_volume,
+        total_facing_shotcrete_area=total_facing_shotcrete_area,
         total_alignment_length=total_alignment_len,
         total_road_surface_area=total_road_surf_area,
         total_road_asphalt_volume=total_road_asphalt_vol,
