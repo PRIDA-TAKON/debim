@@ -9,6 +9,7 @@
 <p align="center">
   <a href="https://pypi.org/project/debim/"><img src="https://img.shields.io/pypi/v/debim.svg?color=blue" alt="PyPI Version" /></a>
   <a href="docs/winget.md"><img src="https://img.shields.io/badge/WinGet-debim-0078D4.svg?logo=windows&logoColor=white" alt="WinGet Package" /></a>
+  <a href="https://github.com/PRIDA-TAKON/homebrew-debim"><img src="https://img.shields.io/badge/Homebrew-debim-FBB040.svg?logo=homebrew&logoColor=white" alt="Homebrew Tap" /></a>
   <a href="https://glama.ai/mcp/servers/PRIDA-TAKON/debim"><img src="https://glama.ai/mcp/servers/PRIDA-TAKON/debim/badges/score.svg" alt="Glama MCP Server Score" /></a>
   <a href="#-model-context-protocol-mcp-server"><img src="https://img.shields.io/badge/MCP-FastMCP%20Server-purple.svg?logo=anthropic" alt="MCP Server" /></a>
   <a href="https://github.com/PRIDA-TAKON/debim/pkgs/container/debim"><img src="https://img.shields.io/badge/Docker-GHCR%20Image-2496ED.svg?logo=docker&logoColor=white" alt="Docker GHCR" /></a>
@@ -158,18 +159,21 @@ debim --help
 #### 🍎 macOS (Terminal / zsh)
 
 ```bash
-# Option A: Isolated CLI (Recommended on macOS to prevent Homebrew/PEP 668 conflicts)
+# Option A: Native Homebrew Tap (Recommended on macOS)
+brew install PRIDA-TAKON/debim/debim
+
+# Option B: Isolated CLI (via pipx)
 brew install pipx
 pipx ensurepath
 pipx install "debim[all]"
 
-# Option B: Virtual Environment
+# Option C: uv tool
+uv tool install "debim[all]"
+
+# Option D: Virtual Environment
 python3 -m venv .venv
 source .venv/bin/activate
 pip install "debim[all]"
-
-# Option C: uv tool
-uv tool install "debim[all]"
 
 # Verify installation
 debim --help
