@@ -2045,6 +2045,8 @@ RoadType = Literal["HIGHWAY", "CARRIAGEWAY", "ROUNDABOUT", "SERVICE_ROAD", "USER
 BridgeType = Literal["GIRDER", "SLAB", "ARCH", "CABLE_STAYED", "USERDEFINED"]
 BridgePartType = Literal["SUBSTRUCTURE", "SUPERSTRUCTURE", "DECK", "PIER", "ABUTMENT", "FOUNDATION", "USERDEFINED", "NOTDEFINED"]
 MarinePartType = Literal["BERTH", "JETTY", "QUAY", "PIER", "BREAKWATER", "REVETMENT", "SEAWALL", "GROYNE", "LOCK", "CANAL", "DRYDOCK", "SLIPWAY", "USERDEFINED"]
+MooringDeviceType = Literal["BOLLARD", "CLEAT", "FENDER", "MOORING_RING", "MOORING_HOOK", "CATWAY", "USERDEFINED", "NOTDEFINED"]
+FenderType = Literal["ARCH", "CONE", "CYLINDRICAL", "CELL"]
 BearingType = Literal["BRIDGEBEARING", "ELASTOMERIC", "POT", "SPHERICAL", "DISK", "ROLLER", "ROCKER", "USERDEFINED", "NOTDEFINED"]
 RailwayType = Literal["PASSENGER", "FREIGHT", "MIXED", "HIGH_SPEED", "LIGHT_RAIL", "METRO", "USERDEFINED"]
 RailwayPartType = Literal["TRACK", "SUBGRADE", "LINESIDE", "USERDEFINED"]
@@ -2565,6 +2567,63 @@ class IfcMarinePart(BaseModel):
         return self
 
 
+class MooringDevicePlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    quay_wall: Optional[str] = None
+    marine_part: Optional[str] = None
+    face: Literal["FRONT", "BACK", "LEFT", "RIGHT", "NORTH", "SOUTH", "EAST", "WEST", "AUTO"] = "FRONT"
+    position: Optional[Tuple[float, float, float]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    rotation: Optional[Union[float, Tuple[float, float, float]]] = None
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_mooring_grid(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("position", "rotation", mode="before")
+    @classmethod
+    def convert_mooring_pos_rot(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(float(x) for x in v)
+        return v
+
+
+class IfcMooringDevice(BaseModel):
+    class_: Literal["IfcMooringDevice"] = Field(alias="class", default="IfcMooringDevice")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = None
+    predefined_type: MooringDeviceType = "FENDER"
+    fender_type: FenderType = "ARCH"
+    height_mm: float = 800.0
+    length_mm: float = 1500.0
+    frontal_panel: bool = True
+    quay_wall: Optional[str] = None
+    marine_part: Optional[str] = None
+    placement: MooringDevicePlacement = Field(default_factory=MooringDevicePlacement)
+    layer: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_mooring_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            quay = data.get("quay_wall") or data.get("marine_part")
+            if quay:
+                if "quay_wall" not in data:
+                    data["quay_wall"] = quay
+                if "placement" not in data:
+                    data["placement"] = {"quay_wall": quay}
+                elif isinstance(data.get("placement"), dict) and "quay_wall" not in data["placement"]:
+                    data["placement"]["quay_wall"] = quay
+        return data
+
+
 # Civil Earthworks & Retaining Structures
 
 EarthworksElementType = Literal["RETAINING_STRUCTURE", "PAVEMENT", "GABION", "REINFORCED_SOIL", "BERM", "TERRACE", "DRAINAGE", "USERDEFINED", "NOTDEFINED"]
@@ -2814,6 +2873,7 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcBearing",
     "IfcMarineFacility",
     "IfcMarinePart",
+    "IfcMooringDevice",
     "IfcCustomElement",
 } | IFC4_DISTRIBUTION_CLASSES
 
@@ -2841,7 +2901,7 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
     "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
     "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcMarineFacility",
-    "IfcMarinePart", "IfcCustomElement", "IfcBuildingElementProxy"
+    "IfcMarinePart", "IfcMooringDevice", "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
 
@@ -2905,6 +2965,7 @@ Element = Annotated[
         Annotated[IfcBearing, Tag("IfcBearing")],
         Annotated[IfcMarineFacility, Tag("IfcMarineFacility")],
         Annotated[IfcMarinePart, Tag("IfcMarinePart")],
+        Annotated[IfcMooringDevice, Tag("IfcMooringDevice")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -3154,7 +3215,7 @@ class ProjectManifest(BaseModel):
                     if gy not in grid_y_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcBridgePart, IfcBearing, IfcMarinePart, IfcRailway, IfcRailwayPart, IfcTrackElement)):
+            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcBridgePart, IfcBearing, IfcMarinePart, IfcMooringDevice, IfcRailway, IfcRailwayPart, IfcTrackElement)):
                 if getattr(elem.placement, "storey", None) and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -3551,6 +3612,8 @@ def derive_default_layer(elem) -> str:
         return "civil/infrastructure/bridges/parts"
     elif cls == "IfcMarinePart":
         return "civil/infrastructure/marine"
+    elif cls == "IfcMooringDevice":
+        return "civil/infrastructure/marine/fenders"
     elif cls == "IfcBearing":
         return "civil/infrastructure/bridges/bearings"
     elif cls == "IfcMarineFacility":

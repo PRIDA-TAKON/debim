@@ -1093,6 +1093,30 @@ def generate_viewer_html(
             "layer": bp.layer,
         })
 
+    # Civil Marine Infrastructure Mooring Devices / Fenders (IFC4.3)
+    for md in getattr(resolved, "mooring_devices", []) or []:
+        elements_data.append({
+            "tag": md.tag,
+            "class": "IfcMooringDevice",
+            "predefined_type": md.predefined_type,
+            "fender_type": md.fender_type,
+            "material": md.element.material or "EPDM Marine Rubber",
+            "position": [md.position[0], md.position[1], md.position[2] + md.height_m / 2.0],
+            "rotation": [0, 0, md.rotation],
+            "dimensions": {
+                "width": md.length_m,
+                "depth": md.projection_m,
+                "height": md.height_m,
+                "fender_type": md.fender_type,
+                "height_mm": md.height_mm,
+                "length_mm": md.length_mm,
+                "frontal_panel": md.frontal_panel,
+                "frontal_panel_area": md.frontal_panel_area,
+            },
+            "color": "#111827",
+            "layer": md.layer,
+        })
+
     # Civil Infrastructure Bearings (IFC4.3)
     for br in getattr(resolved, "bearings", []) or []:
         elements_data.append({
