@@ -1328,8 +1328,22 @@ def export_class_directory(
     """
     Export Class Directory HTML webpage to output path.
     """
+    import shutil
+
     out_p = Path(output_path)
     out_p.parent.mkdir(parents=True, exist_ok=True)
     html_content = generate_class_directory_html(classes_data)
     out_p.write_text(html_content, encoding="utf-8")
+
+    # Ensure Farnsworth House viewer is bundled alongside for working live link
+    farnsworth_src = Path(__file__).resolve().parent.parent.parent.parent / "examples" / "farnsworth_house" / "viewer.html"
+    if not farnsworth_src.exists():
+        farnsworth_src = Path("examples/farnsworth_house/viewer.html")
+    if farnsworth_src.exists():
+        try:
+            target_farnsworth = out_p.parent / "farnsworth.html"
+            shutil.copyfile(farnsworth_src, target_farnsworth)
+        except Exception:
+            pass
+
     return out_p

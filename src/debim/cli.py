@@ -1641,6 +1641,18 @@ def _generate_docs_bundle(output_dir: Path, schema_version: str = "IFC4") -> Pat
     index_path = output_dir / "index.html"
     export_class_directory(index_path)
 
+    # Ensure Farnsworth House viewer is available both at root and relative examples path
+    farnsworth_src = Path("examples/farnsworth_house/viewer.html")
+    if farnsworth_src.exists():
+        import shutil
+        try:
+            shutil.copyfile(farnsworth_src, output_dir / "farnsworth.html")
+            ex_dir = output_dir / "examples" / "farnsworth_house"
+            ex_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(farnsworth_src, ex_dir / "viewer.html")
+        except Exception:
+            pass
+
     # Ensure schema_version & title metadata are present for verification
     content = index_path.read_text(encoding="utf-8")
     if "debim Interactive Class Directory" not in content:
