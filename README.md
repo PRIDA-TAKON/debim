@@ -15,7 +15,7 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python: 3.11+" /></a>
   <a href="https://technical.buildingsmart.org/"><img src="https://img.shields.io/badge/BIM-IFC4--Minimal-brightgreen.svg" alt="BIM: IFC4" /></a>
-  <a href="tests/"><img src="https://img.shields.io/badge/tests-325%20passed-success.svg" alt="Tests: 325 Passed" /></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/tests-454%20passed-success.svg" alt="Tests: 454 Passed" /></a>
   <a href="https://www.kaggle.com/code/pridatakon/debim-3d-visual-balanced-benchmark"><img src="https://img.shields.io/badge/visual%20fidelity-85.5%25%20median-brightgreen.svg" alt="Visual Fidelity: 85.5% Median" /></a>
   <a href="https://prida-takon.github.io/debim/"><img src="https://img.shields.io/badge/Live%203D%20Demo-Interactive%20Viewer-2ea44f.svg?logo=three.js" alt="Live 3D Demo" /></a>
 </p>

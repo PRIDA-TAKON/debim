@@ -13,7 +13,7 @@ from typing import Optional
 import typer
 from rich.console import Console
 
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 
 PYPI_URL = "https://pypi.org/pypi/debim/json"
 DEFAULT_CACHE_TTL = 86400  # 24 hours in seconds
