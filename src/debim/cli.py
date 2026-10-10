@@ -48,14 +48,15 @@ console = Console(legacy_windows=False)
 
 DEBIM_BANNER = (
     "\n"
-    "[bold #00ffff]  > _    [/bold #00ffff]  [bold #00ffff]██████╗ [/bold #00ffff][bold #22d3ee]███████╗[/bold #22d3ee][bold #38bdf8]██████╗ [/bold #38bdf8][bold #60a5fa]██╗[/bold #60a5fa][bold #818cf8]███╗   ███╗[/bold #818cf8]\n"
-    "[bold #00ffff]  \\ \\    [/bold #00ffff]  [bold #00ffff]██╔══██╗[/bold #00ffff][bold #22d3ee]██╔════╝[/bold #22d3ee][bold #38bdf8]██╔══██╗[/bold #38bdf8][bold #60a5fa]██║[/bold #60a5fa][bold #818cf8]████╗ ████║[/bold #818cf8]\n"
-    "[bold #00ffff] > \\ \\   [/bold #00ffff]  [bold #00ffff]██║  ██║[/bold #00ffff][bold #22d3ee]█████╗  [/bold #22d3ee][bold #38bdf8]██████╔╝[/bold #38bdf8][bold #60a5fa]██║[/bold #60a5fa][bold #818cf8]██╔████╔██║[/bold #818cf8]\n"
-    "[bold #00ffff]  \\ \\ \\  [/bold #00ffff]  [bold #00ffff]██║  ██║[/bold #00ffff][bold #22d3ee]██╔══╝  [/bold #22d3ee][bold #38bdf8]██╔══██╗[/bold #38bdf8][bold #60a5fa]██║[/bold #60a5fa][bold #818cf8]██║╚██╔╝██║[/bold #818cf8]\n"
-    "[bold #00ffff]   \\_\\_\\ [/bold #00ffff]  [bold #00ffff]██████╔╝[/bold #00ffff][bold #22d3ee]███████╗[/bold #22d3ee][bold #38bdf8]██████╔╝[/bold #38bdf8][bold #60a5fa]██║[/bold #60a5fa][bold #818cf8]██║ ╚═╝ ██║[/bold #818cf8]\n"
-    "[bold #ffd700]  ══════ [/bold #ffd700]  [bold #00ffff]╚═════╝ [/bold #00ffff][bold #22d3ee]╚══════╝[/bold #22d3ee][bold #38bdf8]╚═════╝ [/bold #38bdf8][bold #60a5fa]╚═╝[/bold #60a5fa][bold #818cf8]╚═╝     ╚═╝[/bold #818cf8]\n"
+    "[bold #00ffff]  ███╗   [/bold #00ffff]         [bold #00ffff]██████╗ [/bold #00ffff][bold #22d3ee]███████╗[/bold #22d3ee][bold #38bdf8]██████╗ [/bold #38bdf8][bold #60a5fa]██╗[/bold #60a5fa][bold #818cf8]███╗   ███╗[/bold #818cf8]\n"
+    "[bold #00ffff]  ╚███╗  [/bold #00ffff]         [bold #00ffff]██╔══██╗[/bold #00ffff][bold #22d3ee]██╔════╝[/bold #22d3ee][bold #38bdf8]██╔══██╗[/bold #38bdf8][bold #60a5fa]██║[/bold #60a5fa][bold #818cf8]████╗ ████║[/bold #818cf8]\n"
+    "[bold #00ffff]   ╚███╗ [/bold #00ffff]         [bold #00ffff]██║  ██║[/bold #00ffff][bold #22d3ee]█████╗  [/bold #22d3ee][bold #38bdf8]██████╔╝[/bold #38bdf8][bold #60a5fa]██║[/bold #60a5fa][bold #818cf8]██╔████╔██║[/bold #818cf8]\n"
+    "[bold #00ffff]   ╔███╝ [/bold #00ffff]         [bold #00ffff]██║  ██║[/bold #00ffff][bold #22d3ee]██╔══╝  [/bold #22d3ee][bold #38bdf8]██╔══██╗[/bold #38bdf8][bold #60a5fa]██║[/bold #60a5fa][bold #818cf8]██║╚██╔╝██║[/bold #818cf8]\n"
+    "[bold #00ffff]  ╔███╝  [/bold #00ffff] [bold #ffd700]██████╗[/bold #ffd700] [bold #00ffff]██████╔╝[/bold #00ffff][bold #22d3ee]███████╗[/bold #22d3ee][bold #38bdf8]██████╔╝[/bold #38bdf8][bold #60a5fa]██║[/bold #60a5fa][bold #818cf8]██║ ╚═╝ ██║[/bold #818cf8]\n"
+    "[bold #00ffff]  ╚═══╝  [/bold #00ffff] [bold #ffd700]╚═════╝[/bold #ffd700] [bold #00ffff]╚═════╝ [/bold #00ffff][bold #22d3ee]╚══════╝[/bold #22d3ee][bold #38bdf8]╚═════╝ [/bold #38bdf8][bold #60a5fa]╚═╝[/bold #60a5fa][bold #818cf8]╚═╝     ╚═╝[/bold #818cf8]\n"
     "[dim #64748b]  -------------------------------------------------------------[/dim #64748b]\n"
-    "[bold #94a3b8]   Declarative BIM Compiler  |  Building-as-Code for AI Agents [/bold #94a3b8]\n"
+    f"[bold #94a3b8]   Declarative BIM Compiler v{__version__}  |  Developer: Prida Takon[/bold #94a3b8]\n"
+    "[bold #64748b]   Building-as-Code for AI Agents and Humans (@PRIDA-TAKON)[/bold #64748b]\n"
 )
 
 
@@ -70,7 +71,10 @@ def main(
     """Minimal Declarative BIM (Building-as-Code) engine"""
     if version:
         console.print(DEBIM_BANNER)
-        console.print(f"[bold cyan]debim[/bold cyan] version [bold green]{__version__}[/bold green]")
+        console.print(
+            f"[bold cyan]debim[/bold cyan] version [bold green]{__version__}[/bold green] "
+            f"| Developer: [bold #38bdf8]Prida Takon[/bold #38bdf8] ([dim]@PRIDA-TAKON[/dim])"
+        )
         check_and_notify_updates(console=console, quiet=quiet, ctx=ctx)
         raise typer.Exit()
     if ctx.invoked_subcommand is None and not ctx.resilient_parsing:
