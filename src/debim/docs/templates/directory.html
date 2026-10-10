@@ -554,6 +554,8 @@
                     <div id="viewport-3d-container">
                         <canvas id="canvas-3d"></canvas>
                         <div class="controls-overlay">
+                            <button class="tool-btn active" id="rebar-btn" onclick="toggleRebar()" style="display:none;">🔩 Rebar Cage (เหล็กเสริม)</button>
+                            <button class="tool-btn active" id="xray-btn" onclick="toggleXRay()" style="display:none;">🧱 X-Ray Concrete</button>
                             <button class="tool-btn" id="wireframe-btn" onclick="toggleWireframe()">Wireframe</button>
                             <button class="tool-btn" id="bbox-btn" onclick="toggleBBox()">Bounding Box</button>
                             <button class="tool-btn" onclick="reset3DCamera()">Reset Camera</button>
@@ -650,6 +652,10 @@
         let activeClassIndex = 0;
         let scene, camera, renderer, controls;
         let currentMesh = null;
+        let currentConcreteMesh = null;
+        let currentRebarGroup = null;
+        let rebarMode = true;
+        let xrayMode = true;
         let wireframeMode = false;
         let bboxMode = false;
         let bboxHelper = null;
@@ -885,6 +891,166 @@
             animate();
         }
 
+        // Build 3D Reinforcement Rebar Cage
+        function buildRebarCage(sample3d) {
+            const group = new THREE.Group();
+            const rebarType = sample3d.rebar_type || 'column';
+            const w = sample3d.width || 1;
+            const d = sample3d.depth || 1;
+            const h = sample3d.height || 1;
+            const c = sample3d.cover || 0.035;
+
+            const mainMat = new THREE.MeshStandardMaterial({
+                color: 0xf59e0b, // Amber Gold
+                metalness: 0.85,
+                roughness: 0.25
+            });
+            const stirrupMat = new THREE.MeshStandardMaterial({
+                color: 0x38bdf8, // Sky Blue / Cyan
+                metalness: 0.85,
+                roughness: 0.25
+            });
+
+            if (rebarType === 'column') {
+                const rBar = 0.012;
+                const barH = h - 0.04;
+                const barGeom = new THREE.CylinderGeometry(rBar, rBar, barH, 12);
+                const xOffsets = [-w/2 + c, w/2 - c];
+                const zOffsets = [-d/2 + c, d/2 - c];
+                xOffsets.forEach(bx => {
+                    zOffsets.forEach(bz => {
+                        const m = new THREE.Mesh(barGeom, mainMat);
+                        m.position.set(bx, 0, bz);
+                        group.add(m);
+                    });
+                });
+
+                const pitch = 0.20;
+                const nRings = Math.max(2, Math.floor(h / pitch));
+                const rw = w - 2*c;
+                const rd = d - 2*c;
+                const rStir = 0.005;
+                for (let i = 1; i < nRings; i++) {
+                    const y = -h/2 + i * pitch;
+                    const xBarGeom = new THREE.CylinderGeometry(rStir, rStir, rw, 8);
+                    xBarGeom.rotateZ(Math.PI / 2);
+                    [-rd/2, rd/2].forEach(bz => {
+                        const sm = new THREE.Mesh(xBarGeom, stirrupMat);
+                        sm.position.set(0, y, bz);
+                        group.add(sm);
+                    });
+                    const zBarGeom = new THREE.CylinderGeometry(rStir, rStir, rd, 8);
+                    zBarGeom.rotateX(Math.PI / 2);
+                    [-rw/2, rw/2].forEach(bx => {
+                        const sm = new THREE.Mesh(zBarGeom, stirrupMat);
+                        sm.position.set(bx, y, 0);
+                        group.add(sm);
+                    });
+                }
+            } else if (rebarType === 'beam') {
+                const rBar = 0.011;
+                const barL = w - 0.06;
+                const barGeom = new THREE.CylinderGeometry(rBar, rBar, barL, 12);
+                barGeom.rotateZ(Math.PI / 2);
+
+                [-d/2 + c, d/2 - c].forEach(bz => {
+                    const m = new THREE.Mesh(barGeom, mainMat);
+                    m.position.set(0, h/2 - c, bz);
+                    group.add(m);
+                });
+                [-d/2 + c, 0, d/2 - c].forEach(bz => {
+                    const m = new THREE.Mesh(barGeom, mainMat);
+                    m.position.set(0, -h/2 + c, bz);
+                    group.add(m);
+                });
+
+                const pitch = 0.20;
+                const nRings = Math.max(2, Math.floor(w / pitch));
+                const rh = h - 2*c;
+                const rd = d - 2*c;
+                const rStir = 0.005;
+                for (let i = 1; i < nRings; i++) {
+                    const x = -w/2 + i * pitch;
+                    const vBarGeom = new THREE.CylinderGeometry(rStir, rStir, rh, 8);
+                    [-rd/2, rd/2].forEach(bz => {
+                        const sm = new THREE.Mesh(vBarGeom, stirrupMat);
+                        sm.position.set(x, 0, bz);
+                        group.add(sm);
+                    });
+                    const hBarGeom = new THREE.CylinderGeometry(rStir, rStir, rd, 8);
+                    hBarGeom.rotateX(Math.PI / 2);
+                    [-rh/2, rh/2].forEach(by => {
+                        const sm = new THREE.Mesh(hBarGeom, stirrupMat);
+                        sm.position.set(x, by, 0);
+                        group.add(sm);
+                    });
+                }
+            } else if (rebarType === 'footing') {
+                const rBar = 0.008;
+                const matL = w - 2*c;
+                const matW = d - 2*c;
+                const nX = 7;
+                const nZ = 7;
+                const barXGeom = new THREE.CylinderGeometry(rBar, rBar, matL, 8);
+                barXGeom.rotateZ(Math.PI / 2);
+                for (let i = 0; i < nZ; i++) {
+                    const z = -matW/2 + (i / (nZ - 1)) * matW;
+                    const m = new THREE.Mesh(barXGeom, mainMat);
+                    m.position.set(0, -h/2 + c, z);
+                    group.add(m);
+                }
+                const barZGeom = new THREE.CylinderGeometry(rBar, rBar, matW, 8);
+                barZGeom.rotateX(Math.PI / 2);
+                for (let i = 0; i < nX; i++) {
+                    const x = -matL/2 + (i / (nX - 1)) * matL;
+                    const m = new THREE.Mesh(barZGeom, mainMat);
+                    m.position.set(x, -h/2 + c + 0.015, 0);
+                    group.add(m);
+                }
+                const dowelH = h + 0.35;
+                const dowelGeom = new THREE.CylinderGeometry(0.010, 0.010, dowelH, 8);
+                [[-0.12, -0.12], [0.12, -0.12], [0.12, 0.12], [-0.12, 0.12]].forEach(([dx, dz]) => {
+                    const dm = new THREE.Mesh(dowelGeom, mainMat);
+                    dm.position.set(dx, 0.15, dz);
+                    group.add(dm);
+                });
+            } else if (rebarType === 'slab') {
+                const rBar = 0.005;
+                const matL = w - 2*c;
+                const matW = d - 2*c;
+                const nBars = 11;
+                const barXGeom = new THREE.CylinderGeometry(rBar, rBar, matL, 8);
+                barXGeom.rotateZ(Math.PI / 2);
+                for (let i = 0; i < nBars; i++) {
+                    const z = -matW/2 + (i / (nBars - 1)) * matW;
+                    const m = new THREE.Mesh(barXGeom, mainMat);
+                    m.position.set(0, -h/2 + c, z);
+                    group.add(m);
+                }
+                const barZGeom = new THREE.CylinderGeometry(rBar, rBar, matW, 8);
+                barZGeom.rotateX(Math.PI / 2);
+                for (let i = 0; i < nBars; i++) {
+                    const x = -matL/2 + (i / (nBars - 1)) * matL;
+                    const m = new THREE.Mesh(barZGeom, mainMat);
+                    m.position.set(x, -h/2 + c + 0.012, 0);
+                    group.add(m);
+                }
+            } else if (rebarType === 'retaining_wall') {
+                const rBar = 0.008;
+                const nStem = 15;
+                const stemH = h - c;
+                const stemGeom = new THREE.CylinderGeometry(rBar, rBar, stemH, 8);
+                for (let i = 0; i < nStem; i++) {
+                    const x = -w/2 + c + (i / (nStem - 1)) * (w - 2*c);
+                    const sm = new THREE.Mesh(stemGeom, mainMat);
+                    sm.position.set(x, 0, 0);
+                    group.add(sm);
+                }
+            }
+
+            return group;
+        }
+
         // Update 3D Model Shape
         function update3DModel(sample3d) {
             if (currentMesh) {
@@ -895,8 +1061,16 @@
                 scene.remove(bboxHelper);
                 bboxHelper = null;
             }
+            currentConcreteMesh = null;
+            currentRebarGroup = null;
 
             if (!sample3d) return;
+
+            const isRC = Boolean(sample3d.is_reinforced_concrete);
+            const rebarBtn = document.getElementById('rebar-btn');
+            const xrayBtn = document.getElementById('xray-btn');
+            if (rebarBtn) rebarBtn.style.display = isRC ? 'inline-block' : 'none';
+            if (xrayBtn) xrayBtn.style.display = isRC ? 'inline-block' : 'none';
 
             let geom;
             const col = sample3d.color || "#38bdf8";
@@ -910,14 +1084,30 @@
                 geom = new THREE.BoxGeometry(sample3d.width||1, sample3d.height||1, sample3d.depth||1);
             }
 
+            const isTransparent = isRC && xrayMode;
             const mat = new THREE.MeshStandardMaterial({
                 color: new THREE.Color(col),
                 wireframe: wireframeMode,
-                roughness: 0.4,
-                metalness: 0.2
+                roughness: isRC ? 0.7 : 0.4,
+                metalness: isRC ? 0.1 : 0.2,
+                transparent: isTransparent,
+                opacity: isTransparent ? 0.38 : 1.0,
+                depthWrite: !isTransparent
             });
 
-            currentMesh = new THREE.Mesh(geom, mat);
+            currentConcreteMesh = new THREE.Mesh(geom, mat);
+
+            if (isRC) {
+                currentMesh = new THREE.Group();
+                currentMesh.add(currentConcreteMesh);
+
+                currentRebarGroup = buildRebarCage(sample3d);
+                currentRebarGroup.visible = rebarMode;
+                currentMesh.add(currentRebarGroup);
+            } else {
+                currentMesh = currentConcreteMesh;
+            }
+
             currentMesh.position.y = (sample3d.height || 1) / 2.0;
             scene.add(currentMesh);
 
@@ -929,11 +1119,32 @@
             reset3DCamera();
         }
 
+        function toggleRebar() {
+            rebarMode = !rebarMode;
+            const btn = document.getElementById('rebar-btn');
+            if (btn) btn.classList.toggle('active', rebarMode);
+            if (currentRebarGroup) {
+                currentRebarGroup.visible = rebarMode;
+            }
+        }
+
+        function toggleXRay() {
+            xrayMode = !xrayMode;
+            const btn = document.getElementById('xray-btn');
+            if (btn) btn.classList.toggle('active', xrayMode);
+            if (currentConcreteMesh && currentConcreteMesh.material) {
+                currentConcreteMesh.material.transparent = xrayMode;
+                currentConcreteMesh.material.opacity = xrayMode ? 0.38 : 1.0;
+                currentConcreteMesh.material.depthWrite = !xrayMode;
+                currentConcreteMesh.material.needsUpdate = true;
+            }
+        }
+
         function toggleWireframe() {
             wireframeMode = !wireframeMode;
             document.getElementById('wireframe-btn').classList.toggle('active', wireframeMode);
-            if (currentMesh && currentMesh.material) {
-                currentMesh.material.wireframe = wireframeMode;
+            if (currentConcreteMesh && currentConcreteMesh.material) {
+                currentConcreteMesh.material.wireframe = wireframeMode;
             }
         }
 

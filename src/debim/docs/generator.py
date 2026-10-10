@@ -29,13 +29,18 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
   placement:
     grid: A-1
     offset_base: 0.0
-    height: 3.50""",
+    height: 3.50
+  reinforcement:
+    main: 4-DB20
+    stirrups: RB6@0.15""",
         "ifc_step": """#101=IFCCOLUMN('2bV1$aXq1F3w0Z2k4L5mN6',#102,'C1','Main Column',$,#103,#104,$,.COLUMN.);
 #103=IFCLOCALPLACEMENT($,#105);
 #104=IFCPRODUCTDEFINITIONSHAPE($,$,(#106));
 #106=IFCSHAPEREPRESENTATION(#107,'Body','SweptSolid',(#108));
 #108=IFCEXTRUDEDAREASOLID(#109,#110,#111,3.5);
-#109=IFCRECTANGLEPROFILEDEF(.AREA.,'C30x30',$,0.3,0.3);""",
+#109=IFCRECTANGLEPROFILEDEF(.AREA.,'C30x30',$,0.3,0.3);
+#120=IFCREINFORCINGBAR('2cV2$bYr2G4w0Z2k4L5mN7',#102,'C1-MAIN','4-DB20 Main Bars',$,#103,$,$,.MAIN.,20.,$,3.5,$,$);
+#121=IFCREINFORCINGBAR('2dW3$cZs3H5x1A3l5M6nO8',#102,'C1-TIE','RB6@0.15 Stirrups',$,#103,$,$,.RING.,6.,$,1.1,$,$);""",
         "qto_boq": [
             {
                 "code": "CONC-C30",
@@ -64,6 +69,15 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
                 "mat_rate": 32.0,
                 "labor_rate": 5.0,
             },
+            {
+                "code": "REBAR-RB6",
+                "name": "เหล็กปลอกเสา RB6 (Stirrups @0.15m)",
+                "formula": "24 ปลอก × 1.10m × 0.222 kg/m",
+                "unit": "kg",
+                "quantity": 5.86,
+                "mat_rate": 30.0,
+                "labor_rate": 5.0,
+            },
         ],
         "thai_specs": {
             "materials": "คอนกรีตทรงลูกบาศก์แรงอัดไม่น้อยกว่า 280 ksc ที่อายุ 28 วัน (มอก. 213-2552) เหล็กข้ออ้อยชั้นคุณภาพ SD40 (มอก. 24-2548)",
@@ -76,6 +90,8 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
             "depth": 0.30,
             "height": 3.50,
             "color": "#64748B",
+            "is_reinforced_concrete": True,
+            "rebar_type": "column",
         },
         "sample_2d_svg": """<svg viewBox="0 0 200 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect x="50" y="50" width="100" height="100" fill="#94a3b8" stroke="#0f172a" stroke-width="3"/><line x1="10" y1="100" x2="190" y2="100" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="4,2"/><line x1="100" y1="10" x2="100" y2="190" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="4,2"/><text x="105" y="40" fill="#0f172a" font-size="12" font-weight="bold">C1 (300x300mm)</text><circle x="100" y="100" r="4" fill="#0284c7"/></svg>""",
     },
@@ -99,12 +115,19 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
   placement:
     from_grid: A-1
     to_grid: A-2
-    offset_z: 0.0""",
+    offset_z: 0.0
+  reinforcement:
+    main_top: 2-DB16
+    main_bottom: 3-DB20
+    stirrups: RB9@0.15""",
         "ifc_step": """#201=IFCBEAM('3cW2$bYr2G4x1A3l5M6nO7',#102,'B1','Floor Beam',$,#203,#204,$,.BEAM.);
 #204=IFCPRODUCTDEFINITIONSHAPE($,$,(#206));
 #206=IFCSHAPEREPRESENTATION(#107,'Body','SweptSolid',(#208));
 #208=IFCEXTRUDEDAREASOLID(#209,#210,#211,4.0);
-#209=IFCRECTANGLEPROFILEDEF(.AREA.,'B20x40',$,0.2,0.4);""",
+#209=IFCRECTANGLEPROFILEDEF(.AREA.,'B20x40',$,0.2,0.4);
+#220=IFCREINFORCINGBAR('3dX3$cZs3H5y2B4m6N7oP8',#102,'B1-BOT','3-DB20 Main Bottom',$,#203,$,$,.MAIN.,20.,$,4.0,$,$);
+#221=IFCREINFORCINGBAR('3eY4$dAt4I6z3C5n7O8pQ9',#102,'B1-TOP','2-DB16 Main Top',$,#203,$,$,.MAIN.,16.,$,4.0,$,$);
+#222=IFCREINFORCINGBAR('3fZ5$eBu5J7a4D6o8P9qR0',#102,'B1-STIRRUP','RB9@0.15 Stirrups',$,#203,$,$,.RING.,9.,$,1.1,$,$);""",
         "qto_boq": [
             {
                 "code": "CONC-C30",
@@ -124,6 +147,33 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
                 "mat_rate": 320.0,
                 "labor_rate": 180.0,
             },
+            {
+                "code": "REBAR-DB20",
+                "name": "เหล็กข้ออ้อยล่าง DB20 (Main Bottom Rebar)",
+                "formula": "3 เส้น × 4.0m × 2.47 kg/m × 1.15",
+                "unit": "kg",
+                "quantity": 34.09,
+                "mat_rate": 32.0,
+                "labor_rate": 5.0,
+            },
+            {
+                "code": "REBAR-DB16",
+                "name": "เหล็กข้ออ้อยบน DB16 (Main Top Rebar)",
+                "formula": "2 เส้น × 4.0m × 1.58 kg/m × 1.15",
+                "unit": "kg",
+                "quantity": 14.54,
+                "mat_rate": 32.0,
+                "labor_rate": 5.0,
+            },
+            {
+                "code": "REBAR-RB9",
+                "name": "เหล็กปลอกคาน RB9 (Stirrups @0.15m)",
+                "formula": "27 ปลอก × 1.10m × 0.499 kg/m",
+                "unit": "kg",
+                "quantity": 14.82,
+                "mat_rate": 30.0,
+                "labor_rate": 5.0,
+            },
         ],
         "thai_specs": {
             "materials": "คอนกรีตผสมเสร็จ มอก. 213 แรงอัดไม่น้อยกว่า 280 ksc เหล็กเสริม SD40/RB9 มอก. 24",
@@ -136,6 +186,8 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
             "depth": 0.20,
             "height": 0.40,
             "color": "#475569",
+            "is_reinforced_concrete": True,
+            "rebar_type": "beam",
         },
         "sample_2d_svg": """<svg viewBox="0 0 240 120" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="30" width="200" height="60" fill="#cbd5e1" stroke="#0f172a" stroke-width="2"/><line x1="20" y1="60" x2="220" y2="60" stroke="#0284c7" stroke-width="1" stroke-dasharray="3,3"/><text x="100" y="55" fill="#0f172a" font-size="11" font-weight="bold">B1 (200x400mm)</text></svg>""",
     },
@@ -157,11 +209,15 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
     - [0.0, 0.0]
     - [4.0, 0.0]
     - [4.0, 4.0]
-    - [0.0, 4.0]""",
+    - [0.0, 4.0]
+  reinforcement:
+    main_bottom: DB10@0.20
+    main_top: DB10@0.20""",
         "ifc_step": """#301=IFCSLAB('4dX3$cZs3H5y2B4m6N7oP8',#102,'S1','Floor Slab',$,#303,#304,$,.FLOOR.);
 #304=IFCPRODUCTDEFINITIONSHAPE($,$,(#306));
 #306=IFCSHAPEREPRESENTATION(#107,'Body','SweptSolid',(#308));
-#308=IFCEXTRUDEDAREASOLID(#309,#310,#311,0.12);""",
+#308=IFCEXTRUDEDAREASOLID(#309,#310,#311,0.12);
+#320=IFCREINFORCINGMESH('4eY4$dAt4I6z3C5n7O8pQ9',#102,'S1-MESH','Rebar Mesh DB10@0.20m Top/Bottom',$,#303,$,$,.USERDEFINED.,10.,10.,0.20,0.20,$,$);""",
         "qto_boq": [
             {
                 "code": "CONC-SLAB",
@@ -171,6 +227,15 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
                 "quantity": 1.92,
                 "mat_rate": 2400.0,
                 "labor_rate": 450.0,
+            },
+            {
+                "code": "REBAR-DB10",
+                "name": "เหล็กเสริมตะแกรงพื้น บน-ล่าง DB10@0.20m",
+                "formula": "2 ชั้น × (21+21 เส้น × 4m) × 0.617 kg/m",
+                "unit": "kg",
+                "quantity": 207.31,
+                "mat_rate": 32.0,
+                "labor_rate": 5.0,
             },
             {
                 "code": "WIRE-MESH",
@@ -193,6 +258,8 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
             "depth": 4.00,
             "height": 0.12,
             "color": "#94A3B8",
+            "is_reinforced_concrete": True,
+            "rebar_type": "slab",
         },
         "sample_2d_svg": """<svg viewBox="0 0 200 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="20" width="160" height="160" fill="#e2e8f0" stroke="#0f172a" stroke-width="2"/><text x="80" y="105" fill="#0f172a" font-size="13" font-weight="bold">S1 (t=12cm)</text></svg>""",
     },
@@ -214,8 +281,13 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
     thickness: 0.50
   placement:
     grid: A-1
-    offset_z: -1.50""",
-        "ifc_step": """#401=IFCFOOTING('5eY4$dAt4I6z3C5n7O8pQ9',#102,'F1','Pile Cap',$,#403,#404,$,.PAD_FOOTING.);""",
+    offset_z: -1.50
+  reinforcement:
+    mesh_bottom: DB16@0.15
+    dowels: 4-DB20""",
+        "ifc_step": """#401=IFCFOOTING('5eY4$dAt4I6z3C5n7O8pQ9',#102,'F1','Pile Cap',$,#403,#404,$,.PAD_FOOTING.);
+#410=IFCREINFORCINGMESH('5fZ5$eBu5J7a4D6o8P9qR0',#102,'F1-MAT','Mat DB16@0.15 (X & Y)',$,#403,$,$,.USERDEFINED.,16.,16.,0.15,0.15,$,$);
+#411=IFCREINFORCINGBAR('5gA6$fCv6K8b5E7p9Q0rS1',#102,'F1-DOWEL','Column Dowels 4-DB20',$,#403,$,$,.DOWEL.,20.,$,1.2,$,$);""",
         "qto_boq": [
             {
                 "code": "CONC-F1",
@@ -225,7 +297,25 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
                 "quantity": 0.72,
                 "mat_rate": 2400.0,
                 "labor_rate": 450.0,
-            }
+            },
+            {
+                "code": "REBAR-DB16",
+                "name": "เหล็กตะแกรงก้นฐานราก DB16@0.15m (2 ทาง)",
+                "formula": "16 เส้น × 1.10m × 1.58 kg/m",
+                "unit": "kg",
+                "quantity": 27.81,
+                "mat_rate": 32.0,
+                "labor_rate": 5.0,
+            },
+            {
+                "code": "DOWEL-DB20",
+                "name": "เหล็กเดือยฝังต่อเสาตอม่อ 4-DB20 (Dowels L=1.20m)",
+                "formula": "4 เส้น × 1.20m × 2.47 kg/m",
+                "unit": "kg",
+                "quantity": 11.86,
+                "mat_rate": 32.0,
+                "labor_rate": 5.0,
+            },
         ],
         "thai_specs": {
             "materials": "คอนกรีตผสมเสร็จแรงอัด 280 ksc คอนกรีตหยาบรองฐานราก 1:3:5 หนา 5 ซม.",
@@ -238,6 +328,8 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
             "depth": 1.20,
             "height": 0.50,
             "color": "#64748B",
+            "is_reinforced_concrete": True,
+            "rebar_type": "footing",
         },
         "sample_2d_svg": """<svg viewBox="0 0 160 160" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="30" width="100" height="100" fill="#94a3b8" stroke="#0f172a" stroke-width="2"/><circle cx="80" cy="80" r="12" fill="#0284c7"/><text x="60" y="22" fill="#0f172a" font-size="11" font-weight="bold">F1 (1.2x1.2m)</text></svg>""",
     },
@@ -596,8 +688,12 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
   width: 1.20
   riser_height: 0.175
   tread_depth: 0.25
-  steps_count: 16""",
-        "ifc_step": """#801=IFCSTAIR('4nH3$mJC3R5i2L4w6X7yZ8',#102,'ST1','Main Stair',$,#803,#804,$,.STRAIGHT.);""",
+  steps_count: 16
+  reinforcement:
+    waist_main: DB12@0.15
+    cross_bars: RB9@0.20""",
+        "ifc_step": """#801=IFCSTAIR('4nH3$mJC3R5i2L4w6X7yZ8',#102,'ST1','Main Stair',$,#803,#804,$,.STRAIGHT.);
+#810=IFCREINFORCINGBAR('4oI4$nKD4S6j3M5x7Y8z0A',#102,'ST1-MAIN','Waist Rebar DB12@0.15',$,#803,$,$,.MAIN.,12.,$,4.5,$,$);""",
         "qto_boq": [
             {
                 "code": "STAIR-CONC",
@@ -607,7 +703,16 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
                 "quantity": 19.20,
                 "mat_rate": 1200.0,
                 "labor_rate": 450.0,
-            }
+            },
+            {
+                "code": "REBAR-STAIR",
+                "name": "เหล็กเสริมท้องบันได ค.ส.ล. DB12@0.15m + RB9@0.20m",
+                "formula": "16 ขั้น × 1.20 ม. × 4.2 kg/m",
+                "unit": "kg",
+                "quantity": 80.64,
+                "mat_rate": 32.0,
+                "labor_rate": 5.0,
+            },
         ],
         "thai_specs": {
             "materials": "คอนกรีต 280 ksc ไม้ลูกนอนไม้แดง/ไม้เต็งอบแห้ง หนาไม่น้อยกว่า 35 มม.",
@@ -1139,8 +1244,14 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
   length: 12.0
   stem_height: 3.0
   stem_thickness: 0.30
-  footing_base_width: 1.80""",
-        "ifc_step": """#1501=IFCRETAININGWALL('7aU6$zWP6e8v5Y7j9K0l2M',#102,'RW1','Cantilever Retaining Wall',$,#1503,#1504,$,.CANTILEVER.);""",
+  footing_base_width: 1.80
+  reinforcement:
+    stem_vertical: DB16@0.15
+    stem_horizontal: DB12@0.20
+    base_bottom: DB16@0.15""",
+        "ifc_step": """#1501=IFCRETAININGWALL('7aU6$zWP6e8v5Y7j9K0l2M',#102,'RW1','Cantilever Retaining Wall',$,#1503,#1504,$,.CANTILEVER.);
+#1510=IFCREINFORCINGBAR('7bV7$aXQ7f9w6Z8k0L1m3N',#102,'RW1-STEM','Stem Vertical Rebar DB16@0.15',$,#1503,$,$,.MAIN.,16.,$,3.2,$,$);
+#1511=IFCREINFORCINGBAR('7cW8$bYR8g0x7A9l1M2n4O',#102,'RW1-BASE','Base Mat Rebar DB16@0.15',$,#1503,$,$,.MAIN.,16.,$,1.8,$,$);""",
         "qto_boq": [
             {
                 "code": "CONC-RW",
@@ -1150,7 +1261,25 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
                 "quantity": 19.44,
                 "mat_rate": 2400.0,
                 "labor_rate": 450.0,
-            }
+            },
+            {
+                "code": "REBAR-DB16",
+                "name": "เหล็กเสริมหลักกำแพงกันดิน DB16@0.15m (Stem & Footing)",
+                "formula": "12.0m × (3.2m + 1.8m)/0.15 × 1.58 kg/m",
+                "unit": "kg",
+                "quantity": 632.0,
+                "mat_rate": 32.0,
+                "labor_rate": 5.0,
+            },
+            {
+                "code": "REBAR-DB12",
+                "name": "เหล็กเสริมแนวนอนกำแพงกันดิน DB12@0.20m",
+                "formula": "15 เส้น × 12.0m × 0.888 kg/m",
+                "unit": "kg",
+                "quantity": 159.84,
+                "mat_rate": 32.0,
+                "labor_rate": 5.0,
+            },
         ],
         "thai_specs": {
             "materials": "คอนกรีตผสมเสร็จ 280 ksc เหล็กเสริม SD40 ท่อระบายน้ำทิ้งพีวีซี Ø 2 นิ้ว ระบายน้ำหลังกำแพง",
@@ -1163,6 +1292,8 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = [
             "depth": 1.80,
             "height": 3.0,
             "color": "#64748B",
+            "is_reinforced_concrete": True,
+            "rebar_type": "retaining_wall",
         },
         "sample_2d_svg": """<svg viewBox="0 0 160 140" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><path d="M 40 20 L 70 20 L 70 100 L 130 100 L 130 120 L 20 120 L 20 100 L 40 100 Z" fill="#94a3b8" stroke="#0f172a" stroke-width="2"/><text x="45" y="70" fill="#0f172a" font-size="10" font-weight="bold">Cantilever RW</text></svg>""",
     },
