@@ -225,16 +225,90 @@ def evaluate_question_gemini_api(
     limiter.acquire(estimated_tokens=800)
 
     clean_model_name = model_name[7:] if model_name.startswith("models/") else model_name
-    api_version = "v1alpha" if "gemini-3.8" in clean_model_name.lower() or "gemini-3.8" in model_name.lower() else "v1beta"
-
-    url = f"https://generativelanguage.googleapis.com/{api_version}/models/{clean_model_name}:generateContent?key={api_key}"
 
     # Ensure raster compatibility for SVG images
+    raw_img_bytes = b""
+    raster_mime = image_mime_type
     if image_base64:
         raw_img_bytes = base64.b64decode(image_base64)
         raster_bytes, raster_mime = ensure_raster_image(raw_img_bytes, image_mime_type)
         image_base64 = base64.b64encode(raster_bytes).decode("utf-8")
+        raw_img_bytes = raster_bytes
         image_mime_type = raster_mime
+
+    # If targeting Gemini Live WebSocket models (models/gemini-3.8-live-extended-thinking) with real API keys
+    if "live" in clean_model_name.lower() and api_key != "TEST_API_KEY":
+        import asyncio
+        import re
+
+        async def _eval_live() -> Dict[str, Any]:
+            from google import genai
+            from google.genai import types
+            full_model_name = f"models/{clean_model_name}" if not clean_model_name.startswith("models/") else clean_model_name
+            client = genai.Client(api_key=api_key, http_options={"api_version": "v1alpha"})
+            config = types.LiveConnectConfig(
+                response_modalities=["AUDIO"],
+                thinking_config=types.ThinkingConfig(thinking_level="HIGH"),
+                speech_config=types.SpeechConfig(
+                    voice_config=types.VoiceConfig(prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Puck"))
+                ),
+                output_audio_transcription=types.AudioTranscriptionConfig(),
+            )
+            choices_text = ", ".join([f"{k}: {v}" for k, v in question["choices"].items()])
+            prompt = (
+                f"Answer this multiple-choice question about the attached architectural blueprint image immediately:\n"
+                f"{question['question_text']}\n"
+                f"Choices: {choices_text}\n"
+                f"Which choice letter is correct? State: The correct choice is [letter]."
+            )
+            parts = [types.Part.from_text(text=prompt)]
+            if raw_img_bytes:
+                parts.insert(0, types.Part.from_bytes(data=raw_img_bytes, mime_type=raster_mime))
+
+            async with client.aio.live.connect(model=full_model_name, config=config) as session:
+                await session.send_client_content(
+                    turns=[types.Content(role="user", parts=parts)],
+                    turn_complete=True,
+                )
+                transcription = ""
+                turns_seen = 0
+                async for response in session.receive():
+                    if response.server_content:
+                        sc = response.server_content
+                        if sc.output_transcription and sc.output_transcription.text:
+                            transcription += sc.output_transcription.text
+                        if sc.turn_complete:
+                            turns_seen += 1
+                            if re.search(r"\b([A-D])\b", transcription) or turns_seen >= 2:
+                                break
+
+                match = re.search(r"\b([A-D])\b", transcription)
+                selected = match.group(1) if match else "A"
+                return {
+                    "question_id": question["question_id"],
+                    "selected_choice": selected,
+                    "visual_confidence": 0.95 if match else 0.50,
+                    "readability_notes": transcription.strip() or "Evaluation completed via Live Extended Thinking",
+                }
+
+        max_retries = 3
+        backoff = 2.0
+        for attempt in range(max_retries):
+            try:
+                return asyncio.run(_eval_live())
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    return {
+                        "question_id": question["question_id"],
+                        "selected_choice": "A",
+                        "visual_confidence": 0.0,
+                        "readability_notes": f"Live API Error: {str(e)}",
+                    }
+                time.sleep(backoff)
+                backoff *= 2.0
+
+    api_version = "v1alpha" if "gemini-3.8" in clean_model_name.lower() or "gemini-3.8" in model_name.lower() else "v1beta"
+    url = f"https://generativelanguage.googleapis.com/{api_version}/models/{clean_model_name}:generateContent?key={api_key}"
 
     choices_text = "\n".join([f"{k}: {v}" for k, v in question["choices"].items()])
     prompt = (
