@@ -986,6 +986,31 @@ def estimate_cost(
                 quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_retaining_wall_concrete_volume
                 break
 
+    if qto.total_road_pavement_area > 0:
+        for code, item in catalog.items.items():
+            if "road-asphalt" in code.lower() or "pavement" in code.lower() or "asphalt" in code.lower() or "ถนน" in item.name or "road" in code.lower():
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_road_pavement_area
+                break
+
+    base_sub_vol = qto.total_road_base_volume + qto.total_road_subbase_volume
+    if base_sub_vol > 0:
+        for code, item in catalog.items.items():
+            if "road-base" in code.lower() or "crushed-rock" in code.lower() or "หินคลุก" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + base_sub_vol
+                break
+
+    if qto.total_bridge_deck_concrete > 0:
+        for code, item in catalog.items.items():
+            if "bridge-deck" in code.lower() or "rc-deck" in code.lower() or "deck" in code.lower() or "พื้นสะพาน" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_bridge_deck_concrete
+                break
+
+    if qto.total_bridge_pier_concrete > 0:
+        for code, item in catalog.items.items():
+            if "bridge-pier" in code.lower() or "rc-pier" in code.lower() or "pier" in code.lower() or "ตอม่อสะพาน" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_bridge_pier_concrete
+                break
+
     # 9. Map Ceilings (Gypsum, T-Bar, Eaves) if not already mapped via material ref
     if qto.total_ceiling_gypsum_area > 0:
         has_gyp = any("ceil-gypsum" in c.lower() or "gypsum" in c.lower() for c in quantities_by_code.keys())

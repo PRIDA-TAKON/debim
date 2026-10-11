@@ -734,6 +734,119 @@ def generate_viewer_html(
             "layer": rw.layer,
         })
 
+    # Civil Infrastructure Alignments
+    for align in resolved.alignments:
+        if align.points:
+            elements_data.append({
+                "tag": align.tag,
+                "class": "IfcAlignment",
+                "predefined_type": align.predefined_type,
+                "geometry_type": "line",
+                "points": align.points,
+                "color": "#F59E0B",
+                "linewidth": 4,
+                "layer": align.layer,
+                "dimensions": {
+                    "total_length": align.total_length,
+                    "start_chainage": align.start_chainage,
+                    "end_chainage": align.end_chainage,
+                    "design_speed": align.design_speed,
+                },
+            })
+
+    # Civil Infrastructure Roads
+    for road in resolved.roads:
+        dx = road.end_point[0] - road.start_point[0]
+        dy = road.end_point[1] - road.start_point[1]
+        angle = math.atan2(dy, dx)
+        cx = (road.start_point[0] + road.end_point[0]) / 2.0
+        cy = (road.start_point[1] + road.end_point[1]) / 2.0
+        cz = (road.start_point[2] + road.end_point[2]) / 2.0 - (road.surface_thickness / 2.0)
+
+        elements_data.append({
+            "tag": road.tag,
+            "class": "IfcRoad",
+            "predefined_type": road.predefined_type,
+            "material": road.element.material or "Asphalt Concrete",
+            "position": [cx, cy, cz],
+            "rotation": [0, 0, angle],
+            "dimensions": {
+                "length": road.corridor_length,
+                "width": road.road_width,
+                "height": road.surface_thickness + road.base_thickness + road.subbase_thickness,
+                "surface_area": road.surface_area,
+                "asphalt_volume": road.asphalt_volume,
+                "base_volume": road.base_volume,
+                "subbase_volume": road.subbase_volume,
+                "lanes_count": road.lanes_count,
+            },
+            "color": "#27272A",
+            "layer": road.layer,
+        })
+
+    # Civil Infrastructure Bridges
+    for bridge in resolved.bridges:
+        dx = bridge.end_point[0] - bridge.start_point[0]
+        dy = bridge.end_point[1] - bridge.start_point[1]
+        angle = math.atan2(dy, dx)
+        cx = (bridge.start_point[0] + bridge.end_point[0]) / 2.0
+        cy = (bridge.start_point[1] + bridge.end_point[1]) / 2.0
+        cz_deck = (bridge.start_point[2] + bridge.end_point[2]) / 2.0 + (bridge.deck_thickness / 2.0)
+
+        # Bridge Deck Slab Mesh
+        elements_data.append({
+            "tag": f"{bridge.tag}-Deck",
+            "class": "IfcBridge",
+            "predefined_type": bridge.predefined_type,
+            "material": bridge.element.material or "Reinforced Concrete",
+            "position": [cx, cy, cz_deck],
+            "rotation": [0, 0, angle],
+            "dimensions": {
+                "length": bridge.span_length,
+                "width": bridge.deck_width,
+                "height": bridge.deck_thickness,
+                "deck_area": bridge.deck_area,
+                "deck_concrete_volume": bridge.deck_concrete_volume,
+                "total_concrete_volume": bridge.total_concrete_volume,
+                "formwork_area": bridge.formwork_area,
+            },
+            "color": "#64748B",
+            "layer": bridge.layer,
+        })
+
+        # Pier Meshes
+        for idx, p_pos in enumerate(bridge.pier_positions, 1):
+            pz_center = p_pos[2] + bridge.pier_height / 2.0
+            if bridge.pier_shape == "CYLINDRICAL":
+                elements_data.append({
+                    "tag": f"{bridge.tag}-Pier-{idx}",
+                    "class": "IfcBridgePier",
+                    "geometry_type": "cylinder",
+                    "position": [p_pos[0], p_pos[1], pz_center],
+                    "radius": bridge.pier_diameter / 2.0,
+                    "height": bridge.pier_height,
+                    "color": "#475569",
+                    "layer": f"{bridge.layer}/piers",
+                    "dimensions": {
+                        "height": bridge.pier_height,
+                        "diameter": bridge.pier_diameter,
+                    },
+                })
+            else:
+                elements_data.append({
+                    "tag": f"{bridge.tag}-Pier-{idx}",
+                    "class": "IfcBridgePier",
+                    "position": [p_pos[0], p_pos[1], pz_center],
+                    "rotation": [0, 0, angle],
+                    "dimensions": {
+                        "width": bridge.pier_diameter,
+                        "depth": bridge.pier_diameter,
+                        "height": bridge.pier_height,
+                    },
+                    "color": "#475569",
+                    "layer": f"{bridge.layer}/piers",
+                })
+
     # Plates
     for plate in resolved.plates:
         rot = [0.0, 0.0, 0.0]

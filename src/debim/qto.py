@@ -11,7 +11,10 @@ from pydantic import BaseModel, Field
 
 from debim.resolver import (
     ResolvedAirTerminal,
+    ResolvedAlignment,
     ResolvedBeam,
+    ResolvedBridge,
+    ResolvedRoad,
     ResolvedCableCarrierSegment,
     ResolvedColumn,
     ResolvedCovering,
@@ -426,6 +429,33 @@ class RetainingWallQTO(BaseModel):
     footing_width: float = 0.0           # Footing base width (m)
 
 
+class AlignmentQTO(BaseModel):
+    total_length: float = 0.0            # Chainage length (m)
+    start_chainage: float = 0.0          # Start station (m)
+    end_chainage: float = 0.0            # End station (m)
+
+
+class RoadQTO(BaseModel):
+    corridor_length: float = 0.0         # Length (m)
+    road_width: float = 0.0              # Width (m)
+    surface_area: float = 0.0            # Surface area (m2)
+    asphalt_volume: float = 0.0          # Asphalt wearing course volume (m3)
+    base_volume: float = 0.0             # Aggregate base volume (m3)
+    subbase_volume: float = 0.0          # Subbase crushed rock volume (m3)
+    lanes_count: int = 2                 # Lanes count
+
+
+class BridgeQTO(BaseModel):
+    span_length: float = 0.0             # Span length (m)
+    deck_width: float = 0.0              # Deck width (m)
+    deck_area: float = 0.0               # Deck surface area (m2)
+    deck_concrete_volume: float = 0.0    # Deck concrete volume (m3)
+    pier_count: int = 0                  # Number of piers
+    pier_concrete_volume: float = 0.0    # Pier concrete volume (m3)
+    total_concrete_volume: float = 0.0   # Total concrete volume (m3)
+    formwork_area: float = 0.0           # Total formwork area (m2)
+
+
 class MepQTO(BaseModel):
     system_type: str = ""
     length: float = 0.0                    # ท่อ / สายไฟ / ท่อลม (linear meters)
@@ -467,6 +497,9 @@ class ElementQTO(BaseModel):
     slab_finishes: Optional[SlabFinishesQTO] = None
     earthworks: Optional[EarthworksQTO] = None
     retaining_wall: Optional[RetainingWallQTO] = None
+    alignment: Optional[AlignmentQTO] = None
+    road: Optional[RoadQTO] = None
+    bridge: Optional[BridgeQTO] = None
     mep: Optional[MepQTO] = None
 
 
@@ -513,6 +546,14 @@ class ProjectQTO(BaseModel):
     total_compacted_fill_volume: float = 0.0
     total_retaining_wall_concrete_volume: float = 0.0
     total_retaining_wall_formwork_area: float = 0.0
+    # Infrastructure Civil Totals
+    total_alignment_length: float = 0.0
+    total_road_pavement_area: float = 0.0
+    total_asphalt_volume: float = 0.0
+    total_road_base_volume: float = 0.0
+    total_road_subbase_volume: float = 0.0
+    total_bridge_deck_concrete: float = 0.0
+    total_bridge_pier_concrete: float = 0.0
     # Ceilings & Floor Finishes Totals
     total_ceiling_gypsum_area: float = 0.0
     total_ceiling_tbar_area: float = 0.0
@@ -1518,6 +1559,61 @@ def calculate_element_qto(
             retaining_wall=rw_qto,
         )
 
+    elif isinstance(resolved, ResolvedAlignment):
+        elem = resolved.element
+        align_qto = AlignmentQTO(
+            total_length=resolved.total_length,
+            start_chainage=resolved.start_chainage,
+            end_chainage=resolved.end_chainage,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            length=resolved.total_length,
+            alignment=align_qto,
+        )
+
+    elif isinstance(resolved, ResolvedRoad):
+        elem = resolved.element
+        road_qto = RoadQTO(
+            corridor_length=resolved.corridor_length,
+            road_width=resolved.road_width,
+            surface_area=resolved.surface_area,
+            asphalt_volume=resolved.asphalt_volume,
+            base_volume=resolved.base_volume,
+            subbase_volume=resolved.subbase_volume,
+            lanes_count=resolved.lanes_count,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.corridor_length,
+            road=road_qto,
+        )
+
+    elif isinstance(resolved, ResolvedBridge):
+        elem = resolved.element
+        bridge_qto = BridgeQTO(
+            span_length=resolved.span_length,
+            deck_width=resolved.deck_width,
+            deck_area=resolved.deck_area,
+            deck_concrete_volume=resolved.deck_concrete_volume,
+            pier_count=resolved.pier_count,
+            pier_concrete_volume=resolved.pier_concrete_volume,
+            total_concrete_volume=resolved.total_concrete_volume,
+            formwork_area=resolved.formwork_area,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.span_length,
+            concrete_volume=resolved.total_concrete_volume,
+            formwork_area=resolved.formwork_area,
+            bridge=bridge_qto,
+        )
+
     elif isinstance(resolved, ResolvedTerminal):
         elem = resolved.element
         return ElementQTO(
@@ -1915,6 +2011,15 @@ def calculate_qto(
     total_rw_conc_vol = 0.0
     total_rw_formwork = 0.0
 
+    # Infrastructure Civil Totals
+    total_alignment_len = 0.0
+    total_road_pavement_area_val = 0.0
+    total_asphalt_vol = 0.0
+    total_road_base_vol = 0.0
+    total_road_subbase_vol = 0.0
+    total_bridge_deck_conc = 0.0
+    total_bridge_pier_conc = 0.0
+
     total_ceil_gypsum = 0.0
     total_ceil_tbar = 0.0
     total_ceil_eaves = 0.0
@@ -2067,6 +2172,19 @@ def calculate_qto(
             total_rw_conc_vol += eqto.retaining_wall.concrete_volume
             total_rw_formwork += eqto.retaining_wall.formwork_area
 
+        if eqto.alignment:
+            total_alignment_len += eqto.alignment.total_length
+
+        if eqto.road:
+            total_road_pavement_area_val += eqto.road.surface_area
+            total_asphalt_vol += eqto.road.asphalt_volume
+            total_road_base_vol += eqto.road.base_volume
+            total_road_subbase_vol += eqto.road.subbase_volume
+
+        if eqto.bridge:
+            total_bridge_deck_conc += eqto.bridge.deck_concrete_volume
+            total_bridge_pier_conc += eqto.bridge.pier_concrete_volume
+
         if eqto.element_class == "IfcWall":
             if hasattr(elem, "thickness") and elem.thickness > 0:
                 total_wall_masonry += eqto.concrete_volume / elem.thickness
@@ -2173,6 +2291,13 @@ def calculate_qto(
         total_compacted_fill_volume=total_compacted_fill_vol,
         total_retaining_wall_concrete_volume=total_rw_conc_vol,
         total_retaining_wall_formwork_area=total_rw_formwork,
+        total_alignment_length=total_alignment_len,
+        total_road_pavement_area=total_road_pavement_area_val,
+        total_asphalt_volume=total_asphalt_vol,
+        total_road_base_volume=total_road_base_vol,
+        total_road_subbase_volume=total_road_subbase_vol,
+        total_bridge_deck_concrete=total_bridge_deck_conc,
+        total_bridge_pier_concrete=total_bridge_pier_conc,
         total_ceiling_gypsum_area=total_ceil_gypsum,
         total_ceiling_tbar_area=total_ceil_tbar,
         total_ceiling_eaves_area=total_ceil_eaves,

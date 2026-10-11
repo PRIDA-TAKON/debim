@@ -468,6 +468,56 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        default_st = list(storey_elements.keys())[0] if storey_elements else None
+
+        for align in resolved.alignments:
+            st_id = (align.element.placement and align.element.placement.storey) or default_st
+            elem_ref = self.create_entity(
+                "IfcAlignment",
+                generate_ifc_guid(),
+                None,
+                align.tag,
+                None,
+                f"IfcAlignment.{align.predefined_type}",
+                None,
+                None,
+                f".{align.predefined_type}.",
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for road in resolved.roads:
+            st_id = (road.element.placement and road.element.placement.storey) or default_st
+            elem_ref = self.create_entity(
+                "IfcRoad",
+                generate_ifc_guid(),
+                None,
+                road.tag,
+                None,
+                f"IfcRoad.{road.predefined_type}",
+                None,
+                None,
+                f".{road.predefined_type}.",
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for bridge in resolved.bridges:
+            st_id = (bridge.element.placement and bridge.element.placement.storey) or default_st
+            elem_ref = self.create_entity(
+                "IfcBridge",
+                generate_ifc_guid(),
+                None,
+                bridge.tag,
+                None,
+                f"IfcBridge.{bridge.predefined_type}",
+                None,
+                None,
+                f".{bridge.predefined_type}.",
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
         # 6. MEP Terminals
         for term in resolved.terminals:
             st_id = term.element.placement.storey or (
@@ -1939,6 +1989,74 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = rw.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(rw_obj)
+
+    default_st_id = list(storey_products.keys())[0] if storey_products else None
+
+    for align in resolved.alignments:
+        try:
+            align_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcAlignment",
+                name=align.tag,
+                predefined_type=align.predefined_type if align.predefined_type in ("HORIZONTAL", "VERTICAL", "SEGMENT", "USERDEFINED") else "USERDEFINED",
+            )
+        except Exception:
+            align_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=align.tag,
+                predefined_type="USERDEFINED",
+            )
+            align_obj.ObjectType = f"IfcAlignment.{align.predefined_type}"
+        st_id = (align.element.placement and align.element.placement.storey) or default_st_id
+        if st_id in storey_products:
+            storey_products[st_id].append(align_obj)
+
+    for road in resolved.roads:
+        try:
+            road_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcRoad",
+                name=road.tag,
+                predefined_type=road.predefined_type if road.predefined_type in ("HIGHWAY", "CARRIAGEWAY", "ROUNDABOUT", "SERVICE_ROAD", "USERDEFINED") else "USERDEFINED",
+            )
+        except Exception:
+            road_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=road.tag,
+                predefined_type="USERDEFINED",
+            )
+            road_obj.ObjectType = f"IfcRoad.{road.predefined_type}"
+        st_id = (road.element.placement and road.element.placement.storey) or default_st_id
+        if st_id in storey_products:
+            storey_products[st_id].append(road_obj)
+
+    for bridge in resolved.bridges:
+        try:
+            bridge_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBridge",
+                name=bridge.tag,
+                predefined_type=bridge.predefined_type if bridge.predefined_type in ("GIRDER", "SLAB", "ARCH", "CABLE_STAYED", "USERDEFINED") else "USERDEFINED",
+            )
+        except Exception:
+            bridge_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=bridge.tag,
+                predefined_type="USERDEFINED",
+            )
+            bridge_obj.ObjectType = f"IfcBridge.{bridge.predefined_type}"
+        st_id = (bridge.element.placement and bridge.element.placement.storey) or default_st_id
+        if st_id in storey_products:
+            storey_products[st_id].append(bridge_obj)
 
     # 6. Roofs & Roof Openings / Skylights
     for roof in resolved.roofs:

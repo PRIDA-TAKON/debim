@@ -1930,6 +1930,9 @@ class IfcCovering(BaseModel):
 EarthworksCutType = Literal["TRENCH", "DREDGING", "CUT", "BASEMENT_EXCAVATION", "USERDEFINED"]
 EarthworksFillType = Literal["EMBANKMENT", "BACKFILL", "SLOPE_FILL", "SUBGRADE", "USERDEFINED"]
 RetainingWallType = Literal["CANTILEVER_WALL", "GRAVITY_WALL", "SHEET_PILE_WALL", "DIAPHRAGM_WALL", "USERDEFINED"]
+AlignmentType = Literal["HORIZONTAL", "VERTICAL", "SEGMENT", "USERDEFINED", "NOTDEFINED"]
+RoadType = Literal["HIGHWAY", "CARRIAGEWAY", "ROUNDABOUT", "SERVICE_ROAD", "USERDEFINED", "NOTDEFINED"]
+BridgeType = Literal["GIRDER", "SLAB", "ARCH", "CABLE_STAYED", "USERDEFINED", "NOTDEFINED"]
 
 
 class EarthworksPlacement(BaseModel):
@@ -2027,6 +2030,96 @@ class IfcRetainingWall(BaseModel):
     layer: Optional[str] = None
 
 
+class AlignmentPoint(BaseModel):
+    x: float
+    y: float
+    z: float = 0.0
+    station: Optional[float] = None
+    segment_type: Optional[str] = None  # e.g., "LINE", "ARC", "CLOTHOID", "PARABOLA"
+
+
+class CivilPlacement(BaseModel):
+    storey: Optional[str] = "GROUND"
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcAlignment(BaseModel):
+    class_: Literal["IfcAlignment"] = Field(alias="class", default="IfcAlignment")
+    tag: str
+    predefined_type: AlignmentType = "USERDEFINED"
+    path: Optional[List[Union[AlignmentPoint, Tuple[float, float, float], Tuple[float, float], Dict[str, Any]]]] = None
+    points: Optional[List[Union[AlignmentPoint, Tuple[float, float, float], Tuple[float, float], Dict[str, Any]]]] = None
+    start_chainage: float = 0.0  # Stationing chainage start (m)
+    end_chainage: Optional[float] = None  # Stationing chainage end (m)
+    design_speed: Optional[float] = None  # Design speed (km/h)
+    placement: Optional[CivilPlacement] = None
+    layer: Optional[str] = None
+
+    @field_validator("path", "points", mode="before")
+    @classmethod
+    def parse_points_list(cls, v):
+        if v is None:
+            return v
+        res = []
+        for pt in v:
+            if isinstance(pt, AlignmentPoint):
+                res.append(pt)
+            elif isinstance(pt, dict):
+                res.append(AlignmentPoint(**pt))
+            elif isinstance(pt, (list, tuple)):
+                if len(pt) == 2:
+                    res.append(AlignmentPoint(x=float(pt[0]), y=float(pt[1]), z=0.0))
+                elif len(pt) >= 3:
+                    res.append(AlignmentPoint(x=float(pt[0]), y=float(pt[1]), z=float(pt[2])))
+            else:
+                res.append(pt)
+        return res
+
+
+class IfcRoad(BaseModel):
+    class_: Literal["IfcRoad"] = Field(alias="class", default="IfcRoad")
+    tag: str
+    predefined_type: RoadType = "CARRIAGEWAY"
+    material: Optional[str] = None
+    corridor_length: Optional[float] = None  # Corridor length (m)
+    road_width: float = 7.0  # Road width (m)
+    surface_thickness: float = 0.05  # Asphalt wearing course thickness (m)
+    base_thickness: float = 0.15  # Aggregate base course thickness (m)
+    subbase_thickness: float = 0.20  # Subbase crushed rock thickness (m)
+    lanes_count: int = 2
+    alignment_ref: Optional[str] = None  # Tag of referenced IfcAlignment
+    placement: Optional[CivilPlacement] = None
+    layer: Optional[str] = None
+
+
+class IfcBridge(BaseModel):
+    class_: Literal["IfcBridge"] = Field(alias="class", default="IfcBridge")
+    tag: str
+    predefined_type: BridgeType = "GIRDER"
+    material: Optional[str] = None
+    span_length: float = 20.0  # Total span length (m)
+    deck_width: float = 10.0  # Bridge deck width (m)
+    deck_thickness: float = 0.35  # Concrete deck slab thickness (m)
+    pier_height: float = 6.0  # Height of piers (m)
+    pier_count: int = 2  # Number of piers
+    pier_shape: Literal["CYLINDRICAL", "RECTANGULAR"] = "CYLINDRICAL"
+    pier_diameter: float = 1.0  # Pier diameter or width (m)
+    placement: Optional[CivilPlacement] = None
+    layer: Optional[str] = None
+
+
 KNOWN_ELEMENT_CLASSES = {
     "IfcColumn",
     "IfcBeam",
@@ -2060,6 +2153,9 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcEarthworksCut",
     "IfcEarthworksFill",
     "IfcRetainingWall",
+    "IfcAlignment",
+    "IfcRoad",
+    "IfcBridge",
     "IfcCustomElement",
 }
 
@@ -2114,6 +2210,9 @@ Element = Annotated[
         Annotated[IfcEarthworksCut, Tag("IfcEarthworksCut")],
         Annotated[IfcEarthworksFill, Tag("IfcEarthworksFill")],
         Annotated[IfcRetainingWall, Tag("IfcRetainingWall")],
+        Annotated[IfcAlignment, Tag("IfcAlignment")],
+        Annotated[IfcRoad, Tag("IfcRoad")],
+        Annotated[IfcBridge, Tag("IfcBridge")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -2703,6 +2802,12 @@ def derive_default_layer(elem) -> str:
         return "civil/earthworks/fill"
     elif cls == "IfcRetainingWall":
         return "civil/structures/retaining_walls"
+    elif cls == "IfcAlignment":
+        return "civil/infrastructure/alignment"
+    elif cls == "IfcRoad":
+        return "civil/infrastructure/roads"
+    elif cls == "IfcBridge":
+        return "civil/infrastructure/bridges"
     elif cls == "IfcCustomElement":
         return "general/custom"
     elif cls == "IfcBuildingElementProxy" or isinstance(elem, IfcBuildingElementProxy):
