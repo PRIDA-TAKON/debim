@@ -604,7 +604,19 @@ class ColumnReinforcement(BaseModel):
     stirrups: Optional[str] = None
 
 
-class IfcColumn(BaseModel):
+class ElementPsetMixin(BaseModel):
+    properties: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _handle_psets_alias(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "psets" in data and "properties" not in data:
+                data["properties"] = data.pop("psets")
+        return data
+
+
+class IfcColumn(ElementPsetMixin):
     class_: Literal["IfcColumn"] = Field(alias="class")
     tag: str
     material: str
@@ -668,7 +680,7 @@ class FootingSubstructureConfig(BaseModel):
     excavation_working_space: float = 0.14
 
 
-class IfcFooting(BaseModel):
+class IfcFooting(ElementPsetMixin):
     class_: Literal["IfcFooting"] = Field(alias="class")
     tag: str
     material: str
@@ -722,7 +734,7 @@ class BeamReinforcement(BaseModel):
     stirrups: Optional[str] = None
 
 
-class IfcBeam(BaseModel):
+class IfcBeam(ElementPsetMixin):
     class_: Literal["IfcBeam"] = Field(alias="class")
     tag: str
     material: str
@@ -739,7 +751,7 @@ class Dimensions(BaseModel):
     height: float
 
 
-class IfcDoor(BaseModel):
+class IfcDoor(ElementPsetMixin):
     class_: Literal["IfcDoor"] = Field(alias="class", default="IfcDoor")
     tag: str
     material: Optional[str] = None
@@ -752,7 +764,7 @@ class IfcDoor(BaseModel):
     layer: Optional[str] = None
 
 
-class IfcWindow(BaseModel):
+class IfcWindow(ElementPsetMixin):
     class_: Literal["IfcWindow"] = Field(alias="class", default="IfcWindow")
     tag: str
     material: Optional[str] = None
@@ -793,7 +805,7 @@ class WallFinishesConfig(BaseModel):
     tile_height: Optional[float] = None
 
 
-class IfcWall(BaseModel):
+class IfcWall(ElementPsetMixin):
     class_: Literal["IfcWall"] = Field(alias="class", default="IfcWall")
     tag: str
     material: str
@@ -848,7 +860,7 @@ class SlabFinishesConfig(BaseModel):
     sand_thickness: float = 0.10
 
 
-class IfcSlab(BaseModel):
+class IfcSlab(ElementPsetMixin):
     class_: Literal["IfcSlab"] = Field(alias="class")
     tag: str
     material: str
@@ -936,7 +948,7 @@ class StairReinforcement(BaseModel):
     temperature: Optional[str] = None  # e.g. "RB9 @ 0.20m"
 
 
-class IfcStair(BaseModel):
+class IfcStair(ElementPsetMixin):
     class_: Literal["IfcStair"] = Field(alias="class")
     tag: str
     material: str
@@ -958,7 +970,7 @@ class IfcStair(BaseModel):
     layer: Optional[str] = None
 
 
-class IfcStairFlight(BaseModel):
+class IfcStairFlight(ElementPsetMixin):
     class_: Literal["IfcStairFlight"] = Field(alias="class", default="IfcStairFlight")
     tag: str
     material: str
@@ -1007,7 +1019,7 @@ class RampPlacement(BaseModel):
         return v
 
 
-class IfcRamp(BaseModel):
+class IfcRamp(ElementPsetMixin):
     class_: Literal["IfcRamp"] = Field(alias="class", default="IfcRamp")
     tag: str
     material: str
@@ -1083,7 +1095,7 @@ class RailingPlacement(BaseModel):
         return v
 
 
-class IfcRailing(BaseModel):
+class IfcRailing(ElementPsetMixin):
     class_: Literal["IfcRailing"] = Field(alias="class", default="IfcRailing")
     tag: str
     material: Optional[str] = None
@@ -1114,7 +1126,7 @@ class CurtainWallPlacement(BaseModel):
         return v
 
 
-class IfcCurtainWall(BaseModel):
+class IfcCurtainWall(ElementPsetMixin):
     class_: Literal["IfcCurtainWall"] = Field(alias="class", default="IfcCurtainWall")
     tag: str
     material: str  # Glass material or primary facade material
@@ -1170,7 +1182,7 @@ class PlatePlacement(BaseModel):
         return v
 
 
-class IfcPlate(BaseModel):
+class IfcPlate(ElementPsetMixin):
     class_: Literal["IfcPlate"] = Field(alias="class", default="IfcPlate")
     tag: str
     material: str
@@ -1215,7 +1227,7 @@ class CustomElementPlacement(BaseModel):
     rotation: Optional[Tuple[float, float, float]] = None
 
 
-class IfcCustomElement(BaseModel):
+class IfcCustomElement(ElementPsetMixin):
     class_: Literal["IfcCustomElement"] = Field(alias="class", default="IfcCustomElement")
     tag: str
     name: str
@@ -1318,7 +1330,7 @@ class ProxyPlacement(BaseModel):
         return v
 
 
-class IfcBuildingElementProxy(BaseModel):
+class IfcBuildingElementProxy(ElementPsetMixin):
     model_config = ConfigDict(populate_by_name=True)
 
     class_: str = Field(alias="class", default="IfcBuildingElementProxy")
@@ -1403,7 +1415,7 @@ class RoofFramingConfig(BaseModel):
     steel_weight_per_sqm: float = 18.0  # kg/m2 of projected roof area for structural steel framing
 
 
-class IfcRoof(BaseModel):
+class IfcRoof(ElementPsetMixin):
     class_: Literal["IfcRoof"] = Field(alias="class", default="IfcRoof")
     tag: str
     material: str
@@ -1515,7 +1527,7 @@ class PipePlacement(BaseModel):
         return v
 
 
-class IfcPipeSegment(BaseModel):
+class IfcPipeSegment(ElementPsetMixin):
     class_: Literal["IfcPipeSegment"] = Field(alias="class", default="IfcPipeSegment")
     tag: str
     system_type: PipeSystemType = "COLD_WATER"
@@ -1526,7 +1538,7 @@ class IfcPipeSegment(BaseModel):
     layer: Optional[str] = None
 
 
-class IfcCableCarrierSegment(BaseModel):
+class IfcCableCarrierSegment(ElementPsetMixin):
     class_: Literal["IfcCableCarrierSegment"] = Field(alias="class", default="IfcCableCarrierSegment")
     tag: str
     system_type: ElectricalSystemType = "LIGHTING"
@@ -1573,7 +1585,7 @@ class TerminalPlacement(BaseModel):
         return self
 
 
-class IfcSanitaryTerminal(BaseModel):
+class IfcSanitaryTerminal(ElementPsetMixin):
     class_: Literal["IfcSanitaryTerminal"] = Field(alias="class", default="IfcSanitaryTerminal")
     tag: str
     terminal_type: SanitaryTerminalType = "WATER_CLOSET"
@@ -1612,7 +1624,7 @@ class IfcSanitaryTerminal(BaseModel):
         return self
 
 
-class IfcWasteTerminal(BaseModel):
+class IfcWasteTerminal(ElementPsetMixin):
     class_: Literal["IfcWasteTerminal"] = Field(alias="class", default="IfcWasteTerminal")
     tag: str
     terminal_type: WasteTerminalType = "FLOORDRAIN"
@@ -1646,7 +1658,7 @@ class IfcWasteTerminal(BaseModel):
         return self
 
 
-class IfcDistributionBoard(BaseModel):
+class IfcDistributionBoard(ElementPsetMixin):
     model_config = ConfigDict(populate_by_name=True)
 
     class_: Literal["IfcDistributionBoard"] = Field(
@@ -1695,7 +1707,7 @@ class IfcElectricDistributionBoard(IfcDistributionBoard):
     )
 
 
-class IfcLightFixture(BaseModel):
+class IfcLightFixture(ElementPsetMixin):
     class_: Literal["IfcLightFixture"] = Field(alias="class", default="IfcLightFixture")
     tag: str
     fixture_type: LightFixtureType = "DOWNLIGHT"
@@ -1735,7 +1747,7 @@ class IfcLightFixture(BaseModel):
         return self
 
 
-class IfcSwitchingDevice(BaseModel):
+class IfcSwitchingDevice(ElementPsetMixin):
     class_: Literal["IfcSwitchingDevice"] = Field(alias="class", default="IfcSwitchingDevice")
     tag: str
     switch_type: SwitchType = "ONE_WAY"
@@ -1750,7 +1762,7 @@ class IfcSwitchingDevice(BaseModel):
     layer: Optional[str] = None
 
 
-class IfcOutlet(BaseModel):
+class IfcOutlet(ElementPsetMixin):
     class_: Literal["IfcOutlet"] = Field(alias="class", default="IfcOutlet")
     tag: str
     outlet_type: OutletType = "DUPLEX_GROUNDED"
@@ -1777,7 +1789,7 @@ class IfcOutlet(BaseModel):
         return self
 
 
-class IfcDuctSegment(BaseModel):
+class IfcDuctSegment(ElementPsetMixin):
     class_: Literal["IfcDuctSegment"] = Field(alias="class", default="IfcDuctSegment")
     tag: str
     system_type: DuctSystemType = "EXHAUST_AIR"
@@ -1789,7 +1801,7 @@ class IfcDuctSegment(BaseModel):
     layer: Optional[str] = None
 
 
-class IfcAirTerminal(BaseModel):
+class IfcAirTerminal(ElementPsetMixin):
     class_: Literal["IfcAirTerminal"] = Field(alias="class", default="IfcAirTerminal")
     tag: str
     terminal_type: AirTerminalType = "DIFFUSER"
@@ -1845,7 +1857,7 @@ class IfcAirTerminal(BaseModel):
         return self
 
 
-class IfcDamper(BaseModel):
+class IfcDamper(ElementPsetMixin):
     class_: Literal["IfcDamper"] = Field(alias="class", default="IfcDamper")
     tag: str
     damper_type: DamperType = "VOLUME_CONTROL_DAMPER"
@@ -1886,7 +1898,7 @@ class IfcDamper(BaseModel):
         return self
 
 
-class IfcFlowController(BaseModel):
+class IfcFlowController(ElementPsetMixin):
     class_: Literal["IfcFlowController"] = Field(alias="class", default="IfcFlowController")
     tag: str
     controller_type: FlowControllerType = "AIR_CONTROLLER"
@@ -1915,7 +1927,7 @@ class IfcFlowController(BaseModel):
         return self
 
 
-class IfcUnitaryEquipment(BaseModel):
+class IfcUnitaryEquipment(ElementPsetMixin):
     class_: Literal["IfcUnitaryEquipment"] = Field(alias="class", default="IfcUnitaryEquipment")
     tag: str
     equipment_type: HvacEquipmentType = "AC_INDOOR_WALL"
@@ -1948,7 +1960,7 @@ class CoveringPlacement(BaseModel):
         return v
 
 
-class IfcCovering(BaseModel):
+class IfcCovering(ElementPsetMixin):
     class_: Literal["IfcCovering"] = Field(alias="class", default="IfcCovering")
     tag: str
     covering_type: CoveringType = "CEILING"
@@ -1989,7 +2001,7 @@ class EarthworksPlacement(BaseModel):
         return v
 
 
-class IfcEarthworksCut(BaseModel):
+class IfcEarthworksCut(ElementPsetMixin):
     class_: Literal["IfcEarthworksCut"] = Field(alias="class", default="IfcEarthworksCut")
     tag: str
     predefined_type: EarthworksCutType = "CUT"
@@ -2003,7 +2015,7 @@ class IfcEarthworksCut(BaseModel):
     layer: Optional[str] = None
 
 
-class IfcEarthworksFill(BaseModel):
+class IfcEarthworksFill(ElementPsetMixin):
     class_: Literal["IfcEarthworksFill"] = Field(alias="class", default="IfcEarthworksFill")
     tag: str
     predefined_type: EarthworksFillType = "EMBANKMENT"
@@ -2043,7 +2055,7 @@ class RetainingWallReinforcement(BaseModel):
     footing_mesh: Optional[str] = None  # e.g. "DB16 @ 0.15m"
 
 
-class IfcRetainingWall(BaseModel):
+class IfcRetainingWall(ElementPsetMixin):
     class_: Literal["IfcRetainingWall"] = Field(alias="class", default="IfcRetainingWall")
     tag: str
     material: str

@@ -98,15 +98,70 @@ def validate(
     manifest: Path = typer.Option(
         Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
     ),
+    bsdd: bool = typer.Option(
+        False, "--bsdd", help="Validate Property Sets against buildingSMART bSDD schema"
+    ),
+    strict_psets: bool = typer.Option(
+        False, "--strict-psets", help="Validate Property Sets against buildingSMART bSDD schema in strict mode"
+    ),
 ):
-    """Validate project.yaml schema, grid alignment, and element placement links"""
+    """Validate project.yaml schema, grid alignment, element placement links, and Property Sets (bSDD)"""
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
         raise typer.Exit(code=1)
     console.print(f"[bold green]Validating:[/bold green] {manifest}")
     try:
-        load_manifest(manifest)
+        manifest_obj = load_manifest(manifest)
+
+        from debim.bsdd import validate_manifest_psets, PsetValidationStatus
+        pset_results = validate_manifest_psets(manifest_obj)
+
+        if pset_results or bsdd or strict_psets:
+            if pset_results:
+                table = Table(
+                    title="buildingSMART bSDD Property Set Validation",
+                    show_header=True,
+                    header_style="bold cyan",
+                )
+                table.add_column("Element Tag", style="bold yellow")
+                table.add_column("Element Class", style="cyan")
+                table.add_column("Pset Name", style="magenta")
+                table.add_column("Property", style="white")
+                table.add_column("Expected Type", style="dim")
+                table.add_column("Status", style="bold")
+                table.add_column("Message")
+
+                has_errors = False
+                for res in pset_results:
+                    if res.status == PsetValidationStatus.VALID:
+                        status_str = f"[bold green]{res.status.value}[/bold green]"
+                        msg_str = f"[dim green]{res.message}[/dim green]"
+                    elif res.status in (PsetValidationStatus.NON_STANDARD, PsetValidationStatus.WARNING):
+                        status_str = f"[bold yellow]{res.status.value}[/bold yellow]"
+                        msg_str = f"[yellow]{res.message}[/yellow]"
+                    else:
+                        status_str = f"[bold red]{res.status.value}[/bold red]"
+                        msg_str = f"[red]{res.message}[/red]"
+                        has_errors = True
+
+                    table.add_row(
+                        res.element_tag,
+                        res.element_class,
+                        res.pset_name,
+                        res.property_name,
+                        res.expected_type or "-",
+                        status_str,
+                        msg_str,
+                    )
+
+                console.print(table)
+                if has_errors and (bsdd or strict_psets):
+                    console.print("[bold red]bSDD Validation Error:[/bold red] Invalid Property Set declarations detected.")
+                    raise typer.Exit(code=1)
+
         console.print("[bold green]Validation passed successfully.[/bold green]")
+    except typer.Exit:
+        raise
     except (ValidationError, ValueError, Exception) as e:
         console.print(f"[bold red]Validation Error:[/bold red]\n{e}")
         raise typer.Exit(code=1)
