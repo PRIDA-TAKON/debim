@@ -1256,6 +1256,112 @@ def draw_export_dxf(
         raise typer.Exit(code=1)
 
 
+@draw_app.command(name="generate-vqa")
+def draw_generate_vqa(
+    manifest: Optional[Path] = typer.Option(
+        None, "--manifest", "-m", help="Path to project manifest (.yaml)"
+    ),
+    output: Path = typer.Option(
+        Path("dist/vqa_dataset.json"), "--output", "-o", help="Output VQA dataset JSON path"
+    ),
+    image_dir: Path = typer.Option(
+        Path("dist/vqa_images"), "--image-dir", help="Directory to export rendered 2D SVG blueprint images"
+    ),
+    seed: int = typer.Option(42, "--seed", help="Random seed for distractor choice generation"),
+):
+    """Generate 2D Construction Blueprint VQA Multiple-Choice Dataset (Dimensions, Topology, Tags, Levels) and SVG sheet"""
+    console.print(f"[bold green]Generating VQA MCQ Dataset:[/bold green] -> [cyan]{output}[/cyan]")
+    try:
+        if str(Path.cwd()) not in sys.path:
+            sys.path.insert(0, str(Path.cwd()))
+        from tools.generate_vqa_dataset import generate_vqa_dataset
+
+        ds_data = generate_vqa_dataset(
+            manifest_path=manifest,
+            output_dataset_path=output,
+            output_image_dir=image_dir,
+            seed=seed,
+        )
+
+        q_count = ds_data.get("question_count", 0)
+        cat_counts = ds_data.get("category_counts", {})
+        cat_summary = ", ".join([f"{k}: {v}" for k, v in cat_counts.items()])
+
+        console.print(
+            Panel(
+                f"[bold green]VQA Dataset Generation Successful![/bold green]\n"
+                f"[bold cyan]Dataset Path:[/bold cyan] {output}\n"
+                f"[bold cyan]Total Questions:[/bold cyan] {q_count}\n"
+                f"[bold cyan]Category Breakdown:[/bold cyan] {cat_summary}\n"
+                f"[bold cyan]Image Asset Path:[/bold cyan] {ds_data.get('image_path', '')}",
+                title="[bold green]debim VQA Dataset Generator[/bold green]",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]VQA Dataset Generation Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
+@draw_app.command(name="benchmark-vqa")
+def draw_benchmark_vqa(
+    dataset: Path = typer.Option(
+        Path("dist/vqa_dataset.json"), "--dataset", "-d", help="Path to VQA dataset JSON"
+    ),
+    api_key: Optional[str] = typer.Option(
+        None, "--api-key", "-k", help="Gemini API key (or set GEMINI_API_KEY environment variable)"
+    ),
+    model: str = typer.Option(
+        "gemini-2.0-flash", "--model", "-m", help="Gemini multimodal model (gemini-2.0-flash, gemini-1.5-pro, gemini-exp)"
+    ),
+    mock_eval: bool = typer.Option(
+        False, "--mock-eval", help="Perform mock dry-run evaluation without calling Gemini API"
+    ),
+    output: Path = typer.Option(
+        Path("dist/benchmark_vqa_report.json"), "--output", "-o", help="Path to write output JSON report"
+    ),
+    markdown_output: Path = typer.Option(
+        Path("dist/benchmark_vqa_report.md"), "--markdown-output", help="Path to write output Markdown report"
+    ),
+    rpm: int = typer.Option(60, "--rpm", help="Requests per minute rate limit"),
+    tpm: int = typer.Option(65000, "--tpm", help="Tokens per minute budget limit"),
+):
+    """Run 2D Construction Blueprint VQA Cognitive Benchmark using Gemini Multimodal Vision API or --mock-eval"""
+    console.print(f"[bold green]Running VQA Cognitive Benchmark:[/bold green] [yellow]{dataset}[/yellow]")
+    try:
+        if str(Path.cwd()) not in sys.path:
+            sys.path.insert(0, str(Path.cwd()))
+        from tools.benchmark_vqa_gemini import run_vqa_benchmark
+
+        report = run_vqa_benchmark(
+            dataset_path=dataset,
+            api_key=api_key,
+            model_name=model,
+            mock_eval=mock_eval,
+            rpm=rpm,
+            tpm=tpm,
+            output_report_path=output,
+            output_markdown_path=markdown_output,
+        )
+
+        cat_str = ", ".join([f"{k}: {v:.1f}%" for k, v in report.category_accuracy.items()])
+
+        console.print(
+            Panel(
+                f"[bold green]VQA Cognitive Benchmark Complete![/bold green]\n"
+                f"[bold cyan]AI Model:[/bold cyan] {report.model_name}\n"
+                f"[bold cyan]Overall Accuracy:[/bold cyan] [bold green]{report.overall_accuracy_pct:.2f}%[/bold green] ({report.correct_count}/{report.total_questions})\n"
+                f"[bold cyan]Category Accuracy:[/bold cyan] {cat_str}\n"
+                f"[bold cyan]Diagnostic Failure Cases:[/bold cyan] {len(report.diagnostic_failures)}\n"
+                f"[bold cyan]JSON Report:[/bold cyan] {output}\n"
+                f"[bold cyan]Markdown Report:[/bold cyan] {markdown_output}",
+                title="[bold green]debim VQA Cognitive Benchmark Engine[/bold green]",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]VQA Benchmark Execution Error:[/bold red]\n{e}")
+        raise typer.Exit(code=1)
+
+
 spec_app = typer.Typer(
     help="Declarative material specification management & discrepancy auditing commands",
     add_completion=False,
