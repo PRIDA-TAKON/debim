@@ -172,43 +172,67 @@ my_project/
 
 ---
 
-## 🧪 7. The Novel "Round-Trip Cognitive Regression Benchmark" (ไอเดียการทดสอบสุดแหวกแนว)
+## 🧪 7. The Novel "Round-Trip Cognitive VQA Benchmark" (Visual Question Answering)
 
-> **"แบบก่อสร้าง 2D ที่สมบูรณ์แบบ ต้องสื่อสารได้ชัดเจนจน AI Vision อ่านแล้วสร้างตึกกลับมาได้ตรงเป๊ะ 100%"**
+> **"แบบก่อสร้างที่ดีเลิศ คือแบบที่เมื่อให้ AI Vision เพ่งมองรูปแปลน 2D แล้วตอบคำถามช้อยส์ปิด ผลลัพธ์ต้องตรงกับ Ground Truth ในโค้ด 100%"**
 
-การหาชุดข้อมูล IFC หรือ CAD 2D คุณภาพสูงจากภายนอกมาเทียบเคียงเป็นเรื่องยากมาก เราจึงสร้าง **Cognitive Closed-Loop Benchmark (วงจรทดสอบการถดถอยความเข้าใจของ AI)**:
+เพื่อขจัดปัญหาความกำกวมของการให้ AI สร้างไฟล์ YAML คืนมา (ซึ่งมักเกิดปัญหา Format Error หรือ Hallucination ทางไวยากรณ์) ระบบได้เปลี่ยนผ่านสู่สถาปัตยกรรม **Closed-Set Visual Question Answering (VQA) with Constrained Choices (JED / Structured JSON Output)**:
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant GT as Original Ground Truth (project.yaml)
-    participant Engine as debim 2D Engine
-    participant Paper as 2D Blueprint (PNG / PDF Image)
-    participant AI as AI Vision Architect (Gemini / Claude / GPT)
-    participant Rec as Reconstructed Model (reconstructed.yaml)
-    participant Judge as Benchmark Judge (pytest / trimesh)
+    participant LLM_Seed as 1. Seed Manifest Generator
+    participant GT as 2. Ground Truth (1,000 debim Files)
+    participant Engine as 3. debim 2D Drafting Engine
+    participant QA_Gen as 4. Auto QA & Distractor Generator
+    participant Vision_AI as 5. Vision AI Judge (Gemini Thinking / Live API)
+    participant Evaluator as 6. Deterministic Score Evaluator
 
-    GT->>Engine: คอมไพล์โมเดลอาคาร 3D สู่แบบแปลน 2D
-    Engine->>Paper: เรนเดอร์เป็นภาพแปลน 2D (มีเสา 9 ต้น, คาน, ผนัง, ระยะ)
-    Paper->>AI: ส่งภาพแปลน 2D ให้ AI อ่าน ("วิเคราะห์และเขียน project.yaml คืนมา")
-    AI->>Rec: AI สกัดข้อมูลและเขียนออกมาเป็น reconstructed.yaml
-    Judge->>Rec: ตรวจเทียบ reconstructed.yaml กับ Original GT
-    Judge-->>Judge: คำนวณความคลาดเคลื่อน (Entity Retention & Coordinate Drift)
+    LLM_Seed->>GT: สร้างตึกจำลอง 1,000 แบบ (L-shape, U-shape, ผนังเฉียง, เสาถี่)
+    GT->>Engine: คอมไพล์เป็นภาพแปลน 2D A3 คมชัดสูง (High-Res PNG)
+    GT->>QA_Gen: ดึงค่าจริงจาก Pydantic models มาสร้างคำถามและ 4 ตัวเลือก
+    Note over QA_Gen: คำถาม: คาน B2 มีความยาวเท่าใด?<br/>A) 4.50 m (คำตอบถูกใน debim)<br/>B) 3.80 m (ช้อยส์หลอก)<br/>C) 5.20 m (ช้อยส์หลอก)<br/>D) 4.00 m (ช้อยส์หลอก)
+    Engine->>Vision_AI: ส่งเฉพาะ "ภาพแปลน 2D" + คำถาม 4 ช้อยส์
+    Vision_AI-->>Evaluator: ตอบกลับเป็น Structured JSON (JED: {"selected": "A"})
+    Evaluator->>Evaluator: ตรวจคำตอบ Exact Match (1 หรือ 0)
+    Note over Evaluator: หากตอบผิด: วินิจฉัยทันทีว่า<br/>"เส้นมิติซ้อนทับ / ฟอนต์จม / ตัวเลขชน Hatch"
 ```
 
-### 🎯 ดัชนีชี้วัด (Cognitive Benchmark Metrics)
+---
 
-1. **Entity Retention Rate (อัตราการอยู่รอดของชิ้นส่วน):**
-   $$\text{Retention Rate} = \frac{\text{Count of Recognized Elements}}{\text{Total Ground Truth Elements}} \times 100\%$$
-   - *ตัวอย่างความล้มเหลวของแบบ 2D:* แปลนมีเสา 9 ต้น แต่แบบเขียนตัวหนังสือหรือเส้นบอกระยะทับเสาต้นมุม จน AI อ่านแปลนแล้วเห็นเสาแค่ 7 ต้น $\rightarrow$ **Retention = 77.8% (Fail!)**
-2. **Coordinate & Dimensional Accuracy (ความคลาดเคลื่อนของพิกัดและระยะ):**
-   - คำนวณ Mean Absolute Error (MAE) ของระยะเสาและขนาดห้อง ระหว่างของเดิมกับที่ AI อ่านได้
-3. **Clutter Penalty (บทลงโทษความรกของแบบ):**
-   - วัดว่าโมเดล AI เกิด Hallucination (เห็นชิ้นส่วนผีที่ไม่มีจริง เช่น อ่านเส้นบอกระยะเป็นผนัง) กี่จุด
+### 🎯 4 หมวดคำถามตรวจสอบคุณภาพแบบ (VQA Question Taxonomy)
 
-### 🏆 ประโยชน์สองต่อ (Dual Purpose):
-- **วัดคุณภาพของ debim 2D Engine:** หากโมเดล AI หลายค่าย (Gemini 1.5/2.0, Claude 3.5 Sonnet, GPT-4o) อ่านแปลนชุดเดียวกันแล้วเกิดอาการ "เสาหาย" พร้อมๆ กัน แสดงว่า **ระบบจัดวางแปลนของ debim ยังแสดงผลไม่ชัดเจนพอ** (ต้องปรับปรุง Contrast, Lineweight, หรือตำแหน่ง Leader)
-- **AI Architect Leaderboard:** วัดได้ชัดเจนว่า **โมเดล AI ค่ายใดคือ "สุดยอดผู้ช่วยสถาปนิกและวิศวกร"** ที่อ่านแบบก่อสร้าง 2D ซับซ้อนได้แม่นยำที่สุดในโลก!
+| หมวดการทดสอบ | ตัวอย่างคำถามที่ระบบสร้างอัตโนมัติ | รูปแบบช้อยส์ (Closed Set) | สิ่งที่ระบบวัดผลได้จากแบบ |
+|---|---|---|---|
+| **1. มิติระยะ (Dimensions)** | *"ระยะห่างระหว่างศูนย์กลางเสากริด 2 ถึง 3 คือเท่าใด?"* | A) 4.00 m<br>B) 4.50 m *(ถูก)*<br>C) 5.00 m<br>D) 3.50 m | ตัวเลขบนเส้นบอกระยะอ่านง่าย ไม่ซ้อนทับเส้นกริดหรือแนวเสา |
+| **2. ความสัมพันธ์ชิ้นงาน (Topology)** | *"เสา C1 ตั้งอยู่บริเวณจุดตัดของแนวกริดใด?"* | A) [A, 1]<br>B) [B, 2] *(ถูก)*<br>C) [C, 3]<br>D) [B, 3] | วงกลม Grid Bubble และชื่อกริด ลากตรงไปยังเสาต้นนั้นชัดเจน |
+| **3. สัญลักษณ์ช่องเปิด (Tags)** | *"ประตู D2 เป็นประตูชนิดใดและมีความกว้างเท่าใด?"* | A) บานเลื่อน 1.20m<br>B) บานเปิดเดี่ยว 0.90m *(ถูก)*<br>C) บานเปิดคู่ 1.80m | สัญลักษณ์วงรี Door Tag และรัศมีสวิงของบานประตูวาดถูกต้อง |
+| **4. ระดับความสูง (Levels)** | *"ห้องน้ำ 1 มีระดับพื้นต่างจากห้องโถงเท่าใด?"* | A) -0.05 m *(ถูก)*<br>B) -0.10 m<br>C) +0.00 m | สัญลักษณ์บอกระดับ $+/-0.00$ ไม่ถูกสุขภัณฑ์บัง |
+
+---
+
+### ⚡ สเปกการเชื่อมต่อ AI Judge API (Gemini Thinking & Rate Limiting)
+
+* **โมเดลที่แนะนำ:** Gemini 3.8 Flash Thinking / Multimodal Live API
+* **การควบคุม Output (JED / Structured Output):**
+  ```json
+  {
+    "type": "object",
+    "properties": {
+      "question_id": { "type": "string" },
+      "selected_choice": { "type": "string", "enum": ["A", "B", "C", "D"] },
+      "visual_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+      "readability_notes": { "type": "string" }
+    },
+    "required": ["question_id", "selected_choice"]
+  }
+  ```
+* **การบริหาร Token Quota (TPM 65,000 Budgeting):**
+  * รูปภาพแบบแปลน 1 รูป $\approx 500\text{ – }1,000\text{ tokens}$
+  * คำถามช้อยส์ 1 ข้อ $\approx 150\text{ tokens}$
+  * รวมต่อ 1 ข้อความ $\approx 650\text{ – }1,150\text{ tokens}$
+  * **ขีดความสามารถที่ TPM 65k:** ยิงได้ถึง **50 – 80 คำถามต่อนาที** (หรือ $\sim 3,000\text{ – }4,800$ คำถามต่อชั่วโมง)
+  * ตัว Runner จะติดตั้ง **Token Bucket Rate Limiter** (`sleep 1s` per request) ป้องกันไม่ให้ชนขีดจำกัด TPM
 
 ---
 
@@ -224,9 +248,9 @@ debim draw view -m project.yaml --sheets sheets/ -o dist/viewer_2d.html
 # ส่งออกเป็นไฟล์ DXF สำหรับทีมดราฟต์แมน AutoCAD (Export-only)
 debim draw export-dxf -m project.yaml --sheet sheets/A-101_floor_1.yaml -o dist/A-101.dxf
 
-# รันการทดสอบคุณภาพแบบก่อสร้าง (DQS: Drafting Quality Score)
-debim draw test -m project.yaml --sheets sheets/
+# สร้างชุดข้อมูลคำถามทดสอบ VQA สังเคราะห์จาก debim
+debim draw generate-vqa -m project.yaml --count 10 -o vqa_dataset.json
 
-# รัน Cognitive Regression Benchmark ร่วมกับ AI Vision
-debim draw benchmark-cognitive --model gemini-2.0-flash --sheet sheets/A-101_floor_1.yaml
+# รัน VQA Cognitive Regression Benchmark ร่วมกับ Gemini Multimodal API
+debim draw benchmark-vqa --dataset vqa_dataset.json --model gemini-3.8-flash-thinking --api-key $GEMINI_API_KEY
 ```

@@ -378,6 +378,44 @@ def import_ifc_to_manifest(
         st_elev = storey_elevation_by_id.get(st_id, 0.0)
         pos = (0.0, 0.0, 0.0)
         rot = None
+
+        if geom_settings is not None:
+            try:
+                import ifcopenshell.geom
+                import numpy as np
+
+                shape = ifcopenshell.geom.create_shape(geom_settings, elem)
+                verts = np.array(shape.geometry.verts, dtype=np.float64).reshape(-1, 3)
+                if len(verts) > 0:
+                    min_b = verts.min(axis=0)
+                    max_b = verts.max(axis=0)
+                    center_local = (min_b + max_b) / 2.0
+                    d_ext = max_b - min_b
+
+                    mat = ifcopenshell.util.placement.get_local_placement(elem.ObjectPlacement)
+                    world_center = (mat[:3, :3] @ center_local) + mat[:3, 3]
+
+                    w_val = round(float(d_ext[0]), 3)
+                    d_val = round(float(d_ext[1]), 3)
+                    h_val = round(float(d_ext[2]), 3)
+
+                    if w_val > 0 and d_val > 0 and h_val > 0:
+                        pos = (
+                            round(float(world_center[0]), 3),
+                            round(float(world_center[1]), 3),
+                            round(float(world_center[2] - h_val / 2.0 - st_elev), 3),
+                        )
+                        rot = _extract_euler_angles(mat)
+                        placement = CustomElementPlacement(
+                            position=pos,
+                            storey=st_id,
+                            rotation=rot,
+                        )
+                        dims = Dimensions(width=w_val, depth=d_val, height=h_val)
+                        return placement, dims
+            except Exception:
+                pass
+
         try:
             mat = ifcopenshell.util.placement.get_local_placement(elem.ObjectPlacement)
             pos = (
@@ -947,11 +985,24 @@ def import_ifc_to_manifest(
         w, d = 0.2, 0.4
         ps = ifcopenshell.util.element.get_psets(beam)
         dims = ps.get("Dimensions", {}) or ps.get("PSet_Revit_Dimensions", {}) or ps.get("Qto_BeamBaseQuantities", {})
+        type_dims = ps.get("PSet_Revit_Type_Dimensions", {}) or ps.get("PSet_Revit_Type_Construction", {}) or ps.get("Pset_BeamCommon", {}) or {}
         length = float(dims.get("Length", 4.0)) if dims.get("Length") else 4.0
         if length > 100:
             length /= 1000.0
 
-        if "Width" in dims and dims["Width"]:
+        if "bf" in type_dims and type_dims["bf"]:
+            w = float(type_dims["bf"])
+            if w > 10:
+                w /= 1000.0
+        elif "FlangeWidth" in type_dims and type_dims["FlangeWidth"]:
+            w = float(type_dims["FlangeWidth"])
+            if w > 10:
+                w /= 1000.0
+        elif "Width" in type_dims and type_dims["Width"]:
+            w = float(type_dims["Width"])
+            if w > 10:
+                w /= 1000.0
+        elif "Width" in dims and dims["Width"]:
             w = float(dims["Width"])
             if w > 10:
                 w /= 1000.0
@@ -960,7 +1011,19 @@ def import_ifc_to_manifest(
             if w > 10:
                 w /= 1000.0
 
-        if "Depth" in dims and dims["Depth"]:
+        if "d" in type_dims and type_dims["d"]:
+            d = float(type_dims["d"])
+            if d > 10:
+                d /= 1000.0
+        elif "OverallDepth" in type_dims and type_dims["OverallDepth"]:
+            d = float(type_dims["OverallDepth"])
+            if d > 10:
+                d /= 1000.0
+        elif "Depth" in type_dims and type_dims["Depth"]:
+            d = float(type_dims["Depth"])
+            if d > 10:
+                d /= 1000.0
+        elif "Depth" in dims and dims["Depth"]:
             d = float(dims["Depth"])
             if d > 10:
                 d /= 1000.0
@@ -968,6 +1031,16 @@ def import_ifc_to_manifest(
             d = float(dims["OverallDepth"])
             if d > 10:
                 d /= 1000.0
+
+        if (w == 0.2 and d == 0.4) or w <= 0 or d <= 0:
+            bbox = _extract_bounding_box(beam)
+            if bbox:
+                if bbox.width > 0:
+                    w = bbox.width
+                if bbox.height > 0:
+                    d = bbox.height
+                elif bbox.depth > 0:
+                    d = bbox.depth
 
         try:
             mat = ifcopenshell.util.placement.get_local_placement(beam.ObjectPlacement)

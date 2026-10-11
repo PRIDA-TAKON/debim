@@ -194,6 +194,30 @@ my_project/
 
 ---
 
+### 🟡 Phase 6: Full 3D Visual Regression & Geometry Parity Engine (กำลังดำเนินการ: Issues #180 – #202)
+> **เป้าหมาย:** กำจัดช่องว่างทางเรขาคณิต 3D ใน Three.js ให้ครอบคลุมทุกคลาส IFC ด้วยเกณฑ์เชิงปริมาณ (3D BBox IoU $\ge 95.0\%$ และ Multi-View Match $\ge 85.0\%$)
+
+- [ ] **Task 6.1:** `fix(geometry): Implement Missing 3D Mechanical & Equipment Primitives` (Issues #180, #181, #186, #187 - หม้อต้มน้ำ Boiler, ปั๊มน้ำ Pump, วาล์ว Valve, และ Air Terminal)
+- [ ] **Task 6.2:** `feat(mep): Implement Curved Swept-Disk Trajectory for Flow Fittings` (Issue #182 - ข้องอท่อ Pipe/Duct Elbows ตามแนวพอร์ตจริง)
+- [ ] **Task 6.3:** `feat(architecture): Tier 2 Parametric Sub-Component Assemblies` (Issues #188, #189, #200 - ประตู Door, บันได StairFlight, ราวกันตก Railing)
+- [ ] **Task 6.4:** `feat(testing): Build Automated Round-Trip Golden Test Suite for All IFC Classes` (Issue #202 - สคริปต์สังเคราะห์ Fixture 800 คลาสและทดสอบ Round-Trip แบบไม่สูญเสียข้อมูล)
+- [ ] **Task 6.5:** `feat(proxies): Enhanced Aspect-Ratio Geometric Classification for Long-Tail Proxies` (Issue #183)
+
+---
+
+### 🚀 Phase 7: Declarative 2D Construction Blueprint Engine (The Next Strategic Horizon)
+> **เป้าหมาย:** สถาปัตยกรรมแปลงโค้ดแบบจำลองอาคาร 3D สู่แบบก่อสร้าง 2D มาตรฐานสากล (A3/A1 Vector Blueprints) ที่ใช้ยื่นขออนุญาตก่อสร้างและเซ็นสัญญาหน้างานได้จริง ปราศจากปัญหาแบบไม่ตรงกับ 3D (Zero Discrepancy)
+
+- [ ] **Task 7.1:** `feat(draw): Topological Cut-Plane & 2D Boolean Slicing Engine` (ตัดระนาบแนวนอนที่ความสูง $+1.20\text{ m}$ ดึงรอยตัดผนัง เสา ช่องเปิดผ่าน `shapely` ใน `src/debim/draw/projection.py`)
+- [ ] **Task 7.2:** `feat(draw): Collision-Free Automated Dimensions & Grid Bubbles` (อัลกอริทึมลากเส้นบอกระยะเสากริด ระยะรวมอาคาร และระยะช่องเปิดประตู-หน้าต่างอัตโนมัติ โดยไม่ทับซ้อนตัวหนังสือ)
+- [ ] **Task 7.3:** `feat(draw): Web-Native Vector Sheet Builder (SVG + CSS Paged Media + Sarabun Font)` (จัดหน้ากระดาษ A3/A4 บรรจุ Title Block สารบัญแบบ ขจัดปัญหาสระภาษาไทยลอย 100% พิมพ์ลง PDF คมชัดสูง)
+- [ ] **Task 7.4:** `feat(draw): Standalone 2D Blueprint Web Viewer (viewer_2d.html)` (หน้าต่างเปิดตรวจแบบ 2D บนมือถือ/แท็บเล็ตหน้างาน ซูมเวกเตอร์ไม่แตก พร้อมไม้บรรทัดวัดระยะบนจอ)
+- [ ] **Task 7.5:** `feat(draw): Export-Only AutoCAD DXF Bridge` (ส่งออกไฟล์ `.dxf` ทางเดียวแยกเลเยอร์มาตรฐาน `A-WALL`, `S-COLS`, `A-GRID` สำหรับทีมดราฟต์แมน)
+
+> *รายละเอียดและสเปกเชิงลึกศึกษาได้ที่:* [`docs/ROADMAP_2D_DRAWINGS.md`](ROADMAP_2D_DRAWINGS.md)
+
+---
+
 ## 🎯 4. Definition of Done (DoD) สำหรับแต่ละ Issue ของ Jules
 
 เพื่อให้การทำงานของ Jules แม่นยำ ไม่หลุดกรอบ และ merge ได้ทันที ทุก Issue ที่เปิดภายใต้ Roadmap นี้ต้องกำหนดให้ Jules ปฏิบัติตามมาตรฐาน 5 ข้อเสมอ:
@@ -201,8 +225,8 @@ my_project/
 1. **Schema (`schema.py`):** เพิ่ม Pydantic v2 model พร้อม Type annotation และ default values ครบถ้วน
 2. **Resolver (`resolver.py`):** คำนวณพิกัด 3D World Vector จาก Grid/Storey หรืออิสระ 3D
 3. **QTO (`qto.py`):** มีสูตรคำนวณปริมาณงาน (Volume $m^3$, Area $m^2$, Length $m$, หรือ Count ชิ้น)
-4. **Viewer (`viewer.py`):** มี Three.js procedural geometry หรือ visual fallback ใน 3D HTML Viewer
-5. **Unit Tests (`tests/`):** มี Pytest ครอบคลุมการทำงานอย่างน้อย 2-3 Test Cases และการทดสอบเดิมทั้งหมด 150+ ข้อต้อง Pass 100%
+4. **Viewer (`viewer.py` / `draw/`):** มี Three.js procedural geometry ใน 3D Viewer หรือ SVG projection ใน 2D Drawing
+5. **Unit Tests (`tests/`):** มี Pytest ครอบคลุมการทำงานอย่างน้อย 2-3 Test Cases และการทดสอบเดิมทั้งหมดต้อง Pass 100%
 
 ---
 
@@ -216,6 +240,8 @@ my_project/
 | **Phase 3** | MEP Graph & Civil (IFC4.3) | เปิด Issue `jules` 3 งาน | รองรับ ทางเชื่อมท่อ, ถนน, สะพาน, กำแพงกันดิน |
 | **Phase 4** | Universal Proxy Engine (~700 Entities) | เปิด Issue `jules` 2 งาน | ครอบคลุมมาตรฐาน IFC4/IFC4.3 ครบทุกชนิด 100% |
 | **Phase 5** | Tests & Validation Benchmark | รัน Benchmark Automation | ได้รับการรับรองมาตรฐานสากล Zero-Regression |
+| **Phase 6** | Full 3D Visual Regression & Geometry Parity | รัน Jules พร้อมกัน (Issues #180–#202) | Three.js 3D แสดงผลถูกต้องทุกคลาส IoU $\ge 95\%$ |
+| **Phase 7** | Declarative 2D Construction Blueprint Engine | พัฒนาระบบ `src/debim/draw/` สู่ Production | สร้างแบบแปลน A3 สเกลจริง ขออนุญาตก่อสร้างได้ทันที |
 
 ---
 *บันทึกไว้ในระบบ debim เพื่อเป็นแผนที่นำทางสำหรับการทำงานร่วมกันระหว่าง Human Architect และ AI Agent (Jules)*

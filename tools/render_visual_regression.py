@@ -69,10 +69,11 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
         meshes[col.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for beam in resolved.beams:
-        w = float(beam.element.profile.width)
-        d = float(beam.element.profile.depth)
+        w = float(beam.width)
+        d = float(beam.depth)
         l = float(beam.span_length)
-        m = trimesh.creation.box(extents=(l, w, d))
+        m = trimesh.creation.box(extents=(w, l, d))
+        m.apply_translation([0.0, l / 2.0, -d / 2.0])
         meshes[beam.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for wall in resolved.walls:
@@ -85,19 +86,57 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
         for child in wall.children:
             cw = float(child.width)
             ch = float(child.height)
-            f_box = getattr(child, "frame_box", {"width": cw, "depth": 0.05, "height": ch})
-            p_box = getattr(child, "panel_box", {"width": cw - 0.1, "depth": 0.02, "height": ch - 0.1, "offset_y": 0.015})
+            f_w = float(getattr(child, "frame_width", 0.05) or 0.05)
+            f_d = float(getattr(child, "frame_thickness", th) or th)
+            c_w = float(getattr(child, "casing_width", 0.076) or 0.076)
+            c_t = float(getattr(child, "casing_thickness", 0.025) or 0.025)
 
-            # 1. Outer frame mesh
-            frame_mesh = trimesh.creation.box(extents=(float(f_box["width"]), float(f_box["depth"]), float(f_box["height"])))
+            # Parametric Assembly Frame & Casing & Leaf Panel in local door space
+            # 1. Frame Jambs & Head
+            f_left = trimesh.creation.box(extents=(f_w, f_d, ch))
+            f_left.apply_translation([f_w / 2.0, f_d / 2.0, ch / 2.0])
 
-            # 2. Inner panel / glazing mesh (recessed by panel_recess in Y)
-            panel_mesh = trimesh.creation.box(extents=(float(p_box["width"]), float(p_box["depth"]), float(p_box["height"])))
-            offset_y = float(p_box.get("offset_y", 0.015))
-            panel_mesh.apply_translation([0.0, offset_y, 0.0])
+            f_right = trimesh.creation.box(extents=(f_w, f_d, ch))
+            f_right.apply_translation([cw - f_w / 2.0, f_d / 2.0, ch / 2.0])
 
-            # Composite sub-meshes
-            cm = trimesh.util.concatenate([frame_mesh, panel_mesh])
+            f_top = trimesh.creation.box(extents=(cw, f_d, f_w))
+            f_top.apply_translation([cw / 2.0, f_d / 2.0, ch - f_w / 2.0])
+
+            # 2. Outer Casing Trim Members (Left, Right, Top) on Front and Back
+            # Front Casing (Y = f_d + c_t / 2.0)
+            c_f_left = trimesh.creation.box(extents=(c_w, c_t, ch + c_w))
+            c_f_left.apply_translation([c_w / 2.0 - c_w, f_d + c_t / 2.0, (ch + c_w) / 2.0])
+
+            c_f_right = trimesh.creation.box(extents=(c_w, c_t, ch + c_w))
+            c_f_right.apply_translation([cw + c_w - c_w / 2.0, f_d + c_t / 2.0, (ch + c_w) / 2.0])
+
+            c_f_top = trimesh.creation.box(extents=(cw + 2 * c_w, c_t, c_w))
+            c_f_top.apply_translation([cw / 2.0, f_d + c_t / 2.0, ch + c_w / 2.0])
+
+            # Back Casing (Y = -c_t / 2.0)
+            c_b_left = trimesh.creation.box(extents=(c_w, c_t, ch + c_w))
+            c_b_left.apply_translation([c_w / 2.0 - c_w, -c_t / 2.0, (ch + c_w) / 2.0])
+
+            c_b_right = trimesh.creation.box(extents=(c_w, c_t, ch + c_w))
+            c_b_right.apply_translation([cw + c_w - c_w / 2.0, -c_t / 2.0, (ch + c_w) / 2.0])
+
+            c_b_top = trimesh.creation.box(extents=(cw + 2 * c_w, c_t, c_w))
+            c_b_top.apply_translation([cw / 2.0, -c_t / 2.0, ch + c_w / 2.0])
+
+            # 3. Door Leaf Panel
+            p_w = max(0.01, cw - 2 * f_w)
+            p_h = max(0.01, ch - f_w)
+            p_t = float(getattr(child, "panel_thickness", 0.035) or 0.035)
+            panel = trimesh.creation.box(extents=(p_w, p_t, p_h))
+            panel.apply_translation([cw / 2.0, f_d / 2.0, p_h / 2.0])
+
+            # Composite Parametric Assembly
+            cm = trimesh.util.concatenate([
+                f_left, f_right, f_top,
+                c_f_left, c_f_right, c_f_top,
+                c_b_left, c_b_right, c_b_top,
+                panel
+            ])
             meshes[child.tag] = (np.array(cm.vertices, dtype=np.float64), np.array(cm.faces, dtype=np.int32))
 
     for slab in resolved.slabs:
@@ -119,7 +158,10 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             d = float(np.max(pts[:, 1]) - np.min(pts[:, 1]))
             w = max(w, 0.5)
             d = max(d, 0.5)
+            cx, cy = cov.center[0], cov.center[1]
+            z_base = cov.polygon[0][2] if cov.polygon and len(cov.polygon[0]) > 2 else cov.center[2]
             m = trimesh.creation.box(extents=(w, d, th))
+            m.apply_translation([cx, cy, z_base + th / 2.0])
             meshes[cov.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for custom in resolved.custom_elements:
@@ -133,6 +175,15 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
                 T = trimesh.transformations.euler_matrix(rx, ry, rz)
                 m.apply_transform(T)
             meshes[custom.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+
+    for proxy in resolved.proxies:
+        w, d, h = float(proxy.dimensions[0]), float(proxy.dimensions[1]), float(proxy.dimensions[2])
+        m = trimesh.creation.box(extents=(w, d, h))
+        if proxy.rotation and any(abs(r) > 1e-4 for r in proxy.rotation):
+            rx, ry, rz = [float(r) for r in proxy.rotation]
+            T = trimesh.transformations.euler_matrix(rx, ry, rz)
+            m.apply_transform(T)
+        meshes[proxy.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for fc in getattr(resolved, "flow_controllers", []):
         w = float(fc.dimensions[0])
@@ -441,7 +492,7 @@ def run_visual_regression(
         t = e.is_a()
         if t == "IfcWallStandardCase":
             t = "IfcWall"
-        if target_class and t != target_class:
+        if target_class and t.lower() != target_class.lower():
             continue
         by_category.setdefault(t, []).append(e)
 
@@ -629,6 +680,7 @@ def main():
     parser.add_argument("--ifc", type=str, default=None, help="Path to a single IFC file")
     parser.add_argument("--dir", type=str, default=None, help="Path to directory containing multiple IFC files")
     parser.add_argument("--output", type=str, default="dist/visual_regression", help="Output directory for reports & images")
+    parser.add_argument("--class", "--element-class", dest="target_class", type=str, default=None, help="Filter testing to specific IFC element class (e.g., IfcBeam, IfcDoor)")
     parser.add_argument("--max-per-type", type=int, default=2, help="Max components per element class")
     parser.add_argument("--limit", type=int, default=10, help="Total component test limit per model")
     parser.add_argument("--dedup", action="store_true", default=True, help="Enable variant deduplication to prevent repetitive sampling")
