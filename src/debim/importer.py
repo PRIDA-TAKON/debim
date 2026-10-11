@@ -375,6 +375,44 @@ def import_ifc_to_manifest(
         st_elev = storey_elevation_by_id.get(st_id, 0.0)
         pos = (0.0, 0.0, 0.0)
         rot = None
+
+        if geom_settings is not None:
+            try:
+                import ifcopenshell.geom
+                import numpy as np
+
+                shape = ifcopenshell.geom.create_shape(geom_settings, elem)
+                verts = np.array(shape.geometry.verts, dtype=np.float64).reshape(-1, 3)
+                if len(verts) > 0:
+                    min_b = verts.min(axis=0)
+                    max_b = verts.max(axis=0)
+                    center_local = (min_b + max_b) / 2.0
+                    d_ext = max_b - min_b
+
+                    mat = ifcopenshell.util.placement.get_local_placement(elem.ObjectPlacement)
+                    world_center = (mat[:3, :3] @ center_local) + mat[:3, 3]
+
+                    w_val = round(float(d_ext[0]), 3)
+                    d_val = round(float(d_ext[1]), 3)
+                    h_val = round(float(d_ext[2]), 3)
+
+                    if w_val > 0 and d_val > 0 and h_val > 0:
+                        pos = (
+                            round(float(world_center[0]), 3),
+                            round(float(world_center[1]), 3),
+                            round(float(world_center[2] - h_val / 2.0 - st_elev), 3),
+                        )
+                        rot = _extract_euler_angles(mat)
+                        placement = CustomElementPlacement(
+                            position=pos,
+                            storey=st_id,
+                            rotation=rot,
+                        )
+                        dims = Dimensions(width=w_val, depth=d_val, height=h_val)
+                        return placement, dims
+            except Exception:
+                pass
+
         try:
             mat = ifcopenshell.util.placement.get_local_placement(elem.ObjectPlacement)
             pos = (
