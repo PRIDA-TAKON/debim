@@ -17,6 +17,7 @@ from debim.schema import (
     IfcBridge,
     IfcBridgePart,
     IfcBuildingElementProxy,
+    IfcMarinePart,
     IfcBuiltSystem,
     IfcCableCarrierSegment,
     IfcColumn,
@@ -1303,6 +1304,27 @@ class ResolvedBearing(BaseModel):
     layer: str = "civil/infrastructure/bridges/bearings"
 
 
+class ResolvedMarinePart(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMarinePart
+    predefined_type: str = "LOCK"
+    chamber_length: float = 100.0
+    chamber_width: float = 18.0
+    wall_thickness: float = 1.5
+    wall_height: float = 8.0
+    sill_elevation: float = 0.0
+    floor_thickness: float = 1.0
+    chamber_water_volume: float = 0.0
+    wall_concrete_volume: float = 0.0
+    floor_concrete_volume: float = 0.0
+    total_concrete_volume: float = 0.0
+    formwork_area: float = 0.0
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "civil/marine/parts"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1344,6 +1366,7 @@ ResolvedElement = Union[
     ResolvedTrackElement,
     ResolvedBridgePart,
     ResolvedBearing,
+    ResolvedMarinePart,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1399,6 +1422,7 @@ class ResolvedManifest(BaseModel):
     built_systems: List[ResolvedBuiltSystem] = []
     bridge_parts: List[ResolvedBridgePart] = []
     bearings: List[ResolvedBearing] = []
+    marine_parts: List[ResolvedMarinePart] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -5050,6 +5074,71 @@ class SpatialResolver:
             layer=derive_default_layer(bridge_part),
         )
 
+    def resolve_marine_part(self, marine_part: IfcMarinePart) -> ResolvedMarinePart:
+        z_base = self.get_storey(marine_part.placement.storey).elevation if marine_part.placement.storey else 0.0
+
+        if marine_part.placement.position:
+            px, py, pz = marine_part.placement.position
+            pos = (px, py, z_base + pz)
+            length = marine_part.chamber_length or 100.0
+        elif marine_part.placement.from_grid and marine_part.placement.to_grid:
+            x1, y1 = self.get_grid_xy(marine_part.placement.from_grid)
+            x2, y2 = self.get_grid_xy(marine_part.placement.to_grid)
+            x1 += marine_part.placement.offset_x
+            y1 += marine_part.placement.offset_y
+            x2 += marine_part.placement.offset_x
+            y2 += marine_part.placement.offset_y
+            z = z_base + marine_part.placement.offset_z
+            span = math.hypot(x2 - x1, y2 - y1)
+            length = span if span > 0 else (marine_part.chamber_length or 100.0)
+            pos = ((x1 + x2) / 2.0, (y1 + y2) / 2.0, z)
+        elif marine_part.placement.grid:
+            gx, gy = self.get_grid_xy(marine_part.placement.grid)
+            gx += marine_part.placement.offset_x
+            gy += marine_part.placement.offset_y
+            z = z_base + marine_part.placement.offset_z
+            pos = (gx, gy, z)
+            length = marine_part.chamber_length or 100.0
+        else:
+            z = z_base + marine_part.placement.offset_z
+            pos = (marine_part.placement.offset_x, marine_part.placement.offset_y, z)
+            length = marine_part.chamber_length or 100.0
+
+        width = marine_part.chamber_width or 18.0
+        wall_thick = marine_part.wall_thickness or 1.5
+        wall_h = marine_part.wall_height or 8.0
+        sill_elev = marine_part.sill_elevation or 0.0
+        floor_thick = marine_part.floor_thickness or 1.0
+
+        water_vol = length * width * wall_h
+        wall_conc_vol = 2.0 * length * wall_thick * wall_h
+        outer_width = width + 2.0 * wall_thick
+        floor_conc_vol = length * outer_width * floor_thick
+        total_conc_vol = wall_conc_vol + floor_conc_vol
+        formwork = (2.0 * length * wall_h) + (2.0 * length * wall_h) + (4.0 * wall_thick * wall_h)
+
+        ptype = marine_part.predefined_type or "LOCK"
+        layer = marine_part.layer or derive_default_layer(marine_part)
+
+        return ResolvedMarinePart(
+            tag=marine_part.tag,
+            element=marine_part,
+            predefined_type=ptype,
+            chamber_length=length,
+            chamber_width=width,
+            wall_thickness=wall_thick,
+            wall_height=wall_h,
+            sill_elevation=sill_elev,
+            floor_thickness=floor_thick,
+            chamber_water_volume=water_vol,
+            wall_concrete_volume=wall_conc_vol,
+            floor_concrete_volume=floor_conc_vol,
+            total_concrete_volume=total_conc_vol,
+            formwork_area=formwork,
+            position=pos,
+            layer=layer,
+        )
+
     def resolve_bearing(self, bearing: IfcBearing) -> ResolvedBearing:
         z_base = self.get_storey(bearing.placement.storey).elevation if bearing.placement.storey else 0.0
 
@@ -5361,6 +5450,10 @@ class SpatialResolver:
                 r_br = self.resolve_bearing(elem)
                 resolved_manifest.bearings.append(r_br)
                 resolved_manifest.elements.append(r_br)
+            elif isinstance(elem, IfcMarinePart):
+                r_mp = self.resolve_marine_part(elem)
+                resolved_manifest.marine_parts.append(r_mp)
+                resolved_manifest.elements.append(r_mp)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

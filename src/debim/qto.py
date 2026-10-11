@@ -17,6 +17,7 @@ from debim.resolver import (
     ResolvedBridge,
     ResolvedBridgePart,
     ResolvedCableCarrierSegment,
+    ResolvedMarinePart,
     ResolvedColumn,
     ResolvedCovering,
     ResolvedCurtainWall,
@@ -473,6 +474,20 @@ class BridgeQTO(BaseModel):
     pier_count: int = 2
 
 
+class MarineQTO(BaseModel):
+    chamber_length: float = 0.0          # Chamber length (m)
+    chamber_width: float = 0.0           # Chamber width (m)
+    wall_thickness: float = 0.0          # Wall thickness (m)
+    wall_height: float = 0.0             # Wall height (m)
+    sill_elevation: float = 0.0          # Sill elevation (m)
+    floor_thickness: float = 0.0         # Floor thickness (m)
+    chamber_water_volume: float = 0.0    # Chamber water retention volume capacity (m3)
+    wall_concrete_volume: float = 0.0    # Reinforced concrete wall volume (m3)
+    floor_concrete_volume: float = 0.0   # Floor slab concrete volume (m3)
+    total_concrete_volume: float = 0.0   # Total concrete volume (m3)
+    formwork_area: float = 0.0           # Formwork area (m2)
+
+
 class RailwayQTO(BaseModel):
     track_length: float = 0.0            # Track corridor length (m)
     total_rail_length: float = 0.0       # Total parallel steel rails length (m)
@@ -528,6 +543,7 @@ class ElementQTO(BaseModel):
     road: Optional[RoadQTO] = None
     bridge: Optional[BridgeQTO] = None
     railway: Optional[RailwayQTO] = None
+    marine: Optional[MarineQTO] = None
     mep: Optional[MepQTO] = None
 
 
@@ -588,6 +604,10 @@ class ProjectQTO(BaseModel):
     total_railway_sleepers_count: int = 0
     total_railway_ballast_volume: float = 0.0
     total_railway_turnouts_count: int = 0
+    # Marine Totals (IFC4.3)
+    total_marine_water_volume: float = 0.0
+    total_marine_concrete_volume: float = 0.0
+    total_marine_formwork_area: float = 0.0
     # Ceilings & Floor Finishes Totals
     total_ceiling_gypsum_area: float = 0.0
     total_ceiling_tbar_area: float = 0.0
@@ -1785,6 +1805,37 @@ def calculate_element_qto(
             bridge=bridge_qto,
         )
 
+    elif isinstance(resolved, ResolvedMarinePart):
+        elem = resolved.element
+        water_vol = resolved.chamber_water_volume
+        wall_vol = resolved.wall_concrete_volume
+        floor_vol = resolved.floor_concrete_volume
+        total_vol = resolved.total_concrete_volume
+        formwork = resolved.formwork_area
+
+        marine_qto = MarineQTO(
+            chamber_length=resolved.chamber_length,
+            chamber_width=resolved.chamber_width,
+            wall_thickness=resolved.wall_thickness,
+            wall_height=resolved.wall_height,
+            sill_elevation=resolved.sill_elevation,
+            floor_thickness=resolved.floor_thickness,
+            chamber_water_volume=water_vol,
+            wall_concrete_volume=wall_vol,
+            floor_concrete_volume=floor_vol,
+            total_concrete_volume=total_vol,
+            formwork_area=formwork,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.chamber_length,
+            concrete_volume=total_vol,
+            formwork_area=formwork,
+            marine=marine_qto,
+        )
+
     elif isinstance(resolved, ResolvedBearing):
         elem = resolved.element
         vol = resolved.width * resolved.depth * resolved.height
@@ -2525,6 +2576,9 @@ def calculate_qto(
         total_railway_sleepers_count=total_railway_sleepers_count,
         total_railway_ballast_volume=total_railway_ballast_volume,
         total_railway_turnouts_count=total_railway_turnouts_count,
+        total_marine_water_volume=sum(e.marine.chamber_water_volume for e in qto_elements if e.marine),
+        total_marine_concrete_volume=sum(e.marine.total_concrete_volume for e in qto_elements if e.marine),
+        total_marine_formwork_area=sum(e.marine.formwork_area for e in qto_elements if e.marine),
         total_ceiling_gypsum_area=total_ceil_gypsum,
         total_ceiling_tbar_area=total_ceil_tbar,
         total_ceiling_eaves_area=total_ceil_eaves,

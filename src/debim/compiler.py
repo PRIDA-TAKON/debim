@@ -337,6 +337,8 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcBuildingElementProxy"
     if "bridgepart" in l or "bridge_part" in l:
         return "IfcBridgePart"
+    if "marinepart" in l or "marine_part" in l or "marine" in l:
+        return "IfcMarinePart"
     if "bearing" in l:
         return "IfcBearing"
     if "chimney" in l:
@@ -962,6 +964,62 @@ class StepSerializer:
                 ptype,
             )
             element_tag_refs[bp.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for mp in getattr(resolved, "marine_parts", []) or []:
+            st_id = mp.element.placement.storey
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+            st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
+
+            px, py, pz = mp.position
+            rel_z = float(pz - st_elev)
+
+            w_half = float(mp.chamber_width) / 2.0
+            w_outer_half = w_half + float(mp.wall_thickness)
+            hw_total = float(mp.wall_height) + float(mp.floor_thickness)
+            tf = float(mp.floor_thickness)
+
+            pts2d_tuples = [
+                (-w_outer_half, 0.0),
+                (w_outer_half, 0.0),
+                (w_outer_half, hw_total),
+                (w_half, hw_total),
+                (w_half, tf),
+                (-w_half, tf),
+                (-w_half, hw_total),
+                (-w_outer_half, hw_total),
+                (-w_outer_half, 0.0),
+            ]
+            pt_refs = [self.create_entity("IfcCartesianPoint", pt) for pt in pts2d_tuples]
+            poly_ref = self.create_entity("IfcPolyline", pt_refs)
+            prof_ref = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, poly_ref)
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", prof_ref, axis3d, ext_dir, float(mp.chamber_length))
+
+            shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
+            prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, elem_axis)
+
+            ptype = f".{mp.predefined_type.upper()}." if mp.predefined_type else ".LOCK."
+            elem_ref = self.create_entity(
+                "IfcMarinePart",
+                generate_ifc_guid(),
+                None,
+                mp.tag,
+                None,
+                f"IfcMarinePart.{mp.predefined_type}",
+                elem_pl,
+                prod_shape_ref,
+                ptype,
+            )
+            element_tag_refs[mp.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -2294,6 +2352,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             or resolved.bridges
             or getattr(resolved, "bridge_parts", [])
             or getattr(resolved, "bearings", [])
+            or getattr(resolved, "marine_parts", [])
             or getattr(resolved, "railways", [])
             or getattr(resolved, "railway_parts", [])
             or getattr(resolved, "track_elements", [])
@@ -3377,6 +3436,68 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         )
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
         ifcopenshell.api.run("geometry.assign_representation", model, product=br_obj, representation=rep)
+
+    for mp in getattr(resolved, "marine_parts", []) or []:
+        try:
+            mp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcMarinePart",
+                name=mp.tag,
+                predefined_type=mp.predefined_type.upper(),
+            )
+        except Exception:
+            mp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=mp.tag,
+            )
+            mp_obj.ObjectType = f"IfcMarinePart.{mp.predefined_type}"
+
+        st_id = mp.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(mp_obj)
+        elif site_obj:
+            try:
+                ifcopenshell.api.run("spatial.assign_container", model, products=[mp_obj], relating_structure=site_obj)
+            except Exception:
+                pass
+
+        px, py, pz = mp.position
+        mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, 0.0))
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=mp_obj, matrix=mat)
+
+        w_half = float(mp.chamber_width) / 2.0
+        w_outer_half = w_half + float(mp.wall_thickness)
+        hw_total = float(mp.wall_height) + float(mp.floor_thickness)
+        tf = float(mp.floor_thickness)
+
+        pts2d_tuples = [
+            (-w_outer_half, 0.0),
+            (w_outer_half, 0.0),
+            (w_outer_half, hw_total),
+            (w_half, hw_total),
+            (w_half, tf),
+            (-w_half, tf),
+            (-w_half, hw_total),
+            (-w_outer_half, hw_total),
+            (-w_outer_half, 0.0),
+        ]
+        ifc_pts = [model.createIfcCartesianPoint(p) for p in pts2d_tuples]
+        poly_curve = model.createIfcPolyline(ifc_pts)
+        prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly_curve)
+
+        pos3d = model.createIfcAxis2Placement3D(
+            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(mp.chamber_length)
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=mp_obj, representation=rep)
 
     for rw in resolved.railways:
         try:

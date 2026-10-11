@@ -969,6 +969,31 @@ def generate_viewer_html(
             "layer": bp.layer,
         })
 
+    # Civil Marine Parts (IFC4.3)
+    for mp in getattr(resolved, "marine_parts", []) or []:
+        elements_data.append({
+            "tag": mp.tag,
+            "class": "IfcMarinePart",
+            "predefined_type": mp.predefined_type,
+            "material": mp.element.material or "Reinforced Concrete",
+            "position": [mp.position[0], mp.position[1], mp.position[2] + (mp.wall_height + mp.floor_thickness) / 2.0],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "length": mp.chamber_length,
+                "width": mp.chamber_width,
+                "wall_thickness": mp.wall_thickness,
+                "wall_height": mp.wall_height,
+                "sill_elevation": mp.sill_elevation,
+                "floor_thickness": mp.floor_thickness,
+                "chamber_water_volume": mp.chamber_water_volume,
+                "wall_concrete_volume": mp.wall_concrete_volume,
+                "floor_concrete_volume": mp.floor_concrete_volume,
+                "total_concrete_volume": mp.total_concrete_volume,
+            },
+            "color": "#0284C7",
+            "layer": mp.layer,
+        })
+
     # Civil Infrastructure Bearings (IFC4.3)
     for br in getattr(resolved, "bearings", []) or []:
         elements_data.append({
