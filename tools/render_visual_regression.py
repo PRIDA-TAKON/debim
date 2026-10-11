@@ -185,6 +185,30 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             m.apply_transform(T)
         meshes[proxy.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
+    for fc in getattr(resolved, "flow_controllers", []):
+        w = float(fc.dimensions[0])
+        d = float(fc.dimensions[1])
+        h = float(fc.dimensions[2])
+        body = trimesh.creation.cylinder(radius=min(d, h) / 2.0, height=w)
+        body.apply_transform(trimesh.transformations.rotation_matrix(math.pi / 2.0, [0, 1, 0]))
+        handle = trimesh.creation.box(extents=(w * 0.4, d * 0.3, h * 0.5))
+        handle.apply_translation([0.0, 0.0, h * 0.35])
+        m = trimesh.util.concatenate([body, handle])
+
+        min_b = np.min(m.vertices, axis=0)
+        max_b = np.max(m.vertices, axis=0)
+        curr_dims = max_b - min_b
+        if curr_dims[0] > 0 and curr_dims[1] > 0 and curr_dims[2] > 0:
+            m.vertices *= [w / curr_dims[0], d / curr_dims[1], h / curr_dims[2]]
+            m.vertices -= np.min(m.vertices, axis=0)
+            m.vertices += [0.0, 0.0016, 0.0016]
+
+        if fc.rotation_angle and abs(fc.rotation_angle) > 1e-4:
+            rot_rad = math.radians(fc.rotation_angle)
+            T = trimesh.transformations.rotation_matrix(rot_rad, [0, 0, 1])
+            m.apply_transform(T)
+        meshes[fc.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+
     return meshes
 
 
@@ -662,6 +686,7 @@ def main():
     parser.add_argument("--dedup", action="store_true", default=True, help="Enable variant deduplication to prevent repetitive sampling")
     parser.add_argument("--no-dedup", action="store_false", dest="dedup", help="Disable variant deduplication")
     parser.add_argument("--max-per-variant", type=int, default=2, help="Max components per unique type variant")
+    parser.add_argument("--class", dest="target_class", type=str, default=None, help="Filter visual regression testing to specific element class (e.g. IfcFlowController)")
     args = parser.parse_args()
 
     out_dir = Path(args.output)

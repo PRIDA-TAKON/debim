@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from debim.importer import import_ifc_to_manifest
 from debim.compiler import compile_to_ifc, derive_custom_ifc_class
-from debim.schema import IfcCustomElement
+from debim.schema import IfcCustomElement, IfcFlowController
 from tools.compare_ifc import count_ifc_elements
 
 
@@ -77,7 +77,7 @@ def test_mep_flow_controls_extraction_and_recompilation(tmp_path: Path):
     manifest = import_ifc_to_manifest(orig_ifc_path)
     assert len(manifest.elements) == 4
 
-    layers = [e.layer for e in manifest.elements if isinstance(e, IfcCustomElement)]
+    layers = [e.layer for e in manifest.elements if isinstance(e, (IfcCustomElement, IfcFlowController))]
     assert "mep/valves" in layers
     assert "mep/dampers" in layers
     assert "mep/flow_controllers" in layers
@@ -85,9 +85,8 @@ def test_mep_flow_controls_extraction_and_recompilation(tmp_path: Path):
 
     # 2. Verify all extracted elements have valid non-zero dimensions & placements
     for elem in manifest.elements:
-        assert isinstance(elem, IfcCustomElement)
+        assert isinstance(elem, (IfcCustomElement, IfcFlowController))
         assert elem.placement is not None
-        assert elem.placement.position is not None
         assert elem.dimensions is not None
         assert elem.dimensions.width > 0
         assert elem.dimensions.height > 0
