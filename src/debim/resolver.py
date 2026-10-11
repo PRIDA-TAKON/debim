@@ -223,8 +223,10 @@ class ResolvedDoor(BaseModel):
     height: float
     offset_distance: float
     sill_height: float
-    frame_thickness: float = 0.05
+    frame_thickness: float = 0.15
     frame_width: float = 0.05
+    casing_width: float = 0.076
+    casing_thickness: float = 0.025
     panel_recess: float = 0.015
     panel_thickness: float = 0.035
     operation_type: Optional[str] = None
@@ -249,10 +251,21 @@ class ResolvedDoor(BaseModel):
         }
 
     @property
+    def casing_box(self) -> Dict[str, float]:
+        return {
+            "width": self.width + 2 * self.casing_width,
+            "depth": self.frame_thickness + 2 * self.casing_thickness,
+            "height": self.height + self.casing_width,
+            "casing_width": self.casing_width,
+            "casing_thickness": self.casing_thickness,
+        }
+
+    @property
     def sub_meshes(self) -> Dict[str, Dict[str, float]]:
         return {
             "frame": self.frame_box,
             "panel": self.panel_box,
+            "casing": self.casing_box,
         }
 
 
@@ -1788,7 +1801,7 @@ class SpatialResolver:
             child_pos = (child_x, child_y, child_z)
 
             if isinstance(child, IfcDoor):
-                f_thick = child.frame_thickness if child.frame_thickness is not None else 0.05
+                f_thick = child.frame_thickness if child.frame_thickness is not None else wall.thickness
                 r_door = ResolvedDoor(
                     tag=child.tag,
                     element=child,
@@ -1799,6 +1812,8 @@ class SpatialResolver:
                     sill_height=child.sill_height,
                     frame_thickness=f_thick,
                     frame_width=0.05,
+                    casing_width=0.076,
+                    casing_thickness=0.025,
                     panel_recess=0.015,
                     panel_thickness=0.035,
                     operation_type=child.operation_type,

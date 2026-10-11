@@ -276,17 +276,45 @@ def slice_storey(
                 frame_poly = _create_rotated_box(c_center_x, c_center_y, w_child, f_thick, wall_angle_deg)
 
                 elem_cls = "IfcDoor" if isinstance(child, ResolvedDoor) else "IfcWindow"
+
+                # For doors, generate door leaf line and 90-degree swing arc projection
+                if isinstance(child, ResolvedDoor):
+                    hinge_x = x1 + d1 * ux
+                    hinge_y = y1 + d1 * uy
+                    door_w = child.width
+
+                    # Open leaf line at 90 deg relative to wall direction
+                    leaf_x = hinge_x + door_w * (-uy)
+                    leaf_y = hinge_y + door_w * ux
+                    door_leaf_geom = LineString([(hinge_x, hinge_y), (leaf_x, leaf_y)])
+
+                    projection_elements.append(ProjectionElement(
+                        tag=f"{child.tag}-Leaf",
+                        element_class="IfcDoorLeaf",
+                        category="low_projection",
+                        geometry=door_leaf_geom,
+                        layer=f"{child.layer}/leaf",
+                        properties={
+                            "host_door": child.tag,
+                            "width": child.width,
+                            "hinge_point": (hinge_x, hinge_y),
+                        },
+                    ))
+
                 cut_elements.append(CutElement(
                     tag=child.tag,
                     element_class=elem_cls,
                     category="medium_cut",
                     geometry=frame_poly,
+                    centerline=LineString([(x1 + d1 * ux, y1 + d1 * uy), (x1 + d2 * ux, y1 + d2 * uy)]),
                     layer=child.layer,
                     properties={
                         "host_wall": wall.tag,
                         "width": child.width,
                         "height": child.height,
                         "sill_height": child.sill_height,
+                        "frame_thickness": f_thick,
+                        "has_leaf": isinstance(child, ResolvedDoor),
                     },
                 ))
 

@@ -85,19 +85,57 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
         for child in wall.children:
             cw = float(child.width)
             ch = float(child.height)
-            f_box = getattr(child, "frame_box", {"width": cw, "depth": 0.05, "height": ch})
-            p_box = getattr(child, "panel_box", {"width": cw - 0.1, "depth": 0.02, "height": ch - 0.1, "offset_y": 0.015})
+            f_w = float(getattr(child, "frame_width", 0.05) or 0.05)
+            f_d = float(getattr(child, "frame_thickness", th) or th)
+            c_w = float(getattr(child, "casing_width", 0.076) or 0.076)
+            c_t = float(getattr(child, "casing_thickness", 0.025) or 0.025)
 
-            # 1. Outer frame mesh
-            frame_mesh = trimesh.creation.box(extents=(float(f_box["width"]), float(f_box["depth"]), float(f_box["height"])))
+            # Parametric Assembly Frame & Casing & Leaf Panel in local door space
+            # 1. Frame Jambs & Head
+            f_left = trimesh.creation.box(extents=(f_w, f_d, ch))
+            f_left.apply_translation([f_w / 2.0, f_d / 2.0, ch / 2.0])
 
-            # 2. Inner panel / glazing mesh (recessed by panel_recess in Y)
-            panel_mesh = trimesh.creation.box(extents=(float(p_box["width"]), float(p_box["depth"]), float(p_box["height"])))
-            offset_y = float(p_box.get("offset_y", 0.015))
-            panel_mesh.apply_translation([0.0, offset_y, 0.0])
+            f_right = trimesh.creation.box(extents=(f_w, f_d, ch))
+            f_right.apply_translation([cw - f_w / 2.0, f_d / 2.0, ch / 2.0])
 
-            # Composite sub-meshes
-            cm = trimesh.util.concatenate([frame_mesh, panel_mesh])
+            f_top = trimesh.creation.box(extents=(cw, f_d, f_w))
+            f_top.apply_translation([cw / 2.0, f_d / 2.0, ch - f_w / 2.0])
+
+            # 2. Outer Casing Trim Members (Left, Right, Top) on Front and Back
+            # Front Casing (Y = f_d + c_t / 2.0)
+            c_f_left = trimesh.creation.box(extents=(c_w, c_t, ch + c_w))
+            c_f_left.apply_translation([c_w / 2.0 - c_w, f_d + c_t / 2.0, (ch + c_w) / 2.0])
+
+            c_f_right = trimesh.creation.box(extents=(c_w, c_t, ch + c_w))
+            c_f_right.apply_translation([cw + c_w - c_w / 2.0, f_d + c_t / 2.0, (ch + c_w) / 2.0])
+
+            c_f_top = trimesh.creation.box(extents=(cw + 2 * c_w, c_t, c_w))
+            c_f_top.apply_translation([cw / 2.0, f_d + c_t / 2.0, ch + c_w / 2.0])
+
+            # Back Casing (Y = -c_t / 2.0)
+            c_b_left = trimesh.creation.box(extents=(c_w, c_t, ch + c_w))
+            c_b_left.apply_translation([c_w / 2.0 - c_w, -c_t / 2.0, (ch + c_w) / 2.0])
+
+            c_b_right = trimesh.creation.box(extents=(c_w, c_t, ch + c_w))
+            c_b_right.apply_translation([cw + c_w - c_w / 2.0, -c_t / 2.0, (ch + c_w) / 2.0])
+
+            c_b_top = trimesh.creation.box(extents=(cw + 2 * c_w, c_t, c_w))
+            c_b_top.apply_translation([cw / 2.0, -c_t / 2.0, ch + c_w / 2.0])
+
+            # 3. Door Leaf Panel
+            p_w = max(0.01, cw - 2 * f_w)
+            p_h = max(0.01, ch - f_w)
+            p_t = float(getattr(child, "panel_thickness", 0.035) or 0.035)
+            panel = trimesh.creation.box(extents=(p_w, p_t, p_h))
+            panel.apply_translation([cw / 2.0, f_d / 2.0, p_h / 2.0])
+
+            # Composite Parametric Assembly
+            cm = trimesh.util.concatenate([
+                f_left, f_right, f_top,
+                c_f_left, c_f_right, c_f_top,
+                c_b_left, c_b_right, c_b_top,
+                panel
+            ])
             meshes[child.tag] = (np.array(cm.vertices, dtype=np.float64), np.array(cm.faces, dtype=np.int32))
 
     for slab in resolved.slabs:
@@ -350,6 +388,7 @@ def run_visual_regression(
     save_passes_sample_limit: int = 2,
     dedup_by_variant: bool = True,
     max_samples_per_variant: int = 2,
+    target_class: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Runs component-level visual regression between Original IFC and debim Recompiled model.
@@ -416,6 +455,8 @@ def run_visual_regression(
         t = e.is_a()
         if t == "IfcWallStandardCase":
             t = "IfcWall"
+        if target_class and t.lower() != target_class.lower():
+            continue
         by_category.setdefault(t, []).append(e)
 
     tested_count = 0
@@ -602,6 +643,7 @@ def main():
     parser.add_argument("--ifc", type=str, default=None, help="Path to a single IFC file")
     parser.add_argument("--dir", type=str, default=None, help="Path to directory containing multiple IFC files")
     parser.add_argument("--output", type=str, default="dist/visual_regression", help="Output directory for reports & images")
+    parser.add_argument("--class", "--element-class", dest="target_class", type=str, default=None, help="Filter testing to specific IFC element class (e.g., IfcDoor)")
     parser.add_argument("--max-per-type", type=int, default=2, help="Max components per element class")
     parser.add_argument("--limit", type=int, default=10, help="Total component test limit per model")
     parser.add_argument("--dedup", action="store_true", default=True, help="Enable variant deduplication to prevent repetitive sampling")
@@ -649,6 +691,7 @@ def main():
                 limit_total=args.limit,
                 dedup_by_variant=args.dedup,
                 max_samples_per_variant=args.max_per_variant,
+                target_class=args.target_class,
             )
             summary_results.append({"name": f.name, **stat})
         except Exception as e:
