@@ -2410,6 +2410,69 @@ class IfcBearing(BaseModel):
     layer: Optional[str] = None
 
 
+# Marine Hardware Elements (IFC4.3)
+MooringDeviceType = Literal["BOLLARD", "CLEAT", "FENDER", "HOOK", "USERDEFINED"]
+NavigationElementType = Literal["BEACON", "BUOY", "LIGHT", "MARKER", "USERDEFINED"]
+
+
+class MarinePlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    position: Optional[Tuple[float, float, float]] = None
+    quay_edge: Optional[str] = None
+    position_offset: float = 0.0
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    rotation: Optional[Union[float, Tuple[float, float, float]]] = None
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_marine_grid(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("position", mode="before")
+    @classmethod
+    def convert_marine_position(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(float(x) for x in v)
+        return v
+
+
+class IfcMooringDevice(BaseModel):
+    class_: Literal["IfcMooringDevice"] = Field(alias="class", default="IfcMooringDevice")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = None
+    predefined_type: MooringDeviceType = "BOLLARD"
+    capacity_tons: Optional[float] = None
+    fender_diameter: Optional[float] = None
+    fender_projection: Optional[float] = None
+    width: float = 0.50
+    depth: float = 0.50
+    height: float = 0.80
+    placement: MarinePlacement = Field(default_factory=MarinePlacement)
+    layer: Optional[str] = None
+
+
+class IfcNavigationElement(BaseModel):
+    class_: Literal["IfcNavigationElement"] = Field(alias="class", default="IfcNavigationElement")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = None
+    predefined_type: NavigationElementType = "BEACON"
+    capacity_tons: Optional[float] = None
+    fender_diameter: Optional[float] = None
+    fender_projection: Optional[float] = None
+    width: float = 0.60
+    depth: float = 0.60
+    height: float = 1.50
+    placement: MarinePlacement = Field(default_factory=MarinePlacement)
+    layer: Optional[str] = None
+
+
 # Civil Earthworks & Retaining Structures
 
 EarthworksElementType = Literal["RETAINING_STRUCTURE", "PAVEMENT", "GABION", "REINFORCED_SOIL", "BERM", "TERRACE", "DRAINAGE", "USERDEFINED", "NOTDEFINED"]
@@ -2686,6 +2749,7 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcTrackElement", "IfcCustomElement", "IfcBuildingElementProxy"
     "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksCut", "IfcEarthworksFill",
     "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcBridgePart", "IfcBearing",
+    "IfcMooringDevice", "IfcNavigationElement",
     "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
@@ -2748,6 +2812,8 @@ Element = Annotated[
         Annotated[IfcTrackElement, Tag("IfcTrackElement")],
         Annotated[IfcBridgePart, Tag("IfcBridgePart")],
         Annotated[IfcBearing, Tag("IfcBearing")],
+        Annotated[IfcMooringDevice, Tag("IfcMooringDevice")],
+        Annotated[IfcNavigationElement, Tag("IfcNavigationElement")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -2996,7 +3062,7 @@ class ProjectManifest(BaseModel):
                     if gy not in grid_y_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcBridgePart, IfcBearing, IfcRailway, IfcRailwayPart, IfcTrackElement)):
+            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcBridgePart, IfcBearing, IfcRailway, IfcRailwayPart, IfcTrackElement, IfcMooringDevice, IfcNavigationElement)):
                 if getattr(elem.placement, "storey", None) and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -3393,6 +3459,10 @@ def derive_default_layer(elem) -> str:
         return "civil/infrastructure/bridges/parts"
     elif cls == "IfcBearing":
         return "civil/infrastructure/bridges/bearings"
+    elif cls == "IfcMooringDevice":
+        return "civil/marine/mooring"
+    elif cls == "IfcNavigationElement":
+        return "civil/marine/navigation"
     elif cls == "IfcCustomElement":
         return "general/custom"
     elif cls == "IfcBuildingElementProxy" or isinstance(elem, IfcBuildingElementProxy):

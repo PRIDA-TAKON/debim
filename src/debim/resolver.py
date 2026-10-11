@@ -15,6 +15,8 @@ from debim.schema import (
     IfcBeam,
     IfcBearing,
     IfcBridge,
+    IfcMooringDevice,
+    IfcNavigationElement,
     IfcBridgePart,
     IfcBuildingElementProxy,
     IfcBuiltSystem,
@@ -1303,6 +1305,42 @@ class ResolvedBearing(BaseModel):
     layer: str = "civil/infrastructure/bridges/bearings"
 
 
+class ResolvedMooringDevice(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMooringDevice
+    predefined_type: str = "BOLLARD"
+    capacity_tons: Optional[float] = None
+    fender_diameter: Optional[float] = None
+    fender_projection: Optional[float] = None
+    width: float = 0.50
+    depth: float = 0.50
+    height: float = 0.80
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    quay_edge_tag: Optional[str] = None
+    position_offset: float = 0.0
+    layer: str = "civil/marine/mooring"
+
+
+class ResolvedNavigationElement(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcNavigationElement
+    predefined_type: str = "BEACON"
+    capacity_tons: Optional[float] = None
+    fender_diameter: Optional[float] = None
+    fender_projection: Optional[float] = None
+    width: float = 0.60
+    depth: float = 0.60
+    height: float = 1.50
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    quay_edge_tag: Optional[str] = None
+    position_offset: float = 0.0
+    layer: str = "civil/marine/navigation"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1344,6 +1382,8 @@ ResolvedElement = Union[
     ResolvedTrackElement,
     ResolvedBridgePart,
     ResolvedBearing,
+    ResolvedMooringDevice,
+    ResolvedNavigationElement,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1399,6 +1439,8 @@ class ResolvedManifest(BaseModel):
     built_systems: List[ResolvedBuiltSystem] = []
     bridge_parts: List[ResolvedBridgePart] = []
     bearings: List[ResolvedBearing] = []
+    mooring_devices: List[ResolvedMooringDevice] = []
+    navigation_elements: List[ResolvedNavigationElement] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -5078,6 +5120,122 @@ class SpatialResolver:
             layer=derive_default_layer(bearing),
         )
 
+    def _resolve_quay_edge_position(
+        self,
+        quay_edge_tag: str,
+        position_offset: float,
+        offset_x: float,
+        offset_y: float,
+        offset_z: float,
+        storey_id: Optional[str],
+        resolved_manifest: ResolvedManifest,
+    ) -> Tuple[float, float, float]:
+        host = resolved_manifest.get_element_by_tag(quay_edge_tag)
+        z_base = self.get_storey(storey_id).elevation if storey_id else 0.0
+        if host is not None:
+            if hasattr(host, "start_point") and hasattr(host, "end_point") and host.start_point and host.end_point:
+                x1, y1, z1 = host.start_point
+                x2, y2, z2 = host.end_point
+                dx, dy = x2 - x1, y2 - y1
+                length = (dx * dx + dy * dy) ** 0.5
+                ux, uy = (dx / length, dy / length) if length > 0 else (1.0, 0.0)
+                px = x1 + position_offset * ux + offset_x
+                py = y1 + position_offset * uy + offset_y
+                pz = z1 + offset_z
+                return (px, py, pz)
+            elif hasattr(host, "position") and host.position:
+                hx, hy, hz = host.position
+                return (hx + position_offset + offset_x, hy + offset_y, hz + offset_z)
+        return (offset_x + position_offset, offset_y, z_base + offset_z)
+
+    def resolve_mooring_device(
+        self, md: IfcMooringDevice, resolved_manifest: ResolvedManifest
+    ) -> ResolvedMooringDevice:
+        z_base = self.get_storey(md.placement.storey).elevation if md.placement.storey else 0.0
+
+        if md.placement.quay_edge:
+            pos = self._resolve_quay_edge_position(
+                md.placement.quay_edge,
+                md.placement.position_offset,
+                md.placement.offset_x,
+                md.placement.offset_y,
+                md.placement.offset_z,
+                md.placement.storey,
+                resolved_manifest,
+            )
+        elif md.placement.position:
+            px, py, pz = md.placement.position
+            pos = (px + md.placement.offset_x, py + md.placement.offset_y, z_base + pz + md.placement.offset_z)
+        elif md.placement.grid:
+            gx, gy = self.get_grid_xy(md.placement.grid)
+            gx += md.placement.offset_x
+            gy += md.placement.offset_y
+            z = z_base + md.placement.offset_z
+            pos = (gx, gy, z)
+        else:
+            z = z_base + md.placement.offset_z
+            pos = (md.placement.offset_x, md.placement.offset_y, z)
+
+        return ResolvedMooringDevice(
+            tag=md.tag,
+            element=md,
+            predefined_type=md.predefined_type,
+            capacity_tons=md.capacity_tons,
+            fender_diameter=md.fender_diameter,
+            fender_projection=md.fender_projection,
+            width=md.width,
+            depth=md.depth,
+            height=md.height,
+            position=pos,
+            quay_edge_tag=md.placement.quay_edge,
+            position_offset=md.placement.position_offset,
+            layer=derive_default_layer(md),
+        )
+
+    def resolve_navigation_element(
+        self, nav: IfcNavigationElement, resolved_manifest: ResolvedManifest
+    ) -> ResolvedNavigationElement:
+        z_base = self.get_storey(nav.placement.storey).elevation if nav.placement.storey else 0.0
+
+        if nav.placement.quay_edge:
+            pos = self._resolve_quay_edge_position(
+                nav.placement.quay_edge,
+                nav.placement.position_offset,
+                nav.placement.offset_x,
+                nav.placement.offset_y,
+                nav.placement.offset_z,
+                nav.placement.storey,
+                resolved_manifest,
+            )
+        elif nav.placement.position:
+            px, py, pz = nav.placement.position
+            pos = (px + nav.placement.offset_x, py + nav.placement.offset_y, z_base + pz + nav.placement.offset_z)
+        elif nav.placement.grid:
+            gx, gy = self.get_grid_xy(nav.placement.grid)
+            gx += nav.placement.offset_x
+            gy += nav.placement.offset_y
+            z = z_base + nav.placement.offset_z
+            pos = (gx, gy, z)
+        else:
+            z = z_base + nav.placement.offset_z
+            pos = (nav.placement.offset_x, nav.placement.offset_y, z)
+
+        return ResolvedNavigationElement(
+            tag=nav.tag,
+            element=nav,
+            predefined_type=nav.predefined_type,
+            capacity_tons=nav.capacity_tons,
+            fender_diameter=nav.fender_diameter,
+            fender_projection=nav.fender_projection,
+            width=nav.width,
+            depth=nav.depth,
+            height=nav.height,
+            position=pos,
+            quay_edge_tag=nav.placement.quay_edge,
+            position_offset=nav.placement.position_offset,
+            layer=derive_default_layer(nav),
+        )
+
 
     def _resolve_element_ports(self, elem, host_pos: Tuple[float, float, float], rot_deg: float = 0.0) -> List[ResolvedPort]:
         resolved_ports = []
@@ -5361,6 +5519,14 @@ class SpatialResolver:
                 r_br = self.resolve_bearing(elem)
                 resolved_manifest.bearings.append(r_br)
                 resolved_manifest.elements.append(r_br)
+            elif isinstance(elem, IfcMooringDevice):
+                r_md = self.resolve_mooring_device(elem, resolved_manifest)
+                resolved_manifest.mooring_devices.append(r_md)
+                resolved_manifest.elements.append(r_md)
+            elif isinstance(elem, IfcNavigationElement):
+                r_nav = self.resolve_navigation_element(elem, resolved_manifest)
+                resolved_manifest.navigation_elements.append(r_nav)
+                resolved_manifest.elements.append(r_nav)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

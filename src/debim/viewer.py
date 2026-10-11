@@ -987,6 +987,43 @@ def generate_viewer_html(
             "layer": br.layer,
         })
 
+    # Civil Marine Hardware (IFC4.3)
+    for md in getattr(resolved, "mooring_devices", []) or []:
+        elements_data.append({
+            "tag": md.tag,
+            "class": "IfcMooringDevice",
+            "predefined_type": md.predefined_type,
+            "material": md.element.material or "Cast Iron / Rubber",
+            "position": [md.position[0], md.position[1], md.position[2] + md.height / 2.0],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": md.width,
+                "depth": md.depth,
+                "height": md.height,
+                "capacity_tons": md.capacity_tons,
+                "fender_diameter": md.fender_diameter,
+            },
+            "color": "#0284C7",
+            "layer": md.layer,
+        })
+
+    for nav in getattr(resolved, "navigation_elements", []) or []:
+        elements_data.append({
+            "tag": nav.tag,
+            "class": "IfcNavigationElement",
+            "predefined_type": nav.predefined_type,
+            "material": nav.element.material or "Steel / Composite",
+            "position": [nav.position[0], nav.position[1], nav.position[2] + nav.height / 2.0],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": nav.width,
+                "depth": nav.depth,
+                "height": nav.height,
+            },
+            "color": "#F59E0B",
+            "layer": nav.layer,
+        })
+
     # Civil Earthworks Cut
     for cut in resolved.earthworks_cuts:
         cz = cut.position[2] - cut.depth / 2.0

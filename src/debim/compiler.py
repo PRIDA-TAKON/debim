@@ -1005,6 +1005,51 @@ class StepSerializer:
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        for item in (getattr(resolved, "mooring_devices", []) or []) + (getattr(resolved, "navigation_elements", []) or []):
+            st_id = getattr(item.element.placement, "storey", None)
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+            st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
+
+            px, py, pz = item.position
+            rel_z = float(pz - st_elev)
+
+            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+            if item.fender_diameter or item.predefined_type in ("BOLLARD", "BUOY", "BEACON", "LIGHT", "MARKER"):
+                rad = float((item.fender_diameter or item.width) / 2.0)
+                prof = self.create_entity("IfcCircleProfileDef", ".AREA.", None, axis2d, rad)
+            else:
+                prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(item.width), float(item.depth))
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", prof, axis3d, ext_dir, float(item.height))
+
+            shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
+            prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, elem_axis)
+
+            ifc_cls = item.element.class_
+            ptype = f".{item.predefined_type.upper()}." if item.predefined_type else ".USERDEFINED."
+            elem_ref = self.create_entity(
+                ifc_cls,
+                generate_ifc_guid(),
+                None,
+                item.tag,
+                None,
+                f"{ifc_cls}.{item.predefined_type}",
+                elem_pl,
+                prod_shape_ref,
+                ptype,
+            )
+            element_tag_refs[item.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
         for fill in resolved.earthworks_fills:
             st_id = fill.element.placement.storey
             elem_ref = self.create_entity(
@@ -3377,6 +3422,49 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         )
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
         ifcopenshell.api.run("geometry.assign_representation", model, product=br_obj, representation=rep)
+
+    for item in (getattr(resolved, "mooring_devices", []) or []) + (getattr(resolved, "navigation_elements", []) or []):
+        ifc_cls = item.element.class_
+        try:
+            item_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class=ifc_cls,
+                name=item.tag,
+                predefined_type=item.predefined_type.upper(),
+            )
+        except Exception:
+            item_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=item.tag,
+            )
+            item_obj.ObjectType = f"{ifc_cls}.{item.predefined_type}"
+
+        st_id = getattr(item.element.placement, "storey", None)
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(item_obj)
+
+        pos2d = model.createIfcCartesianPoint((0.0, 0.0))
+        if item.fender_diameter or item.predefined_type in ("BOLLARD", "BUOY", "BEACON", "LIGHT", "MARKER"):
+            rad = float((item.fender_diameter or item.width) / 2.0)
+            prof = model.createIfcCircleProfileDef("AREA", None, pos2d, rad)
+        else:
+            prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(item.width), float(item.depth))
+
+        pt_3d = model.createIfcCartesianPoint((float(item.position[0]), float(item.position[1]), float(item.position[2])))
+        place3d = model.createIfcAxis2Placement3D(pt_3d, None, None)
+        pos3d = model.createIfcAxis2Placement3D(model.createIfcCartesianPoint((0.0, 0.0, 0.0)), None, None)
+
+        local_pl = model.createIfcLocalPlacement(None, place3d)
+        item_obj.ObjectPlacement = local_pl
+
+        solid = model.createIfcExtrudedAreaSolid(
+            prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(item.height)
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=item_obj, representation=rep)
 
     for rw in resolved.railways:
         try:

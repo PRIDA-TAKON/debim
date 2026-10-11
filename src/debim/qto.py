@@ -14,6 +14,8 @@ from debim.resolver import (
     ResolvedAlignment,
     ResolvedBeam,
     ResolvedBearing,
+    ResolvedMooringDevice,
+    ResolvedNavigationElement,
     ResolvedBridge,
     ResolvedBridgePart,
     ResolvedCableCarrierSegment,
@@ -493,6 +495,9 @@ class MepQTO(BaseModel):
     count: int = 1                         # จำนวนชิ้น / ชุด
     dimensions: Optional[Tuple[float, float, float]] = None
     capacity: Optional[float] = None       # CFM หรือ BTU
+    capacity_tons: Optional[float] = None
+    fender_diameter: Optional[float] = None
+    fender_projection: Optional[float] = None
     power_watts: Optional[float] = None
     voltage: Optional[float] = None
     phases: Optional[Union[int, str]] = None
@@ -1798,6 +1803,25 @@ def calculate_element_qto(
                 count=1,
                 width=resolved.width,
                 height=resolved.height,
+            ),
+        )
+
+    elif isinstance(resolved, (ResolvedMooringDevice, ResolvedNavigationElement)):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            mep=MepQTO(
+                system_type="MARINE",
+                fixture_type=resolved.predefined_type,
+                count=1,
+                width=resolved.width,
+                height=resolved.height,
+                capacity_tons=resolved.capacity_tons,
+                fender_diameter=resolved.fender_diameter,
+                fender_projection=resolved.fender_projection,
+                predefined_type=resolved.predefined_type,
             ),
         )
 
