@@ -18,6 +18,9 @@ from debim.cli import app
 from tools.benchmark_vqa_gemini import (
     TokenBucketRateLimiter,
     VQABenchmarkReport,
+    ensure_raster_image,
+    evaluate_question_gemini_api,
+    rasterize_svg_to_png,
     run_vqa_benchmark,
 )
 from tools.generate_vqa_dataset import (
@@ -118,6 +121,98 @@ def test_benchmark_vqa_mock_eval(tmp_output_dir: Path):
     md_content = report_md_path.read_text(encoding="utf-8")
     assert "# 2D Construction Blueprint VQA Cognitive Benchmark Report" in md_content
     assert "Overall VQA Accuracy" in md_content
+
+
+def test_ensure_raster_image_svg_conversion():
+    """Test converting SVG blueprint image bytes to PNG raster image format for Gemini API."""
+    svg_data = b'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100"/></svg>'
+    png_bytes, mime = ensure_raster_image(svg_data, "image/svg+xml")
+
+    assert mime == "image/png"
+    assert png_bytes.startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_gemini_38_extended_thinking_endpoint_and_payload(monkeypatch):
+    """Test Gemini 3.8 Live Extended Thinking v1alpha URL construction, model stripping, and thinking_config payload."""
+    import base64
+
+    captured_requests = []
+
+    class MockResponse:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {
+                                    "text": json.dumps(
+                                        {
+                                            "question_id": "Q-101",
+                                            "selected_choice": "B",
+                                            "visual_confidence": 0.95,
+                                            "readability_notes": "Clear rendering",
+                                        }
+                                    )
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+
+    class MockClient:
+        def __init__(self, timeout=None):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            pass
+
+        def post(self, url, headers=None, json=None):
+            captured_requests.append({"url": url, "headers": headers, "json": json})
+            return MockResponse()
+
+    monkeypatch.setattr("httpx.Client", MockClient)
+
+    limiter = TokenBucketRateLimiter(rpm=6000, tpm=600000)
+    question = {
+        "question_id": "Q-101",
+        "question_text": "What is the wall thickness?",
+        "choices": {"A": "100 mm", "B": "200 mm", "C": "300 mm", "D": "400 mm"},
+        "correct_choice": "B",
+    }
+    dummy_svg_b64 = base64.b64encode(b'<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>').decode("utf-8")
+
+    result = evaluate_question_gemini_api(
+        question=question,
+        image_base64=dummy_svg_b64,
+        image_mime_type="image/svg+xml",
+        api_key="TEST_API_KEY",
+        model_name="models/gemini-3.8-live-extended-thinking",
+        limiter=limiter,
+        thinking_budget=2048,
+    )
+
+    assert result["selected_choice"] == "B"
+    assert len(captured_requests) == 1
+
+    req = captured_requests[0]
+    expected_url = "https://generativelanguage.googleapis.com/v1alpha/models/gemini-3.8-live-extended-thinking:generateContent?key=TEST_API_KEY"
+    assert req["url"] == expected_url
+
+    gen_cfg = req["json"]["generationConfig"]
+    assert gen_cfg["thinking_config"]["thinking_budget"] == 2048
+
+    inline_part = req["json"]["contents"][0]["parts"][0]["inline_data"]
+    assert inline_part["mime_type"] == "image/png"
 
 
 def test_vqa_cli_integration(tmp_output_dir: Path):

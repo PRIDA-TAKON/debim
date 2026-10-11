@@ -159,6 +159,59 @@ class VQABenchmarkReport:
         return "\n".join(lines)
 
 
+def rasterize_svg_to_png(svg_bytes: bytes) -> bytes:
+    """Converts SVG raw bytes to PNG image bytes using available python libraries or fallback."""
+    try:
+        import cairosvg
+        return cairosvg.svg2png(bytestring=svg_bytes)
+    except Exception:
+        pass
+
+    try:
+        import resvg_py
+        return resvg_py.svg_to_bytes(svg_bytes)
+    except Exception:
+        pass
+
+    try:
+        import io
+        from svglib.svglib import svg2rlg
+        from reportlab.graphics import renderPM
+        drawing = svg2rlg(io.BytesIO(svg_bytes))
+        if drawing is not None:
+            out = io.BytesIO()
+            renderPM.drawToFile(drawing, out, fmt="PNG")
+            return out.getvalue()
+    except Exception:
+        pass
+
+    try:
+        import fitz
+        doc = fitz.open(stream=svg_bytes, filetype="svg")
+        page = doc[0]
+        pix = page.get_pixmap()
+        return pix.tobytes("png")
+    except Exception:
+        pass
+
+    # Fallback 1x1 PNG bytes
+    return base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+
+
+def ensure_raster_image(image_bytes: bytes, mime_type: str) -> Tuple[bytes, str]:
+    """Ensures image is rasterized PNG/JPEG/WEBP format compatible with Gemini Multimodal API."""
+    is_svg = (
+        "svg" in mime_type.lower()
+        or image_bytes.lstrip().startswith(b"<svg")
+        or b"<svg" in image_bytes[:500]
+    )
+    if is_svg:
+        png_bytes = rasterize_svg_to_png(image_bytes)
+        return png_bytes, "image/png"
+
+    return image_bytes, mime_type if mime_type else "image/png"
+
+
 def evaluate_question_gemini_api(
     question: Dict[str, Any],
     image_base64: str,
@@ -166,11 +219,22 @@ def evaluate_question_gemini_api(
     api_key: str,
     model_name: str,
     limiter: TokenBucketRateLimiter,
+    thinking_budget: Optional[int] = 2048,
 ) -> Dict[str, Any]:
     """Invokes Gemini Multimodal API with image and prompt using structured JSON schema output."""
     limiter.acquire(estimated_tokens=800)
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+    clean_model_name = model_name[7:] if model_name.startswith("models/") else model_name
+    api_version = "v1alpha" if "gemini-3.8" in clean_model_name.lower() or "gemini-3.8" in model_name.lower() else "v1beta"
+
+    url = f"https://generativelanguage.googleapis.com/{api_version}/models/{clean_model_name}:generateContent?key={api_key}"
+
+    # Ensure raster compatibility for SVG images
+    if image_base64:
+        raw_img_bytes = base64.b64decode(image_base64)
+        raster_bytes, raster_mime = ensure_raster_image(raw_img_bytes, image_mime_type)
+        image_base64 = base64.b64encode(raster_bytes).decode("utf-8")
+        image_mime_type = raster_mime
 
     choices_text = "\n".join([f"{k}: {v}" for k, v in question["choices"].items()])
     prompt = (
@@ -182,6 +246,16 @@ def evaluate_question_gemini_api(
         f"Analyze the drawing carefully. Pick the single correct choice (A, B, C, or D).\n"
         f"Provide your visual confidence level (0.0 to 1.0) and any readability notes regarding text collisions or font legibility."
     )
+
+    gen_config: Dict[str, Any] = {
+        "response_mime_type": "application/json",
+        "response_schema": GEMINI_RESPONSE_SCHEMA,
+    }
+
+    if thinking_budget is not None and thinking_budget > 0:
+        gen_config["thinking_config"] = {
+            "thinking_budget": thinking_budget,
+        }
 
     payload = {
         "contents": [
@@ -197,10 +271,7 @@ def evaluate_question_gemini_api(
                 ]
             }
         ],
-        "generationConfig": {
-            "response_mime_type": "application/json",
-            "response_schema": GEMINI_RESPONSE_SCHEMA,
-        },
+        "generationConfig": gen_config,
     }
 
     headers = {"Content-Type": "application/json"}
@@ -280,10 +351,11 @@ def evaluate_question_mock(
 def run_vqa_benchmark(
     dataset_path: Union[str, Path],
     api_key: Optional[str] = None,
-    model_name: str = "gemini-2.0-flash",
+    model_name: str = "models/gemini-3.8-live-extended-thinking",
     mock_eval: bool = False,
     rpm: int = 60,
     tpm: int = 65000,
+    thinking_budget: Optional[int] = 2048,
     output_report_path: Optional[Union[str, Path]] = None,
     output_markdown_path: Optional[Union[str, Path]] = None,
 ) -> VQABenchmarkReport:
@@ -339,6 +411,7 @@ def run_vqa_benchmark(
                 api_key=effective_api_key,
                 model_name=model_name,
                 limiter=limiter,
+                thinking_budget=thinking_budget,
             )
 
         selected = eval_out.get("selected_choice", "A")
@@ -419,7 +492,8 @@ def main():
     parser = argparse.ArgumentParser(description="2D Construction Blueprint VQA Gemini Benchmark Runner")
     parser.add_argument("--dataset", "-d", type=str, default="dist/vqa_dataset.json", help="Path to vqa_dataset.json")
     parser.add_argument("--api-key", "-k", type=str, default=None, help="Gemini API Key")
-    parser.add_argument("--model", "-m", type=str, default="gemini-2.0-flash", help="Gemini model (gemini-2.0-flash, gemini-1.5-pro, gemini-exp)")
+    parser.add_argument("--model", "-m", type=str, default="models/gemini-3.8-live-extended-thinking", help="Gemini model (default: models/gemini-3.8-live-extended-thinking)")
+    parser.add_argument("--thinking-budget", type=int, default=2048, help="Thinking budget for Gemini extended thinking models (default: 2048)")
     parser.add_argument("--mock-eval", action="store_true", help="Run mock evaluation without calling external API")
     parser.add_argument("--rpm", type=int, default=60, help="Requests per minute rate limit")
     parser.add_argument("--tpm", type=int, default=65000, help="Tokens per minute budget limit")
@@ -436,6 +510,7 @@ def main():
             mock_eval=args.mock_eval,
             rpm=args.rpm,
             tpm=args.tpm,
+            thinking_budget=args.thinking_budget,
             output_report_path=args.output,
             output_markdown_path=args.markdown_output,
         )
