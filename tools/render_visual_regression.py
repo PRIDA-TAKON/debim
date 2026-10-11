@@ -157,7 +157,10 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             d = float(np.max(pts[:, 1]) - np.min(pts[:, 1]))
             w = max(w, 0.5)
             d = max(d, 0.5)
+            cx, cy = cov.center[0], cov.center[1]
+            z_base = cov.polygon[0][2] if cov.polygon and len(cov.polygon[0]) > 2 else cov.center[2]
             m = trimesh.creation.box(extents=(w, d, th))
+            m.apply_translation([cx, cy, z_base + th / 2.0])
             meshes[cov.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for custom in resolved.custom_elements:
