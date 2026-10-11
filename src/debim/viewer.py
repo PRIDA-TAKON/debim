@@ -1600,6 +1600,8 @@ def generate_viewer_html(
                 color = "#FDE047" if "light" in tag_lower else "#F97316"
             elif any(kw in layer_lower for kw in ["pipe", "plumbing"]):
                 color = "#0284C7" if "cold" in tag_lower else ("#EF4444" if "hot" in tag_lower else "#64748B")
+            elif any(kw in layer_lower for kw in ["controls", "control"]):
+                color = "#3B82F6"
             else:
                 color = "#9370DB" if "furniture" in layer_lower else "#808080"
         elif "F2" in tag_upper or "FOOTING" in tag_upper:

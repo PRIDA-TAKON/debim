@@ -173,10 +173,7 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             d = float(custom.dimensions.depth if custom.dimensions.depth is not None else w)
             h = float(custom.dimensions.height)
             m = trimesh.creation.box(extents=(w, d, h))
-            if custom.rotation and any(abs(r) > 1e-4 for r in custom.rotation):
-                rx, ry, rz = custom.rotation
-                T = trimesh.transformations.euler_matrix(rx, ry, rz)
-                m.apply_transform(T)
+            m.apply_translation([0.0, -d / 2.0, h / 2.0])
             meshes[custom.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for proxy in resolved.proxies:
@@ -553,7 +550,7 @@ def run_visual_regression(
 
             if recomp_mesh is not None:
                 r_verts, r_faces = recomp_mesh
-                img_recomp = render_mesh_to_image(r_verts, r_faces, color="#4ade80", edge_color="#16a34a")
+                img_recomp = render_mesh_to_image(r_verts, r_faces, color="#38bdf8", edge_color="#0284c7")
 
                 # Bounding Box IoU
                 min1, max1, _ = compute_bounding_box(o_verts)

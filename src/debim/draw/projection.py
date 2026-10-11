@@ -579,6 +579,48 @@ def slice_storey(
                 },
             ))
 
+    # Process Custom Elements (Cut & Low Projection)
+    for custom in getattr(resolved, "custom_elements", []) or []:
+        cx, cy, cz = custom.position
+        all_2d_points.append((cx, cy))
+        if custom.dimensions:
+            w = custom.dimensions.width
+            d = custom.dimensions.depth if custom.dimensions.depth is not None else w
+            h = custom.dimensions.height
+        else:
+            w, d, h = 0.3, 0.3, 0.3
+
+        c_base_z = cz
+        c_top_z = cz + h
+        rot_z = custom.rotation[2] if (custom.rotation and len(custom.rotation) >= 3) else 0.0
+        custom_poly = _create_rotated_box(cx, cy, w, d, rot_z)
+
+        if c_base_z <= cut_elev <= c_top_z:
+            cut_elements.append(CutElement(
+                tag=custom.tag,
+                element_class="IfcCustomElement",
+                category="medium_cut",
+                geometry=custom_poly,
+                centerline=Point(cx, cy),
+                layer=custom.layer,
+                properties={
+                    "layer": custom.layer,
+                    "dimensions": [w, d, h],
+                },
+            ))
+        elif c_top_z <= cut_elev:
+            projection_elements.append(ProjectionElement(
+                tag=custom.tag,
+                element_class="IfcCustomElement",
+                category="low_projection",
+                geometry=custom_poly,
+                layer=custom.layer,
+                properties={
+                    "layer": custom.layer,
+                    "dimensions": [w, d, h],
+                },
+            ))
+
     # Process Flow Controllers (Cut & Low Projection)
     for fc in getattr(resolved, "flow_controllers", []):
         fc_base_z = fc.position[2]
