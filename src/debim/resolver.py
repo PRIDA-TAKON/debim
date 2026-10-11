@@ -27,6 +27,8 @@ from debim.schema import (
     IfcDistributionPort,
     IfcDamper,
     IfcDistributionBoard,
+    IfcDistributionFlowElement,
+    FlowElementPlacement,
     IfcDoor,
     IfcDuctSegment,
     IfcEarthworksElement,
@@ -1326,6 +1328,32 @@ class ResolvedMarinePart(BaseModel):
     layer: str = "civil/infrastructure/marine"
 
 
+class ResolvedDistributionFlowElement(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcDistributionFlowElement
+    predefined_type: str = "CULVERT"
+    start_point: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    end_point: Tuple[float, float, float] = (10.0, 0.0, 0.0)
+    position: Tuple[float, float, float] = (5.0, 0.0, 0.0)
+    rotation_angle: float = 0.0
+    length: float = 10.0
+    internal_span: float = 2.0
+    internal_rise: float = 2.0
+    wall_thickness: float = 0.25
+    slab_thickness: float = 0.25
+    slope_pct: float = 0.5
+    outer_width: float = 2.5
+    outer_height: float = 2.5
+    hydraulic_flow_area: float = 4.0
+    concrete_cross_section_area: float = 2.25
+    concrete_volume: float = 22.5
+    formwork_area: float = 180.0
+    polygon: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/drainage/culverts"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1424,6 +1452,8 @@ class ResolvedManifest(BaseModel):
     bridge_parts: List[ResolvedBridgePart] = []
     bearings: List[ResolvedBearing] = []
     marine_parts: List[ResolvedMarinePart] = []
+    distribution_flow_elements: List[ResolvedDistributionFlowElement] = []
+    culverts: List[ResolvedDistributionFlowElement] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -5232,6 +5262,122 @@ class SpatialResolver:
             layer=marine_part.layer or derive_default_layer(marine_part),
         )
 
+    def resolve_distribution_flow_element(self, elem: IfcDistributionFlowElement) -> ResolvedDistributionFlowElement:
+        pl = elem.placement
+        if isinstance(pl, dict):
+            pl = FlowElementPlacement(**pl)
+
+        storey_id = pl.storey if pl else None
+        z_base = self.get_storey(storey_id).elevation if (storey_id and hasattr(self, 'get_storey') and storey_id in self.storeys) else 0.0
+
+        rot_deg = 0.0
+        if pl and pl.rotation is not None:
+            if isinstance(pl.rotation, (int, float)):
+                rot_deg = float(pl.rotation)
+            elif isinstance(pl.rotation, (list, tuple)) and len(pl.rotation) >= 3:
+                rot_deg = float(pl.rotation[2])
+            elif isinstance(pl.rotation, (list, tuple)) and len(pl.rotation) > 0:
+                rot_deg = float(pl.rotation[0])
+
+        offset_x = pl.offset_x if pl else 0.0
+        offset_y = pl.offset_y if pl else 0.0
+        offset_z = pl.offset_z if pl else 0.0
+
+        if pl and pl.from_grid and pl.to_grid:
+            x1, y1 = self.get_grid_xy(pl.from_grid)
+            x2, y2 = self.get_grid_xy(pl.to_grid)
+            x1 += offset_x
+            y1 += offset_y
+            x2 += offset_x
+            y2 += offset_y
+            dx = x2 - x1
+            dy = y2 - y1
+            calc_len = math.hypot(dx, dy)
+            length = calc_len if calc_len > 0 else elem.length
+            if pl.rotation is None and calc_len > 0:
+                rot_deg = math.degrees(math.atan2(dy, dx))
+        elif pl and pl.position:
+            x1, y1, z_pos = pl.position
+            z_base = z_pos
+            length = elem.length
+            rot_rad = math.radians(rot_deg)
+            x2 = x1 + length * math.cos(rot_rad)
+            y2 = y1 + length * math.sin(rot_rad)
+        elif pl and pl.grid:
+            x1, y1 = self.get_grid_xy(pl.grid)
+            x1 += offset_x
+            y1 += offset_y
+            length = elem.length
+            rot_rad = math.radians(rot_deg)
+            x2 = x1 + length * math.cos(rot_rad)
+            y2 = y1 + length * math.sin(rot_rad)
+        else:
+            x1 = offset_x
+            y1 = offset_y
+            length = elem.length
+            rot_rad = math.radians(rot_deg)
+            x2 = x1 + length * math.cos(rot_rad)
+            y2 = y1 + length * math.sin(rot_rad)
+
+        z1 = z_base + offset_z
+        z_drop = length * (elem.slope_pct / 100.0)
+        z2 = z1 - z_drop
+        start_point = (x1, y1, z1)
+        end_point = (x2, y2, z2)
+        pos = ((x1 + x2) / 2.0, (y1 + y2) / 2.0, (z1 + z2) / 2.0)
+
+        ptype = (elem.predefined_type or "CULVERT").upper()
+        Win = elem.internal_span
+        Hin = elem.internal_rise
+        tw = elem.wall_thickness
+        ts = elem.slab_thickness
+        L = length
+        Wout = Win + 2.0 * tw
+
+        if "CHANNEL" in ptype or "DRAIN" in ptype:
+            Hout = Hin + ts
+            outer_area = Wout * Hout
+            flow_area = Win * Hin
+            conc_area = outer_area - flow_area
+            conc_vol = conc_area * L
+            formwork = (Wout + 2.0 * Hout + Win + 2.0 * Hin) * L + 2.0 * conc_area
+        else:
+            Hout = Hin + 2.0 * ts
+            outer_area = Wout * Hout
+            flow_area = Win * Hin
+            conc_area = outer_area - flow_area
+            conc_vol = conc_area * L
+            formwork = (2.0 * (Wout + Hout) + 2.0 * (Win + Hin)) * L + 2.0 * conc_area
+
+        poly = [
+            (x1, y1, z1),
+            (x2, y2, z2),
+        ]
+
+        return ResolvedDistributionFlowElement(
+            tag=elem.tag,
+            element=elem,
+            predefined_type=elem.predefined_type or "CULVERT",
+            start_point=start_point,
+            end_point=end_point,
+            position=pos,
+            rotation_angle=rot_deg,
+            length=length,
+            internal_span=Win,
+            internal_rise=Hin,
+            wall_thickness=tw,
+            slab_thickness=ts,
+            slope_pct=elem.slope_pct,
+            outer_width=Wout,
+            outer_height=Hout,
+            hydraulic_flow_area=flow_area,
+            concrete_cross_section_area=conc_area,
+            concrete_volume=conc_vol,
+            formwork_area=formwork,
+            polygon=poly,
+            layer=elem.layer or derive_default_layer(elem),
+        )
+
 
     def _resolve_element_ports(self, elem, host_pos: Tuple[float, float, float], rot_deg: float = 0.0) -> List[ResolvedPort]:
         resolved_ports = []
@@ -5519,6 +5665,11 @@ class SpatialResolver:
                 r_mp = self.resolve_marine_part(elem)
                 resolved_manifest.marine_parts.append(r_mp)
                 resolved_manifest.elements.append(r_mp)
+            elif isinstance(elem, IfcDistributionFlowElement):
+                r_dfe = self.resolve_distribution_flow_element(elem)
+                resolved_manifest.distribution_flow_elements.append(r_dfe)
+                resolved_manifest.culverts.append(r_dfe)
+                resolved_manifest.elements.append(r_dfe)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

@@ -1255,6 +1255,32 @@ def generate_viewer_html(
             "layer": rw.layer,
         })
 
+    # Stormwater Box & Drainage Culverts
+    for c_elem in getattr(resolved, "distribution_flow_elements", []) or []:
+        elements_data.append({
+            "tag": c_elem.tag,
+            "class": "IfcDistributionFlowElement",
+            "predefined_type": c_elem.predefined_type,
+            "material": c_elem.element.material,
+            "position": list(c_elem.position),
+            "rotation": [0, 0, c_elem.rotation_angle],
+            "dimensions": {
+                "length": c_elem.length,
+                "internal_span": c_elem.internal_span,
+                "internal_rise": c_elem.internal_rise,
+                "wall_thickness": c_elem.wall_thickness,
+                "slab_thickness": c_elem.slab_thickness,
+                "slope_pct": c_elem.slope_pct,
+                "outer_width": c_elem.outer_width,
+                "outer_height": c_elem.outer_height,
+                "hydraulic_flow_area": c_elem.hydraulic_flow_area,
+                "concrete_volume": c_elem.concrete_volume,
+                "formwork_area": c_elem.formwork_area,
+            },
+            "color": "#3B82F6" if "CHANNEL" in (c_elem.predefined_type or "").upper() else "#475569",
+            "layer": c_elem.layer,
+        })
+
     # Plates
     for plate in resolved.plates:
         rot = [0.0, 0.0, 0.0]

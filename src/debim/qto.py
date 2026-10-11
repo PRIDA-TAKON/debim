@@ -23,6 +23,7 @@ from debim.resolver import (
     ResolvedCustomElement,
     ResolvedDamper,
     ResolvedDistributionBoard,
+    ResolvedDistributionFlowElement,
     ResolvedDoor,
     ResolvedDuctSegment,
     ResolvedEarthworksElement,
@@ -493,6 +494,19 @@ class RailwayQTO(BaseModel):
     turnout_count: int = 0               # Turnouts / switches / derailers count
 
 
+class CulvertQTO(BaseModel):
+    length: float = 0.0                      # Culvert/channel length (m)
+    concrete_volume: float = 0.0             # Precast/in-situ concrete volume (m3)
+    formwork_area: float = 0.0               # Formwork area (m2)
+    hydraulic_flow_area: float = 0.0         # Hydraulic flow cross-section area (m2)
+    internal_span: float = 0.0               # Internal span / width (m)
+    internal_rise: float = 0.0               # Internal rise / height (m)
+    wall_thickness: float = 0.0              # Side wall thickness (m)
+    slab_thickness: float = 0.0              # Slab thickness (m)
+    slope_pct: float = 0.0                   # Slope percentage (%)
+    predefined_type: str = "CULVERT"
+
+
 class MepQTO(BaseModel):
     system_type: str = ""
     length: float = 0.0                    # ท่อ / สายไฟ / ท่อลม (linear meters)
@@ -540,6 +554,7 @@ class ElementQTO(BaseModel):
     bridge: Optional[BridgeQTO] = None
     marine: Optional[MarineQTO] = None
     railway: Optional[RailwayQTO] = None
+    culvert: Optional[CulvertQTO] = None
     mep: Optional[MepQTO] = None
 
 
@@ -600,6 +615,9 @@ class ProjectQTO(BaseModel):
     total_railway_sleepers_count: int = 0
     total_railway_ballast_volume: float = 0.0
     total_railway_turnouts_count: int = 0
+    total_culvert_concrete_volume: float = 0.0
+    total_culvert_formwork_area: float = 0.0
+    total_culvert_length: float = 0.0
     # Ceilings & Floor Finishes Totals
     total_ceiling_gypsum_area: float = 0.0
     total_ceiling_tbar_area: float = 0.0
@@ -1731,6 +1749,30 @@ def calculate_element_qto(
             bridge=bridge_qto,
         )
 
+    elif isinstance(resolved, ResolvedDistributionFlowElement):
+        elem = resolved.element
+        culvert_qto = CulvertQTO(
+            length=resolved.length,
+            concrete_volume=resolved.concrete_volume,
+            formwork_area=resolved.formwork_area,
+            hydraulic_flow_area=resolved.hydraulic_flow_area,
+            internal_span=resolved.internal_span,
+            internal_rise=resolved.internal_rise,
+            wall_thickness=resolved.wall_thickness,
+            slab_thickness=resolved.slab_thickness,
+            slope_pct=resolved.slope_pct,
+            predefined_type=resolved.predefined_type,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.length,
+            concrete_volume=resolved.concrete_volume,
+            formwork_area=resolved.formwork_area,
+            culvert=culvert_qto,
+        )
+
     elif isinstance(resolved, ResolvedMarinePart):
         elem = resolved.element
         vol = resolved.concrete_volume
@@ -2243,6 +2285,9 @@ def calculate_qto(
     total_compacted_fill_vol = 0.0
     total_rw_conc_vol = 0.0
     total_rw_formwork = 0.0
+    total_culvert_conc_vol = 0.0
+    total_culvert_formwork = 0.0
+    total_culvert_len = 0.0
 
     # Civil Infrastructure Totals (IFC4.3)
     total_alignment_len = 0.0
@@ -2431,6 +2476,11 @@ def calculate_qto(
             total_rw_conc_vol += eqto.retaining_wall.concrete_volume
             total_rw_formwork += eqto.retaining_wall.formwork_area
 
+        if eqto.culvert:
+            total_culvert_conc_vol += eqto.culvert.concrete_volume
+            total_culvert_formwork += eqto.culvert.formwork_area
+            total_culvert_len += eqto.culvert.length
+
         if eqto.alignment:
             total_alignment_len += eqto.alignment.total_length
 
@@ -2571,6 +2621,9 @@ def calculate_qto(
         total_railway_sleepers_count=total_railway_sleepers_count,
         total_railway_ballast_volume=total_railway_ballast_volume,
         total_railway_turnouts_count=total_railway_turnouts_count,
+        total_culvert_concrete_volume=total_culvert_conc_vol,
+        total_culvert_formwork_area=total_culvert_formwork,
+        total_culvert_length=total_culvert_len,
         total_ceiling_gypsum_area=total_ceil_gypsum,
         total_ceiling_tbar_area=total_ceil_tbar,
         total_ceiling_eaves_area=total_ceil_eaves,

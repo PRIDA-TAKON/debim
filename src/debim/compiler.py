@@ -1082,6 +1082,79 @@ class StepSerializer:
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        for c_elem in getattr(resolved, "distribution_flow_elements", []) or []:
+            if c_elem.element and c_elem.element.placement:
+                pl = c_elem.element.placement
+                st_id = pl.get("storey") if isinstance(pl, dict) else getattr(pl, "storey", None)
+            else:
+                st_id = None
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+            st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
+
+            px, py, pz = c_elem.position
+            rel_z = float(pz - st_elev)
+
+            ptype = (c_elem.predefined_type or "CULVERT").upper()
+            Win, Hin = c_elem.internal_span, c_elem.internal_rise
+            tw, ts = c_elem.wall_thickness, c_elem.slab_thickness
+            Wout, Hout = c_elem.outer_width, c_elem.outer_height
+
+            if "CHANNEL" in ptype or "DRAIN" in ptype:
+                p1 = self.create_entity("IfcCartesianPoint", (-float(Wout) / 2.0, float(Hout) / 2.0))
+                p2 = self.create_entity("IfcCartesianPoint", (-float(Win) / 2.0, float(Hout) / 2.0))
+                p3 = self.create_entity("IfcCartesianPoint", (-float(Win) / 2.0, -float(Hout) / 2.0 + float(ts)))
+                p4 = self.create_entity("IfcCartesianPoint", (float(Win) / 2.0, -float(Hout) / 2.0 + float(ts)))
+                p5 = self.create_entity("IfcCartesianPoint", (float(Win) / 2.0, float(Hout) / 2.0))
+                p6 = self.create_entity("IfcCartesianPoint", (float(Wout) / 2.0, float(Hout) / 2.0))
+                p7 = self.create_entity("IfcCartesianPoint", (float(Wout) / 2.0, -float(Hout) / 2.0))
+                p8 = self.create_entity("IfcCartesianPoint", (-float(Wout) / 2.0, -float(Hout) / 2.0))
+                p9 = p1
+                curve = self.create_entity("IfcPolyline", [p1, p2, p3, p4, p5, p6, p7, p8, p9])
+                prof = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, curve)
+            else:
+                op1 = self.create_entity("IfcCartesianPoint", (-float(Wout) / 2.0, -float(Hout) / 2.0))
+                op2 = self.create_entity("IfcCartesianPoint", (float(Wout) / 2.0, -float(Hout) / 2.0))
+                op3 = self.create_entity("IfcCartesianPoint", (float(Wout) / 2.0, float(Hout) / 2.0))
+                op4 = self.create_entity("IfcCartesianPoint", (-float(Wout) / 2.0, float(Hout) / 2.0))
+                op5 = op1
+                outer_curve = self.create_entity("IfcPolyline", [op1, op2, op3, op4, op5])
+
+                ip1 = self.create_entity("IfcCartesianPoint", (-float(Win) / 2.0, -float(Hin) / 2.0))
+                ip2 = self.create_entity("IfcCartesianPoint", (float(Win) / 2.0, -float(Hin) / 2.0))
+                ip3 = self.create_entity("IfcCartesianPoint", (float(Win) / 2.0, float(Hin) / 2.0))
+                ip4 = self.create_entity("IfcCartesianPoint", (-float(Win) / 2.0, float(Hin) / 2.0))
+                ip5 = ip1
+                inner_curve = self.create_entity("IfcPolyline", [ip1, ip2, ip3, ip4, ip5])
+                prof = self.create_entity("IfcArbitraryProfileDefWithVoids", ".AREA.", None, outer_curve, [inner_curve])
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", prof, axis3d, ext_dir, float(c_elem.length))
+
+            shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
+            prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, elem_axis)
+
+            ptype_str = f".{c_elem.predefined_type.upper()}." if c_elem.predefined_type else ".CULVERT."
+            elem_ref = self.create_entity(
+                "IfcDistributionFlowElement",
+                generate_ifc_guid(),
+                None,
+                c_elem.tag,
+                None,
+                f"IfcDistributionFlowElement.{c_elem.predefined_type}",
+                elem_pl,
+                prod_shape_ref,
+                ptype_str,
+            )
+            element_tag_refs[c_elem.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
         for fill in resolved.earthworks_fills:
             st_id = fill.element.placement.storey
             elem_ref = self.create_entity(
@@ -3533,6 +3606,87 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         )
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
         ifcopenshell.api.run("geometry.assign_representation", model, product=br_obj, representation=rep)
+
+    for c_elem in getattr(resolved, "distribution_flow_elements", []) or []:
+        try:
+            flow_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcDistributionFlowElement",
+                name=c_elem.tag,
+                predefined_type=c_elem.predefined_type.upper(),
+            )
+        except Exception:
+            flow_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=c_elem.tag,
+            )
+            flow_obj.ObjectType = f"IfcDistributionFlowElement.{c_elem.predefined_type}"
+
+        if c_elem.element and c_elem.element.placement:
+            pl = c_elem.element.placement
+            st_id = pl.get("storey") if isinstance(pl, dict) else getattr(pl, "storey", None)
+        else:
+            st_id = None
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(flow_obj)
+        elif default_storey_obj:
+            ifcopenshell.api.run("spatial.assign_container", model, products=[flow_obj], relating_structure=default_storey_obj)
+
+        px, py, pz = c_elem.position
+        mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, c_elem.rotation_angle))
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=flow_obj, matrix=mat)
+
+        ptype = (c_elem.predefined_type or "CULVERT").upper()
+        Win, Hin = c_elem.internal_span, c_elem.internal_rise
+        tw, ts = c_elem.wall_thickness, c_elem.slab_thickness
+        Wout, Hout = c_elem.outer_width, c_elem.outer_height
+
+        if "CHANNEL" in ptype or "DRAIN" in ptype:
+            pts = [
+                model.createIfcCartesianPoint((-float(Wout) / 2.0, float(Hout) / 2.0)),
+                model.createIfcCartesianPoint((-float(Win) / 2.0, float(Hout) / 2.0)),
+                model.createIfcCartesianPoint((-float(Win) / 2.0, -float(Hout) / 2.0 + float(ts))),
+                model.createIfcCartesianPoint((float(Win) / 2.0, -float(Hout) / 2.0 + float(ts))),
+                model.createIfcCartesianPoint((float(Win) / 2.0, float(Hout) / 2.0)),
+                model.createIfcCartesianPoint((float(Wout) / 2.0, float(Hout) / 2.0)),
+                model.createIfcCartesianPoint((float(Wout) / 2.0, -float(Hout) / 2.0)),
+                model.createIfcCartesianPoint((-float(Wout) / 2.0, -float(Hout) / 2.0)),
+                model.createIfcCartesianPoint((-float(Wout) / 2.0, float(Hout) / 2.0)),
+            ]
+            curve = model.createIfcPolyline(pts)
+            prof = model.createIfcArbitraryClosedProfileDef("AREA", None, curve)
+        else:
+            outer_pts = [
+                model.createIfcCartesianPoint((-float(Wout) / 2.0, -float(Hout) / 2.0)),
+                model.createIfcCartesianPoint((float(Wout) / 2.0, -float(Hout) / 2.0)),
+                model.createIfcCartesianPoint((float(Wout) / 2.0, float(Hout) / 2.0)),
+                model.createIfcCartesianPoint((-float(Wout) / 2.0, float(Hout) / 2.0)),
+                model.createIfcCartesianPoint((-float(Wout) / 2.0, -float(Hout) / 2.0)),
+            ]
+            outer_curve = model.createIfcPolyline(outer_pts)
+            inner_pts = [
+                model.createIfcCartesianPoint((-float(Win) / 2.0, -float(Hin) / 2.0)),
+                model.createIfcCartesianPoint((float(Win) / 2.0, -float(Hin) / 2.0)),
+                model.createIfcCartesianPoint((float(Win) / 2.0, float(Hin) / 2.0)),
+                model.createIfcCartesianPoint((-float(Win) / 2.0, float(Hin) / 2.0)),
+                model.createIfcCartesianPoint((-float(Win) / 2.0, -float(Hin) / 2.0)),
+            ]
+            inner_curve = model.createIfcPolyline(inner_pts)
+            prof = model.createIfcArbitraryProfileDefWithVoids("AREA", None, outer_curve, [inner_curve])
+
+        pos3d = model.createIfcAxis2Placement3D(
+            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(c_elem.length)
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=flow_obj, representation=rep)
 
     for rw in resolved.railways:
         try:

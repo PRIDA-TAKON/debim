@@ -2630,6 +2630,60 @@ class IfcRetainingWall(BaseModel):
     layer: Optional[str] = None
 
 
+class FlowElementPlacement(BaseModel):
+    storey: Optional[str] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    grid: Optional[Tuple[str, str]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    rotation: Optional[Union[float, List[float], Tuple[float, ...]]] = None
+    position: Optional[Tuple[float, float, float]] = None
+
+    @field_validator("from_grid", "to_grid", "grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcDistributionFlowElement(BaseModel):
+    class_: Literal["IfcDistributionFlowElement"] = Field(alias="class", default="IfcDistributionFlowElement")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = "MAT_CONCRETE"
+    predefined_type: Optional[str] = "CULVERT"
+    length: float = 10.0  # Total length along alignment / run (m)
+    internal_span: float = 2.0  # Internal opening width (m)
+    internal_rise: float = 2.0  # Internal opening height (m)
+    wall_thickness: float = 0.25  # Wall thickness (m)
+    slab_thickness: float = 0.25  # Top and bottom slab thickness (m)
+    slope_pct: float = 0.5  # Slope percentage (%)
+    placement: Optional[Union[Dict[str, Any], FlowElementPlacement]] = None
+    ports: Optional[List[IfcDistributionPort]] = None
+    properties: Optional[Dict[str, Any]] = None
+    psets: Optional[Dict[str, Any]] = None
+    layer: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_flow_element_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "span" in data and "internal_span" not in data:
+                data["internal_span"] = data.pop("span")
+            if "rise" in data and "internal_rise" not in data:
+                data["internal_rise"] = data.pop("rise")
+            if "wall" in data and "wall_thickness" not in data:
+                data["wall_thickness"] = data.pop("wall")
+            if "slab" in data and "slab_thickness" not in data:
+                data["slab_thickness"] = data.pop("slab")
+            if "slope" in data and "slope_pct" not in data:
+                data["slope_pct"] = data.pop("slope")
+        return data
+
+
 IFC4_DISTRIBUTION_9_ATTR_CLASSES = {
     "IFCACTUATOR", "IFCAIRTERMINAL", "IFCAIRTERMINALBOX", "IFCAIRTOAIRHEATRECOVERY", "IFCALARM",
     "IFCAUDIOVISUALAPPLIANCE", "IFCBOILER", "IFCBURNER", "IFCCABLECARRIERFITTING", "IFCCABLECARRIERSEGMENT",
@@ -2744,10 +2798,8 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksElement", "IfcEarthworksCut",
     "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
     "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
-    "IfcTrackElement", "IfcCustomElement", "IfcBuildingElementProxy"
-    "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksCut", "IfcEarthworksFill",
-    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcBridgePart", "IfcBearing",
-    "IfcMarinePart", "IfcCustomElement", "IfcBuildingElementProxy"
+    "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcMarinePart",
+    "IfcDistributionFlowElement", "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
 
@@ -2810,6 +2862,7 @@ Element = Annotated[
         Annotated[IfcBridgePart, Tag("IfcBridgePart")],
         Annotated[IfcBearing, Tag("IfcBearing")],
         Annotated[IfcMarinePart, Tag("IfcMarinePart")],
+        Annotated[IfcDistributionFlowElement, Tag("IfcDistributionFlowElement")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
