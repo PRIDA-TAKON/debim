@@ -822,6 +822,34 @@ class StepSerializer:
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        for mf in resolved.marine_facilities:
+            elem_ref = self.create_entity(
+                "IfcMarineFacility",
+                generate_ifc_guid(),
+                None,
+                mf.tag,
+                None,
+                f"IfcMarineFacility.{mf.predefined_type}",
+                None,
+                None,
+                f".{mf.predefined_type.upper()}.",
+            )
+            element_tag_refs[mf.tag] = elem_ref
+
+        for mp in resolved.marine_parts:
+            elem_ref = self.create_entity(
+                "IfcMarinePart",
+                generate_ifc_guid(),
+                None,
+                mp.tag,
+                None,
+                f"IfcMarinePart.{mp.predefined_type}",
+                None,
+                None,
+                f".{mp.predefined_type.upper()}.",
+            )
+            element_tag_refs[mp.tag] = elem_ref
+
         for fill in resolved.earthworks_fills:
             st_id = fill.element.placement.storey
             elem_ref = self.create_entity(
@@ -3091,6 +3119,53 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         solid = model.createIfcSweptDiskSolid(polyline, r, None, None, None)
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
         ifcopenshell.api.run("geometry.assign_representation", model, product=product_obj, representation=rep)
+
+    # 6.5 Marine Facilities & Marine Parts
+    mf_objs: Dict[str, Any] = {}
+    for mf in resolved.marine_facilities:
+        try:
+            mf_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcMarineFacility",
+                name=mf.tag,
+                predefined_type=mf.predefined_type if mf.predefined_type in ("PORT", "HARBOUR", "WATERWAY", "BREAKWATER", "CANAL", "DRYDOCK", "FLOATINGDOCK", "JETTY", "QUAY", "REVETMENT", "SHIPYARD", "SLIPWAY") else "USERDEFINED",
+            )
+        except Exception:
+            mf_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=mf.tag,
+            )
+            mf_obj.ObjectType = f"IfcMarineFacility.{mf.predefined_type}"
+
+        ifcopenshell.api.run("aggregate.assign_object", model, products=[mf_obj], relating_object=site)
+        _add_ifcopenshell_terminal_geometry(mf_obj, mf.position_3d, 0.0, (mf.length, mf.width, mf.height))
+        mf_objs[mf.tag] = mf_obj
+
+    for mp in resolved.marine_parts:
+        try:
+            mp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcMarinePart",
+                name=mp.tag,
+                predefined_type=mp.predefined_type if mp.predefined_type in ("QUAY", "JETTY", "BREAKWATER", "BERTH", "ABOVEWATERLINE", "BELOWWATERLINE", "BERTHINGSTRUCTURE", "PROTECTION") else "USERDEFINED",
+            )
+        except Exception:
+            mp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=mp.tag,
+            )
+            mp_obj.ObjectType = f"IfcMarinePart.{mp.predefined_type}"
+
+        parent_mf = mf_objs.get(mp.facility) if mp.facility else (list(mf_objs.values())[0] if mf_objs else site)
+        relating_parent = parent_mf if parent_mf else site
+        ifcopenshell.api.run("aggregate.assign_object", model, products=[mp_obj], relating_object=relating_parent)
+        _add_ifcopenshell_terminal_geometry(mp_obj, mp.position_3d, 0.0, (mp.length, mp.width, mp.height))
 
     # 7. MEP Elements (Pipes, Conduits, Terminals, Electrical, HVAC)
     for pipe in resolved.pipes:

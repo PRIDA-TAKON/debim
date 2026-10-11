@@ -803,6 +803,50 @@ def generate_viewer_html(
                 "layer": bridge.layer,
             })
 
+    # Civil Marine Facilities & Parts
+    for mf in resolved.marine_facilities:
+        pos = mf.position_3d
+        elements_data.append({
+            "tag": mf.tag,
+            "class": "IfcMarineFacility",
+            "predefined_type": mf.predefined_type,
+            "material": mf.element.material or "Marine Infrastructure",
+            "position": [pos[0], pos[1], pos[2]],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "length": mf.length,
+                "width": mf.width,
+                "height": mf.height,
+                "water_depth": mf.water_depth,
+                "surface_area": mf.surface_area,
+                "volume": mf.volume,
+            },
+            "color": "#0284C7",
+            "layer": mf.layer,
+        })
+
+    for mp in resolved.marine_parts:
+        pos = mp.position_3d
+        elements_data.append({
+            "tag": mp.tag,
+            "class": "IfcMarinePart",
+            "predefined_type": mp.predefined_type,
+            "material": mp.element.material or "Reinforced Concrete",
+            "position": [pos[0], pos[1], pos[2]],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "length": mp.length,
+                "width": mp.width,
+                "height": mp.height,
+                "water_depth": mp.water_depth,
+                "surface_area": mp.surface_area,
+                "volume": mp.volume,
+                "formwork_area": mp.formwork_area,
+            },
+            "color": "#0D9488",
+            "layer": mp.layer,
+        })
+
     # Civil Earthworks Cut
     for cut in resolved.earthworks_cuts:
         cz = cut.position[2] - cut.depth / 2.0

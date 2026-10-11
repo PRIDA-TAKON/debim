@@ -31,6 +31,8 @@ from debim.schema import (
     IfcFlowController,
     IfcFooting,
     IfcLightFixture,
+    IfcMarineFacility,
+    IfcMarinePart,
     IfcOutlet,
     IfcPipeSegment,
     IfcPlate,
@@ -1145,6 +1147,45 @@ class ResolvedBridge(BaseModel):
     layer: str = "civil/infrastructure/bridges"
 
 
+class ResolvedMarineFacility(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMarineFacility
+    name: Optional[str] = None
+    predefined_type: str = "PORT"
+    water_depth: float = 0.0
+    length: float = 0.0
+    width: float = 0.0
+    height: float = 0.0
+    surface_area: float = 0.0
+    volume: float = 0.0
+    position_3d: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    boundary_points_3d: List[Tuple[float, float, float]] = Field(default_factory=list)
+    parts: List[str] = Field(default_factory=list)
+    layer: str = "civil/marine/facilities"
+
+
+class ResolvedMarinePart(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMarinePart
+    name: Optional[str] = None
+    predefined_type: str = "QUAY"
+    facility: Optional[str] = None
+    water_depth: float = 0.0
+    length: float = 0.0
+    width: float = 0.0
+    height: float = 0.0
+    surface_area: float = 0.0
+    volume: float = 0.0
+    formwork_area: float = 0.0
+    position_3d: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    boundary_points_3d: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/marine/parts"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1178,6 +1219,8 @@ ResolvedElement = Union[
     ResolvedAlignment,
     ResolvedRoad,
     ResolvedBridge,
+    ResolvedMarineFacility,
+    ResolvedMarinePart,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1224,6 +1267,8 @@ class ResolvedManifest(BaseModel):
     alignments: List[ResolvedAlignment] = []
     roads: List[ResolvedRoad] = []
     bridges: List[ResolvedBridge] = []
+    marine_facilities: List[ResolvedMarineFacility] = Field(default_factory=list)
+    marine_parts: List[ResolvedMarinePart] = Field(default_factory=list)
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -4524,6 +4569,156 @@ class SpatialResolver:
             layer=derive_default_layer(bridge),
         )
 
+    def resolve_marine_facility(self, facility: IfcMarineFacility) -> ResolvedMarineFacility:
+        from shapely.geometry import Polygon
+
+        z_base = self.get_storey(facility.placement.storey).elevation if facility.placement.storey else 0.0
+
+        pts: List[Tuple[float, float, float]] = []
+        surf_area: Optional[float] = None
+
+        if facility.placement.from_grid and facility.placement.to_grid:
+            x1, y1 = self.get_grid_xy(facility.placement.from_grid)
+            x2, y2 = self.get_grid_xy(facility.placement.to_grid)
+            x1 += facility.placement.offset_x
+            y1 += facility.placement.offset_y
+            x2 += facility.placement.offset_x
+            y2 += facility.placement.offset_y
+            z = z_base + facility.placement.offset_z
+            length = math.hypot(x2 - x1, y2 - y1)
+            if length <= 0:
+                length = facility.length or 50.0
+            pos = ((x1 + x2) / 2.0, (y1 + y2) / 2.0, z)
+            pts = [(x1, y1, z), (x2, y2, z)]
+            width = facility.width or 20.0
+        elif facility.placement.boundary:
+            boundary_pts = []
+            for pt in facility.placement.boundary:
+                gx, gy = self.get_grid_xy(pt)
+                boundary_pts.append((gx + facility.placement.offset_x, gy + facility.placement.offset_y))
+            z = z_base + facility.placement.offset_z
+            polygon = Polygon(boundary_pts)
+            surf_area = polygon.area
+            pos = (polygon.centroid.x, polygon.centroid.y, z)
+            pts = [(p[0], p[1], z) for p in boundary_pts]
+            length = facility.length or math.sqrt(surf_area)
+            width = facility.width or (surf_area / length if length > 0 else 20.0)
+        elif facility.placement.grid:
+            gx, gy = self.get_grid_xy(facility.placement.grid)
+            gx += facility.placement.offset_x
+            gy += facility.placement.offset_y
+            z = z_base + facility.placement.offset_z
+            pos = (gx, gy, z)
+            length = facility.length or 50.0
+            width = facility.width or 20.0
+        else:
+            z = z_base + facility.placement.offset_z
+            pos = (facility.placement.offset_x, facility.placement.offset_y, z)
+            length = facility.length or 50.0
+            width = facility.width or 20.0
+
+        length = facility.length or length
+        width = facility.width or width
+        height = facility.height or 5.0
+        water_depth = facility.water_depth or 10.0
+        surf_area_val = surf_area if surf_area is not None else length * width
+        volume = surf_area_val * (height + water_depth)
+
+        layer = facility.layer or derive_default_layer(facility)
+
+        return ResolvedMarineFacility(
+            tag=facility.tag,
+            element=facility,
+            name=facility.name,
+            predefined_type=facility.predefined_type,
+            water_depth=water_depth,
+            length=length,
+            width=width,
+            height=height,
+            surface_area=surf_area_val,
+            volume=volume,
+            position_3d=pos,
+            boundary_points_3d=pts,
+            parts=[],
+            layer=layer,
+        )
+
+    def resolve_marine_part(self, part: IfcMarinePart) -> ResolvedMarinePart:
+        from shapely.geometry import Polygon
+
+        z_base = self.get_storey(part.placement.storey).elevation if part.placement.storey else 0.0
+
+        pts: List[Tuple[float, float, float]] = []
+        surf_area: Optional[float] = None
+
+        if part.placement.from_grid and part.placement.to_grid:
+            x1, y1 = self.get_grid_xy(part.placement.from_grid)
+            x2, y2 = self.get_grid_xy(part.placement.to_grid)
+            x1 += part.placement.offset_x
+            y1 += part.placement.offset_y
+            x2 += part.placement.offset_x
+            y2 += part.placement.offset_y
+            z = z_base + part.placement.offset_z
+            length = math.hypot(x2 - x1, y2 - y1)
+            if length <= 0:
+                length = part.length or 20.0
+            pos = ((x1 + x2) / 2.0, (y1 + y2) / 2.0, z)
+            pts = [(x1, y1, z), (x2, y2, z)]
+            width = part.width or 10.0
+        elif part.placement.boundary:
+            boundary_pts = []
+            for pt in part.placement.boundary:
+                gx, gy = self.get_grid_xy(pt)
+                boundary_pts.append((gx + part.placement.offset_x, gy + part.placement.offset_y))
+            z = z_base + part.placement.offset_z
+            polygon = Polygon(boundary_pts)
+            surf_area = polygon.area
+            pos = (polygon.centroid.x, polygon.centroid.y, z)
+            pts = [(p[0], p[1], z) for p in boundary_pts]
+            length = part.length or math.sqrt(surf_area)
+            width = part.width or (surf_area / length if length > 0 else 10.0)
+        elif part.placement.grid:
+            gx, gy = self.get_grid_xy(part.placement.grid)
+            gx += part.placement.offset_x
+            gy += part.placement.offset_y
+            z = z_base + part.placement.offset_z
+            pos = (gx, gy, z)
+            length = part.length or 20.0
+            width = part.width or 10.0
+        else:
+            z = z_base + part.placement.offset_z
+            pos = (part.placement.offset_x, part.placement.offset_y, z)
+            length = part.length or 20.0
+            width = part.width or 10.0
+
+        length = part.length or length
+        width = part.width or width
+        height = part.height or 4.0
+        water_depth = part.water_depth or 8.0
+        surf_area_val = surf_area if surf_area is not None else length * width
+        volume = surf_area_val * height
+        formwork = 2.0 * (length + width) * height
+
+        layer = part.layer or derive_default_layer(part)
+
+        return ResolvedMarinePart(
+            tag=part.tag,
+            element=part,
+            name=part.name,
+            predefined_type=part.predefined_type,
+            facility=part.facility,
+            water_depth=water_depth,
+            length=length,
+            width=width,
+            height=height,
+            surface_area=surf_area_val,
+            volume=volume,
+            formwork_area=formwork,
+            position_3d=pos,
+            boundary_points_3d=pts,
+            layer=layer,
+        )
+
 
     def _resolve_element_ports(self, elem, host_pos: Tuple[float, float, float], rot_deg: float = 0.0) -> List[ResolvedPort]:
         resolved_ports = []
@@ -4763,6 +4958,14 @@ class SpatialResolver:
                 r_bridge = self.resolve_bridge(elem)
                 resolved_manifest.bridges.append(r_bridge)
                 resolved_manifest.elements.append(r_bridge)
+            elif isinstance(elem, IfcMarineFacility):
+                r_mf = self.resolve_marine_facility(elem)
+                resolved_manifest.marine_facilities.append(r_mf)
+                resolved_manifest.elements.append(r_mf)
+            elif isinstance(elem, IfcMarinePart):
+                r_mp = self.resolve_marine_part(elem)
+                resolved_manifest.marine_parts.append(r_mp)
+                resolved_manifest.elements.append(r_mp)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)
@@ -4776,6 +4979,16 @@ class SpatialResolver:
             r_proxy = self.resolve_proxy(proxy_elem)
             resolved_manifest.proxies.append(r_proxy)
             resolved_manifest.elements.append(r_proxy)
+
+        # Link marine parts to parent marine facility
+        fac_map = {f.tag: f for f in resolved_manifest.marine_facilities}
+        for mp in resolved_manifest.marine_parts:
+            if mp.facility and mp.facility in fac_map:
+                if mp.tag not in fac_map[mp.facility].parts:
+                    fac_map[mp.facility].parts.append(mp.tag)
+            elif len(resolved_manifest.marine_facilities) == 1:
+                if mp.tag not in resolved_manifest.marine_facilities[0].parts:
+                    resolved_manifest.marine_facilities[0].parts.append(mp.tag)
 
         # Resolve ports for all elements and proxies
         all_resolved_ports: List[ResolvedPort] = []

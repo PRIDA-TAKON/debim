@@ -2163,6 +2163,83 @@ class IfcBridge(BaseModel):
         return data
 
 
+# Civil Marine Infrastructure (IFC4.3) Entities
+
+MarineFacilityType = Literal[
+    "PORT", "HARBOUR", "WATERWAY", "BARRIERBEACH", "BREAKWATER", "CANAL",
+    "DRYDOCK", "FLOATINGDOCK", "HYDROLIFT", "JETTY", "LAUNCHRECOVERY",
+    "MARINEDEFENCE", "NAVIGATIONALCHANNEL", "QUAY", "REVETMENT", "SHIPLIFT",
+    "SHIPLOCK", "SHIPYARD", "SLIPWAY", "WATERWAYSHIPLIFT", "USERDEFINED", "NOTDEFINED"
+]
+
+MarinePartType = Literal[
+    "QUAY", "JETTY", "BREAKWATER", "BERTH", "ABOVEWATERLINE", "ANCHORAGE",
+    "APPROACHCHANNEL", "BELOWWATERLINE", "BERTHINGSTRUCTURE", "CHAMBER",
+    "CILL_LEVEL", "COPELEVEL", "CORE", "CREST", "GATEHEAD", "GUDINGSTRUCTURE",
+    "HIGHWATERLINE", "LANDFIELD", "LEEWARDSIDE", "LOWWATERLINE", "MANUFACTURING",
+    "NAVIGATIONALAREA", "PROTECTION", "SHIPTRANSFER", "STORAGEAREA",
+    "VEHICLESERVICING", "WATERFIELD", "WEATHERSIDE", "USERDEFINED", "NOTDEFINED"
+]
+
+
+class MarinePlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    alignment: Optional[str] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    points: Optional[List[AlignmentPoint]] = None
+    boundary: Optional[List[Tuple[str, str]]] = None
+    boundary_points: Optional[List[Tuple[float, float]]] = None
+    rotation: Optional[float] = None
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("boundary", mode="before")
+    @classmethod
+    def convert_boundary_to_str(cls, v):
+        if isinstance(v, list):
+            return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+
+class IfcMarineFacility(BaseModel):
+    class_: Literal["IfcMarineFacility"] = Field(alias="class", default="IfcMarineFacility")
+    tag: str
+    name: Optional[str] = None
+    predefined_type: MarineFacilityType = "PORT"
+    material: Optional[str] = None
+    water_depth: Optional[float] = None
+    length: Optional[float] = None
+    width: Optional[float] = None
+    height: Optional[float] = None
+    placement: MarinePlacement
+    layer: Optional[str] = None
+
+
+class IfcMarinePart(BaseModel):
+    class_: Literal["IfcMarinePart"] = Field(alias="class", default="IfcMarinePart")
+    tag: str
+    name: Optional[str] = None
+    predefined_type: MarinePartType = "QUAY"
+    facility: Optional[str] = None  # Reference to parent IfcMarineFacility tag
+    material: Optional[str] = None
+    water_depth: Optional[float] = None
+    length: Optional[float] = None
+    width: Optional[float] = None
+    height: Optional[float] = None
+    placement: MarinePlacement
+    layer: Optional[str] = None
+
+
 # Civil Earthworks & Retaining Structures
 
 EarthworksCutType = Literal["TRENCH", "DREDGING", "CUT", "BASEMENT_EXCAVATION", "USERDEFINED"]
@@ -2344,6 +2421,8 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcAlignment",
     "IfcRoad",
     "IfcBridge",
+    "IfcMarineFacility",
+    "IfcMarinePart",
     "IfcCustomElement",
 } | IFC4_DISTRIBUTION_CLASSES
 
@@ -2368,7 +2447,7 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcSanitaryTerminal", "IfcWasteTerminal", "IfcDistributionBoard", "IfcElectricDistributionBoard",
     "IfcLightFixture", "IfcSwitchingDevice", "IfcOutlet", "IfcAirTerminal", "IfcDamper",
     "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksCut", "IfcEarthworksFill",
-    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcCustomElement", "IfcBuildingElementProxy"
+    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcMarineFacility", "IfcMarinePart", "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
 
@@ -2422,6 +2501,8 @@ Element = Annotated[
         Annotated[IfcAlignment, Tag("IfcAlignment")],
         Annotated[IfcRoad, Tag("IfcRoad")],
         Annotated[IfcBridge, Tag("IfcBridge")],
+        Annotated[IfcMarineFacility, Tag("IfcMarineFacility")],
+        Annotated[IfcMarinePart, Tag("IfcMarinePart")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -2669,7 +2750,7 @@ class ProjectManifest(BaseModel):
                     if gy not in grid_y_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge)):
+            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcMarineFacility, IfcMarinePart)):
                 if elem.placement.storey and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -2692,6 +2773,20 @@ class ProjectManifest(BaseModel):
                         raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
                     if gy not in grid_y_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
+                if getattr(elem.placement, "boundary", None):
+                    for pt in elem.placement.boundary:
+                        gx, gy = pt
+                        if gx not in grid_x_ids:
+                            raise ValueError(f"Element '{elem.tag}' boundary references unknown X grid '{gx}'")
+                        if gy not in grid_y_ids:
+                            raise ValueError(f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'")
+                if isinstance(elem, IfcMarinePart) and elem.facility:
+                    facility_tags = {
+                        f.tag for f in all_manifest_elements
+                        if getattr(f, "class_", None) == "IfcMarineFacility" or getattr(f, "ifc_class", None) == "IfcMarineFacility"
+                    }
+                    if elem.facility not in facility_tags:
+                        raise ValueError(f"Element '{elem.tag}' references unknown facility '{elem.facility}'")
 
             elif isinstance(elem, IfcRoof):
                 if elem.placement.storey not in storey_ids:
@@ -3048,6 +3143,10 @@ def derive_default_layer(elem) -> str:
         return "civil/infrastructure/roads"
     elif cls == "IfcBridge":
         return "civil/infrastructure/bridges"
+    elif cls == "IfcMarineFacility":
+        return "civil/marine/facilities"
+    elif cls == "IfcMarinePart":
+        return "civil/marine/parts"
     elif cls == "IfcCustomElement":
         return "general/custom"
     elif cls == "IfcBuildingElementProxy" or isinstance(elem, IfcBuildingElementProxy):
