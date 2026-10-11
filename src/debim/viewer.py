@@ -2430,6 +2430,22 @@ def generate_viewer_html(
             "height": h,
         }
 
+        elem_geom = getattr(proxy.element, "geometry", None)
+        if elem_geom:
+            if hasattr(elem_geom, "cylinder") and elem_geom.cylinder:
+                p_dims["shape"] = "CYLINDER"
+                p_dims["radius"] = w / 2.0
+            elif hasattr(elem_geom, "profile") and elem_geom.profile:
+                prof_dims = extract_profile_viewer_dim(elem_geom.profile, h, is_column=True)
+                p_dims.update(prof_dims)
+            elif isinstance(elem_geom, dict):
+                if elem_geom.get("cylinder"):
+                    p_dims["shape"] = "CYLINDER"
+                    p_dims["radius"] = w / 2.0
+                elif elem_geom.get("profile"):
+                    prof_dims = extract_profile_viewer_dim(elem_geom["profile"], h, is_column=True)
+                    p_dims.update(prof_dims)
+
         cz = proxy.position[2] + h / 2.0
 
         color = "#10B981" if any(kw in p_class for kw in ["Energy", "Chiller", "Compressor", "Unitary", "Burner", "Solar"]) else "#8B5CF6"

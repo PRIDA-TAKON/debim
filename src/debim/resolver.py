@@ -6448,26 +6448,99 @@ class SpatialResolver:
 
         st_elev = storey.elevation if storey else 0.0
 
-        px, py, pz = 0.0, 0.0, 0.0
-        if proxy.placement.position:
-            px, py, pz = proxy.placement.position
-        elif proxy.placement.grid:
-            gx, gy = self.get_grid_xy(proxy.placement.grid)
-            off_x = proxy.placement.offset_x + (proxy.placement.offset[0] if proxy.placement.offset else 0.0)
-            off_y = proxy.placement.offset_y + (proxy.placement.offset[1] if proxy.placement.offset else 0.0)
-            off_z = proxy.placement.offset_z + (proxy.placement.offset[2] if proxy.placement.offset else 0.0)
-            px = gx + off_x
-            py = gy + off_y
-            pz = off_z
-        elif proxy.placement.offset:
-            px, py, pz = proxy.placement.offset
+        if proxy.placement.wall and proxy.placement.wall in self.walls_by_tag:
+            r_wall = self.walls_by_tag[proxy.placement.wall]
+            wall_elem = r_wall.element
+            storey_id = proxy.placement.storey or wall_elem.placement.storey
+            if storey_id in self.storeys:
+                storey = self.storeys[storey_id]
+                st_elev = storey.elevation
 
-        world_pos = (px, py, st_elev + pz)
+            x1, y1, _ = r_wall.start_point
+            x2, y2, _ = r_wall.end_point
+            wall_len = r_wall.length
+            thickness = r_wall.thickness
 
-        dims_obj = proxy.get_resolved_dimensions()
-        w = dims_obj.width
-        d = dims_obj.depth if dims_obj.depth is not None else w
-        h = dims_obj.height
+            if wall_len > 0:
+                ux = (x2 - x1) / wall_len
+                uy = (y2 - y1) / wall_len
+            else:
+                ux, uy = 1.0, 0.0
+
+            nx, ny = -uy, ux
+
+            p_base_x = x1 + proxy.placement.distance * ux
+            p_base_y = y1 + proxy.placement.distance * uy
+
+            dims_obj = proxy.get_resolved_dimensions()
+            w = dims_obj.width
+            d = dims_obj.depth if dims_obj.depth is not None else w
+            h = dims_obj.height
+
+            standoff = proxy.placement.standoff
+            if proxy.placement.side == "CENTER":
+                offset_dist = 0.0
+            elif proxy.placement.side == "EXTERIOR":
+                offset_dist = -(thickness / 2.0 + standoff + d / 2.0)
+            else:  # INTERIOR
+                offset_dist = +(thickness / 2.0 + standoff + d / 2.0)
+
+            px = p_base_x + offset_dist * nx
+            py = p_base_y + offset_dist * ny
+            pz = st_elev + proxy.placement.offset_z
+
+            if proxy.placement.rotation is not None:
+                if isinstance(proxy.placement.rotation, (int, float)):
+                    rot = (0.0, 0.0, float(proxy.placement.rotation))
+                else:
+                    rot = tuple(float(r) for r in proxy.placement.rotation)
+            else:
+                if proxy.placement.side == "EXTERIOR":
+                    rot_angle = math.degrees(math.atan2(-ny, -nx))
+                else:
+                    rot_angle = math.degrees(math.atan2(ny, nx))
+                rot = (0.0, 0.0, rot_angle)
+
+            world_pos = (px, py, pz)
+        else:
+            px, py, pz = 0.0, 0.0, 0.0
+            if proxy.placement.position:
+                px, py, pz = proxy.placement.position
+                px += proxy.placement.offset_x
+                py += proxy.placement.offset_y
+                pz += proxy.placement.offset_z
+            elif proxy.placement.grid:
+                gx, gy = self.get_grid_xy(proxy.placement.grid)
+                off_x = proxy.placement.offset_x + (proxy.placement.offset[0] if proxy.placement.offset else 0.0)
+                off_y = proxy.placement.offset_y + (proxy.placement.offset[1] if proxy.placement.offset else 0.0)
+                off_z = proxy.placement.offset_z + (proxy.placement.offset[2] if proxy.placement.offset else 0.0)
+                px = gx + off_x
+                py = gy + off_y
+                pz = off_z
+            elif proxy.placement.offset:
+                px = proxy.placement.offset_x + proxy.placement.offset[0]
+                py = proxy.placement.offset_y + proxy.placement.offset[1]
+                pz = proxy.placement.offset_z + proxy.placement.offset[2]
+            else:
+                px = proxy.placement.offset_x
+                py = proxy.placement.offset_y
+                pz = proxy.placement.offset_z
+
+            world_pos = (px, py, st_elev + pz)
+
+            dims_obj = proxy.get_resolved_dimensions()
+            w = dims_obj.width
+            d = dims_obj.depth if dims_obj.depth is not None else w
+            h = dims_obj.height
+
+            if proxy.placement.rotation is not None:
+                if isinstance(proxy.placement.rotation, (int, float)):
+                    rot = (0.0, 0.0, float(proxy.placement.rotation))
+                else:
+                    rot = tuple(float(r) for r in proxy.placement.rotation)
+            else:
+                rot = (0.0, 0.0, 0.0)
+
         vol = w * d * h
         footprint = w * d
 
@@ -6479,7 +6552,6 @@ class SpatialResolver:
             "volume": vol, "footprint_area": footprint,
         }
 
-        rot = proxy.placement.rotation if proxy.placement.rotation else (0.0, 0.0, 0.0)
         ifc_cls = proxy.ifc_class or proxy.class_ or "IfcBuildingElementProxy"
 
         return ResolvedProxy(

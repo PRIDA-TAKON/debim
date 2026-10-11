@@ -134,6 +134,15 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
                 m.apply_transform(T)
             meshes[custom.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
+    for proxy in resolved.proxies:
+        w, d, h = float(proxy.dimensions[0]), float(proxy.dimensions[1]), float(proxy.dimensions[2])
+        m = trimesh.creation.box(extents=(w, d, h))
+        if proxy.rotation and any(abs(r) > 1e-4 for r in proxy.rotation):
+            rx, ry, rz = [float(r) for r in proxy.rotation]
+            T = trimesh.transformations.euler_matrix(rx, ry, rz)
+            m.apply_transform(T)
+        meshes[proxy.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+
     return meshes
 
 

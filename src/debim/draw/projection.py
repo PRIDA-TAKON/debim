@@ -27,6 +27,7 @@ from debim.resolver import (
     ResolvedManifest,
     ResolvedPipeSegment,
     ResolvedPlate,
+    ResolvedProxy,
     ResolvedRailing,
     ResolvedRamp,
     ResolvedSanitaryTerminal,
@@ -422,7 +423,46 @@ def slice_storey(
                     },
                 ))
 
-    # 5. Process Sanitary & MEP Terminals (Low Projection)
+    # 5. Process Proxies
+    for proxy in resolved.proxies:
+        px, py, pz = proxy.position
+        w, d, h = proxy.dimensions
+        p_base_z = pz
+        p_top_z = pz + h
+        rot_z = proxy.rotation[2] if (proxy.rotation and len(proxy.rotation) >= 3) else 0.0
+
+        all_2d_points.append((px, py))
+        proxy_poly = _create_rotated_box(px, py, w, d, rot_z)
+
+        if p_base_z <= cut_elev <= p_top_z:
+            cut_elements.append(CutElement(
+                tag=proxy.tag,
+                element_class=proxy.ifc_class,
+                category="medium_cut",
+                geometry=proxy_poly,
+                centerline=Point(px, py),
+                layer=proxy.layer,
+                properties={
+                    "ifc_class": proxy.ifc_class,
+                    "predefined_type": proxy.predefined_type,
+                    "dimensions": proxy.dimensions,
+                },
+            ))
+        elif p_top_z <= cut_elev:
+            projection_elements.append(ProjectionElement(
+                tag=proxy.tag,
+                element_class=proxy.ifc_class,
+                category="low_projection",
+                geometry=proxy_poly,
+                layer=proxy.layer,
+                properties={
+                    "ifc_class": proxy.ifc_class,
+                    "predefined_type": proxy.predefined_type,
+                    "dimensions": proxy.dimensions,
+                },
+            ))
+
+    # 6. Process Sanitary & MEP Terminals (Low Projection)
     for term in resolved.sanitary_terminals:
         if term.position[2] <= cut_elev:
             tx, ty, _ = term.position
