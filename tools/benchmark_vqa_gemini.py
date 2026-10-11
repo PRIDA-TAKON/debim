@@ -445,16 +445,16 @@ def run_vqa_benchmark(
     image_rel_path = ds_data.get("image_path", "")
     mime_type = ds_data.get("image_mime_type", "image/svg+xml")
 
-    # Load image content if calling Gemini API
-    image_b64 = ""
-    if not mock_eval:
+    # Load image content if calling Gemini API (default dataset-level image)
+    default_image_b64 = ""
+    image_cache: Dict[str, str] = {}
+    if not mock_eval and image_rel_path:
         resolved_img_path = dataset_path.parent / image_rel_path
         if not resolved_img_path.exists():
             resolved_img_path = Path(image_rel_path)
         if resolved_img_path.exists():
-            image_b64 = base64.b64encode(resolved_img_path.read_bytes()).decode("utf-8")
-        else:
-            raise FileNotFoundError(f"Blueprint image file not found at '{image_rel_path}'")
+            default_image_b64 = base64.b64encode(resolved_img_path.read_bytes()).decode("utf-8")
+            image_cache[image_rel_path] = default_image_b64
 
     effective_api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if not mock_eval and not effective_api_key:
@@ -478,10 +478,25 @@ def run_vqa_benchmark(
         if mock_eval:
             eval_out = evaluate_question_mock(q, seed=idx)
         else:
+            q_img_path = q.get("image_path")
+            q_mime = q.get("image_mime_type", mime_type)
+            if q_img_path:
+                if q_img_path not in image_cache:
+                    resolved_p = dataset_path.parent / q_img_path
+                    if not resolved_p.exists():
+                        resolved_p = Path(q_img_path)
+                    if resolved_p.exists():
+                        image_cache[q_img_path] = base64.b64encode(resolved_p.read_bytes()).decode("utf-8")
+                    else:
+                        raise FileNotFoundError(f"Image for question {q_id} not found: '{q_img_path}'")
+                curr_image_b64 = image_cache[q_img_path]
+            else:
+                curr_image_b64 = default_image_b64
+
             eval_out = evaluate_question_gemini_api(
                 question=q,
-                image_base64=image_b64,
-                image_mime_type=mime_type,
+                image_base64=curr_image_b64,
+                image_mime_type=q_mime,
                 api_key=effective_api_key,
                 model_name=model_name,
                 limiter=limiter,

@@ -554,46 +554,251 @@ def generate_vqa_questions(
     return questions
 
 
+def create_procedural_manifest(model_idx: int, seed: int = 42) -> ProjectManifest:
+    """Generates randomized procedural buildings with varied grids, spans, columns, walls, doors and beams."""
+    rng = random.Random(seed + model_idx * 1337)
+    nx = rng.randint(3, 6)
+    ny = rng.randint(3, 5)
+
+    # Generate grid coordinates
+    curr_x = 0.0
+    x_coords: Dict[str, float] = {}
+    for i in range(nx):
+        x_coords[str(i + 1)] = round(curr_x, 2)
+        curr_x += rng.uniform(3.5, 7.5)
+
+    curr_y = 0.0
+    y_coords: Dict[str, float] = {}
+    y_letters = [chr(65 + j) for j in range(ny)]
+    for j in range(ny):
+        y_coords[y_letters[j]] = round(curr_y, 2)
+        curr_y += rng.uniform(4.0, 8.0)
+
+    storeys = [
+        Storey(id="L1", name="Ground Level", elevation=0.0, height=round(rng.uniform(3.2, 4.0), 2)),
+        Storey(id="L2", name="Second Floor", elevation=3.5, height=round(rng.uniform(3.0, 3.5), 2)),
+    ]
+
+    elements: List[Any] = []
+    # 1. Structural Columns
+    col_idx = 1
+    for gx in x_coords:
+        for gy in y_coords:
+            col_w = round(rng.choice([0.30, 0.40, 0.50]), 2)
+            elements.append(
+                IfcColumn(
+                    **{
+                        "class": "IfcColumn",
+                        "tag": f"C{col_idx}",
+                        "material": "CONC",
+                        "profile": BoxProfile(width=col_w, depth=col_w),
+                        "placement": ColumnPlacement(grid=(gx, gy), base_storey="L1", top_storey="L2"),
+                    }
+                )
+            )
+            col_idx += 1
+
+    # 2. Structural & Partition Walls
+    x_keys = list(x_coords.keys())
+    wall_idx = 1
+    # Perimeter walls along Y=A and Y=top
+    for i in range(len(x_keys) - 1):
+        # Bottom perimeter wall
+        doors_b = []
+        if i == 0 or rng.random() > 0.6:
+            doors_b.append(
+                IfcDoor(
+                    **{
+                        "class": "IfcDoor",
+                        "tag": f"D{wall_idx}",
+                        "material": "TIMBER",
+                        "dimensions": Dimensions(width=0.90, height=2.10),
+                        "offset_distance": 1.20,
+                    }
+                )
+            )
+        elements.append(
+            IfcWall(
+                **{
+                    "class": "IfcWall",
+                    "tag": f"W{wall_idx}",
+                    "material": "BRICK",
+                    "thickness": 0.20,
+                    "height": storeys[0].height,
+                    "placement": WallPlacement(from_grid=(x_keys[i], y_letters[0]), to_grid=(x_keys[i + 1], y_letters[0]), storey="L1"),
+                    "doors": doors_b,
+                }
+            )
+        )
+        wall_idx += 1
+
+        # Top perimeter wall
+        windows_t = []
+        if rng.random() > 0.4:
+            windows_t.append(
+                IfcWindow(
+                    **{
+                        "class": "IfcWindow",
+                        "tag": f"WIND{wall_idx}",
+                        "material": "GLASS",
+                        "dimensions": Dimensions(width=1.50, height=1.20),
+                        "offset_distance": 1.00,
+                        "sill_height": 0.90,
+                    }
+                )
+            )
+        elements.append(
+            IfcWall(
+                **{
+                    "class": "IfcWall",
+                    "tag": f"W{wall_idx}",
+                    "material": "BRICK",
+                    "thickness": 0.20,
+                    "height": storeys[0].height,
+                    "placement": WallPlacement(from_grid=(x_keys[i], y_letters[-1]), to_grid=(x_keys[i + 1], y_letters[-1]), storey="L1"),
+                    "windows": windows_t,
+                }
+            )
+        )
+        wall_idx += 1
+
+    # 3. Perimeter walls along X=1 and X=last
+    for j in range(len(y_letters) - 1):
+        elements.append(
+            IfcWall(
+                **{
+                    "class": "IfcWall",
+                    "tag": f"W{wall_idx}",
+                    "material": "BRICK",
+                    "thickness": 0.20,
+                    "height": storeys[0].height,
+                    "placement": WallPlacement(from_grid=(x_keys[0], y_letters[j]), to_grid=(x_keys[0], y_letters[j + 1]), storey="L1"),
+                }
+            )
+        )
+        wall_idx += 1
+
+        elements.append(
+            IfcWall(
+                **{
+                    "class": "IfcWall",
+                    "tag": f"W{wall_idx}",
+                    "material": "BRICK",
+                    "thickness": 0.20,
+                    "height": storeys[0].height,
+                    "placement": WallPlacement(from_grid=(x_keys[-1], y_letters[j]), to_grid=(x_keys[-1], y_letters[j + 1]), storey="L1"),
+                }
+            )
+        )
+        wall_idx += 1
+
+    # 4. Structural Beams
+    beam_idx = 1
+    for i in range(len(x_keys) - 1):
+        for j in range(len(y_letters)):
+            elements.append(
+                IfcBeam(
+                    **{
+                        "class": "IfcBeam",
+                        "tag": f"B{beam_idx}",
+                        "material": "CONC",
+                        "profile": BoxProfile(width=0.25, depth=0.50),
+                        "placement": BeamPlacement(from_grid=(x_keys[i], y_letters[j]), to_grid=(x_keys[i + 1], y_letters[j]), storey="L1"),
+                    }
+                )
+            )
+            beam_idx += 1
+
+    return ProjectManifest(
+        project=ProjectInfo(id=f"PRJ-SYNTH-{model_idx + 1:03d}", name=f"Synthetic Procedural Building {model_idx + 1}"),
+        spatial_structure=SpatialStructure(storeys=storeys),
+        grids=Grids(axes_x=x_coords, axes_y=y_coords),
+        materials=[
+            Material(id="CONC", name="Structural Concrete", category="concrete", unit_cost_ref="MAT-CONC-01"),
+            Material(id="BRICK", name="Masonry Wall", category="masonry", unit_cost_ref="MAT-BRICK-01"),
+            Material(id="STEEL", name="Structural Steel", category="steel", unit_cost_ref="MAT-STEEL-01"),
+        ],
+        elements=elements,
+    )
+
+
 def generate_vqa_dataset(
     manifest_path: Optional[Union[str, Path]] = None,
     output_dataset_path: Union[str, Path] = "dist/vqa_dataset.json",
     output_image_dir: Union[str, Path] = "dist/vqa_images",
+    target_count: Optional[int] = None,
     seed: int = 42,
 ) -> Dict[str, Any]:
-    """Generates 2D Construction Blueprint VQA MCQ dataset and exports dataset JSON and SVG blueprint image."""
+    """Generates 2D Construction Blueprint VQA MCQ dataset and exports dataset JSON and SVG blueprint images."""
     output_dataset_path = Path(output_dataset_path)
     output_image_dir = Path(output_image_dir)
     output_dataset_path.parent.mkdir(parents=True, exist_ok=True)
     output_image_dir.mkdir(parents=True, exist_ok=True)
 
+    all_questions: List[Dict[str, Any]] = []
+    manifests: List[ProjectManifest] = []
+
     if manifest_path and Path(manifest_path).exists():
-        manifest = load_manifest(manifest_path)
+        manifests = [load_manifest(manifest_path)]
+    elif target_count is None:
+        manifests = [create_synthetic_manifest()]
     else:
-        manifest = create_synthetic_manifest()
+        # Generate multiple procedural buildings until target question count is reached
+        m_idx = 0
+        while len(all_questions) < target_count and m_idx < 100:
+            m = create_procedural_manifest(model_idx=m_idx, seed=seed)
+            manifests.append(m)
 
-    # Render 2D SVG blueprint
-    blueprint_svg = render_sheet(manifest)
-    sheet_image_path = output_image_dir / f"{manifest.project.id}_plan.svg"
-    sheet_image_path.write_text(blueprint_svg, encoding="utf-8")
+            # Render 2D SVG blueprint for this model
+            svg_content = render_sheet(m)
+            svg_file = output_image_dir / f"{m.project.id}_plan.svg"
+            svg_file.write_text(svg_content, encoding="utf-8")
 
-    # Generate MCQ Questions across 4 categories
-    questions = generate_vqa_questions(manifest, seed=seed)
+            # Generate questions for this building
+            model_qs = generate_vqa_questions(m, seed=seed + m_idx)
+            for q in model_qs:
+                q["question_id"] = f"q_{len(all_questions) + 1:04d}"
+                q["model_id"] = m.project.id
+                q["image_path"] = str(svg_file.relative_to(output_dataset_path.parent) if output_dataset_path.parent in svg_file.parents else svg_file)
+                q["image_mime_type"] = "image/svg+xml"
+                all_questions.append(q)
+                if len(all_questions) >= target_count:
+                    break
+
+            m_idx += 1
+
+    # Single manifest flow (either manifest_path or default target_count=None)
+    if (manifest_path or target_count is None) and manifests:
+        m = manifests[0]
+        svg_content = render_sheet(m)
+        svg_file = output_image_dir / f"{m.project.id}_plan.svg"
+        svg_file.write_text(svg_content, encoding="utf-8")
+        all_questions = generate_vqa_questions(m, seed=seed)
+        for q in all_questions:
+            q["model_id"] = m.project.id
+            q["image_path"] = str(svg_file.relative_to(output_dataset_path.parent) if output_dataset_path.parent in svg_file.parents else svg_file)
+            q["image_mime_type"] = "image/svg+xml"
 
     # Calculate summary
     cat_counts: Dict[str, int] = {}
-    for q in questions:
+    for q in all_questions:
         c = q["category"]
         cat_counts[c] = cat_counts.get(c, 0) + 1
 
+    is_single_manifest = len(manifests) == 1
+    proj_id = manifests[0].project.id if (is_single_manifest and manifests) else "DEBIM-VQA-BENCHMARK-PROCEDURAL"
+    proj_name = manifests[0].project.name if (is_single_manifest and manifests) else f"Procedural 2D Blueprint VQA Suite ({len(manifests)} Buildings)"
+
     dataset_dict = {
-        "project_id": manifest.project.id,
-        "project_name": manifest.project.name,
+        "project_id": proj_id,
+        "project_name": proj_name,
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "image_path": str(sheet_image_path),
+        "image_path": str(all_questions[0]["image_path"]) if all_questions else "",
         "image_mime_type": "image/svg+xml",
-        "question_count": len(questions),
+        "building_count": len(manifests),
+        "question_count": len(all_questions),
         "category_counts": cat_counts,
-        "questions": questions,
+        "questions": all_questions,
     }
 
     with open(output_dataset_path, "w", encoding="utf-8") as f:
@@ -607,6 +812,7 @@ def main():
     parser.add_argument("--model", "-m", type=str, default=None, help="Path to debim project manifest (.yaml)")
     parser.add_argument("--output", "-o", type=str, default="dist/vqa_dataset.json", help="Path to output dataset JSON")
     parser.add_argument("--image-dir", type=str, default="dist/vqa_images", help="Directory to save 2D blueprint SVG images")
+    parser.add_argument("--target-count", "-n", type=int, default=500, help="Target total question count")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for distractor choices")
 
     args = parser.parse_args()
@@ -614,9 +820,10 @@ def main():
         manifest_path=args.model,
         output_dataset_path=args.output,
         output_image_dir=args.image_dir,
+        target_count=args.target_count,
         seed=args.seed,
     )
-    print(f"Successfully generated VQA dataset with {ds['question_count']} questions at '{args.output}'")
+    print(f"Successfully generated VQA dataset with {ds['question_count']} questions across {ds.get('building_count', 1)} buildings at '{args.output}'")
 
 
 if __name__ == "__main__":
