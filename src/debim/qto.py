@@ -32,6 +32,7 @@ from debim.resolver import (
     ResolvedGeotechnicalStratum,
     ResolvedSoil,
     ResolvedMarinePart,
+    ResolvedMooringDevice,
     ResolvedFlowController,
     ResolvedFooting,
     ResolvedLightFixture,
@@ -482,6 +483,8 @@ class MarineQTO(BaseModel):
     pile_count: int = 0                  # Number of foundation piles
     pile_total_length: float = 0.0       # Total pile linear meters (m)
     depth: float = 0.0                   # Water depth / berth depth (m)
+    mooring_count: int = 0               # Mooring devices count
+    mooring_capacity_tons: float = 0.0   # Mooring safe working load capacity (SWL tons)
 
 
 class RailwayQTO(BaseModel):
@@ -594,6 +597,8 @@ class ProjectQTO(BaseModel):
     total_road_subbase_volume: float = 0.0
     total_bridge_concrete_volume: float = 0.0
     total_bridge_formwork_area: float = 0.0
+    total_mooring_devices_count: int = 0
+    total_mooring_capacity_tons: float = 0.0
     total_railway_track_length: float = 0.0
     total_railway_rail_length: float = 0.0
     total_railway_rail_weight_kg: float = 0.0
@@ -1765,6 +1770,27 @@ def calculate_element_qto(
             substructure=sub_qto,
         )
 
+    elif isinstance(resolved, ResolvedMooringDevice):
+        elem = resolved.element
+        cap_tons = resolved.capacity_tons
+        marine_qto = MarineQTO(
+            mooring_count=1,
+            mooring_capacity_tons=cap_tons,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            marine=marine_qto,
+            mep=MepQTO(
+                system_type="MOORING",
+                fixture_type=resolved.predefined_type,
+                count=1,
+                capacity=cap_tons,
+                predefined_type=resolved.predefined_type,
+            ),
+        )
+
     elif isinstance(resolved, ResolvedRailway):
         elem = resolved.element
         rw_qto = RailwayQTO(
@@ -2252,6 +2278,8 @@ def calculate_qto(
     total_road_subbase_vol = 0.0
     total_bridge_conc_vol = 0.0
     total_bridge_formwork = 0.0
+    total_mooring_devices_cnt = 0
+    total_mooring_cap_tons = 0.0
     total_railway_track_length = 0.0
     total_railway_rail_length = 0.0
     total_railway_rail_weight_kg = 0.0
@@ -2444,6 +2472,10 @@ def calculate_qto(
             total_bridge_conc_vol += eqto.bridge.total_concrete_volume
             total_bridge_formwork += eqto.bridge.formwork_area
 
+        if eqto.marine:
+            total_mooring_devices_cnt += eqto.marine.mooring_count
+            total_mooring_cap_tons += eqto.marine.mooring_capacity_tons
+
         if eqto.railway:
             total_railway_track_length += eqto.railway.track_length
             total_railway_rail_length += eqto.railway.total_rail_length
@@ -2565,6 +2597,8 @@ def calculate_qto(
         total_road_subbase_volume=total_road_subbase_vol,
         total_bridge_concrete_volume=total_bridge_conc_vol,
         total_bridge_formwork_area=total_bridge_formwork,
+        total_mooring_devices_count=total_mooring_devices_cnt,
+        total_mooring_capacity_tons=total_mooring_cap_tons,
         total_railway_track_length=total_railway_track_length,
         total_railway_rail_length=total_railway_rail_length,
         total_railway_rail_weight_kg=total_railway_rail_weight_kg,

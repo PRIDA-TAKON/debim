@@ -1255,6 +1255,25 @@ def generate_viewer_html(
             "layer": rw.layer,
         })
 
+    for md in getattr(resolved, "mooring_devices", []) or []:
+        elements_data.append({
+            "tag": md.tag,
+            "class": "IfcMooringDevice",
+            "predefined_type": md.predefined_type,
+            "material": md.element.material or "Cast Steel",
+            "position": [md.position[0], md.position[1], md.position[2] + md.height / 2.0],
+            "rotation": [0, 0, md.rotation_angle],
+            "dimensions": {
+                "length": md.base_plate_width,
+                "width": md.base_plate_width,
+                "height": md.height,
+                "capacity_tons": md.capacity_tons,
+                "anchor_bolts_count": md.anchor_bolts_count,
+            },
+            "color": "#334155",
+            "layer": md.layer,
+        })
+
     # Plates
     for plate in resolved.plates:
         rot = [0.0, 0.0, 0.0]

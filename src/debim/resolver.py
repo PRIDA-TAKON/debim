@@ -18,6 +18,7 @@ from debim.schema import (
     IfcBridgePart,
     IfcBuildingElementProxy,
     IfcMarinePart,
+    IfcMooringDevice,
     IfcBuiltSystem,
     IfcCableCarrierSegment,
     IfcColumn,
@@ -1326,6 +1327,21 @@ class ResolvedMarinePart(BaseModel):
     layer: str = "civil/infrastructure/marine"
 
 
+class ResolvedMooringDevice(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMooringDevice
+    predefined_type: str = "BOLLARD"
+    capacity_tons: float = 50.0
+    base_plate_width: float = 0.60
+    anchor_bolts_count: int = 4
+    height: float = 0.80
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    rotation_angle: float = 0.0
+    layer: str = "civil/infrastructure/marine/mooring"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1368,6 +1384,7 @@ ResolvedElement = Union[
     ResolvedBridgePart,
     ResolvedBearing,
     ResolvedMarinePart,
+    ResolvedMooringDevice,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1424,6 +1441,7 @@ class ResolvedManifest(BaseModel):
     bridge_parts: List[ResolvedBridgePart] = []
     bearings: List[ResolvedBearing] = []
     marine_parts: List[ResolvedMarinePart] = []
+    mooring_devices: List[ResolvedMooringDevice] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -5232,6 +5250,53 @@ class SpatialResolver:
             layer=marine_part.layer or derive_default_layer(marine_part),
         )
 
+    def resolve_mooring_device(self, mooring_device: IfcMooringDevice) -> ResolvedMooringDevice:
+        z_base = self.get_storey(mooring_device.placement.storey).elevation if mooring_device.placement.storey else 0.0
+
+        rot_deg = 0.0
+        if mooring_device.placement.rotation is not None:
+            if isinstance(mooring_device.placement.rotation, (int, float)):
+                rot_deg = float(mooring_device.placement.rotation)
+            elif isinstance(mooring_device.placement.rotation, (list, tuple)) and len(mooring_device.placement.rotation) >= 3:
+                rot_deg = float(mooring_device.placement.rotation[2])
+
+        if mooring_device.placement.position:
+            px, py, pz = mooring_device.placement.position
+            pos = (px, py, z_base + pz)
+        elif mooring_device.placement.from_grid and mooring_device.placement.to_grid:
+            x1, y1 = self.get_grid_xy(mooring_device.placement.from_grid)
+            x2, y2 = self.get_grid_xy(mooring_device.placement.to_grid)
+            x1 += mooring_device.placement.offset_x
+            y1 += mooring_device.placement.offset_y
+            x2 += mooring_device.placement.offset_x
+            y2 += mooring_device.placement.offset_y
+            z = z_base + mooring_device.placement.offset_z
+            pos = ((x1 + x2) / 2.0, (y1 + y2) / 2.0, z)
+            if mooring_device.placement.rotation is None:
+                rot_deg = math.degrees(math.atan2(y2 - y1, x2 - x1))
+        elif mooring_device.placement.grid:
+            gx, gy = self.get_grid_xy(mooring_device.placement.grid)
+            gx += mooring_device.placement.offset_x
+            gy += mooring_device.placement.offset_y
+            z = z_base + mooring_device.placement.offset_z
+            pos = (gx, gy, z)
+        else:
+            z = z_base + mooring_device.placement.offset_z
+            pos = (mooring_device.placement.offset_x, mooring_device.placement.offset_y, z)
+
+        return ResolvedMooringDevice(
+            tag=mooring_device.tag,
+            element=mooring_device,
+            predefined_type=mooring_device.predefined_type,
+            capacity_tons=mooring_device.capacity_tons,
+            base_plate_width=mooring_device.base_plate_width,
+            anchor_bolts_count=mooring_device.anchor_bolts_count,
+            height=mooring_device.height,
+            position=pos,
+            rotation_angle=rot_deg,
+            layer=mooring_device.layer or derive_default_layer(mooring_device),
+        )
+
 
     def _resolve_element_ports(self, elem, host_pos: Tuple[float, float, float], rot_deg: float = 0.0) -> List[ResolvedPort]:
         resolved_ports = []
@@ -5519,6 +5584,10 @@ class SpatialResolver:
                 r_mp = self.resolve_marine_part(elem)
                 resolved_manifest.marine_parts.append(r_mp)
                 resolved_manifest.elements.append(r_mp)
+            elif isinstance(elem, IfcMooringDevice):
+                r_md = self.resolve_mooring_device(elem)
+                resolved_manifest.mooring_devices.append(r_md)
+                resolved_manifest.elements.append(r_md)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)
