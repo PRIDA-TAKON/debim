@@ -2379,6 +2379,43 @@ def generate_viewer_html(
             "fixture_name_th": fc_th,
         })
 
+    # MEP Elements: Flow Fittings
+    for fitting in getattr(resolved, "flow_fittings", []):
+        f_th = {
+            "BEND": "Pipe / Duct Bend / Elbow",
+            "ELBOW": "Pipe / Duct Elbow",
+            "TEE": "Pipe / Duct Tee Junction",
+            "TRANSITION": "Duct / Pipe Transition",
+            "JUNCTION": "Multi-port Junction",
+        }.get(fitting.fitting_type, fitting.fitting_type)
+
+        elements_data.append({
+            "tag": fitting.tag,
+            "class": "IfcFlowFitting",
+            "material": getattr(fitting.element, "material", None) or "PVC / Steel Fitting",
+            "position": [
+                fitting.position[0] + fitting.dimensions[0] / 2.0,
+                fitting.position[1] + fitting.dimensions[1] / 2.0,
+                fitting.position[2] + fitting.dimensions[2] / 2.0,
+            ],
+            "rotation": [
+                fitting.rotation[0],
+                fitting.rotation[1],
+                fitting.rotation[2],
+            ],
+            "dimensions": {
+                "width": fitting.dimensions[0],
+                "depth": fitting.dimensions[1],
+                "height": fitting.dimensions[2],
+            },
+            "color": "#475569",
+            "layer": fitting.layer,
+            "fitting_type": fitting.fitting_type,
+            "predefined_type": fitting.predefined_type,
+            "nominal_diameter": fitting.nominal_diameter,
+            "fixture_name_th": f_th,
+        })
+
     # MEP Elements: Unitary Equipment
     for eq in resolved.unitary_equipments:
         eq_th = {

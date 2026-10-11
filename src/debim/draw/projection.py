@@ -579,6 +579,43 @@ def slice_storey(
                 },
             ))
 
+    # Process Flow Fittings (Cut & Low Projection)
+    for ff in getattr(resolved, "flow_fittings", []):
+        ff_base_z = ff.position[2]
+        ff_top_z = ff_base_z + ff.dimensions[2]
+        cx = ff.position[0] + ff.dimensions[0] / 2.0
+        cy = ff.position[1] + ff.dimensions[1] / 2.0
+        all_2d_points.append((cx, cy))
+        w, d = ff.dimensions[0], ff.dimensions[1]
+        rot = ff.rotation_angle if hasattr(ff, "rotation_angle") else (ff.rotation[2] if hasattr(ff, "rotation") and ff.rotation else 0.0)
+        ff_poly = _create_rotated_box(cx, cy, w, d, rot)
+
+        if ff_base_z <= cut_elev <= ff_top_z:
+            cut_elements.append(CutElement(
+                tag=ff.tag,
+                element_class="IfcFlowFitting",
+                category="medium_cut",
+                geometry=ff_poly,
+                centerline=Point(cx, cy),
+                layer=ff.layer,
+                properties={
+                    "fitting_type": ff.fitting_type,
+                    "predefined_type": ff.predefined_type,
+                },
+            ))
+        elif ff_base_z < cut_elev:
+            projection_elements.append(ProjectionElement(
+                tag=ff.tag,
+                element_class="IfcFlowFitting",
+                category="low_projection",
+                geometry=ff_poly,
+                layer=ff.layer,
+                properties={
+                    "fitting_type": ff.fitting_type,
+                    "predefined_type": ff.predefined_type,
+                },
+            ))
+
     # Process Flow Controllers (Cut & Low Projection)
     for fc in getattr(resolved, "flow_controllers", []):
         fc_base_z = fc.position[2]

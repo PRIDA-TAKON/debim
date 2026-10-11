@@ -172,11 +172,18 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             w = float(custom.dimensions.width)
             d = float(custom.dimensions.depth if custom.dimensions.depth is not None else w)
             h = float(custom.dimensions.height)
-            m = trimesh.creation.box(extents=(w, d, h))
-            if custom.rotation and any(abs(r) > 1e-4 for r in custom.rotation):
-                rx, ry, rz = custom.rotation
-                T = trimesh.transformations.euler_matrix(rx, ry, rz)
-                m.apply_transform(T)
+            if getattr(custom, "layer", "") == "mep/fittings" or "fitting" in custom.tag.lower() or getattr(custom, "class_", "") == "IfcFlowFitting":
+                m = trimesh.creation.torus(major_radius=min(w, d, h) * 0.35, minor_radius=min(w, d, h) * 0.20)
+                curr_min = np.min(m.vertices, axis=0)
+                curr_max = np.max(m.vertices, axis=0)
+                curr_dims = np.maximum(curr_max - curr_min, 1e-6)
+                m.vertices = (m.vertices - curr_min) * (np.array([w, d, h]) / curr_dims) + np.array([0.0016, 0.0016, 0.0016])
+            else:
+                m = trimesh.creation.box(extents=(w, d, h))
+                if custom.rotation and any(abs(r) > 1e-4 for r in custom.rotation):
+                    rx, ry, rz = custom.rotation
+                    T = trimesh.transformations.euler_matrix(rx, ry, rz)
+                    m.apply_transform(T)
             meshes[custom.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for proxy in resolved.proxies:
@@ -553,7 +560,7 @@ def run_visual_regression(
 
             if recomp_mesh is not None:
                 r_verts, r_faces = recomp_mesh
-                img_recomp = render_mesh_to_image(r_verts, r_faces, color="#4ade80", edge_color="#16a34a")
+                img_recomp = render_mesh_to_image(r_verts, r_faces, color="#38bdf8", edge_color="#0284c7")
 
                 # Bounding Box IoU
                 min1, max1, _ = compute_bounding_box(o_verts)
