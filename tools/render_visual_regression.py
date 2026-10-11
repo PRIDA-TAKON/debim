@@ -69,10 +69,11 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
         meshes[col.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for beam in resolved.beams:
-        w = float(beam.element.profile.width)
-        d = float(beam.element.profile.depth)
+        w = float(beam.width)
+        d = float(beam.depth)
         l = float(beam.span_length)
-        m = trimesh.creation.box(extents=(l, w, d))
+        m = trimesh.creation.box(extents=(w, l, d))
+        m.apply_translation([0.0, l / 2.0, -d / 2.0])
         meshes[beam.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for wall in resolved.walls:
@@ -655,7 +656,7 @@ def main():
     parser.add_argument("--ifc", type=str, default=None, help="Path to a single IFC file")
     parser.add_argument("--dir", type=str, default=None, help="Path to directory containing multiple IFC files")
     parser.add_argument("--output", type=str, default="dist/visual_regression", help="Output directory for reports & images")
-    parser.add_argument("--class", "--element-class", dest="target_class", type=str, default=None, help="Filter testing to specific IFC element class (e.g., IfcDoor)")
+    parser.add_argument("--class", "--element-class", dest="target_class", type=str, default=None, help="Filter testing to specific IFC element class (e.g., IfcBeam, IfcDoor)")
     parser.add_argument("--max-per-type", type=int, default=2, help="Max components per element class")
     parser.add_argument("--limit", type=int, default=10, help="Total component test limit per model")
     parser.add_argument("--dedup", action="store_true", default=True, help="Enable variant deduplication to prevent repetitive sampling")

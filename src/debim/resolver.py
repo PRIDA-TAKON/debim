@@ -212,6 +212,22 @@ class ResolvedBeam(BaseModel):
     waypoints: List[Tuple[float, float, float]] = []
     layer: str = "structure/framing/beams"
 
+    @property
+    def width(self) -> float:
+        prof = self.element.profile
+        w = getattr(prof, "width", getattr(prof, "overall_width", getattr(prof, "flange_width", None)))
+        if w is None:
+            w = getattr(prof, "diameter", getattr(prof, "radius", 0.2))
+        return float(w)
+
+    @property
+    def depth(self) -> float:
+        prof = self.element.profile
+        d = getattr(prof, "depth", getattr(prof, "overall_depth", None))
+        if d is None:
+            d = getattr(prof, "diameter", getattr(prof, "radius", 0.4))
+        return float(d)
+
 
 class ResolvedDoor(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
