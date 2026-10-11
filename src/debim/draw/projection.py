@@ -27,6 +27,7 @@ from debim.resolver import (
     ResolvedManifest,
     ResolvedPipeSegment,
     ResolvedPlate,
+    ResolvedProxy,
     ResolvedRailing,
     ResolvedRamp,
     ResolvedSanitaryTerminal,
@@ -276,17 +277,45 @@ def slice_storey(
                 frame_poly = _create_rotated_box(c_center_x, c_center_y, w_child, f_thick, wall_angle_deg)
 
                 elem_cls = "IfcDoor" if isinstance(child, ResolvedDoor) else "IfcWindow"
+
+                # For doors, generate door leaf line and 90-degree swing arc projection
+                if isinstance(child, ResolvedDoor):
+                    hinge_x = x1 + d1 * ux
+                    hinge_y = y1 + d1 * uy
+                    door_w = child.width
+
+                    # Open leaf line at 90 deg relative to wall direction
+                    leaf_x = hinge_x + door_w * (-uy)
+                    leaf_y = hinge_y + door_w * ux
+                    door_leaf_geom = LineString([(hinge_x, hinge_y), (leaf_x, leaf_y)])
+
+                    projection_elements.append(ProjectionElement(
+                        tag=f"{child.tag}-Leaf",
+                        element_class="IfcDoorLeaf",
+                        category="low_projection",
+                        geometry=door_leaf_geom,
+                        layer=f"{child.layer}/leaf",
+                        properties={
+                            "host_door": child.tag,
+                            "width": child.width,
+                            "hinge_point": (hinge_x, hinge_y),
+                        },
+                    ))
+
                 cut_elements.append(CutElement(
                     tag=child.tag,
                     element_class=elem_cls,
                     category="medium_cut",
                     geometry=frame_poly,
+                    centerline=LineString([(x1 + d1 * ux, y1 + d1 * uy), (x1 + d2 * ux, y1 + d2 * uy)]),
                     layer=child.layer,
                     properties={
                         "host_wall": wall.tag,
                         "width": child.width,
                         "height": child.height,
                         "sill_height": child.sill_height,
+                        "frame_thickness": f_thick,
+                        "has_leaf": isinstance(child, ResolvedDoor),
                     },
                 ))
 
@@ -490,7 +519,46 @@ def slice_storey(
                     },
                 ))
 
-    # 5. Process Sanitary & MEP Terminals (Low Projection)
+    # 5. Process Proxies
+    for proxy in resolved.proxies:
+        px, py, pz = proxy.position
+        w, d, h = proxy.dimensions
+        p_base_z = pz
+        p_top_z = pz + h
+        rot_z = proxy.rotation[2] if (proxy.rotation and len(proxy.rotation) >= 3) else 0.0
+
+        all_2d_points.append((px, py))
+        proxy_poly = _create_rotated_box(px, py, w, d, rot_z)
+
+        if p_base_z <= cut_elev <= p_top_z:
+            cut_elements.append(CutElement(
+                tag=proxy.tag,
+                element_class=proxy.ifc_class,
+                category="medium_cut",
+                geometry=proxy_poly,
+                centerline=Point(px, py),
+                layer=proxy.layer,
+                properties={
+                    "ifc_class": proxy.ifc_class,
+                    "predefined_type": proxy.predefined_type,
+                    "dimensions": proxy.dimensions,
+                },
+            ))
+        elif p_top_z <= cut_elev:
+            projection_elements.append(ProjectionElement(
+                tag=proxy.tag,
+                element_class=proxy.ifc_class,
+                category="low_projection",
+                geometry=proxy_poly,
+                layer=proxy.layer,
+                properties={
+                    "ifc_class": proxy.ifc_class,
+                    "predefined_type": proxy.predefined_type,
+                    "dimensions": proxy.dimensions,
+                },
+            ))
+
+    # 6. Process Sanitary & MEP Terminals (Low Projection)
     for term in resolved.sanitary_terminals:
         if term.position[2] <= cut_elev:
             tx, ty, _ = term.position
@@ -529,7 +597,35 @@ def slice_storey(
                 },
             ))
 
-    # 6. Calculate Bounding Box
+    # 6. Process Coverings (Low Projection)
+    for cov in getattr(resolved, "coverings", []) or []:
+        cov_z = cov.center[2]
+        if cov_z <= cut_elev:
+            if cov.polygon and len(cov.polygon) >= 3:
+                c_pts_2d = [(p[0], p[1]) for p in cov.polygon]
+                all_2d_points.extend(c_pts_2d)
+                cov_poly = Polygon(c_pts_2d)
+            else:
+                cx, cy = cov.center[0], cov.center[1]
+                all_2d_points.append((cx, cy))
+                w = math.sqrt(cov.area) if cov.area > 0 else 1.0
+                cov_poly = _create_rotated_box(cx, cy, w, w, 0.0)
+
+            projection_elements.append(ProjectionElement(
+                tag=cov.tag,
+                element_class="IfcCovering",
+                category="low_projection",
+                geometry=cov_poly,
+                layer=cov.layer,
+                properties={
+                    "covering_type": cov.covering_type,
+                    "material": cov.element.material if cov.element else None,
+                    "thickness": cov.thickness,
+                    "area": cov.area,
+                },
+            ))
+
+    # 7. Calculate Bounding Box
     if all_2d_points:
         xs = [p[0] for p in all_2d_points]
         ys = [p[1] for p in all_2d_points]

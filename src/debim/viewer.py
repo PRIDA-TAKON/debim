@@ -538,7 +538,7 @@ def generate_viewer_html(
                 elements_data.append({
                     "tag": child.tag,
                     "class": "IfcDoor",
-                    "material": "Wood",
+                    "material": child.element.material or "Wood",
                     "position": [
                         child.position[0],
                         child.position[1],
@@ -547,8 +547,14 @@ def generate_viewer_html(
                     "rotation": [0, 0, angle],
                     "dimensions": {
                         "width": child.width,
-                        "thickness": wall.thickness * 1.08,
+                        "thickness": child.frame_thickness,
                         "height": child.height,
+                        "frame_width": child.frame_width,
+                        "frame_thickness": child.frame_thickness,
+                        "casing_width": child.casing_width,
+                        "casing_thickness": child.casing_thickness,
+                        "panel_thickness": child.panel_thickness,
+                        "operation_type": child.operation_type,
                     },
                     "color": "#8B4513",
                     "layer": child.layer,
@@ -1908,20 +1914,34 @@ def generate_viewer_html(
 
         else:
             if cov.polygon and len(cov.polygon) >= 3:
+                xs = [pt[0] for pt in cov.polygon]
+                ys = [pt[1] for pt in cov.polygon]
+                min_x, max_x = min(xs), max(xs)
+                min_y, max_y = min(ys), max(ys)
+                w = max_x - min_x
+                d = max_y - min_y
+                h = cov.thickness if cov.thickness > 0 else 0.015
+                cx = (min_x + max_x) / 2.0
+                cy = (min_y + max_y) / 2.0
+                cz = cov.center[2] + h / 2.0
+
                 elements_data.append({
                     "tag": cov.tag,
                     "class": "IfcCovering",
                     "material": cov.element.material,
-                    "geometry_type": "polygon",
-                    "points": cov.polygon,
+                    "position": [cx, cy, cz],
+                    "rotation": [0, 0, 0],
+                    "dimensions": {
+                        "width": w,
+                        "depth": d,
+                        "height": h,
+                        "polygon": [[pt[0], pt[1]] for pt in cov.polygon],
+                        "area": cov.area,
+                    },
                     "color": color,
                     "layer": cov_layer,
                     "covering_type": c_type,
                     "member_name": f"{c_th} - {cov.element.material}",
-                    "dimensions": {
-                        "area": cov.area,
-                        "thickness": cov.thickness,
-                    },
                     "transparent": True,
                     "opacity": opacity,
                 })
@@ -2429,6 +2449,22 @@ def generate_viewer_html(
             "depth": d,
             "height": h,
         }
+
+        elem_geom = getattr(proxy.element, "geometry", None)
+        if elem_geom:
+            if hasattr(elem_geom, "cylinder") and elem_geom.cylinder:
+                p_dims["shape"] = "CYLINDER"
+                p_dims["radius"] = w / 2.0
+            elif hasattr(elem_geom, "profile") and elem_geom.profile:
+                prof_dims = extract_profile_viewer_dim(elem_geom.profile, h, is_column=True)
+                p_dims.update(prof_dims)
+            elif isinstance(elem_geom, dict):
+                if elem_geom.get("cylinder"):
+                    p_dims["shape"] = "CYLINDER"
+                    p_dims["radius"] = w / 2.0
+                elif elem_geom.get("profile"):
+                    prof_dims = extract_profile_viewer_dim(elem_geom["profile"], h, is_column=True)
+                    p_dims.update(prof_dims)
 
         cz = proxy.position[2] + h / 2.0
 
@@ -3246,7 +3282,7 @@ def generate_viewer_html(
                 }} else {{
                     geometry = new THREE.BoxGeometry(dim.length, dim.width || dim.thickness || 0.02, dim.height || dim.depth || 0.20);
                 }}
-            }} else if (data.class === "IfcSlab") {{
+            }} else if (data.class === "IfcSlab" || data.class === "IfcCovering") {{
                 if (dim.polygon && dim.polygon.length >= 3) {{
                     const s = new THREE.Shape();
                     s.moveTo(dim.polygon[0][0] - data.position[0], dim.polygon[0][1] - data.position[1]);
@@ -3275,7 +3311,95 @@ def generate_viewer_html(
                 }}
             }} else if (data.class === "IfcWall") {{
                 geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
-            }} else if (data.class === "IfcDoor" || data.class === "IfcWindow") {{
+            }} else if (data.class === "IfcDoor") {{
+                const w = dim.width || 0.9;
+                const h = dim.height || 2.1;
+                const f_d = dim.thickness || dim.frame_thickness || 0.15;
+                const f_w = dim.frame_width || 0.05;
+                const c_w = dim.casing_width || 0.076;
+                const c_t = dim.casing_thickness || 0.025;
+                const p_t = dim.panel_thickness || 0.035;
+                const p_w = Math.max(0.01, w - 2 * f_w);
+                const p_h = Math.max(0.01, h - f_w);
+
+                const doorGroup = new THREE.Group();
+                const doorMat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color(data.color || "#8B4513"),
+                    roughness: 0.5,
+                    metalness: 0.1
+                }});
+                const isGlass = (data.material && data.material.toLowerCase().includes("glass")) || (data.tag && data.tag.toLowerCase().includes("glass"));
+                const leafMat = isGlass ? new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color("#38BDF8"),
+                    transparent: true,
+                    opacity: 0.5,
+                    roughness: 0.1
+                }}) : doorMat;
+
+                // 1. Frame Jambs & Head
+                const fLeftGeom = new THREE.BoxGeometry(f_w, f_d, h);
+                const fLeftMesh = new THREE.Mesh(fLeftGeom, doorMat);
+                fLeftMesh.position.set(-w/2 + f_w/2, 0, 0);
+                doorGroup.add(fLeftMesh);
+
+                const fRightGeom = new THREE.BoxGeometry(f_w, f_d, h);
+                const fRightMesh = new THREE.Mesh(fRightGeom, doorMat);
+                fRightMesh.position.set(w/2 - f_w/2, 0, 0);
+                doorGroup.add(fRightMesh);
+
+                const fTopGeom = new THREE.BoxGeometry(w, f_d, f_w);
+                const fTopMesh = new THREE.Mesh(fTopGeom, doorMat);
+                fTopMesh.position.set(0, 0, h/2 - f_w/2);
+                doorGroup.add(fTopMesh);
+
+                // 2. Trim Casings (Front and Back jamb & head trims)
+                const cSideGeom = new THREE.BoxGeometry(c_w, c_t, h + c_w);
+                const cHeadGeom = new THREE.BoxGeometry(w + 2*c_w, c_t, c_w);
+
+                // Front Casing (Y = f_d/2 + c_t/2)
+                const cFLeft = new THREE.Mesh(cSideGeom, doorMat);
+                cFLeft.position.set(-w/2 - c_w/2, f_d/2 + c_t/2, c_w/2);
+                doorGroup.add(cFLeft);
+
+                const cFRight = new THREE.Mesh(cSideGeom, doorMat);
+                cFRight.position.set(w/2 + c_w/2, f_d/2 + c_t/2, c_w/2);
+                doorGroup.add(cFRight);
+
+                const cFHead = new THREE.Mesh(cHeadGeom, doorMat);
+                cFHead.position.set(0, f_d/2 + c_t/2, h/2 + c_w/2);
+                doorGroup.add(cFHead);
+
+                // Back Casing (Y = -f_d/2 - c_t/2)
+                const cBLeft = new THREE.Mesh(cSideGeom, doorMat);
+                cBLeft.position.set(-w/2 - c_w/2, -f_d/2 - c_t/2, c_w/2);
+                doorGroup.add(cBLeft);
+
+                const cBRight = new THREE.Mesh(cSideGeom, doorMat);
+                cBRight.position.set(w/2 + c_w/2, -f_d/2 - c_t/2, c_w/2);
+                doorGroup.add(cBRight);
+
+                const cBHead = new THREE.Mesh(cHeadGeom, doorMat);
+                cBHead.position.set(0, -f_d/2 - c_t/2, h/2 + c_w/2);
+                doorGroup.add(cBHead);
+
+                // 3. Door Leaf Panel
+                const panelGeom = new THREE.BoxGeometry(p_w, p_t, p_h);
+                const panelMesh = new THREE.Mesh(panelGeom, leafMat);
+                panelMesh.position.set(0, 0, -f_w/2);
+                doorGroup.add(panelMesh);
+
+                if (data.position) doorGroup.position.set(...data.position);
+                if (data.rotation) doorGroup.rotation.set(data.rotation[0], data.rotation[1], data.rotation[2]);
+
+                doorGroup.userData = data;
+                let layerPath = data.layer || "general/other";
+                if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
+                doorGroup.userData.layer = layerPath;
+
+                scene.add(doorGroup);
+                pickableObjects.push(doorGroup);
+                return;
+            }} else if (data.class === "IfcWindow") {{
                 geometry = new THREE.BoxGeometry(dim.width, dim.thickness, dim.height);
             }} else if (dim.shape === "CYLINDER") {{
                 const r = dim.radius || 0.5;
