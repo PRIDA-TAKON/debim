@@ -1549,16 +1549,17 @@ def generate_viewer_html(
         if custom.resolved_solid:
             s = custom.resolved_solid
             if isinstance(s, ResolvedSweptDisk):
+                is_fit = "fitting" in layer_lower or "fitting" in tag_lower or any(kw in tag_lower for kw in ["elbow", "tee", "transition", "bend", "reducer", "cross"])
                 elem_dict = {
                     "tag": custom.tag,
-                    "class": "IfcCustomElement",
+                    "class": "IfcFlowFitting" if is_fit else "IfcCustomElement",
                     "geometry_type": "swept_disk",
                     "material": "Swept Disk Asset",
                     "position": list(s.centroid),
                     "points": list(s.directrix),
                     "radius": s.radius,
                     "inner_radius": s.inner_radius,
-                    "color": "#38BDF8",
+                    "color": "#0284C7" if is_fit else "#38BDF8",
                     "layer": custom.layer,
                     "dimensions": s.bounding_box,
                 }

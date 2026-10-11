@@ -1981,6 +1981,50 @@ class SpatialResolver:
                 )
 
         dims = custom.dimensions
+
+        # Auto-synthesize ResolvedSweptDisk for MEP fittings if custom.solid is not explicitly provided
+        tag_lower = (custom.tag or "").lower()
+        layer_lower = (custom.layer or "").lower()
+        is_fitting = (
+            "fitting" in layer_lower
+            or "fitting" in tag_lower
+            or any(kw in tag_lower for kw in ["elbow", "tee", "transition", "bend", "reducer", "cross"])
+        )
+
+        if resolved_solid is None and is_fitting and dims is not None:
+            w = float(dims.width)
+            d = float(dims.depth if dims.depth is not None else w)
+            h = float(dims.height)
+            r = max(min(w, d, h) / 2.0, 0.005)
+
+            bbox = {
+                "min_x": world_pos[0] - w / 2.0,
+                "max_x": world_pos[0] + w / 2.0,
+                "min_y": world_pos[1] - d / 2.0,
+                "max_y": world_pos[1] + d / 2.0,
+                "min_z": world_pos[2] - h / 2.0,
+                "max_z": world_pos[2] + h / 2.0,
+                "width": w,
+                "depth": d,
+                "height": h,
+            }
+
+            p0 = (world_pos[0] - w / 2.0 + r, world_pos[1] - d / 2.0 + r, world_pos[2] - h / 2.0 + r)
+            p1 = (world_pos[0], world_pos[1], world_pos[2])
+            p2 = (world_pos[0] + w / 2.0 - r, world_pos[1] + d / 2.0 - r, world_pos[2] + h / 2.0 - r)
+            world_pts = [p0, p1, p2]
+            tot_len = math.dist(p0, p1) + math.dist(p1, p2)
+
+            resolved_solid = ResolvedSweptDisk(
+                tag=custom.tag,
+                directrix=world_pts,
+                radius=r,
+                inner_radius=round(r * 0.8, 4),
+                length=tot_len,
+                centroid=world_pos,
+                bounding_box=bbox,
+            )
+
         if dims is None and resolved_solid is not None:
             dims = Dimensions(
                 width=resolved_solid.bounding_box["width"],
