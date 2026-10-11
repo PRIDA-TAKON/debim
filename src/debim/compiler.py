@@ -69,6 +69,8 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcFurnishingElement"
     if "railing" in l:
         return "IfcRailing"
+    if "curtain" in l:
+        return "IfcCurtainWall"
     if "member" in l:
         return "IfcMember"
     if "plate" in l:
@@ -875,6 +877,39 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(roof_ref)
 
+        # 6b. Curtain Walls & Plates
+        for cw in getattr(resolved, "curtain_walls", []):
+            st_id = cw.element.placement.storey
+            cw_ref = self.create_entity(
+                "IfcCurtainWall",
+                generate_ifc_guid(),
+                None,
+                cw.tag,
+                None,
+                None,
+                None,
+                None,
+                f".{cw.element.predefined_type}.",
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(cw_ref)
+
+        for plate in getattr(resolved, "plates", []):
+            st_id = plate.element.placement.storey
+            plate_ref = self.create_entity(
+                "IfcPlate",
+                generate_ifc_guid(),
+                None,
+                plate.tag,
+                None,
+                None,
+                None,
+                None,
+                f".{plate.element.predefined_type}.",
+            )
+            if st_id in storey_elements:
+                storey_elements[st_id].append(plate_ref)
+
             for child in roof.children:
                 if isinstance(child, ResolvedDoor):
                     door_ref = self.create_entity(
@@ -1646,6 +1681,45 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = roof.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(roof_obj)
+
+        for child in roof.children:
+            if isinstance(child, ResolvedDoor):
+                door_obj = ifcopenshell.api.run(
+                    "root.create_entity", model, ifc_class="IfcDoor", name=child.tag
+                )
+                if st_id in storey_products:
+                    storey_products[st_id].append(door_obj)
+            elif isinstance(child, ResolvedWindow):
+                win_obj = ifcopenshell.api.run(
+                    "root.create_entity", model, ifc_class="IfcWindow", name=child.tag
+                )
+                if st_id in storey_products:
+                    storey_products[st_id].append(win_obj)
+
+    # 6b. Curtain Walls & Plates
+    for cw in getattr(resolved, "curtain_walls", []):
+        cw_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcCurtainWall",
+            name=cw.tag,
+            predefined_type=cw.element.predefined_type if cw.element.predefined_type in ("POST_AND_BEAM", "UNITIZED", "USERDEFINED", "NOTDEFINED") else "NOTDEFINED",
+        )
+        st_id = cw.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(cw_obj)
+
+    for plate in getattr(resolved, "plates", []):
+        plate_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcPlate",
+            name=plate.tag,
+            predefined_type=plate.element.predefined_type if plate.element.predefined_type in ("CURTAIN_PANEL", "SHEET", "FLANGE_PLATE", "BASE_PLATE", "USERDEFINED", "NOTDEFINED") else "NOTDEFINED",
+        )
+        st_id = plate.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(plate_obj)
 
         for child in roof.children:
             if isinstance(child, ResolvedDoor):

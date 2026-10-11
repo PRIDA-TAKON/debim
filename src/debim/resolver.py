@@ -15,6 +15,7 @@ from debim.schema import (
     IfcCableCarrierSegment,
     IfcColumn,
     IfcCovering,
+    IfcCurtainWall,
     IfcCustomElement,
     IfcDistributionBoard,
     IfcElectricDistributionBoard,
@@ -24,6 +25,7 @@ from debim.schema import (
     IfcLightFixture,
     IfcOutlet,
     IfcPipeSegment,
+    IfcPlate,
     IfcRailing,
     IfcRamp,
     IfcRoof,
@@ -577,6 +579,61 @@ class ResolvedRoof(BaseModel):
     layer: str = "architecture/roofs"
 
 
+class ResolvedGlassPanel(BaseModel):
+    tag: str
+    polygon: List[Tuple[float, float, float]]
+    area: float
+    thickness: float
+
+
+class ResolvedMullion(BaseModel):
+    tag: str
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    length: float
+    mullion_type: str  # "VERTICAL", "HORIZONTAL", "FRAME"
+    width: float
+    depth: float
+
+
+class ResolvedCurtainWall(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcCurtainWall
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    height: float
+    length: float
+    gross_facade_area: float
+    mullion_spacing_h: float
+    mullion_spacing_v: float
+    total_mullion_length: float
+    glass_panel_count: int
+    mullions: List[ResolvedMullion] = []
+    glass_panels: List[ResolvedGlassPanel] = []
+    layer: str = "architecture/facades/curtain_walls"
+
+
+class ResolvedPlate(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcPlate
+    predefined_type: str
+    position: Tuple[float, float, float]
+    rotation: Optional[Tuple[float, float, float]] = None
+    width: float
+    depth: float
+    height: float
+    thickness: float
+    area: float
+    volume: float
+    weight: float
+    polygon: Optional[List[Tuple[float, float, float]]] = None
+    layer: str = "architecture/cladding"
+
+
 # MEP Colors & Defaults
 MEP_PIPE_COLORS: Dict[str, str] = {
     "COLD_WATER": "#0284C7",  # Sky Blue (น้ำดี ท่อ PVC ฟ้า / PPR)
@@ -890,6 +947,8 @@ ResolvedElement = Union[
     ResolvedRamp,
     ResolvedRailing,
     ResolvedRoof,
+    ResolvedCurtainWall,
+    ResolvedPlate,
     ResolvedPipeSegment,
     ResolvedCableCarrierSegment,
     ResolvedDuctSegment,
@@ -923,6 +982,8 @@ class ResolvedManifest(BaseModel):
     ramps: List[ResolvedRamp] = []
     railings: List[ResolvedRailing] = []
     roofs: List[ResolvedRoof] = []
+    curtain_walls: List[ResolvedCurtainWall] = []
+    plates: List[ResolvedPlate] = []
     doors: List[ResolvedDoor] = []
     windows: List[ResolvedWindow] = []
     pipes: List[ResolvedPipeSegment] = []
@@ -2651,10 +2712,10 @@ class SpatialResolver:
         planes: List[ResolvedRoofPlane] = []
         ridges: List[ResolvedRoofRidge] = []
 
-        roof_type = roof.roof_type.upper()
+        roof_type = (roof.predefined_type or roof.roof_type).upper()
         orientation = roof.placement.ridge_orientation
 
-        if roof_type == "GABLE":
+        if roof_type in ("GABLE", "GABLE_ROOF"):
             # Gable roof (อกไก่แนวขวางหรือแนวยาว + 2 ด้านลาดเอียง)
             if orientation == "Y" or (orientation == "ALONG_LENGTH" and length >= width):
                 span = width
@@ -2736,7 +2797,7 @@ class SpatialResolver:
                         ridge_type="VERGE",
                     ))
 
-        elif roof_type == "HIP":
+        elif roof_type in ("HIP", "HIP_ROOF"):
             # Hip roof (หลังคาปั้นหยา 4 ด้าน)
             if orientation == "Y" or (orientation == "ALONG_LENGTH" and length > width):
                 half_span = width / 2.0
@@ -2843,7 +2904,7 @@ class SpatialResolver:
                         normal=normal,
                     ))
 
-        elif roof_type == "SHED":
+        elif roof_type in ("SHED", "SHED_ROOF"):
             # Shed (เพิงหมาแหงน)
             span = length
             rise_h = span * math.tan(pitch_rad)
@@ -3170,6 +3231,215 @@ class SpatialResolver:
             total_eaves_length=eaves_perimeter,
             total_steel_weight=tot_steel,
             layer=derive_default_layer(roof),
+        )
+
+    def resolve_curtain_wall(self, cw: IfcCurtainWall) -> ResolvedCurtainWall:
+        st = self.storeys[cw.placement.storey]
+        z0 = st.elevation + cw.placement.offset_z
+
+        if cw.placement.from_grid and cw.placement.to_grid:
+            gx1, gy1 = cw.placement.from_grid
+            gx2, gy2 = cw.placement.to_grid
+            x1 = self.axes_x[gx1]
+            y1 = self.axes_y[gy1]
+            x2 = self.axes_x[gx2]
+            y2 = self.axes_y[gy2]
+            p_start = (x1, y1, z0)
+            p_end = (x2, y2, z0)
+        elif cw.placement.start_point and cw.placement.end_point:
+            p_start = (cw.placement.start_point[0], cw.placement.start_point[1], z0 + cw.placement.start_point[2])
+            p_end = (cw.placement.end_point[0], cw.placement.end_point[1], z0 + cw.placement.end_point[2])
+        elif cw.placement.boundary and len(cw.placement.boundary) >= 2:
+            gx1, gy1 = cw.placement.boundary[0]
+            gx2, gy2 = cw.placement.boundary[1]
+            p_start = (self.axes_x[gx1], self.axes_y[gy1], z0)
+            p_end = (self.axes_x[gx2], self.axes_y[gy2], z0)
+        else:
+            p_start = (0.0, 0.0, z0)
+            p_end = (cw.width or 3.0, 0.0, z0)
+
+        dx = p_end[0] - p_start[0]
+        dy = p_end[1] - p_start[1]
+        dist_xy = math.hypot(dx, dy)
+        length = cw.width if cw.width and cw.width > 0 else dist_xy
+        if length < 0.001:
+            length = 1.0
+        height = cw.height if cw.height > 0 else 3.0
+        gross_facade_area = length * height
+
+        spacing_h = cw.mullion_spacing_h if cw.mullion_spacing_h > 0 else 1.2
+        spacing_v = cw.mullion_spacing_v if cw.mullion_spacing_v > 0 else 1.5
+
+        n_v = max(1, round(length / spacing_h))
+        n_h = max(1, round(height / spacing_v))
+
+        mullions: List[ResolvedMullion] = []
+        glass_panels: List[ResolvedGlassPanel] = []
+
+        m_w = cw.mullion_width
+        m_d = cw.mullion_depth
+        g_thick = cw.glass_thickness
+
+        # Vertical mullions
+        for i in range(n_v + 1):
+            t = i / n_v
+            mx = p_start[0] + t * dx
+            my = p_start[1] + t * dy
+            m_s = (mx, my, z0)
+            m_e = (mx, my, z0 + height)
+            mtype = "FRAME" if (i == 0 or i == n_v) else "VERTICAL"
+            mullions.append(ResolvedMullion(
+                tag=f"{cw.tag}-VMullion-{i+1}",
+                start_point=m_s,
+                end_point=m_e,
+                length=height,
+                mullion_type=mtype,
+                width=m_w,
+                depth=m_d,
+            ))
+
+        # Horizontal mullions
+        for j in range(n_h + 1):
+            mz = z0 + j * (height / n_h)
+            m_s = (p_start[0], p_start[1], mz)
+            m_e = (p_end[0], p_end[1], mz)
+            mtype = "FRAME" if (j == 0 or j == n_h) else "HORIZONTAL"
+            mullions.append(ResolvedMullion(
+                tag=f"{cw.tag}-HMullion-{j+1}",
+                start_point=m_s,
+                end_point=m_e,
+                length=length,
+                mullion_type=mtype,
+                width=m_w,
+                depth=m_d,
+            ))
+
+        # Glass panels
+        panel_w = length / n_v
+        panel_h = height / n_h
+        panel_area = panel_w * panel_h
+
+        for i in range(n_v):
+            x_left = p_start[0] + (i / n_v) * dx
+            y_left = p_start[1] + (i / n_v) * dy
+            x_right = p_start[0] + ((i + 1) / n_v) * dx
+            y_right = p_start[1] + ((i + 1) / n_v) * dy
+
+            for j in range(n_h):
+                z_bot = z0 + (j / n_h) * height
+                z_top = z0 + ((j + 1) / n_h) * height
+
+                poly = [
+                    (x_left, y_left, z_bot),
+                    (x_right, y_right, z_bot),
+                    (x_right, y_right, z_top),
+                    (x_left, y_left, z_top),
+                ]
+                glass_panels.append(ResolvedGlassPanel(
+                    tag=f"{cw.tag}-Panel-{i+1}-{j+1}",
+                    polygon=poly,
+                    area=panel_area,
+                    thickness=g_thick,
+                ))
+
+        total_mullion_len = sum(m.length for m in mullions)
+
+        return ResolvedCurtainWall(
+            tag=cw.tag,
+            element=cw,
+            start_point=p_start,
+            end_point=p_end,
+            height=height,
+            length=length,
+            gross_facade_area=gross_facade_area,
+            mullion_spacing_h=spacing_h,
+            mullion_spacing_v=spacing_v,
+            total_mullion_length=total_mullion_len,
+            glass_panel_count=len(glass_panels),
+            mullions=mullions,
+            glass_panels=glass_panels,
+            layer=derive_default_layer(cw),
+        )
+
+    def resolve_plate(self, plate: IfcPlate) -> ResolvedPlate:
+        st = self.storeys[plate.placement.storey]
+        z0 = st.elevation + plate.placement.offset_z
+
+        if plate.placement.grid:
+            gx, gy = plate.placement.grid
+            px = self.axes_x[gx]
+            py = self.axes_y[gy]
+            pz = z0
+            if plate.placement.position:
+                px += plate.placement.position[0]
+                py += plate.placement.position[1]
+                pz += plate.placement.position[2]
+        elif plate.placement.from_grid and plate.placement.to_grid:
+            gx1, gy1 = plate.placement.from_grid
+            gx2, gy2 = plate.placement.to_grid
+            px = (self.axes_x[gx1] + self.axes_x[gx2]) / 2.0
+            py = (self.axes_y[gy1] + self.axes_y[gy2]) / 2.0
+            pz = z0
+        elif plate.placement.boundary:
+            xs = [self.axes_x[pt[0]] for pt in plate.placement.boundary]
+            ys = [self.axes_y[pt[1]] for pt in plate.placement.boundary]
+            px = sum(xs) / len(xs)
+            py = sum(ys) / len(ys)
+            pz = z0
+        elif plate.placement.position:
+            px = plate.placement.position[0]
+            py = plate.placement.position[1]
+            pz = z0 + plate.placement.position[2]
+        else:
+            px, py, pz = 0.0, 0.0, z0
+
+        position = (px, py, pz)
+        width = plate.width
+        depth = plate.height if plate.height is not None else plate.depth
+        height = plate.height if plate.height is not None else plate.depth
+        thickness = plate.thickness if plate.thickness > 0 else 0.02
+
+        area = width * depth
+        volume = area * thickness
+
+        if plate.density and plate.density > 0:
+            density = plate.density
+        else:
+            mat_upper = (plate.material or "").upper()
+            if "STEEL" in mat_upper:
+                density = 7850.0
+            elif "ALUM" in mat_upper:
+                density = 2700.0
+            elif "GLASS" in mat_upper:
+                density = 2500.0
+            else:
+                density = 2700.0
+
+        weight = volume * density
+
+        hw, hd = width / 2.0, depth / 2.0
+        polygon = [
+            (px - hw, py - hd, pz),
+            (px + hw, py - hd, pz),
+            (px + hw, py + hd, pz),
+            (px - hw, py + hd, pz),
+        ]
+
+        return ResolvedPlate(
+            tag=plate.tag,
+            element=plate,
+            predefined_type=plate.predefined_type,
+            position=position,
+            rotation=plate.placement.rotation,
+            width=width,
+            depth=depth,
+            height=height,
+            thickness=thickness,
+            area=area,
+            volume=volume,
+            weight=weight,
+            polygon=polygon,
+            layer=derive_default_layer(plate),
         )
 
     def resolve_pipe(self, pipe: IfcPipeSegment) -> ResolvedPipeSegment:
@@ -3579,6 +3849,14 @@ class SpatialResolver:
                         resolved_manifest.windows.append(child)
                         resolved_manifest.elements.append(child)
                 resolved_manifest.elements.append(r_roof)
+            elif isinstance(elem, IfcCurtainWall):
+                r_cw = self.resolve_curtain_wall(elem)
+                resolved_manifest.curtain_walls.append(r_cw)
+                resolved_manifest.elements.append(r_cw)
+            elif isinstance(elem, IfcPlate):
+                r_plate = self.resolve_plate(elem)
+                resolved_manifest.plates.append(r_plate)
+                resolved_manifest.elements.append(r_plate)
             elif isinstance(elem, IfcColumn):
                 r_col = self.resolve_column(elem)
                 resolved_manifest.columns.append(r_col)

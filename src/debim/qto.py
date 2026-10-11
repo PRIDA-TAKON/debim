@@ -15,6 +15,7 @@ from debim.resolver import (
     ResolvedCableCarrierSegment,
     ResolvedColumn,
     ResolvedCovering,
+    ResolvedCurtainWall,
     ResolvedCustomElement,
     ResolvedDistributionBoard,
     ResolvedDoor,
@@ -25,6 +26,7 @@ from debim.resolver import (
     ResolvedManifest,
     ResolvedOutlet,
     ResolvedPipeSegment,
+    ResolvedPlate,
     ResolvedRailing,
     ResolvedRamp,
     ResolvedRevolvedArea,
@@ -385,6 +387,24 @@ class RoofQTO(BaseModel):
     insulation_area: float = 0.0         # Under-tile insulation area (m²)
 
 
+class CurtainWallQTO(BaseModel):
+    gross_facade_area: float = 0.0       # Gross facade surface area (m²)
+    mullion_length: float = 0.0          # Total linear meters of mullion frames (m)
+    glass_panel_count: int = 0           # Total glass panel count
+    glass_panel_area: float = 0.0        # Total glass area (m²)
+    frame_material: Optional[str] = None
+    glass_material: Optional[str] = None
+
+
+class PlateQTO(BaseModel):
+    predefined_type: str = "SHEET"
+    area: float = 0.0                    # Face surface area (m²)
+    thickness: float = 0.0               # Thickness (m)
+    volume: float = 0.0                  # Volume (m³)
+    weight: float = 0.0                  # Weight (kg)
+    density: float = 0.0                 # Material density (kg/m³)
+
+
 class MepQTO(BaseModel):
     system_type: str = ""
     length: float = 0.0                    # ท่อ / สายไฟ / ท่อลม (linear meters)
@@ -420,6 +440,8 @@ class ElementQTO(BaseModel):
     stair_assembly: Optional[StairQTO] = None
     wall_finishes: Optional[WallFinishesQTO] = None
     roof: Optional[RoofQTO] = None
+    curtain_wall: Optional[CurtainWallQTO] = None
+    plate: Optional[PlateQTO] = None
     covering: Optional[CoveringQTO] = None
     slab_finishes: Optional[SlabFinishesQTO] = None
     mep: Optional[MepQTO] = None
@@ -467,6 +489,11 @@ class ProjectQTO(BaseModel):
     total_doors_count: int = 0
     total_windows_count: int = 0
     total_openings_area: float = 0.0
+    total_curtain_wall_facade_area: float = 0.0
+    total_curtain_wall_mullion_length: float = 0.0
+    total_curtain_wall_glass_panel_count: int = 0
+    total_plate_area: float = 0.0
+    total_plate_weight: float = 0.0
     # MEP Totals
     total_cold_water_pipe_length: float = 0.0
     total_soil_pipe_length: float = 0.0
@@ -1320,6 +1347,44 @@ def calculate_element_qto(
             roof=roof_qto,
         )
 
+    elif isinstance(resolved, ResolvedCurtainWall):
+        cw_qto = CurtainWallQTO(
+            gross_facade_area=resolved.gross_facade_area,
+            mullion_length=resolved.total_mullion_length,
+            glass_panel_count=resolved.glass_panel_count,
+            glass_panel_area=sum(p.area for p in resolved.glass_panels),
+            frame_material=resolved.element.frame_material,
+            glass_material=resolved.element.glass_material,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=resolved.element.class_,
+            material=resolved.element.material or resolved.element.frame_material,
+            length=resolved.length,
+            curtain_wall=cw_qto,
+        )
+
+    elif isinstance(resolved, ResolvedPlate):
+        plate_qto = PlateQTO(
+            predefined_type=resolved.predefined_type,
+            area=resolved.area,
+            thickness=resolved.thickness,
+            volume=resolved.volume,
+            weight=resolved.weight,
+            density=resolved.weight / resolved.volume if resolved.volume > 0 else 0.0,
+        )
+        mat_upper = (resolved.element.material or "").upper()
+        steel_wt = resolved.weight if ("STEEL" in mat_upper or resolved.predefined_type in ("FLANGE_PLATE", "BASE_PLATE")) else 0.0
+        return ElementQTO(
+            tag=tag,
+            element_class=resolved.element.class_,
+            material=resolved.element.material,
+            length=resolved.width,
+            structural_steel_weight=steel_wt,
+            painting_area=resolved.area * 2.0,
+            plate=plate_qto,
+        )
+
     elif isinstance(resolved, ResolvedTerminal):
         elem = resolved.element
         return ElementQTO(
@@ -1641,10 +1706,15 @@ def calculate_qto(
     total_floor_polish = 0.0
     total_skirting = 0.0
 
-    # Openings Totals
+    # Openings & Enclosure Totals
     total_doors = 0
     total_windows = 0
     total_openings_area = 0.0
+    total_cw_facade_area = 0.0
+    total_cw_mullion_len = 0.0
+    total_cw_glass_count = 0
+    total_plate_area_val = 0.0
+    total_plate_weight_val = 0.0
 
     # MEP Totals
     total_cold_water_len = 0.0
@@ -1685,6 +1755,14 @@ def calculate_qto(
         if window.tag not in existing_tags:
             all_elements.append(window)
             existing_tags.add(window.tag)
+    for cw in getattr(resolved, "curtain_walls", []):
+        if cw.tag not in existing_tags:
+            all_elements.append(cw)
+            existing_tags.add(cw.tag)
+    for plate in getattr(resolved, "plates", []):
+        if plate.tag not in existing_tags:
+            all_elements.append(plate)
+            existing_tags.add(plate.tag)
 
     for elem in all_elements:
         eqto = calculate_element_qto(elem, manifest=manifest_obj)
@@ -1758,6 +1836,15 @@ def calculate_qto(
             total_roof_hip += eqto.roof.hip_cap_length
             total_roof_eaves += eqto.roof.eaves_length
             total_roof_insul += eqto.roof.insulation_area
+
+        if eqto.curtain_wall:
+            total_cw_facade_area += eqto.curtain_wall.gross_facade_area
+            total_cw_mullion_len += eqto.curtain_wall.mullion_length
+            total_cw_glass_count += eqto.curtain_wall.glass_panel_count
+
+        if eqto.plate:
+            total_plate_area_val += eqto.plate.area
+            total_plate_weight_val += eqto.plate.weight
 
         if eqto.element_class == "IfcWall":
             if hasattr(elem, "thickness") and elem.thickness > 0:
@@ -1856,6 +1943,11 @@ def calculate_qto(
         total_doors_count=total_doors,
         total_windows_count=total_windows,
         total_openings_area=total_openings_area,
+        total_curtain_wall_facade_area=total_cw_facade_area,
+        total_curtain_wall_mullion_length=total_cw_mullion_len,
+        total_curtain_wall_glass_panel_count=total_cw_glass_count,
+        total_plate_area=total_plate_area_val,
+        total_plate_weight=total_plate_weight_val,
         total_cold_water_pipe_length=total_cold_water_len,
         total_soil_pipe_length=total_soil_len,
         total_waste_pipe_length=total_waste_len,

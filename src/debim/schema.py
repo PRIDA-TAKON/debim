@@ -1115,7 +1115,11 @@ class IfcCustomElement(BaseModel):
 
 
 # Roof element definitions
-RoofType = Literal["GABLE", "HIP", "SHED", "FLAT", "MANSARD"]
+RoofType = Literal[
+    "GABLE", "HIP", "SHED", "FLAT", "MANSARD",
+    "FLAT_ROOF", "SHED_ROOF", "GABLE_ROOF", "HIP_ROOF", "MANSARD_ROOF", "BARREL_ROOF", "FREEFORM",
+    "USERDEFINED", "NOTDEFINED"
+]
 RidgeOrientation = Literal["X", "Y", "ALONG_LENGTH", "ALONG_WIDTH"]
 
 
@@ -1156,10 +1160,102 @@ class IfcRoof(BaseModel):
     tag: str
     material: str
     roof_type: RoofType = "HIP"
+    predefined_type: Optional[str] = None
     placement: RoofPlacement
     covering: Optional[RoofCoveringConfig] = Field(default_factory=RoofCoveringConfig)
     framing: Optional[RoofFramingConfig] = Field(default_factory=RoofFramingConfig)
     children: List[WallChild] = Field(default_factory=list)
+    layer: Optional[str] = None
+
+
+# Curtain Wall & Facade Element Definitions
+CurtainWallPredefinedType = Literal["POST_AND_BEAM", "UNITIZED", "USERDEFINED", "NOTDEFINED"]
+
+
+class CurtainWallPlacement(BaseModel):
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    storey: str
+    offset_z: float = 0.00
+    start_point: Optional[Tuple[float, float, float]] = None
+    end_point: Optional[Tuple[float, float, float]] = None
+    boundary: Optional[List[Tuple[str, str]]] = None
+
+    @field_validator("from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("boundary", mode="before")
+    @classmethod
+    def convert_boundary_to_str(cls, v):
+        if isinstance(v, list):
+            return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+
+class IfcCurtainWall(BaseModel):
+    class_: Literal["IfcCurtainWall"] = Field(alias="class", default="IfcCurtainWall")
+    tag: str
+    name: Optional[str] = "Curtain Wall"
+    predefined_type: CurtainWallPredefinedType = "POST_AND_BEAM"
+    height: float = 3.0
+    width: Optional[float] = None
+    mullion_spacing_h: float = 1.2
+    mullion_spacing_v: float = 1.5
+    mullion_width: float = 0.05
+    mullion_depth: float = 0.10
+    glass_thickness: float = 0.01
+    frame_material: Optional[str] = None
+    glass_material: Optional[str] = None
+    material: Optional[str] = None
+    placement: CurtainWallPlacement
+    layer: Optional[str] = None
+
+
+# Architectural Plate / Cladding Element Definitions
+PlatePredefinedType = Literal["CURTAIN_PANEL", "SHEET", "FLANGE_PLATE", "BASE_PLATE", "USERDEFINED", "NOTDEFINED"]
+
+
+class PlatePlacement(BaseModel):
+    storey: str
+    position: Optional[Tuple[float, float, float]] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    boundary: Optional[List[Tuple[str, str]]] = None
+    offset_z: float = 0.00
+    rotation: Optional[Tuple[float, float, float]] = None
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("boundary", mode="before")
+    @classmethod
+    def convert_boundary_to_str(cls, v):
+        if isinstance(v, list):
+            return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+
+class IfcPlate(BaseModel):
+    class_: Literal["IfcPlate"] = Field(alias="class", default="IfcPlate")
+    tag: str
+    name: Optional[str] = "Plate"
+    predefined_type: PlatePredefinedType = "SHEET"
+    material: Optional[str] = None
+    thickness: float = 0.02
+    width: float = 1.0
+    depth: float = 1.0
+    height: Optional[float] = None
+    density: Optional[float] = None
+    placement: PlatePlacement
     layer: Optional[str] = None
 
 
@@ -1583,6 +1679,8 @@ Element = Annotated[
         IfcRamp,
         IfcRailing,
         IfcRoof,
+        IfcCurtainWall,
+        IfcPlate,
         IfcPipeSegment,
         IfcCableCarrierSegment,
         IfcDuctSegment,
@@ -1851,6 +1949,48 @@ class ProjectManifest(BaseModel):
                         f"Element '{elem.tag}' framing references unknown material '{elem.framing.material}'"
                     )
 
+            elif isinstance(elem, IfcCurtainWall):
+                if elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                if elem.placement.from_grid:
+                    gx, gy = elem.placement.from_grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
+                if elem.placement.to_grid:
+                    gx, gy = elem.placement.to_grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
+
+            elif isinstance(elem, IfcPlate):
+                if elem.placement.storey not in storey_ids:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
+                    )
+                if elem.placement.grid:
+                    gx, gy = elem.placement.grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
+                if elem.placement.from_grid:
+                    gx, gy = elem.placement.from_grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
+                if elem.placement.to_grid:
+                    gx, gy = elem.placement.to_grid
+                    if gx not in grid_x_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown X grid '{gx}'")
+                    if gy not in grid_y_ids:
+                        raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
+
             elif isinstance(elem, (IfcPipeSegment, IfcCableCarrierSegment, IfcDuctSegment)):
                 if elem.placement.storey not in storey_ids:
                     raise ValueError(
@@ -2035,6 +2175,14 @@ def derive_default_layer(elem) -> str:
         return "architecture/railings"
     elif cls == "IfcRoof":
         return "architecture/roofs"
+    elif cls == "IfcCurtainWall":
+        return "architecture/facades/curtain_walls"
+    elif cls == "IfcPlate":
+        if getattr(elem, "predefined_type", "") == "CURTAIN_PANEL":
+            return "architecture/facades/panels"
+        elif getattr(elem, "predefined_type", "") in ("FLANGE_PLATE", "BASE_PLATE"):
+            return "structure/plates"
+        return "architecture/cladding"
     elif cls == "IfcCovering":
         cov_type = getattr(elem, "covering_type", "general").lower()
         if cov_type in ("skirting", "cladding", "ceiling", "flooring", "roofing", "insulation", "membrane"):

@@ -553,6 +553,77 @@ def generate_viewer_html(
                 },
             })
 
+    # Curtain Walls
+    for cw in getattr(resolved, "curtain_walls", []):
+        for panel in cw.glass_panels:
+            elements_data.append({
+                "tag": panel.tag,
+                "class": "IfcPlate",
+                "geometry_type": "polygon",
+                "points": panel.polygon,
+                "material": "Glass",
+                "color": "#38BDF8",
+                "transparent": True,
+                "opacity": 0.4,
+                "layer": cw.layer,
+                "member_name": "Curtain Wall Glass Panel",
+                "dimensions": {
+                    "area": panel.area,
+                    "thickness": panel.thickness,
+                },
+            })
+        for mullion in cw.mullions:
+            elements_data.append({
+                "tag": mullion.tag,
+                "class": "IfcMember",
+                "geometry_type": "line",
+                "points": [mullion.start_point, mullion.end_point],
+                "color": "#334155",
+                "linewidth": 2,
+                "layer": cw.layer,
+                "member_name": f"Mullion Frame ({mullion.mullion_type.title()})",
+                "dimensions": {
+                    "length": mullion.length,
+                },
+            })
+
+    # Plates / Cladding
+    for plate in getattr(resolved, "plates", []):
+        color = "#94A3B8" if plate.predefined_type in ("SHEET", "CURTAIN_PANEL") else "#64748B"
+        if plate.polygon:
+            elements_data.append({
+                "tag": plate.tag,
+                "class": "IfcPlate",
+                "geometry_type": "polygon",
+                "points": plate.polygon,
+                "material": plate.element.material or "Panel",
+                "color": color,
+                "layer": plate.layer,
+                "member_name": f"Plate Panel ({plate.predefined_type})",
+                "dimensions": {
+                    "width": plate.width,
+                    "depth": plate.depth,
+                    "thickness": plate.thickness,
+                    "area": plate.area,
+                    "weight": plate.weight,
+                },
+            })
+        else:
+            elements_data.append({
+                "tag": plate.tag,
+                "class": "IfcPlate",
+                "position": list(plate.position),
+                "rotation": list(plate.rotation) if plate.rotation else [0.0, 0.0, 0.0],
+                "dimensions": {
+                    "width": plate.width,
+                    "depth": plate.depth,
+                    "height": plate.thickness,
+                },
+                "material": plate.element.material or "Panel",
+                "color": color,
+                "layer": plate.layer,
+            })
+
     # Custom Elements
     for custom in resolved.custom_elements:
         tag_upper = custom.tag.upper()

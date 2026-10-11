@@ -22,7 +22,11 @@ from debim.schema import (
     IfcCovering,
     IfcCustomElement,
     CustomElementPlacement,
+    IfcCurtainWall,
+    CurtainWallPlacement,
     IfcDoor,
+    IfcPlate,
+    PlatePlacement,
     IfcRoof,
     IfcSlab,
     IfcWall,
@@ -876,6 +880,10 @@ def import_ifc_to_manifest(
                 roof_children_map.setdefault(parent_host_elem.GlobalId, []).append(win_obj)
             else:
                 wall_children_map.setdefault(parent_host_elem.GlobalId, []).append(win_obj)
+        else:
+            walls = ifc_file.by_type("IfcWall")
+            if walls:
+                wall_children_map.setdefault(walls[0].GlobalId, []).append(win_obj)
 
     # 5.1 Extract Columns
     for col in ifc_file.by_type("IfcColumn"):
@@ -1581,6 +1589,39 @@ def import_ifc_to_manifest(
                     }
                 )
             )
+
+    # 5.16b Extract Curtain Walls (IfcCurtainWall)
+    for elem in safe_by_type("IfcCurtainWall"):
+        if elem.GlobalId in extracted_custom_ids:
+            continue
+        extracted_custom_ids.add(elem.GlobalId)
+        tag = elem.Name or f"CW-{elem.GlobalId[:8]}"
+        st_id = get_elem_storey(elem)
+
+        p_type = getattr(elem, "PredefinedType", "POST_AND_BEAM") or "POST_AND_BEAM"
+        if p_type not in ("POST_AND_BEAM", "UNITIZED", "USERDEFINED", "NOTDEFINED"):
+            p_type = "POST_AND_BEAM"
+
+        gx_keys = list(grid_x_vals.keys()) or ["GX_1", "GX_2"]
+        gy_keys = list(grid_y_vals.keys()) or ["GY_1", "GY_2"]
+
+        elements.append(
+            IfcCurtainWall(
+                **{
+                    "class": "IfcCurtainWall",
+                    "tag": tag,
+                    "name": elem.Name or tag,
+                    "predefined_type": p_type,
+                    "height": 3.0,
+                    "placement": CurtainWallPlacement(
+                        from_grid=(gx_keys[0], gy_keys[0]),
+                        to_grid=(gx_keys[-1], gy_keys[0]),
+                        storey=st_id,
+                    ),
+                    "layer": "architecture/facades/curtain_walls",
+                }
+            )
+        )
 
     # 5.17 Extract Plates (IfcPlate) and Building Element Parts (IfcBuildingElementPart)
     plate_configs = [
