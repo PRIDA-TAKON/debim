@@ -538,7 +538,7 @@ def generate_viewer_html(
                 elements_data.append({
                     "tag": child.tag,
                     "class": "IfcDoor",
-                    "material": "Wood",
+                    "material": child.element.material or "Wood",
                     "position": [
                         child.position[0],
                         child.position[1],
@@ -547,8 +547,14 @@ def generate_viewer_html(
                     "rotation": [0, 0, angle],
                     "dimensions": {
                         "width": child.width,
-                        "thickness": wall.thickness * 1.08,
+                        "thickness": child.frame_thickness,
                         "height": child.height,
+                        "frame_width": child.frame_width,
+                        "frame_thickness": child.frame_thickness,
+                        "casing_width": child.casing_width,
+                        "casing_thickness": child.casing_thickness,
+                        "panel_thickness": child.panel_thickness,
+                        "operation_type": child.operation_type,
                     },
                     "color": "#8B4513",
                     "layer": child.layer,
@@ -3267,7 +3273,95 @@ def generate_viewer_html(
                 }}
             }} else if (data.class === "IfcWall") {{
                 geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
-            }} else if (data.class === "IfcDoor" || data.class === "IfcWindow") {{
+            }} else if (data.class === "IfcDoor") {{
+                const w = dim.width || 0.9;
+                const h = dim.height || 2.1;
+                const f_d = dim.thickness || dim.frame_thickness || 0.15;
+                const f_w = dim.frame_width || 0.05;
+                const c_w = dim.casing_width || 0.076;
+                const c_t = dim.casing_thickness || 0.025;
+                const p_t = dim.panel_thickness || 0.035;
+                const p_w = Math.max(0.01, w - 2 * f_w);
+                const p_h = Math.max(0.01, h - f_w);
+
+                const doorGroup = new THREE.Group();
+                const doorMat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color(data.color || "#8B4513"),
+                    roughness: 0.5,
+                    metalness: 0.1
+                }});
+                const isGlass = (data.material && data.material.toLowerCase().includes("glass")) || (data.tag && data.tag.toLowerCase().includes("glass"));
+                const leafMat = isGlass ? new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color("#38BDF8"),
+                    transparent: true,
+                    opacity: 0.5,
+                    roughness: 0.1
+                }}) : doorMat;
+
+                // 1. Frame Jambs & Head
+                const fLeftGeom = new THREE.BoxGeometry(f_w, f_d, h);
+                const fLeftMesh = new THREE.Mesh(fLeftGeom, doorMat);
+                fLeftMesh.position.set(-w/2 + f_w/2, 0, 0);
+                doorGroup.add(fLeftMesh);
+
+                const fRightGeom = new THREE.BoxGeometry(f_w, f_d, h);
+                const fRightMesh = new THREE.Mesh(fRightGeom, doorMat);
+                fRightMesh.position.set(w/2 - f_w/2, 0, 0);
+                doorGroup.add(fRightMesh);
+
+                const fTopGeom = new THREE.BoxGeometry(w, f_d, f_w);
+                const fTopMesh = new THREE.Mesh(fTopGeom, doorMat);
+                fTopMesh.position.set(0, 0, h/2 - f_w/2);
+                doorGroup.add(fTopMesh);
+
+                // 2. Trim Casings (Front and Back jamb & head trims)
+                const cSideGeom = new THREE.BoxGeometry(c_w, c_t, h + c_w);
+                const cHeadGeom = new THREE.BoxGeometry(w + 2*c_w, c_t, c_w);
+
+                // Front Casing (Y = f_d/2 + c_t/2)
+                const cFLeft = new THREE.Mesh(cSideGeom, doorMat);
+                cFLeft.position.set(-w/2 - c_w/2, f_d/2 + c_t/2, c_w/2);
+                doorGroup.add(cFLeft);
+
+                const cFRight = new THREE.Mesh(cSideGeom, doorMat);
+                cFRight.position.set(w/2 + c_w/2, f_d/2 + c_t/2, c_w/2);
+                doorGroup.add(cFRight);
+
+                const cFHead = new THREE.Mesh(cHeadGeom, doorMat);
+                cFHead.position.set(0, f_d/2 + c_t/2, h/2 + c_w/2);
+                doorGroup.add(cFHead);
+
+                // Back Casing (Y = -f_d/2 - c_t/2)
+                const cBLeft = new THREE.Mesh(cSideGeom, doorMat);
+                cBLeft.position.set(-w/2 - c_w/2, -f_d/2 - c_t/2, c_w/2);
+                doorGroup.add(cBLeft);
+
+                const cBRight = new THREE.Mesh(cSideGeom, doorMat);
+                cBRight.position.set(w/2 + c_w/2, -f_d/2 - c_t/2, c_w/2);
+                doorGroup.add(cBRight);
+
+                const cBHead = new THREE.Mesh(cHeadGeom, doorMat);
+                cBHead.position.set(0, -f_d/2 - c_t/2, h/2 + c_w/2);
+                doorGroup.add(cBHead);
+
+                // 3. Door Leaf Panel
+                const panelGeom = new THREE.BoxGeometry(p_w, p_t, p_h);
+                const panelMesh = new THREE.Mesh(panelGeom, leafMat);
+                panelMesh.position.set(0, 0, -f_w/2);
+                doorGroup.add(panelMesh);
+
+                if (data.position) doorGroup.position.set(...data.position);
+                if (data.rotation) doorGroup.rotation.set(data.rotation[0], data.rotation[1], data.rotation[2]);
+
+                doorGroup.userData = data;
+                let layerPath = data.layer || "general/other";
+                if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
+                doorGroup.userData.layer = layerPath;
+
+                scene.add(doorGroup);
+                pickableObjects.push(doorGroup);
+                return;
+            }} else if (data.class === "IfcWindow") {{
                 geometry = new THREE.BoxGeometry(dim.width, dim.thickness, dim.height);
             }} else if (dim.shape === "CYLINDER") {{
                 const r = dim.radius || 0.5;
