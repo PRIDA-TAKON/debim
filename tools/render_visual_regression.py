@@ -38,6 +38,9 @@ import ifcopenshell.geom
 
 # Project root in path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+SRC_DIR = PROJECT_ROOT / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -686,7 +689,6 @@ def main():
     parser.add_argument("--dedup", action="store_true", default=True, help="Enable variant deduplication to prevent repetitive sampling")
     parser.add_argument("--no-dedup", action="store_false", dest="dedup", help="Disable variant deduplication")
     parser.add_argument("--max-per-variant", type=int, default=2, help="Max components per unique type variant")
-    parser.add_argument("--class", dest="target_class", type=str, default=None, help="Filter visual regression testing to specific element class (e.g. IfcFlowController)")
     args = parser.parse_args()
 
     out_dir = Path(args.output)
@@ -697,7 +699,7 @@ def main():
         if not dir_p.exists():
             print(f"Error: Directory not found at {dir_p}")
             sys.exit(1)
-        ifc_files = sorted(list(dir_p.glob("*.ifc")) + list(dir_p.glob("**/*.ifc")))
+        ifc_files = sorted(list({p.resolve() for p in dir_p.glob("*.ifc")}.union({p.resolve() for p in dir_p.glob("**/*.ifc")})))
         if not ifc_files:
             print(f"Error: No .ifc files found in {dir_p}")
             sys.exit(1)
@@ -734,6 +736,61 @@ def main():
             summary_results.append({"name": f.name, **stat})
         except Exception as e:
             print(f"  [ERROR] Failed processing {f.name}: {e}")
+
+    if len(ifc_files) >= 1:
+        # Aggregate Class Failures for Jules Backlog
+        from collections import defaultdict
+        import json
+        class_agg = defaultdict(lambda: {"count": 0, "ious": [], "matches": []})
+        for s in summary_results:
+            for cls_k, cinfo in s.get("class_summary", {}).items():
+                class_agg[cls_k]["count"] += cinfo.get("count", 0)
+                class_agg[cls_k]["ious"].append(cinfo.get("avg_iou", 0.0))
+                class_agg[cls_k]["matches"].append(cinfo.get("avg_match", 0.0))
+
+        GEOMETRIC_FAMILIES = {
+            "Extruded Solid": ["IfcColumn", "IfcBeam", "IfcWall", "IfcWallStandardCase", "IfcSlab", "IfcFooting", "IfcMember", "IfcPlate", "IfcPipeSegment", "IfcDuctSegment", "IfcFlowSegment"],
+            "Swept Disk / Curve": ["IfcRailing", "IfcCableSegment", "IfcConduitSegment", "IfcFlowFitting", "IfcPipeFitting", "IfcDuctFitting"],
+            "Parametric Assembly": ["IfcStair", "IfcStairFlight", "IfcDoor", "IfcDoorStandardCase", "IfcWindow", "IfcWindowStandardCase", "IfcRamp", "IfcRoof", "IfcCurtainWall"],
+            "Civil Alignment / Infrastructure": ["IfcRoad", "IfcBridge", "IfcRailway", "IfcEarthworksCut", "IfcEarthworksFill", "IfcTrackElement", "IfcAlignment"],
+            "Complex / Freeform Mesh": ["IfcSanitaryTerminal", "IfcAirTerminal", "IfcFlowTerminal", "IfcFurniture", "IfcFurnishingElement", "IfcBuildingElementProxy", "IfcDistributionControlElement", "IfcValve", "IfcDamper"]
+        }
+        def get_fam(c):
+            for fam, members in GEOMETRIC_FAMILIES.items():
+                if any(c.startswith(m) or m.startswith(c) for m in members):
+                    return fam
+            return "Complex / Freeform Mesh"
+
+        failures = []
+        for cls_k, cdata in sorted(class_agg.items()):
+            mean_iou = round(float(np.mean(cdata["ious"])), 1) if cdata["ious"] else 0.0
+            mean_match = round(float(np.mean(cdata["matches"])), 1) if cdata["matches"] else 0.0
+            if mean_iou < 95.0 or mean_match < 85.0:
+                failures.append({
+                    "class": cls_k,
+                    "family": get_fam(cls_k),
+                    "mean_iou": mean_iou,
+                    "mean_match": mean_match,
+                    "tested_count": cdata["count"],
+                    "status": "FAIL",
+                    "suggested_files": ["src/debim/resolver.py", "src/debim/viewer.py"],
+                    "dod": [
+                        f"3D Bounding Box IoU >= 95.0% (Current: {mean_iou}%)",
+                        f"Visual Match >= 85.0% (Current: {mean_match}%)",
+                        "Unit and regression tests pass without breakage"
+                    ]
+                })
+
+        jules_path = out_dir / "jules_backlog_failures.json"
+        with open(jules_path, "w", encoding="utf-8") as f_j:
+            json.dump({
+                "benchmark": "debim-local-visual-regression",
+                "total_classes_evaluated": len(class_agg),
+                "passed_classes": len(class_agg) - len(failures),
+                "failed_classes": len(failures),
+                "failures": failures
+            }, f_j, indent=2, ensure_ascii=False)
+        print(f"[JULES] Exported failure taxonomy to: {jules_path}")
 
     if len(ifc_files) > 1:
         # Generate Aggregated Batch Report
