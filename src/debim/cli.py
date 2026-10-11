@@ -1311,7 +1311,10 @@ def draw_benchmark_vqa(
         None, "--api-key", "-k", help="Gemini API key (or set GEMINI_API_KEY environment variable)"
     ),
     model: str = typer.Option(
-        "gemini-2.0-flash", "--model", "-m", help="Gemini multimodal model (gemini-2.0-flash, gemini-1.5-pro, gemini-exp)"
+        "models/gemini-3.8-live-extended-thinking", "--model", "-m", help="Gemini multimodal model (default: models/gemini-3.8-live-extended-thinking)"
+    ),
+    thinking_budget: int = typer.Option(
+        2048, "--thinking-budget", help="Thinking budget for Gemini extended thinking models"
     ),
     mock_eval: bool = typer.Option(
         False, "--mock-eval", help="Perform mock dry-run evaluation without calling Gemini API"
@@ -1339,6 +1342,7 @@ def draw_benchmark_vqa(
             mock_eval=mock_eval,
             rpm=rpm,
             tpm=tpm,
+            thinking_budget=thinking_budget,
             output_report_path=output,
             output_markdown_path=markdown_output,
         )
