@@ -274,6 +274,46 @@ def generate_cost_template(
         )
         item_disciplines["BRIDGE-RC-DECK"] = "civil"
 
+    if qto.total_bridge_part_volume > 0 and "BRIDGE-SUBSTRUCTURE" not in required_items:
+        required_items["BRIDGE-SUBSTRUCTURE"] = PriceItem(
+            name="Bridge Substructure / Part Component",
+            unit="m3",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="34 70 00", uniformat="G2030"),
+        )
+        item_disciplines["BRIDGE-SUBSTRUCTURE"] = "civil"
+
+    if qto.total_bearing_count > 0 and "BRIDGE-BEARING" not in required_items:
+        required_items["BRIDGE-BEARING"] = PriceItem(
+            name="Bridge Support Bearing Device",
+            unit="set",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="34 70 00", uniformat="G2030"),
+        )
+        item_disciplines["BRIDGE-BEARING"] = "civil"
+
+    if qto.total_marine_facility_area > 0 and "MARINE-FACILITY" not in required_items:
+        required_items["MARINE-FACILITY"] = PriceItem(
+            name="Marine Facility Basin & Area",
+            unit="m2",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="35 50 00", uniformat="G2040"),
+        )
+        item_disciplines["MARINE-FACILITY"] = "civil"
+
+    if qto.total_marine_part_volume > 0 and "MARINE-QUAY" not in required_items:
+        required_items["MARINE-QUAY"] = PriceItem(
+            name="Marine Quay / Jetty Structure",
+            unit="m3",
+            material_cost=0.0,
+            labor_cost=0.0,
+            standards=PriceItemStandards(masterformat="35 50 00", uniformat="G2040"),
+        )
+        item_disciplines["MARINE-QUAY"] = "civil"
+
     if qto.total_lean_concrete_volume > 0 and "MAT-LEAN-CONC" not in required_items:
         required_items["MAT-LEAN-CONC"] = PriceItem(
             name="Lean Concrete Bedding (1:3:6)",
@@ -1015,7 +1055,32 @@ def estimate_cost(
         elif eqto.tag in catalog.items:
             quantities_by_code[eqto.tag] = quantities_by_code.get(eqto.tag, 0.0) + (float(eqto.mep.count) if eqto.mep else 1.0)
 
-    # 8. Map Earth excavation & Earthworks cut/fill
+    # 8. Map Civil Bridge Sub-Components & Marine Facilities
+    if qto.total_bridge_part_volume > 0:
+        for code, item in catalog.items.items():
+            if "bridge-substructure" in code.lower() or "bridge-part" in code.lower() or "substructure" in code.lower():
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_bridge_part_volume
+                break
+
+    if qto.total_bearing_count > 0:
+        for code, item in catalog.items.items():
+            if "bridge-bearing" in code.lower() or "bearing" in code.lower() or "รองรับ" in item.name:
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + float(qto.total_bearing_count)
+                break
+
+    if qto.total_marine_facility_area > 0:
+        for code, item in catalog.items.items():
+            if "marine-facility" in code.lower() or "marine" in code.lower() or "port" in code.lower():
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_marine_facility_area
+                break
+
+    if qto.total_marine_part_volume > 0:
+        for code, item in catalog.items.items():
+            if "marine-quay" in code.lower() or "quay" in code.lower() or "jetty" in code.lower() or "breakwater" in code.lower():
+                quantities_by_code[code] = quantities_by_code.get(code, 0.0) + qto.total_marine_part_volume
+                break
+
+    # 9. Map Earth excavation & Earthworks cut/fill
     if qto.total_excavation_volume > 0:
         has_excav = any("excav" in c.lower() or "ขุด" in c.lower() for c in quantities_by_code.keys())
         if not has_excav:

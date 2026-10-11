@@ -2021,6 +2021,10 @@ class IfcCovering(BaseModel):
 
 RoadType = Literal["HIGHWAY", "CARRIAGEWAY", "ROUNDABOUT", "SERVICE_ROAD", "USERDEFINED"]
 BridgeType = Literal["GIRDER", "SLAB", "ARCH", "CABLE_STAYED", "USERDEFINED"]
+BridgePartType = Literal["SUBSTRUCTURE", "SUPERSTRUCTURE", "DECK", "PIER", "ABUTMENT", "FOUNDATION", "USERDEFINED", "NOTDEFINED"]
+BearingType = Literal["BRIDGEBEARING", "ELASTOMERIC", "POT", "SPHERICAL", "DISK", "ROLLER", "PIN", "USERDEFINED", "NOTDEFINED"]
+MarineFacilityType = Literal["PORT", "HARBOUR", "WATERWAY", "USERDEFINED", "NOTDEFINED"]
+MarinePartType = Literal["QUAY", "JETTY", "BREAKWATER", "BERTH", "USERDEFINED", "NOTDEFINED"]
 
 
 class AlignmentPoint(BaseModel):
@@ -2161,6 +2165,142 @@ class IfcBridge(BaseModel):
             if "width" in data and "deck_width" not in data:
                 data["deck_width"] = data["width"]
         return data
+
+
+class BridgePartPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    bridge: Optional[str] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcBridgePart(BaseModel):
+    class_: Literal["IfcBridgePart"] = Field(alias="class", default="IfcBridgePart")
+    tag: str
+    material: Optional[str] = None
+    predefined_type: BridgePartType = "DECK"
+    bridge: Optional[str] = None
+    length: Optional[float] = None
+    width: Optional[float] = None
+    height: Optional[float] = None
+    depth: Optional[float] = None
+    volume: Optional[float] = None
+    placement: BridgePartPlacement
+    layer: Optional[str] = None
+
+
+class BearingPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    bridge: Optional[str] = None
+    bridge_part: Optional[str] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcBearing(BaseModel):
+    class_: Literal["IfcBearing"] = Field(alias="class", default="IfcBearing")
+    tag: str
+    material: Optional[str] = None
+    predefined_type: BearingType = "BRIDGEBEARING"
+    bridge: Optional[str] = None
+    bridge_part: Optional[str] = None
+    width: float = 0.50
+    length: Optional[float] = None
+    depth: float = 0.50
+    height: float = 0.15
+    dimensions: Optional[Dimensions] = None
+    load_capacity_kn: Optional[float] = Field(default=None, alias="load_capacity_kN")
+    placement: BearingPlacement
+    layer: Optional[str] = None
+
+
+class MarineFacilityPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    boundary: Optional[List[Tuple[str, str]]] = None
+    boundary_points: Optional[List[Tuple[float, float]]] = None
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("boundary", mode="before")
+    @classmethod
+    def convert_boundary_to_str(cls, v):
+        if isinstance(v, list):
+            return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+
+class IfcMarineFacility(BaseModel):
+    class_: Literal["IfcMarineFacility"] = Field(alias="class", default="IfcMarineFacility")
+    tag: str
+    name: Optional[str] = None
+    predefined_type: MarineFacilityType = "PORT"
+    surface_area: Optional[float] = None
+    water_depth: Optional[float] = None
+    quay_length: Optional[float] = None
+    placement: MarineFacilityPlacement
+    layer: Optional[str] = None
+
+
+class MarinePartPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    marine_facility: Optional[str] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcMarinePart(BaseModel):
+    class_: Literal["IfcMarinePart"] = Field(alias="class", default="IfcMarinePart")
+    tag: str
+    material: Optional[str] = None
+    predefined_type: MarinePartType = "QUAY"
+    marine_facility: Optional[str] = None
+    length: Optional[float] = None
+    width: Optional[float] = None
+    height: Optional[float] = None
+    depth: Optional[float] = None
+    volume: Optional[float] = None
+    placement: MarinePartPlacement
+    layer: Optional[str] = None
 
 
 # Civil Earthworks & Retaining Structures
@@ -2344,6 +2484,10 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcAlignment",
     "IfcRoad",
     "IfcBridge",
+    "IfcBridgePart",
+    "IfcBearing",
+    "IfcMarineFacility",
+    "IfcMarinePart",
     "IfcCustomElement",
 } | IFC4_DISTRIBUTION_CLASSES
 
@@ -2368,7 +2512,8 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcSanitaryTerminal", "IfcWasteTerminal", "IfcDistributionBoard", "IfcElectricDistributionBoard",
     "IfcLightFixture", "IfcSwitchingDevice", "IfcOutlet", "IfcAirTerminal", "IfcDamper",
     "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksCut", "IfcEarthworksFill",
-    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcCustomElement", "IfcBuildingElementProxy"
+    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcBridgePart", "IfcBearing",
+    "IfcMarineFacility", "IfcMarinePart", "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
 
@@ -2422,6 +2567,10 @@ Element = Annotated[
         Annotated[IfcAlignment, Tag("IfcAlignment")],
         Annotated[IfcRoad, Tag("IfcRoad")],
         Annotated[IfcBridge, Tag("IfcBridge")],
+        Annotated[IfcBridgePart, Tag("IfcBridgePart")],
+        Annotated[IfcBearing, Tag("IfcBearing")],
+        Annotated[IfcMarineFacility, Tag("IfcMarineFacility")],
+        Annotated[IfcMarinePart, Tag("IfcMarinePart")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -2669,7 +2818,7 @@ class ProjectManifest(BaseModel):
                     if gy not in grid_y_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge)):
+            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcBridgePart, IfcBearing, IfcMarineFacility, IfcMarinePart)):
                 if elem.placement.storey and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -3048,6 +3197,14 @@ def derive_default_layer(elem) -> str:
         return "civil/infrastructure/roads"
     elif cls == "IfcBridge":
         return "civil/infrastructure/bridges"
+    elif cls == "IfcBridgePart":
+        return "civil/infrastructure/bridges/parts"
+    elif cls == "IfcBearing":
+        return "civil/infrastructure/bridges/bearings"
+    elif cls == "IfcMarineFacility":
+        return "civil/marine/facilities"
+    elif cls == "IfcMarinePart":
+        return "civil/marine/parts"
     elif cls == "IfcCustomElement":
         return "general/custom"
     elif cls == "IfcBuildingElementProxy" or isinstance(elem, IfcBuildingElementProxy):

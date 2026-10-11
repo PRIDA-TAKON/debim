@@ -803,6 +803,86 @@ def generate_viewer_html(
                 "layer": bridge.layer,
             })
 
+    # Civil Bridge Parts
+    for bp in resolved.bridge_parts:
+        elements_data.append({
+            "tag": bp.tag,
+            "class": "IfcBridgePart",
+            "predefined_type": bp.predefined_type,
+            "material": bp.element.material or "Reinforced Concrete",
+            "position": [bp.position[0], bp.position[1], bp.position[2]],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": bp.length,
+                "depth": bp.width,
+                "height": bp.height,
+                "volume": bp.volume,
+            },
+            "color": "#71717A",
+            "layer": bp.layer,
+        })
+
+    # Civil Bearings
+    for brg in resolved.bearings:
+        elements_data.append({
+            "tag": brg.tag,
+            "class": "IfcBearing",
+            "predefined_type": brg.predefined_type,
+            "material": brg.element.material or "Elastomeric Rubber / Steel",
+            "position": [brg.position[0], brg.position[1], brg.position[2]],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": brg.width,
+                "depth": brg.depth,
+                "height": brg.height,
+                "load_capacity_kn": brg.load_capacity_kn,
+            },
+            "color": "#0284C7",
+            "layer": brg.layer,
+        })
+
+    # Marine Facilities
+    for mf in resolved.marine_facilities:
+        side_dim = math.sqrt(mf.surface_area) if mf.surface_area > 0 else 30.0
+        elements_data.append({
+            "tag": mf.tag,
+            "class": "IfcMarineFacility",
+            "predefined_type": mf.predefined_type,
+            "material": "Water / Port Area",
+            "position": [mf.position[0], mf.position[1], mf.position[2]],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": side_dim,
+                "depth": side_dim,
+                "height": mf.water_depth,
+                "surface_area": mf.surface_area,
+                "water_depth": mf.water_depth,
+            },
+            "color": "#0EA5E9",
+            "transparent": True,
+            "opacity": 0.60,
+            "layer": mf.layer,
+        })
+
+    # Marine Parts
+    for mp in resolved.marine_parts:
+        elements_data.append({
+            "tag": mp.tag,
+            "class": "IfcMarinePart",
+            "predefined_type": mp.predefined_type,
+            "material": mp.element.material or "Reinforced Concrete Quay",
+            "position": [mp.position[0], mp.position[1], mp.position[2]],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": mp.length,
+                "depth": mp.width,
+                "height": mp.height,
+                "volume": mp.volume,
+            },
+            "color": "#475569",
+            "layer": mp.layer,
+        })
+
     # Civil Earthworks Cut
     for cut in resolved.earthworks_cuts:
         cz = cut.position[2] - cut.depth / 2.0

@@ -13,7 +13,9 @@ from debim.resolver import (
     ResolvedAirTerminal,
     ResolvedAlignment,
     ResolvedBeam,
+    ResolvedBearing,
     ResolvedBridge,
+    ResolvedBridgePart,
     ResolvedCableCarrierSegment,
     ResolvedColumn,
     ResolvedCovering,
@@ -30,6 +32,8 @@ from debim.resolver import (
     ResolvedFooting,
     ResolvedLightFixture,
     ResolvedManifest,
+    ResolvedMarineFacility,
+    ResolvedMarinePart,
     ResolvedOutlet,
     ResolvedPipeSegment,
     ResolvedPlate,
@@ -465,6 +469,38 @@ class BridgeQTO(BaseModel):
     pier_count: int = 2
 
 
+class BridgePartQTO(BaseModel):
+    predefined_type: str = "DECK"
+    length: float = 0.0
+    width: float = 0.0
+    height: float = 0.0
+    volume: float = 0.0
+
+
+class BearingQTO(BaseModel):
+    predefined_type: str = "BRIDGEBEARING"
+    width: float = 0.50
+    depth: float = 0.50
+    height: float = 0.15
+    load_capacity_kn: float = 0.0
+    count: int = 1
+
+
+class MarineFacilityQTO(BaseModel):
+    predefined_type: str = "PORT"
+    surface_area: float = 0.0
+    water_depth: float = 0.0
+    quay_length: float = 0.0
+
+
+class MarinePartQTO(BaseModel):
+    predefined_type: str = "QUAY"
+    length: float = 0.0
+    width: float = 0.0
+    height: float = 0.0
+    volume: float = 0.0
+
+
 class MepQTO(BaseModel):
     system_type: str = ""
     length: float = 0.0                    # ท่อ / สายไฟ / ท่อลม (linear meters)
@@ -510,6 +546,10 @@ class ElementQTO(BaseModel):
     alignment: Optional[AlignmentQTO] = None
     road: Optional[RoadQTO] = None
     bridge: Optional[BridgeQTO] = None
+    bridge_part: Optional[BridgePartQTO] = None
+    bearing: Optional[BearingQTO] = None
+    marine_facility: Optional[MarineFacilityQTO] = None
+    marine_part: Optional[MarinePartQTO] = None
     mep: Optional[MepQTO] = None
 
 
@@ -564,6 +604,10 @@ class ProjectQTO(BaseModel):
     total_road_subbase_volume: float = 0.0
     total_bridge_concrete_volume: float = 0.0
     total_bridge_formwork_area: float = 0.0
+    total_bridge_part_volume: float = 0.0
+    total_bearing_count: int = 0
+    total_marine_facility_area: float = 0.0
+    total_marine_part_volume: float = 0.0
     # Ceilings & Floor Finishes Totals
     total_ceiling_gypsum_area: float = 0.0
     total_ceiling_tbar_area: float = 0.0
@@ -1650,6 +1694,75 @@ def calculate_element_qto(
             bridge=bridge_qto,
         )
 
+    elif isinstance(resolved, ResolvedBridgePart):
+        elem = resolved.element
+        vol = resolved.volume
+        bp_qto = BridgePartQTO(
+            predefined_type=resolved.predefined_type,
+            length=resolved.length,
+            width=resolved.width,
+            height=resolved.height,
+            volume=vol,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.length,
+            concrete_volume=vol,
+            bridge_part=bp_qto,
+        )
+
+    elif isinstance(resolved, ResolvedBearing):
+        elem = resolved.element
+        brg_qto = BearingQTO(
+            predefined_type=resolved.predefined_type,
+            width=resolved.width,
+            depth=resolved.depth,
+            height=resolved.height,
+            load_capacity_kn=resolved.load_capacity_kn,
+            count=1,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            bearing=brg_qto,
+        )
+
+    elif isinstance(resolved, ResolvedMarineFacility):
+        elem = resolved.element
+        mf_qto = MarineFacilityQTO(
+            predefined_type=resolved.predefined_type,
+            surface_area=resolved.surface_area,
+            water_depth=resolved.water_depth,
+            quay_length=resolved.quay_length,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            marine_facility=mf_qto,
+        )
+
+    elif isinstance(resolved, ResolvedMarinePart):
+        elem = resolved.element
+        vol = resolved.volume
+        mp_qto = MarinePartQTO(
+            predefined_type=resolved.predefined_type,
+            length=resolved.length,
+            width=resolved.width,
+            height=resolved.height,
+            volume=vol,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.length,
+            concrete_volume=vol,
+            marine_part=mp_qto,
+        )
+
     elif isinstance(resolved, ResolvedTerminal):
         elem = resolved.element
         return ElementQTO(
@@ -2055,6 +2168,10 @@ def calculate_qto(
     total_road_subbase_vol = 0.0
     total_bridge_conc_vol = 0.0
     total_bridge_formwork = 0.0
+    total_bridge_part_vol = 0.0
+    total_bearing_cnt = 0
+    total_marine_facility_area_val = 0.0
+    total_marine_part_vol = 0.0
 
     total_ceil_gypsum = 0.0
     total_ceil_tbar = 0.0
@@ -2241,6 +2358,18 @@ def calculate_qto(
             total_bridge_conc_vol += eqto.bridge.total_concrete_volume
             total_bridge_formwork += eqto.bridge.formwork_area
 
+        if eqto.bridge_part:
+            total_bridge_part_vol += eqto.bridge_part.volume
+
+        if eqto.bearing:
+            total_bearing_cnt += eqto.bearing.count
+
+        if eqto.marine_facility:
+            total_marine_facility_area_val += eqto.marine_facility.surface_area
+
+        if eqto.marine_part:
+            total_marine_part_vol += eqto.marine_part.volume
+
         if eqto.element_class == "IfcWall":
             if hasattr(elem, "thickness") and elem.thickness > 0:
                 total_wall_masonry += eqto.concrete_volume / elem.thickness
@@ -2354,6 +2483,10 @@ def calculate_qto(
         total_road_subbase_volume=total_road_subbase_vol,
         total_bridge_concrete_volume=total_bridge_conc_vol,
         total_bridge_formwork_area=total_bridge_formwork,
+        total_bridge_part_volume=total_bridge_part_vol,
+        total_bearing_count=total_bearing_cnt,
+        total_marine_facility_area=total_marine_facility_area_val,
+        total_marine_part_volume=total_marine_part_vol,
         total_ceiling_gypsum_area=total_ceil_gypsum,
         total_ceiling_tbar_area=total_ceil_tbar,
         total_ceiling_eaves_area=total_ceil_eaves,

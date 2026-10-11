@@ -13,7 +13,9 @@ from debim.schema import (
     IfcAirTerminal,
     IfcAlignment,
     IfcBeam,
+    IfcBearing,
     IfcBridge,
+    IfcBridgePart,
     IfcBuildingElementProxy,
     IfcCableCarrierSegment,
     IfcColumn,
@@ -31,6 +33,8 @@ from debim.schema import (
     IfcFlowController,
     IfcFooting,
     IfcLightFixture,
+    IfcMarineFacility,
+    IfcMarinePart,
     IfcOutlet,
     IfcPipeSegment,
     IfcPlate,
@@ -1141,8 +1145,69 @@ class ResolvedBridge(BaseModel):
     total_concrete_volume: float = 0.0  # m3
     formwork_area: float = 0.0  # m2
     deck_position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     pier_positions: List[Tuple[float, float, float]] = Field(default_factory=list)
     layer: str = "civil/infrastructure/bridges"
+
+
+class ResolvedBridgePart(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcBridgePart
+    predefined_type: str = "DECK"
+    bridge_tag: Optional[str] = None
+    length: float = 0.0
+    width: float = 0.0
+    height: float = 0.0
+    volume: float = 0.0
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "civil/infrastructure/bridges/parts"
+
+
+class ResolvedBearing(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcBearing
+    predefined_type: str = "BRIDGEBEARING"
+    bridge_tag: Optional[str] = None
+    bridge_part_tag: Optional[str] = None
+    width: float = 0.50
+    depth: float = 0.50
+    height: float = 0.15
+    load_capacity_kn: float = 0.0
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "civil/infrastructure/bridges/bearings"
+
+
+class ResolvedMarineFacility(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMarineFacility
+    predefined_type: str = "PORT"
+    surface_area: float = 0.0
+    water_depth: float = 0.0
+    quay_length: float = 0.0
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    boundary_polygon: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/marine/facilities"
+
+
+class ResolvedMarinePart(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMarinePart
+    predefined_type: str = "QUAY"
+    facility_tag: Optional[str] = None
+    length: float = 0.0
+    width: float = 0.0
+    height: float = 0.0
+    volume: float = 0.0
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "civil/marine/parts"
 
 
 ResolvedElement = Union[
@@ -1178,6 +1243,10 @@ ResolvedElement = Union[
     ResolvedAlignment,
     ResolvedRoad,
     ResolvedBridge,
+    ResolvedBridgePart,
+    ResolvedBearing,
+    ResolvedMarineFacility,
+    ResolvedMarinePart,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1224,6 +1293,10 @@ class ResolvedManifest(BaseModel):
     alignments: List[ResolvedAlignment] = []
     roads: List[ResolvedRoad] = []
     bridges: List[ResolvedBridge] = []
+    bridge_parts: List[ResolvedBridgePart] = []
+    bearings: List[ResolvedBearing] = []
+    marine_facilities: List[ResolvedMarineFacility] = []
+    marine_parts: List[ResolvedMarinePart] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -4520,8 +4593,153 @@ class SpatialResolver:
             total_concrete_volume=total_vol,
             formwork_area=total_formwork,
             deck_position=deck_pos,
+            position=deck_pos,
             pier_positions=pier_positions,
             layer=derive_default_layer(bridge),
+        )
+
+    def resolve_bridge_part(self, bp: IfcBridgePart) -> ResolvedBridgePart:
+        z_base = self.get_storey(bp.placement.storey).elevation if bp.placement.storey else 0.0
+
+        if bp.placement.from_grid and bp.placement.to_grid:
+            x1, y1 = self.get_grid_xy(bp.placement.from_grid)
+            x2, y2 = self.get_grid_xy(bp.placement.to_grid)
+            x1 += bp.placement.offset_x
+            y1 += bp.placement.offset_y
+            x2 += bp.placement.offset_x
+            y2 += bp.placement.offset_y
+            z = z_base + bp.placement.offset_z
+            span = math.hypot(x2 - x1, y2 - y1)
+            pos = ((x1 + x2) / 2.0, (y1 + y2) / 2.0, z)
+            length = bp.length or (span if span > 0 else 10.0)
+        elif bp.placement.grid:
+            gx, gy = self.get_grid_xy(bp.placement.grid)
+            pos = (gx + bp.placement.offset_x, gy + bp.placement.offset_y, z_base + bp.placement.offset_z)
+            length = bp.length or 10.0
+        else:
+            pos = (bp.placement.offset_x, bp.placement.offset_y, z_base + bp.placement.offset_z)
+            length = bp.length or 10.0
+
+        width = bp.width or 10.0
+        height = bp.height or bp.depth or 1.0
+        vol = bp.volume or (length * width * height)
+
+        return ResolvedBridgePart(
+            tag=bp.tag,
+            element=bp,
+            predefined_type=bp.predefined_type,
+            bridge_tag=bp.bridge or bp.placement.bridge,
+            length=length,
+            width=width,
+            height=height,
+            volume=vol,
+            position=pos,
+            layer=derive_default_layer(bp),
+        )
+
+    def resolve_bearing(self, brg: IfcBearing) -> ResolvedBearing:
+        z_base = self.get_storey(brg.placement.storey).elevation if brg.placement.storey else 0.0
+
+        if brg.placement.grid:
+            gx, gy = self.get_grid_xy(brg.placement.grid)
+            pos = (gx + brg.placement.offset_x, gy + brg.placement.offset_y, z_base + brg.placement.offset_z)
+        else:
+            pos = (brg.placement.offset_x, brg.placement.offset_y, z_base + brg.placement.offset_z)
+
+        dims = brg.dimensions
+        w = dims.width if dims else brg.width
+        d = (dims.depth if dims and dims.depth is not None else brg.depth) if brg.depth else (brg.length or 0.5)
+        h = dims.height if dims else brg.height
+
+        return ResolvedBearing(
+            tag=brg.tag,
+            element=brg,
+            predefined_type=brg.predefined_type,
+            bridge_tag=brg.bridge or brg.placement.bridge,
+            bridge_part_tag=brg.bridge_part or brg.placement.bridge_part,
+            width=w,
+            depth=d,
+            height=h,
+            load_capacity_kn=brg.load_capacity_kn or 0.0,
+            position=pos,
+            layer=derive_default_layer(brg),
+        )
+
+    def resolve_marine_facility(self, mf: IfcMarineFacility) -> ResolvedMarineFacility:
+        z_base = self.get_storey(mf.placement.storey).elevation if mf.placement.storey else 0.0
+
+        if mf.placement.grid:
+            gx, gy = self.get_grid_xy(mf.placement.grid)
+            pos = (gx + mf.placement.offset_x, gy + mf.placement.offset_y, z_base + mf.placement.offset_z)
+        else:
+            pos = (mf.placement.offset_x, mf.placement.offset_y, z_base + mf.placement.offset_z)
+
+        boundary_poly: List[Tuple[float, float, float]] = []
+        calc_area = 0.0
+        if mf.placement.boundary:
+            pts_2d = [self.get_grid_xy(pt) for pt in mf.placement.boundary]
+            for px, py in pts_2d:
+                boundary_poly.append((px + mf.placement.offset_x, py + mf.placement.offset_y, z_base + mf.placement.offset_z))
+            n = len(pts_2d)
+            if n >= 3:
+                area = 0.0
+                for i in range(n):
+                    j = (i + 1) % n
+                    area += pts_2d[i][0] * pts_2d[j][1]
+                    area -= pts_2d[j][0] * pts_2d[i][1]
+                calc_area = abs(area) / 2.0
+
+        surf_area = mf.surface_area or calc_area or 1000.0
+
+        return ResolvedMarineFacility(
+            tag=mf.tag,
+            element=mf,
+            predefined_type=mf.predefined_type,
+            surface_area=surf_area,
+            water_depth=mf.water_depth or 10.0,
+            quay_length=mf.quay_length or 100.0,
+            position=pos,
+            boundary_polygon=boundary_poly,
+            layer=derive_default_layer(mf),
+        )
+
+    def resolve_marine_part(self, mp: IfcMarinePart) -> ResolvedMarinePart:
+        z_base = self.get_storey(mp.placement.storey).elevation if mp.placement.storey else 0.0
+
+        if mp.placement.from_grid and mp.placement.to_grid:
+            x1, y1 = self.get_grid_xy(mp.placement.from_grid)
+            x2, y2 = self.get_grid_xy(mp.placement.to_grid)
+            x1 += mp.placement.offset_x
+            y1 += mp.placement.offset_y
+            x2 += mp.placement.offset_x
+            y2 += mp.placement.offset_y
+            z = z_base + mp.placement.offset_z
+            span = math.hypot(x2 - x1, y2 - y1)
+            pos = ((x1 + x2) / 2.0, (y1 + y2) / 2.0, z)
+            length = mp.length or (span if span > 0 else 50.0)
+        elif mp.placement.grid:
+            gx, gy = self.get_grid_xy(mp.placement.grid)
+            pos = (gx + mp.placement.offset_x, gy + mp.placement.offset_y, z_base + mp.placement.offset_z)
+            length = mp.length or 50.0
+        else:
+            pos = (mp.placement.offset_x, mp.placement.offset_y, z_base + mp.placement.offset_z)
+            length = mp.length or 50.0
+
+        width = mp.width or 10.0
+        height = mp.height or mp.depth or 5.0
+        vol = mp.volume or (length * width * height)
+
+        return ResolvedMarinePart(
+            tag=mp.tag,
+            element=mp,
+            predefined_type=mp.predefined_type,
+            facility_tag=mp.marine_facility or mp.placement.marine_facility,
+            length=length,
+            width=width,
+            height=height,
+            volume=vol,
+            position=pos,
+            layer=derive_default_layer(mp),
         )
 
 
@@ -4763,6 +4981,22 @@ class SpatialResolver:
                 r_bridge = self.resolve_bridge(elem)
                 resolved_manifest.bridges.append(r_bridge)
                 resolved_manifest.elements.append(r_bridge)
+            elif isinstance(elem, IfcBridgePart):
+                r_bp = self.resolve_bridge_part(elem)
+                resolved_manifest.bridge_parts.append(r_bp)
+                resolved_manifest.elements.append(r_bp)
+            elif isinstance(elem, IfcBearing):
+                r_brg = self.resolve_bearing(elem)
+                resolved_manifest.bearings.append(r_brg)
+                resolved_manifest.elements.append(r_brg)
+            elif isinstance(elem, IfcMarineFacility):
+                r_mf = self.resolve_marine_facility(elem)
+                resolved_manifest.marine_facilities.append(r_mf)
+                resolved_manifest.elements.append(r_mf)
+            elif isinstance(elem, IfcMarinePart):
+                r_mp = self.resolve_marine_part(elem)
+                resolved_manifest.marine_parts.append(r_mp)
+                resolved_manifest.elements.append(r_mp)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

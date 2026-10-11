@@ -389,6 +389,16 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcController"
     if "control" in l:
         return "IfcDistributionControlElement"
+    if "bridge_part" in l or "bridgepart" in l or "substructure" in l or "superstructure" in l or "pier" in l or "abutment" in l or "deck" in l:
+        return "IfcBridgePart"
+    if "bearing" in l:
+        return "IfcBearing"
+    if "marine_facility" in l or "marinefacility" in l or "port" in l or "harbour" in l or "waterway" in l:
+        return "IfcMarineFacility"
+    if "marine_part" in l or "marinepart" in l or "quay" in l or "jetty" in l or "breakwater" in l or "berth" in l:
+        return "IfcMarinePart"
+    if "bridge" in l:
+        return "IfcBridge"
     return "IfcBuildingElementProxy"
 
 
@@ -819,7 +829,124 @@ class StepSerializer:
                 f".{bridge.predefined_type.upper()}.",
             )
             element_tag_refs[bridge.tag] = elem_ref
+            self.create_entity(
+                "IfcRelAggregates",
+                generate_ifc_guid(),
+                None,
+                None,
+                None,
+                site_ref,
+                [elem_ref],
+            )
             if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for bp in resolved.bridge_parts:
+            st_id = bp.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcBridgePart",
+                generate_ifc_guid(),
+                None,
+                bp.tag,
+                None,
+                f"IfcBridgePart.{bp.predefined_type}",
+                None,
+                None,
+                f".{bp.predefined_type.upper()}.",
+            )
+            element_tag_refs[bp.tag] = elem_ref
+            if bp.bridge_tag and bp.bridge_tag in element_tag_refs:
+                self.create_entity(
+                    "IfcRelAggregates",
+                    generate_ifc_guid(),
+                    None,
+                    None,
+                    None,
+                    element_tag_refs[bp.bridge_tag],
+                    [elem_ref],
+                )
+            elif st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for brg in resolved.bearings:
+            st_id = brg.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcBearing",
+                generate_ifc_guid(),
+                None,
+                brg.tag,
+                None,
+                f"IfcBearing.{brg.predefined_type}",
+                None,
+                None,
+                f".{brg.predefined_type.upper()}.",
+            )
+            element_tag_refs[brg.tag] = elem_ref
+            p_ref = element_tag_refs.get(brg.bridge_part_tag) or element_tag_refs.get(brg.bridge_tag)
+            if p_ref:
+                self.create_entity(
+                    "IfcRelAggregates",
+                    generate_ifc_guid(),
+                    None,
+                    None,
+                    None,
+                    p_ref,
+                    [elem_ref],
+                )
+            elif st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for mf in resolved.marine_facilities:
+            st_id = mf.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcMarineFacility",
+                generate_ifc_guid(),
+                None,
+                mf.tag,
+                None,
+                f"IfcMarineFacility.{mf.predefined_type}",
+                None,
+                None,
+                f".{mf.predefined_type.upper()}.",
+            )
+            element_tag_refs[mf.tag] = elem_ref
+            self.create_entity(
+                "IfcRelAggregates",
+                generate_ifc_guid(),
+                None,
+                None,
+                None,
+                site_ref,
+                [elem_ref],
+            )
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for mp in resolved.marine_parts:
+            st_id = mp.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcMarinePart",
+                generate_ifc_guid(),
+                None,
+                mp.tag,
+                None,
+                f"IfcMarinePart.{mp.predefined_type}",
+                None,
+                None,
+                f".{mp.predefined_type.upper()}.",
+            )
+            element_tag_refs[mp.tag] = elem_ref
+            if mp.facility_tag and mp.facility_tag in element_tag_refs:
+                self.create_entity(
+                    "IfcRelAggregates",
+                    generate_ifc_guid(),
+                    None,
+                    None,
+                    None,
+                    element_tag_refs[mp.facility_tag],
+                    [elem_ref],
+                )
+            elif st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         for fill in resolved.earthworks_fills:
@@ -2965,9 +3092,135 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 name=bridge.tag,
             )
             bridge_obj.ObjectType = f"IfcBridge.{bridge.predefined_type}"
+        ifcopenshell_elem_objs[bridge.tag] = bridge_obj
+        try:
+            ifcopenshell.api.run("aggregate.assign_object", model, products=[bridge_obj], relating_object=site)
+        except Exception:
+            pass
         st_id = bridge.element.placement.storey
         if st_id and st_id in storey_products:
             storey_products[st_id].append(bridge_obj)
+
+    for bp in resolved.bridge_parts:
+        try:
+            bp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBridgePart",
+                name=bp.tag,
+            )
+        except Exception:
+            bp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=bp.tag,
+            )
+            bp_obj.ObjectType = f"IfcBridgePart.{bp.predefined_type}"
+        ifcopenshell_elem_objs[bp.tag] = bp_obj
+        _add_ifcopenshell_terminal_geometry(
+            bp_obj, bp.position, 0.0,
+            (bp.width or 10.0, bp.length or 10.0, bp.height or 1.0)
+        )
+        p_bridge = ifcopenshell_elem_objs.get(bp.bridge_tag)
+        if p_bridge:
+            try:
+                ifcopenshell.api.run("aggregate.assign_object", model, products=[bp_obj], relating_object=p_bridge)
+            except Exception:
+                pass
+        else:
+            st_id = bp.element.placement.storey
+            if st_id and st_id in storey_products:
+                storey_products[st_id].append(bp_obj)
+
+    for brg in resolved.bearings:
+        try:
+            brg_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBearing",
+                name=brg.tag,
+            )
+        except Exception:
+            brg_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=brg.tag,
+            )
+            brg_obj.ObjectType = f"IfcBearing.{brg.predefined_type}"
+        ifcopenshell_elem_objs[brg.tag] = brg_obj
+        _add_ifcopenshell_terminal_geometry(
+            brg_obj, brg.position, 0.0,
+            (brg.width, brg.depth, brg.height)
+        )
+        p_parent = ifcopenshell_elem_objs.get(brg.bridge_part_tag) or ifcopenshell_elem_objs.get(brg.bridge_tag)
+        if p_parent:
+            try:
+                ifcopenshell.api.run("aggregate.assign_object", model, products=[brg_obj], relating_object=p_parent)
+            except Exception:
+                pass
+        else:
+            st_id = brg.element.placement.storey
+            if st_id and st_id in storey_products:
+                storey_products[st_id].append(brg_obj)
+
+    for mf in resolved.marine_facilities:
+        try:
+            mf_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcMarineFacility",
+                name=mf.tag,
+            )
+        except Exception:
+            mf_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=mf.tag,
+            )
+            mf_obj.ObjectType = f"IfcMarineFacility.{mf.predefined_type}"
+        ifcopenshell_elem_objs[mf.tag] = mf_obj
+        try:
+            ifcopenshell.api.run("aggregate.assign_object", model, products=[mf_obj], relating_object=site)
+        except Exception:
+            pass
+        st_id = mf.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(mf_obj)
+
+    for mp in resolved.marine_parts:
+        try:
+            mp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcMarinePart",
+                name=mp.tag,
+            )
+        except Exception:
+            mp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=mp.tag,
+            )
+            mp_obj.ObjectType = f"IfcMarinePart.{mp.predefined_type}"
+        ifcopenshell_elem_objs[mp.tag] = mp_obj
+        _add_ifcopenshell_terminal_geometry(
+            mp_obj, mp.position, 0.0,
+            (mp.width or 10.0, mp.length or 50.0, mp.height or 5.0)
+        )
+        p_fac = ifcopenshell_elem_objs.get(mp.facility_tag)
+        if p_fac:
+            try:
+                ifcopenshell.api.run("aggregate.assign_object", model, products=[mp_obj], relating_object=p_fac)
+            except Exception:
+                pass
+        else:
+            st_id = mp.element.placement.storey
+            if st_id and st_id in storey_products:
+                storey_products[st_id].append(mp_obj)
 
     # 6. Roofs & Roof Openings / Skylights
     for roof in resolved.roofs:
