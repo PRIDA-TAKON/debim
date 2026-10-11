@@ -35,6 +35,7 @@ from debim.resolver import (
     ResolvedFooting,
     ResolvedLightFixture,
     ResolvedManifest,
+    ResolvedMarinePart,
     ResolvedOutlet,
     ResolvedPipeSegment,
     ResolvedPlate,
@@ -447,6 +448,18 @@ class RetainingWallQTO(BaseModel):
     footing_width: float = 0.0           # Footing base width (m)
 
 
+class MarinePartQTO(BaseModel):
+    length: float = 0.0                  # Embankment length (m)
+    crest_width: float = 0.0             # Crest width (m)
+    crest_elevation: float = 0.0         # Crest height/elevation (m)
+    base_width: float = 0.0              # Base width (m)
+    total_volume: float = 0.0            # Total embankment volume (m3)
+    core_volume: float = 0.0             # Core fill volume (m3)
+    armor_volume: float = 0.0            # Armor rock/block volume (m3)
+    armor_weight_tons: float = 0.0       # Armor weight (metric tons)
+    armor_type: str = "ROCK"
+
+
 class AlignmentQTO(BaseModel):
     total_length: float = 0.0            # Total alignment curve length (m)
     start_chainage: float = 0.0          # Stationing start (m)
@@ -524,6 +537,7 @@ class ElementQTO(BaseModel):
     slab_finishes: Optional[SlabFinishesQTO] = None
     earthworks: Optional[EarthworksQTO] = None
     retaining_wall: Optional[RetainingWallQTO] = None
+    marine_part: Optional[MarinePartQTO] = None
     alignment: Optional[AlignmentQTO] = None
     road: Optional[RoadQTO] = None
     bridge: Optional[BridgeQTO] = None
@@ -574,6 +588,10 @@ class ProjectQTO(BaseModel):
     total_compacted_fill_volume: float = 0.0
     total_retaining_wall_concrete_volume: float = 0.0
     total_retaining_wall_formwork_area: float = 0.0
+    total_marine_embankment_volume: float = 0.0
+    total_marine_core_volume: float = 0.0
+    total_marine_armor_volume: float = 0.0
+    total_marine_armor_weight_tons: float = 0.0
     # Civil Infrastructure Totals (IFC4.3)
     total_alignment_length: float = 0.0
     total_road_surface_area: float = 0.0
@@ -1662,6 +1680,27 @@ def calculate_element_qto(
             retaining_wall=rw_qto,
         )
 
+    elif isinstance(resolved, ResolvedMarinePart):
+        elem = resolved.element
+        mp_qto = MarinePartQTO(
+            length=resolved.length,
+            crest_width=resolved.crest_width,
+            crest_elevation=resolved.crest_elevation,
+            base_width=resolved.base_width,
+            total_volume=resolved.total_volume,
+            core_volume=resolved.core_volume,
+            armor_volume=resolved.armor_volume,
+            armor_weight_tons=resolved.armor_weight_tons,
+            armor_type=resolved.armor_type,
+        )
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.length,
+            marine_part=mp_qto,
+        )
+
     elif isinstance(resolved, ResolvedAlignment):
         elem = resolved.element
         align_qto = AlignmentQTO(
@@ -2197,6 +2236,10 @@ def calculate_qto(
     total_compacted_fill_vol = 0.0
     total_rw_conc_vol = 0.0
     total_rw_formwork = 0.0
+    total_marine_embankment_vol = 0.0
+    total_marine_core_vol = 0.0
+    total_marine_armor_vol = 0.0
+    total_marine_armor_wt_tons = 0.0
 
     # Civil Infrastructure Totals (IFC4.3)
     total_alignment_len = 0.0
@@ -2385,6 +2428,12 @@ def calculate_qto(
             total_rw_conc_vol += eqto.retaining_wall.concrete_volume
             total_rw_formwork += eqto.retaining_wall.formwork_area
 
+        if eqto.marine_part:
+            total_marine_embankment_vol += eqto.marine_part.total_volume
+            total_marine_core_vol += eqto.marine_part.core_volume
+            total_marine_armor_vol += eqto.marine_part.armor_volume
+            total_marine_armor_wt_tons += eqto.marine_part.armor_weight_tons
+
         if eqto.alignment:
             total_alignment_len += eqto.alignment.total_length
 
@@ -2512,6 +2561,10 @@ def calculate_qto(
         total_compacted_fill_volume=total_compacted_fill_vol,
         total_retaining_wall_concrete_volume=total_rw_conc_vol,
         total_retaining_wall_formwork_area=total_rw_formwork,
+        total_marine_embankment_volume=total_marine_embankment_vol,
+        total_marine_core_volume=total_marine_core_vol,
+        total_marine_armor_volume=total_marine_armor_vol,
+        total_marine_armor_weight_tons=total_marine_armor_wt_tons,
         total_alignment_length=total_alignment_len,
         total_road_surface_area=total_road_surf_area,
         total_road_asphalt_volume=total_road_asphalt_vol,

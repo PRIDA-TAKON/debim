@@ -339,6 +339,8 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
         return "IfcBridgePart"
     if "bearing" in l:
         return "IfcBearing"
+    if "marinepart" in l or "marine_part" in l or "marine" in l or "breakwater" in l or "seawall" in l or "revetment" in l:
+        return "IfcMarinePart"
     if "chimney" in l:
         return "IfcChimney"
     if "accessory" in l or "accessories" in l or "accessor" in l:
@@ -1037,6 +1039,58 @@ class StepSerializer:
             )
             element_tag_refs[rw.tag] = elem_ref
             if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for mp in getattr(resolved, "marine_parts", []) or []:
+            st_id = mp.element.placement.storey
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+
+            poly_pts = [self.create_entity("IfcCartesianPoint", pt) for pt in mp.profile_polygon]
+            poly_pts.append(poly_pts[0])
+            poly_ref = self.create_entity("IfcPolyline", poly_pts)
+            prof_ref = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, poly_ref)
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid_ref = self.create_entity("IfcExtrudedAreaSolid", prof_ref, axis3d, ext_dir, float(mp.length))
+
+            shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid_ref])
+            prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
+            dx = mp.end_point[0] - mp.start_point[0]
+            dy = mp.end_point[1] - mp.start_point[1]
+            dz = mp.end_point[2] - mp.start_point[2]
+            length_3d = math.sqrt(dx**2 + dy**2 + dz**2)
+            if length_3d > 1e-6:
+                z_dir = (dx / length_3d, dy / length_3d, dz / length_3d)
+            else:
+                z_dir = (1.0, 0.0, 0.0)
+
+            y_dir = (0.0, 0.0, 1.0)
+            if abs(z_dir[2]) > 0.9:
+                y_dir = (0.0, 1.0, 0.0)
+
+            dir_z_ref = self.create_entity("IfcDirection", z_dir)
+            dir_y_ref = self.create_entity("IfcDirection", y_dir)
+            placement_pt = self.create_entity("IfcCartesianPoint", mp.start_point)
+            placement_axis = self.create_entity("IfcAxis2Placement3D", placement_pt, dir_z_ref, dir_y_ref)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, placement_axis)
+
+            ptype = f".{mp.predefined_type.upper()}." if mp.predefined_type else ".BREAKWATER."
+            elem_ref = self.create_entity(
+                "IfcMarinePart",
+                generate_ifc_guid(),
+                None,
+                mp.tag,
+                None,
+                f"IfcMarinePart.{mp.predefined_type}",
+                elem_pl,
+                prod_shape_ref,
+                ptype,
+            )
+            element_tag_refs[mp.tag] = elem_ref
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         # 1. Columns
@@ -3185,6 +3239,69 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = rw.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(rw_obj)
+
+    for mp in getattr(resolved, "marine_parts", []) or []:
+        st_id = mp.element.placement.storey
+        try:
+            mp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcMarinePart",
+                name=mp.tag,
+                predefined_type=mp.predefined_type,
+            )
+        except Exception:
+            mp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=mp.tag,
+            )
+            mp_obj.ObjectType = f"IfcMarinePart.{mp.predefined_type}"
+
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(mp_obj)
+
+        poly_pts = [model.createIfcCartesianPoint(list(pt)) for pt in mp.profile_polygon]
+        poly_pts.append(poly_pts[0])
+        poly_curve = model.createIfcPolyline(poly_pts)
+        prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly_curve)
+
+        ext_dir = model.createIfcDirection([0.0, 0.0, 1.0])
+        pos3d = model.createIfcAxis2Placement3D(model.createIfcCartesianPoint([0.0, 0.0, 0.0]))
+        solid = model.createIfcExtrudedAreaSolid(prof, pos3d, ext_dir, float(mp.length))
+
+        shape_rep = model.createIfcShapeRepresentation(
+            ContextOfItems=body_context,
+            RepresentationIdentifier="Body",
+            RepresentationType="SweptSolid",
+            Items=[solid],
+        )
+
+        dx = mp.end_point[0] - mp.start_point[0]
+        dy = mp.end_point[1] - mp.start_point[1]
+        dz = mp.end_point[2] - mp.start_point[2]
+        length_3d = math.sqrt(dx**2 + dy**2 + dz**2)
+        if length_3d > 1e-6:
+            z_dir = [dx / length_3d, dy / length_3d, dz / length_3d]
+        else:
+            z_dir = [1.0, 0.0, 0.0]
+
+        y_dir = [0.0, 0.0, 1.0]
+        if abs(z_dir[2]) > 0.9:
+            y_dir = [0.0, 1.0, 0.0]
+
+        placement_pt = model.createIfcCartesianPoint(list(mp.start_point))
+        placement_axis = model.createIfcAxis2Placement3D(
+            placement_pt,
+            model.createIfcDirection(z_dir),
+            model.createIfcDirection(y_dir),
+        )
+        local_placement = model.createIfcLocalPlacement(RelativePlacement=placement_axis)
+        prod_def = model.createIfcProductDefinitionShape(Representations=[shape_rep])
+
+        mp_obj.ObjectPlacement = local_placement
+        mp_obj.Representation = prod_def
 
     for align in resolved.alignments:
         try:

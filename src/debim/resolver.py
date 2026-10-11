@@ -37,6 +37,7 @@ from debim.schema import (
     IfcFlowController,
     IfcFooting,
     IfcLightFixture,
+    IfcMarinePart,
     IfcOutlet,
     IfcPipeSegment,
     IfcPlate,
@@ -1156,6 +1157,29 @@ class ResolvedRetainingWall(BaseModel):
     layer: str = "civil/structures/retaining_walls"
 
 
+class ResolvedMarinePart(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMarinePart
+    predefined_type: str = "BREAKWATER"
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    length: float
+    crest_width: float
+    crest_elevation: float
+    base_width: float
+    slope_ratio: float
+    armor_type: str
+    armor_thickness: float
+    total_volume: float
+    core_volume: float
+    armor_volume: float
+    armor_weight_tons: float
+    profile_polygon: List[Tuple[float, float]]
+    layer: str = "civil/marine/breakwater"
+
+
 class ResolvedAlignment(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -1390,6 +1414,7 @@ class ResolvedManifest(BaseModel):
     geotechnical_strata: List[ResolvedGeotechnicalStratum] = []
     soils: List[ResolvedSoil] = []
     retaining_walls: List[ResolvedRetainingWall] = []
+    marine_parts: List[ResolvedMarinePart] = []
     alignments: List[ResolvedAlignment] = []
     roads: List[ResolvedRoad] = []
     bridges: List[ResolvedBridge] = []
@@ -4686,6 +4711,107 @@ class SpatialResolver:
             layer=derive_default_layer(rw),
         )
 
+    def resolve_marine_part(self, mp: IfcMarinePart) -> ResolvedMarinePart:
+        storey = self.get_storey(mp.placement.storey)
+        z = storey.elevation + mp.placement.offset_z
+
+        start_pos = mp.start_position or mp.placement.start_position
+        end_pos = mp.end_position or mp.placement.end_position
+
+        if start_pos and end_pos:
+            x1, y1, z1 = start_pos
+            x2, y2, z2 = end_pos
+            start_point = (x1, y1, z1)
+            end_point = (x2, y2, z2)
+            length = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
+        elif mp.placement.from_grid and mp.placement.to_grid:
+            x1, y1 = self.get_grid_xy(mp.placement.from_grid)
+            x2, y2 = self.get_grid_xy(mp.placement.to_grid)
+            x1 += mp.placement.offset_x
+            y1 += mp.placement.offset_y
+            x2 += mp.placement.offset_x
+            y2 += mp.placement.offset_y
+            dx = x2 - x1
+            dy = y2 - y1
+            calc_len = math.hypot(dx, dy)
+            length = calc_len if calc_len > 0 else (mp.length or 100.0)
+            start_point = (x1, y1, z)
+            end_point = (x2, y2, z)
+        elif mp.placement.grid:
+            x1, y1 = self.get_grid_xy(mp.placement.grid)
+            x1 += mp.placement.offset_x
+            y1 += mp.placement.offset_y
+            length = mp.length or 100.0
+            x2 = x1 + length
+            y2 = y1
+            start_point = (x1, y1, z)
+            end_point = (x2, y2, z)
+        else:
+            x1 = mp.placement.offset_x
+            y1 = mp.placement.offset_y
+            length = mp.length or 100.0
+            x2 = x1 + length
+            y2 = y1
+            start_point = (x1, y1, z)
+            end_point = (x2, y2, z)
+
+        crest_width = mp.crest_width
+        crest_elevation = mp.crest_elevation
+        slope_ratio = mp.slope_ratio
+        if mp.base_width and mp.base_width > 0:
+            base_width = mp.base_width
+        else:
+            base_width = crest_width + 2.0 * slope_ratio * crest_elevation
+
+        profile_polygon = [
+            (-base_width / 2.0, 0.0),
+            (base_width / 2.0, 0.0),
+            (crest_width / 2.0, crest_elevation),
+            (-crest_width / 2.0, crest_elevation),
+        ]
+
+        total_area = (crest_width + base_width) / 2.0 * crest_elevation
+        total_volume = total_area * length
+
+        armor_thickness = mp.armor_thickness
+        if armor_thickness > 0 and crest_elevation > armor_thickness:
+            h_core = crest_elevation - armor_thickness
+            t_horiz = armor_thickness * math.sqrt(1.0 + slope_ratio ** 2)
+            w_c_core = max(0.0, crest_width - 2.0 * t_horiz)
+            w_b_core = max(0.0, base_width - 2.0 * t_horiz)
+            core_area = (w_c_core + w_b_core) / 2.0 * h_core
+            core_volume = core_area * length
+            armor_volume = max(0.0, total_volume - core_volume)
+        else:
+            core_volume = total_volume
+            armor_volume = 0.0
+
+        density = 2.65 if "ROCK" in (mp.armor_type or "ROCK").upper() else 2.4
+        armor_weight_tons = armor_volume * density
+
+        layer = derive_default_layer(mp)
+
+        return ResolvedMarinePart(
+            tag=mp.tag,
+            element=mp,
+            predefined_type=mp.predefined_type,
+            start_point=start_point,
+            end_point=end_point,
+            length=length,
+            crest_width=crest_width,
+            crest_elevation=crest_elevation,
+            base_width=base_width,
+            slope_ratio=slope_ratio,
+            armor_type=mp.armor_type,
+            armor_thickness=armor_thickness,
+            total_volume=total_volume,
+            core_volume=core_volume,
+            armor_volume=armor_volume,
+            armor_weight_tons=armor_weight_tons,
+            profile_polygon=profile_polygon,
+            layer=layer,
+        )
+
     def resolve_alignment(self, align: IfcAlignment) -> ResolvedAlignment:
         from debim.civil import AlignmentSweeper
 
@@ -5329,6 +5455,10 @@ class SpatialResolver:
                 r_rw = self.resolve_retaining_wall(elem)
                 resolved_manifest.retaining_walls.append(r_rw)
                 resolved_manifest.elements.append(r_rw)
+            elif isinstance(elem, IfcMarinePart):
+                r_mp = self.resolve_marine_part(elem)
+                resolved_manifest.marine_parts.append(r_mp)
+                resolved_manifest.elements.append(r_mp)
             elif isinstance(elem, IfcAlignment):
                 r_align = self.resolve_alignment(elem)
                 resolved_manifest.alignments.append(r_align)

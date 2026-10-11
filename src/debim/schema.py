@@ -2424,6 +2424,7 @@ EarthworksFillType = Literal[
 ]
 GeotechnicalStratumType = Literal["SOLID", "VOID", "WATER", "SOIL", "ROCK", "CLAY", "SAND", "GRAVEL", "SILT", "USERDEFINED", "NOTDEFINED"]
 RetainingWallType = Literal["CANTILEVER_WALL", "GRAVITY_WALL", "SHEET_PILE_WALL", "DIAPHRAGM_WALL", "USERDEFINED"]
+MarinePartType = Literal["BREAKWATER", "SEAWALL", "REVETMENT", "GROYNE", "DIKE", "USERDEFINED", "NOTDEFINED"]
 
 
 class EarthworksPlacement(BaseModel):
@@ -2570,6 +2571,43 @@ class IfcRetainingWall(BaseModel):
     layer: Optional[str] = None
 
 
+class MarinePartPlacement(BaseModel):
+    storey: str = "GL"
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    start_position: Optional[Tuple[float, float, float]] = None
+    end_position: Optional[Tuple[float, float, float]] = None
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcMarinePart(BaseModel):
+    class_: Literal["IfcMarinePart"] = Field(alias="class", default="IfcMarinePart")
+    tag: str
+    predefined_type: MarinePartType = "BREAKWATER"
+    material: Optional[str] = "ROCK"
+    crest_width: float = 4.0
+    crest_elevation: float = 3.0
+    base_width: Optional[float] = None
+    slope_ratio: float = 1.5
+    armor_type: str = "ROCK"
+    armor_thickness: float = 1.0
+    length: Optional[float] = 100.0
+    start_position: Optional[Tuple[float, float, float]] = None
+    end_position: Optional[Tuple[float, float, float]] = None
+    placement: MarinePartPlacement = Field(default_factory=MarinePartPlacement)
+    layer: Optional[str] = None
+
+
 IFC4_DISTRIBUTION_9_ATTR_CLASSES = {
     "IFCACTUATOR", "IFCAIRTERMINAL", "IFCAIRTERMINALBOX", "IFCAIRTOAIRHEATRECOVERY", "IFCALARM",
     "IFCAUDIOVISUALAPPLIANCE", "IFCBOILER", "IFCBURNER", "IFCCABLECARRIERFITTING", "IFCCABLECARRIERSEGMENT",
@@ -2657,6 +2695,7 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcTrackElement",
     "IfcBridgePart",
     "IfcBearing",
+    "IfcMarinePart",
     "IfcCustomElement",
 } | IFC4_DISTRIBUTION_CLASSES
 
@@ -2683,9 +2722,7 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksElement", "IfcEarthworksCut",
     "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
     "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
-    "IfcTrackElement", "IfcCustomElement", "IfcBuildingElementProxy"
-    "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksCut", "IfcEarthworksFill",
-    "IfcRetainingWall", "IfcAlignment", "IfcRoad", "IfcBridge", "IfcBridgePart", "IfcBearing",
+    "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcMarinePart",
     "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
@@ -2748,6 +2785,7 @@ Element = Annotated[
         Annotated[IfcTrackElement, Tag("IfcTrackElement")],
         Annotated[IfcBridgePart, Tag("IfcBridgePart")],
         Annotated[IfcBearing, Tag("IfcBearing")],
+        Annotated[IfcMarinePart, Tag("IfcMarinePart")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -3140,7 +3178,7 @@ class ProjectManifest(BaseModel):
                         if gy not in grid_y_ids:
                             raise ValueError(f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, IfcRetainingWall):
+            elif isinstance(elem, (IfcRetainingWall, IfcMarinePart)):
                 if elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -3393,6 +3431,9 @@ def derive_default_layer(elem) -> str:
         return "civil/infrastructure/bridges/parts"
     elif cls == "IfcBearing":
         return "civil/infrastructure/bridges/bearings"
+    elif cls == "IfcMarinePart":
+        ptype = getattr(elem, "predefined_type", "BREAKWATER").lower()
+        return f"civil/marine/{ptype}"
     elif cls == "IfcCustomElement":
         return "general/custom"
     elif cls == "IfcBuildingElementProxy" or isinstance(elem, IfcBuildingElementProxy):
