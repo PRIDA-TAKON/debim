@@ -24,6 +24,7 @@ from debim.resolver import (
     ResolvedCurtainWall,
     ResolvedCustomElement,
     ResolvedDoor,
+    ResolvedFlowController,
     ResolvedManifest,
     ResolvedPipeSegment,
     ResolvedPlate,
@@ -439,6 +440,42 @@ def slice_storey(
                 properties={
                     "terminal_type": term.terminal_type,
                     "dimensions": term.dimensions,
+                },
+            ))
+
+    # Process Flow Controllers (Cut & Low Projection)
+    for fc in getattr(resolved, "flow_controllers", []):
+        fc_base_z = fc.position[2]
+        fc_top_z = fc_base_z + fc.dimensions[2]
+        cx, cy, _ = fc.position
+        all_2d_points.append((cx, cy))
+        w, d = fc.dimensions[0], fc.dimensions[1]
+        fc_poly = _create_rotated_box(cx, cy, w, d, fc.rotation_angle)
+
+        if fc_base_z <= cut_elev <= fc_top_z:
+            cut_elements.append(CutElement(
+                tag=fc.tag,
+                element_class="IfcFlowController",
+                category="medium_cut",
+                geometry=fc_poly,
+                centerline=Point(cx, cy),
+                layer=fc.layer,
+                properties={
+                    "controller_type": fc.controller_type,
+                    "predefined_type": fc.predefined_type,
+                    "air_flow_rate_m3h": fc.air_flow_rate_m3h,
+                },
+            ))
+        elif fc_base_z < cut_elev:
+            projection_elements.append(ProjectionElement(
+                tag=fc.tag,
+                element_class="IfcFlowController",
+                category="low_projection",
+                geometry=fc_poly,
+                layer=fc.layer,
+                properties={
+                    "controller_type": fc.controller_type,
+                    "predefined_type": fc.predefined_type,
                 },
             ))
 

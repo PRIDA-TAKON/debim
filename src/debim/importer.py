@@ -21,6 +21,7 @@ from debim.schema import (
     IfcColumn,
     IfcCovering,
     IfcCustomElement,
+    IfcFlowController,
     CustomElementPlacement,
     IfcDoor,
     IfcRoof,
@@ -31,6 +32,8 @@ from debim.schema import (
     RoofPlacement,
     WallPlacement,
     SlabPlacement,
+    TerminalPlacement,
+    TerminalDimensions,
     Material,
     ProjectInfo,
     ProjectManifest,
@@ -1468,10 +1471,53 @@ def import_ifc_to_manifest(
             )
 
     # 5.17 Extract MEP Valves, Dampers, Flow Controllers & Distribution Control Elements
+    for fc_elem in safe_by_type("IfcFlowController"):
+        if fc_elem.is_a() != "IfcFlowController":
+            continue
+        if fc_elem.GlobalId in extracted_custom_ids:
+            continue
+        extracted_custom_ids.add(fc_elem.GlobalId)
+        tag = fc_elem.Name or f"FLOW_CTRL-{fc_elem.GlobalId[:8]}"
+        st_id = get_elem_storey(fc_elem)
+        placement_custom, dims = extract_custom_placement_and_dims(fc_elem, st_id)
+        w = dims.width if dims else 0.8
+        d = dims.depth if (dims and dims.depth is not None) else 0.5
+        h = dims.height if dims else 0.4
+
+        gx = get_or_create_grid_x(placement_custom.position[0])
+        gy = get_or_create_grid_y(placement_custom.position[1])
+        rot_angle = placement_custom.rotation[2] if placement_custom.rotation else 0.0
+
+        term_placement = TerminalPlacement(
+            grid=(gx, gy),
+            storey=st_id,
+            offset_x=0.0,
+            offset_y=0.0,
+            offset_z=placement_custom.position[2],
+            rotation=round(rot_angle, 4),
+        )
+
+        elements.append(
+            IfcFlowController(
+                class_="IfcFlowController",
+                tag=tag,
+                controller_type="AIR_CONTROLLER",
+                width=round(w, 3),
+                depth=round(d, 3),
+                height=round(h, 3),
+                placement=term_placement,
+                dimensions=TerminalDimensions(
+                    width=round(w, 3),
+                    depth=round(d, 3),
+                    height=round(h, 3)
+                ),
+                layer="mep/flow_controllers",
+            )
+        )
+
     mep_ctrl_configs = [
         ("IfcValve", "mep/valves", "VALVE"),
         ("IfcDamper", "mep/dampers", "DAMPER"),
-        ("IfcFlowController", "mep/flow_controllers", "FLOW_CTRL"),
         ("IfcDistributionControlElement", "mep/controls", "CTRL_ELEM"),
     ]
     for c_cls, c_layer, c_prefix in mep_ctrl_configs:

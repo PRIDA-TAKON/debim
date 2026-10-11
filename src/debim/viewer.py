@@ -3265,6 +3265,9 @@ def generate_viewer_html(
                 }} else {{
                     geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
                 }}
+            }} else if (data.class === "IfcFlowController") {{
+                const w = dim.width || 0.8, d = dim.depth || 0.5, h = dim.height || 0.4;
+                geometry = new THREE.BoxGeometry(w, d, h);
             }} else if (data.class === "IfcWall") {{
                 geometry = new THREE.BoxGeometry(dim.length, dim.thickness, dim.height);
             }} else if (data.class === "IfcDoor" || data.class === "IfcWindow") {{

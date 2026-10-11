@@ -1020,6 +1020,8 @@ class ResolvedFlowController(BaseModel):
     duct_width: Optional[float] = None
     duct_depth: Optional[float] = None
     duct_diameter: Optional[float] = None
+    bounding_box: Dict[str, float] = Field(default_factory=dict)
+    local_offset: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     layer: str = "mep/hvac/equipment"
 
 
@@ -4420,14 +4422,36 @@ class SpatialResolver:
 
     def resolve_flow_controller(self, controller: IfcFlowController) -> ResolvedFlowController:
         r_term = self.resolve_terminal(controller)
-        dims = (
-            (controller.dimensions.width, controller.dimensions.depth, controller.dimensions.height)
-            if controller.dimensions
-            else (controller.width, controller.depth, controller.height)
-            if (controller.width or controller.depth or controller.height)
-            else DEFAULT_TERMINAL_DIMENSIONS.get(controller.controller_type, (0.80, 0.50, 0.40))
-        )
+        w = controller.width
+        d = controller.depth
+        h = controller.height
+        if controller.dimensions:
+            w = controller.dimensions.width
+            d = controller.dimensions.depth if controller.dimensions.depth is not None else w
+            h = controller.dimensions.height
+
+        if w <= 0 or d <= 0 or h <= 0:
+            default_dims = DEFAULT_TERMINAL_DIMENSIONS.get(controller.controller_type, (0.80, 0.50, 0.40))
+            w = w if w > 0 else default_dims[0]
+            d = d if d > 0 else default_dims[1]
+            h = h if h > 0 else default_dims[2]
+
+        dims = (round(float(w), 4), round(float(d), 4), round(float(h), 4))
         color = DEFAULT_TERMINAL_COLORS.get(controller.controller_type, "#475569")
+
+        px, py, pz = r_term.position
+        bbox = {
+            "min_x": round(float(px), 4),
+            "max_x": round(float(px + w), 4),
+            "min_y": round(float(py), 4),
+            "max_y": round(float(py + d), 4),
+            "min_z": round(float(pz), 4),
+            "max_z": round(float(pz + h), 4),
+            "width": round(float(w), 4),
+            "depth": round(float(d), 4),
+            "height": round(float(h), 4),
+        }
+
         return ResolvedFlowController(
             tag=controller.tag,
             element=controller,
@@ -4442,6 +4466,8 @@ class SpatialResolver:
             duct_width=controller.duct_width or dims[0],
             duct_depth=controller.duct_depth or dims[1],
             duct_diameter=controller.duct_diameter,
+            bounding_box=bbox,
+            local_offset=(0.0, 0.0, 0.0),
             layer=derive_default_layer(controller),
         )
 
