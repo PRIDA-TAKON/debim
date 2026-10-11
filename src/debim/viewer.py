@@ -3207,6 +3207,14 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                }} else if (dim.shape === "BOX" || dim.shape === "RECTANGLE" || dim.shape === "SQUARE") {{
+                    const w = dim.width || 0.2, d = dim.depth || 0.4;
+                    const s = new THREE.Shape();
+                    s.moveTo(-w/2, -d/2); s.lineTo(w/2, -d/2); s.lineTo(w/2, d/2); s.lineTo(-w/2, d/2);
+                    s.closePath();
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
+                    geometry.center();
+                    geometry.rotateY(Math.PI / 2);
                 }} else if (dim.shape === "ARBITRARY" || dim.shape === "ARBITRARY_CLOSED" || dim.shape === "POLYGON" || dim.shape === "ARBITRARY_WITH_VOIDS") {{
                     const pts = dim.points || [];
                     if (pts.length >= 3) {{

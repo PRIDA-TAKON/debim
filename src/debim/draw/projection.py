@@ -367,6 +367,74 @@ def slice_storey(
             },
         ))
 
+    # 2b. Process Beams
+    for beam in resolved.beams:
+        x1, y1, z1 = beam.start_point
+        x2, y2, z2 = beam.end_point
+        all_2d_points.extend([(x1, y1), (x2, y2)])
+
+        b_width = beam.width
+        b_depth = beam.depth
+
+        z_top = max(z1, z2)
+        z_soffit = min(z1, z2) - b_depth
+
+        # Check if cut-plane intersects or views the beam
+        is_cut = (z_soffit <= cut_elev <= z_top)
+        is_projection = (z_top >= storey_elev and z_soffit <= cut_elev + 2.0)
+
+        if not (is_cut or is_projection):
+            continue
+
+        dx = x2 - x1
+        dy = y2 - y1
+        span = math.hypot(dx, dy)
+        if span <= 0:
+            continue
+
+        ux = dx / span
+        uy = dy / span
+        nx, ny = -uy, ux
+
+        hw = b_width / 2.0
+        p0 = (x1 + hw * nx, y1 + hw * ny)
+        p1 = (x2 + hw * nx, y2 + hw * ny)
+        p2 = (x2 - hw * nx, y2 - hw * ny)
+        p3 = (x1 - hw * nx, y1 - hw * ny)
+
+        beam_poly = Polygon([p0, p1, p2, p3])
+        all_2d_points.extend([p0, p1, p2, p3])
+
+        if is_cut:
+            cut_elements.append(CutElement(
+                tag=beam.tag,
+                element_class="IfcBeam",
+                category="medium_cut",
+                geometry=beam_poly,
+                centerline=LineString([(x1, y1), (x2, y2)]),
+                layer=beam.layer,
+                properties={
+                    "material": beam.element.material,
+                    "width": b_width,
+                    "depth": b_depth,
+                    "span_length": beam.span_length,
+                },
+            ))
+        else:
+            projection_elements.append(ProjectionElement(
+                tag=beam.tag,
+                element_class="IfcBeam",
+                category="low_projection",
+                geometry=beam_poly,
+                layer=beam.layer,
+                properties={
+                    "material": beam.element.material,
+                    "width": b_width,
+                    "depth": b_depth,
+                    "span_length": beam.span_length,
+                },
+            ))
+
     # 3. Process Floor Slabs (Low Projection)
     for slab in resolved.slabs:
         s_z = slab.center[2]

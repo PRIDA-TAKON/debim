@@ -69,10 +69,11 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
         meshes[col.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for beam in resolved.beams:
-        w = float(beam.element.profile.width)
-        d = float(beam.element.profile.depth)
+        w = float(beam.width)
+        d = float(beam.depth)
         l = float(beam.span_length)
-        m = trimesh.creation.box(extents=(l, w, d))
+        m = trimesh.creation.box(extents=(w, l, d))
+        m.apply_translation([0.0, l / 2.0, -d / 2.0])
         meshes[beam.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for wall in resolved.walls:
@@ -350,6 +351,7 @@ def run_visual_regression(
     save_passes_sample_limit: int = 2,
     dedup_by_variant: bool = True,
     max_samples_per_variant: int = 2,
+    target_class: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Runs component-level visual regression between Original IFC and debim Recompiled model.
@@ -416,6 +418,8 @@ def run_visual_regression(
         t = e.is_a()
         if t == "IfcWallStandardCase":
             t = "IfcWall"
+        if target_class and t != target_class and t.lower() != target_class.lower():
+            continue
         by_category.setdefault(t, []).append(e)
 
     tested_count = 0
@@ -602,6 +606,7 @@ def main():
     parser.add_argument("--ifc", type=str, default=None, help="Path to a single IFC file")
     parser.add_argument("--dir", type=str, default=None, help="Path to directory containing multiple IFC files")
     parser.add_argument("--output", type=str, default="dist/visual_regression", help="Output directory for reports & images")
+    parser.add_argument("--class", type=str, dest="target_class", default=None, help="Target IFC element class to test (e.g. IfcBeam)")
     parser.add_argument("--max-per-type", type=int, default=2, help="Max components per element class")
     parser.add_argument("--limit", type=int, default=10, help="Total component test limit per model")
     parser.add_argument("--dedup", action="store_true", default=True, help="Enable variant deduplication to prevent repetitive sampling")
@@ -649,6 +654,7 @@ def main():
                 limit_total=args.limit,
                 dedup_by_variant=args.dedup,
                 max_samples_per_variant=args.max_per_variant,
+                target_class=args.target_class,
             )
             summary_results.append({"name": f.name, **stat})
         except Exception as e:
