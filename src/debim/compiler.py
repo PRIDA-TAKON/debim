@@ -1229,6 +1229,46 @@ class StepSerializer:
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        for da in getattr(resolved, "discrete_accessories", []) or []:
+            st_id = da.element.placement.storey if da.element and da.element.placement else None
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+            st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
+
+            px, py, pz = da.position
+            rel_z = float(pz - st_elev)
+
+            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+            rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(da.width), float(da.depth))
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(da.height))
+
+            shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
+            prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, elem_axis)
+
+            ptype = f".{da.predefined_type.upper()}." if da.predefined_type else ".ANCHORBOLT."
+            elem_ref = self.create_entity(
+                "IfcDiscreteAccessory",
+                generate_ifc_guid(),
+                None,
+                da.tag,
+                None,
+                f"IfcDiscreteAccessory.{da.predefined_type}",
+                elem_pl,
+                prod_shape_ref,
+                ptype,
+            )
+            element_tag_refs[da.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
         for md in getattr(resolved, "mooring_devices", []) or []:
             st_id = md.element.placement.storey
             st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
@@ -4237,6 +4277,52 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         )
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
         ifcopenshell.api.run("geometry.assign_representation", model, product=br_obj, representation=rep)
+
+    for da in getattr(resolved, "discrete_accessories", []) or []:
+        try:
+            da_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcDiscreteAccessory",
+                name=da.tag,
+                predefined_type=da.predefined_type.upper(),
+            )
+        except Exception:
+            da_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcBuildingElementProxy",
+                name=da.tag,
+            )
+            da_obj.ObjectType = f"IfcDiscreteAccessory.{da.predefined_type}"
+
+        st_id = da.element.placement.storey if da.element and da.element.placement else None
+        st_obj = storey_objs.get(st_id) if st_id else default_storey
+        if st_obj:
+            try:
+                ifcopenshell.api.run("spatial.assign_container", model, products=[da_obj], relating_structure=st_obj)
+            except Exception:
+                pass
+
+        px, py, pz = da.position
+        mat = np.eye(4)
+        mat[0, 3] = float(px)
+        mat[1, 3] = float(py)
+        mat[2, 3] = float(pz)
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=da_obj, matrix=mat)
+
+        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+        prof = model.createIfcRectangleProfileDef("AREA", None, pos2d, float(da.width), float(da.depth))
+        pos3d = model.createIfcAxis2Placement3D(
+            model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            model.createIfcDirection((1.0, 0.0, 0.0)),
+        )
+        solid = model.createIfcExtrudedAreaSolid(
+            prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), float(da.height)
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=da_obj, representation=rep)
 
     for mf in getattr(resolved, "marine_facilities", []) or []:
         ptype = mf.predefined_type.upper() if mf.predefined_type else "PORT"

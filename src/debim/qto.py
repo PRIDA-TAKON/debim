@@ -14,6 +14,7 @@ from debim.resolver import (
     ResolvedAlignment,
     ResolvedBeam,
     ResolvedBearing,
+    ResolvedDiscreteAccessory,
     ResolvedBridge,
     ResolvedBridgePart,
     ResolvedCableCarrierSegment,
@@ -2006,6 +2007,28 @@ def calculate_element_qto(
             concrete_volume=vol,
             formwork_area=formwork,
             bridge=bridge_qto,
+        )
+
+    elif isinstance(resolved, ResolvedDiscreteAccessory):
+        elem = resolved.element
+        vol = resolved.width * resolved.depth * resolved.height
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            structural_steel_weight=0.0,
+            painting_area=2.0 * (resolved.width * resolved.depth + resolved.width * resolved.height + resolved.depth * resolved.height),
+            mep=MepQTO(
+                system_type="ACCESSORY",
+                fixture_type=resolved.predefined_type,
+                count=1,
+                width=resolved.width,
+                height=resolved.height,
+            ),
         )
 
     elif isinstance(resolved, ResolvedBearing):

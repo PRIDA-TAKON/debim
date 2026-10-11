@@ -579,7 +579,47 @@ def slice_storey(
                 },
             ))
 
-    # 7. Process Sanitary & MEP Terminals (Low Projection)
+    # 7. Process Discrete Accessories (Cut / Low Projection)
+    for da in getattr(resolved, "discrete_accessories", []) or []:
+        z_base = da.position[2]
+        z_top = z_base + da.height
+        if z_base <= cut_elev <= z_top or z_base <= cut_elev:
+            dx, dy, _ = da.position
+            all_2d_points.append((dx, dy))
+            rot_deg = da.rotation[2] if isinstance(da.rotation, (list, tuple)) and len(da.rotation) >= 3 else 0.0
+            da_poly = _create_rotated_box(dx, dy, da.width, da.depth, rot_deg)
+
+            cat = "medium_cut" if z_base <= cut_elev <= z_top else "low_projection"
+            if cat == "medium_cut":
+                cut_elements.append(CutElement(
+                    tag=da.tag,
+                    element_class="IfcDiscreteAccessory",
+                    category="medium_cut",
+                    geometry=da_poly,
+                    layer=da.layer,
+                    properties={
+                        "predefined_type": da.predefined_type,
+                        "width": da.width,
+                        "depth": da.depth,
+                        "height": da.height,
+                    },
+                ))
+            else:
+                projection_elements.append(ProjectionElement(
+                    tag=da.tag,
+                    element_class="IfcDiscreteAccessory",
+                    category="low_projection",
+                    geometry=da_poly,
+                    layer=da.layer,
+                    properties={
+                        "predefined_type": da.predefined_type,
+                        "width": da.width,
+                        "depth": da.depth,
+                        "height": da.height,
+                    },
+                ))
+
+    # 8. Process Sanitary & MEP Terminals (Low Projection)
     for term in resolved.sanitary_terminals:
         if term.position[2] <= cut_elev:
             tx, ty, _ = term.position

@@ -252,6 +252,17 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             m.apply_transform(T)
         meshes[fc.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
+    for da in getattr(resolved, "discrete_accessories", []) or []:
+        w = float(da.width)
+        d = float(da.depth)
+        h = float(da.height)
+        m = trimesh.creation.box(extents=(w, d, h))
+        if da.rotation and any(abs(r) > 1e-4 for r in da.rotation):
+            rx, ry, rz = da.rotation
+            T = trimesh.transformations.euler_matrix(rx, ry, rz)
+            m.apply_transform(T)
+        meshes[da.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+
     return meshes
 
 

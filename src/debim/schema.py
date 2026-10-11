@@ -2072,6 +2072,23 @@ BollardType = Literal["TEE", "PILLAR", "STAGHORN", "KIDNEY", "DOUBLE_BITT", "CLE
 NavigationElementType = Literal["BUOY", "BEACON", "LIGHT", "MARKER", "USERDEFINED", "NOTDEFINED"]
 LightColorType = Literal["RED", "GREEN", "WHITE", "YELLOW"]
 BearingType = Literal["BRIDGEBEARING", "ELASTOMERIC", "POT", "SPHERICAL", "DISK", "ROLLER", "ROCKER", "USERDEFINED", "NOTDEFINED"]
+DiscreteAccessoryType = Literal[
+    "ANCHORBOLT",
+    "BRACKET",
+    "CORBEL",
+    "EXPANSION_JOINT_DEVICE",
+    "INSULATOR",
+    "LOCK",
+    "PANEL_FASTENER",
+    "RAILBRACE",
+    "RAILPAD",
+    "SHOE",
+    "SLIDINGCHAIR",
+    "SOUNDABSORPTION",
+    "TENSIONINGEQUIPMENT",
+    "USERDEFINED",
+    "NOTDEFINED",
+]
 RailwayType = Literal["PASSENGER", "FREIGHT", "MIXED", "HIGH_SPEED", "LIGHT_RAIL", "METRO", "USERDEFINED"]
 RailwayPartType = Literal["TRACK", "SUBGRADE", "LINESIDE", "USERDEFINED"]
 TrackElementType = Literal["RAIL", "SLEEPER", "TURNOUT", "SWITCH", "DERAILER", "FASTENING", "BLOCK", "USERDEFINED"]
@@ -2422,6 +2439,43 @@ class IfcBridgePart(BaseModel):
     @property
     def height(self) -> Optional[float]:
         return self.part_height
+
+
+class DiscreteAccessoryPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    position: Optional[Tuple[float, float, float]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    rotation: Optional[Union[float, Tuple[float, float, float]]] = None
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_da_grid(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("position", "rotation", mode="before")
+    @classmethod
+    def convert_da_pos_rot(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(float(x) for x in v)
+        return v
+
+
+class IfcDiscreteAccessory(BaseModel):
+    class_: Literal["IfcDiscreteAccessory"] = Field(alias="class", default="IfcDiscreteAccessory")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = None
+    predefined_type: DiscreteAccessoryType = "ANCHORBOLT"
+    width: float = 0.20
+    depth: float = 0.20
+    height: float = 0.30
+    placement: DiscreteAccessoryPlacement = Field(default_factory=DiscreteAccessoryPlacement)
+    layer: Optional[str] = "structure/accessories"
 
 
 class BearingPlacement(BaseModel):
@@ -3062,7 +3116,7 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksElement", "IfcEarthworksCut",
     "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
     "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
-    "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcMarineFacility",
+    "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcDiscreteAccessory", "IfcMarineFacility",
     "IfcMarinePart", "IfcMooringDevice", "IfcNavigationElement", "IfcDistributionFlowElement",
     "IfcFurniture", "IfcFurnishingElement", "IfcCustomElement", "IfcBuildingElementProxy"
 }
@@ -3126,6 +3180,7 @@ Element = Annotated[
         Annotated[IfcTrackElement, Tag("IfcTrackElement")],
         Annotated[IfcBridgePart, Tag("IfcBridgePart")],
         Annotated[IfcBearing, Tag("IfcBearing")],
+        Annotated[IfcDiscreteAccessory, Tag("IfcDiscreteAccessory")],
         Annotated[IfcMarineFacility, Tag("IfcMarineFacility")],
         Annotated[IfcMarinePart, Tag("IfcMarinePart")],
         Annotated[IfcMooringDevice, Tag("IfcMooringDevice")],
@@ -3382,7 +3437,7 @@ class ProjectManifest(BaseModel):
                     if gy not in grid_y_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcBridgePart, IfcBearing, IfcMarinePart, IfcMooringDevice, IfcNavigationElement, IfcDistributionFlowElement, IfcRailway, IfcRailwayPart, IfcTrackElement)):
+            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcBridgePart, IfcBearing, IfcDiscreteAccessory, IfcMarinePart, IfcMooringDevice, IfcNavigationElement, IfcDistributionFlowElement, IfcRailway, IfcRailwayPart, IfcTrackElement)):
                 if getattr(elem.placement, "storey", None) and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -3793,6 +3848,8 @@ def derive_default_layer(elem) -> str:
         return "civil/infrastructure/mep/flow"
     elif cls == "IfcBearing":
         return "civil/infrastructure/bridges/bearings"
+    elif cls == "IfcDiscreteAccessory":
+        return "structure/accessories"
     elif cls == "IfcMarineFacility":
         return "civil/marine/facility"
     elif cls in ("IfcFurniture", "IfcFurnishingElement"):

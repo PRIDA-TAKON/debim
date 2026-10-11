@@ -147,7 +147,7 @@ def test_mep_and_proxy_extraction_and_recompilation(tmp_path: Path):
     manifest = import_ifc_to_manifest(orig_ifc_path)
     assert len(manifest.elements) == 6
 
-    layers = [e.layer for e in manifest.elements if isinstance(e, IfcCustomElement)]
+    layers = [e.layer for e in manifest.elements]
     assert "mep/ducts" in layers
     assert "mep/terminals" in layers
     assert "mep/fittings" in layers

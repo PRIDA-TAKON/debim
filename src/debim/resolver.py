@@ -14,6 +14,7 @@ from debim.schema import (
     IfcAlignment,
     IfcBeam,
     IfcBearing,
+    IfcDiscreteAccessory,
     IfcBridge,
     IfcBridgePart,
     IfcBuildingElementProxy,
@@ -1367,6 +1368,21 @@ class ResolvedBearing(BaseModel):
     layer: str = "civil/infrastructure/bridges/bearings"
 
 
+class ResolvedDiscreteAccessory(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcDiscreteAccessory
+    predefined_type: str = "ANCHORBOLT"
+    width: float = 0.20
+    depth: float = 0.20
+    height: float = 0.30
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    bounding_box: Dict[str, float] = Field(default_factory=dict)
+    layer: str = "structure/accessories"
+
+
 class ResolvedMarineFacility(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -1612,6 +1628,7 @@ class ResolvedManifest(BaseModel):
     built_systems: List[ResolvedBuiltSystem] = []
     bridge_parts: List[ResolvedBridgePart] = []
     bearings: List[ResolvedBearing] = []
+    discrete_accessories: List[ResolvedDiscreteAccessory] = []
     marine_facilities: List[ResolvedMarineFacility] = []
     marine_parts: List[ResolvedMarinePart] = []
     mooring_devices: List[ResolvedMooringDevice] = []
@@ -5505,6 +5522,62 @@ class SpatialResolver:
             layer=derive_default_layer(facility),
         )
 
+    def resolve_discrete_accessory(self, da: IfcDiscreteAccessory) -> ResolvedDiscreteAccessory:
+        z_base = self.get_storey(da.placement.storey).elevation if da.placement and da.placement.storey else 0.0
+
+        if da.placement and da.placement.position:
+            px, py, pz = da.placement.position
+            pos = (px, py, z_base + pz)
+        elif da.placement and da.placement.grid:
+            gx, gy = self.get_grid_xy(da.placement.grid)
+            gx += da.placement.offset_x
+            gy += da.placement.offset_y
+            z = z_base + da.placement.offset_z
+            pos = (gx, gy, z)
+        else:
+            off_x = da.placement.offset_x if da.placement else 0.0
+            off_y = da.placement.offset_y if da.placement else 0.0
+            off_z = da.placement.offset_z if da.placement else 0.0
+            pos = (off_x, off_y, z_base + off_z)
+
+        rot_val = da.placement.rotation if da.placement and da.placement.rotation is not None else (0.0, 0.0, 0.0)
+        if isinstance(rot_val, (int, float)):
+            rot = (0.0, 0.0, float(rot_val))
+        elif isinstance(rot_val, (list, tuple)) and len(rot_val) >= 3:
+            rot = (float(rot_val[0]), float(rot_val[1]), float(rot_val[2]))
+        else:
+            rot = (0.0, 0.0, 0.0)
+
+        w = da.width if da.width > 0 else 0.20
+        d = da.depth if da.depth > 0 else 0.20
+        h = da.height if da.height > 0 else 0.30
+
+        hw, hd, hh = w / 2.0, d / 2.0, h / 2.0
+        bbox = {
+            "min_x": pos[0] - hw,
+            "max_x": pos[0] + hw,
+            "min_y": pos[1] - hd,
+            "max_y": pos[1] + hd,
+            "min_z": pos[2],
+            "max_z": pos[2] + h,
+            "width": w,
+            "depth": d,
+            "height": h,
+        }
+
+        return ResolvedDiscreteAccessory(
+            tag=da.tag,
+            element=da,
+            predefined_type=da.predefined_type,
+            width=w,
+            depth=d,
+            height=h,
+            position=pos,
+            rotation=rot,
+            bounding_box=bbox,
+            layer=da.layer or "structure/accessories",
+        )
+
     def resolve_bearing(self, bearing: IfcBearing) -> ResolvedBearing:
         z_base = self.get_storey(bearing.placement.storey).elevation if bearing.placement.storey else 0.0
 
@@ -6513,6 +6586,10 @@ class SpatialResolver:
                 r_br = self.resolve_bearing(elem)
                 resolved_manifest.bearings.append(r_br)
                 resolved_manifest.elements.append(r_br)
+            elif isinstance(elem, IfcDiscreteAccessory):
+                r_da = self.resolve_discrete_accessory(elem)
+                resolved_manifest.discrete_accessories.append(r_da)
+                resolved_manifest.elements.append(r_da)
             elif isinstance(elem, IfcMarineFacility):
                 r_mf = self.resolve_marine_facility(elem)
                 resolved_manifest.marine_facilities.append(r_mf)
