@@ -37,6 +37,7 @@ from debim.resolver import (
     ResolvedNavigationElement,
     ResolvedFlowController,
     ResolvedFooting,
+    ResolvedFurniture,
     ResolvedLightFixture,
     ResolvedManifest,
     ResolvedOutlet,
@@ -2333,6 +2334,27 @@ def calculate_element_qto(
                 count=1,
                 width=resolved.width,
                 height=resolved.height,
+            ),
+        )
+
+    elif isinstance(resolved, ResolvedFurniture):
+        elem = resolved.element
+        vol = resolved.bounding_box["volume"]
+        w, d, h = resolved.dimensions
+        return ElementQTO(
+            tag=tag,
+            element_class=resolved.ifc_class,
+            material=getattr(elem, "material", None) or resolved.ifc_class,
+            concrete_volume=vol,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            mep=MepQTO(
+                system_type="FURNITURE",
+                fixture_type=resolved.ifc_class,
+                count=1,
+                width=w,
+                height=h,
             ),
         )
 

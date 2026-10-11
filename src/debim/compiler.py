@@ -1753,7 +1753,71 @@ class StepSerializer:
                     if st_id in storey_elements:
                         storey_elements[st_id].append(win_ref)
 
-        # 4. Custom Elements
+        # 4. Furniture Elements
+        for furn in getattr(resolved, "furniture", []) or []:
+            st_id = furn.element.placement.storey
+            ifc_cls = getattr(furn, "ifc_class", "IfcFurniture")
+
+            st_pl_ref = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+
+            px, py, pz = furn.position
+            rel_z = float(pz - st_elev)
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+            rx, ry, rz = furn.rotation if furn.rotation else (0.0, 0.0, 0.0)
+            if abs(rz) > 1e-4 or abs(rx) > 1e-4 or abs(ry) > 1e-4:
+                rz_r = math.radians(float(rz))
+                ref_dir = self.create_entity("IfcDirection", (round(math.cos(rz_r), 6), round(math.sin(rz_r), 6), 0.0))
+                axis_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, axis_dir, ref_dir)
+            else:
+                elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
+            dims = furn.element.dimensions
+            prod_shape_ref = None
+            if dims:
+                w = float(dims.width)
+                d = float(dims.depth if dims.depth is not None else dims.width)
+                h = float(dims.height)
+
+                pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, w, d)
+
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, h)
+
+                shape_rep = self.create_entity(
+                    "IfcShapeRepresentation",
+                    body_context_ref,
+                    "Body",
+                    "SweptSolid",
+                    [solid],
+                )
+                prod_shape_ref = self.create_entity(
+                    "IfcProductDefinitionShape", None, None, [shape_rep]
+                )
+
+            furn_ref = self.create_entity(
+                ifc_cls,
+                generate_ifc_guid(),
+                owner_history_ref,
+                furn.tag,
+                getattr(furn.element, "name", None) or furn.tag,
+                furn.tag,
+                elem_pl,
+                prod_shape_ref,
+                generate_ifc_guid(),
+            )
+            self.element_tag_refs[furn.tag] = furn_ref
+            if st_id in storey_elements:
+                storey_elements[st_id].append(furn_ref)
+
+        # 5. Custom Elements
         for custom in resolved.custom_elements:
             st_id = custom.element.placement.storey
             ifc_cls = derive_custom_ifc_class(custom.layer)
@@ -3200,7 +3264,72 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 if st_id in storey_products:
                     storey_products[st_id].append(win_obj)
 
-    # 4. Custom Elements
+    # 4. Furniture Elements
+    for furn in getattr(resolved, "furniture", []) or []:
+        ifc_cls = getattr(furn, "ifc_class", "IfcFurniture")
+        furn_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class=ifc_cls,
+            name=furn.tag,
+        )
+        st_id = furn.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(furn_obj)
+
+        if st_id in storey_objs:
+            ifcopenshell.api.run(
+                "spatial.assign_container",
+                model,
+                products=[furn_obj],
+                relating_structure=storey_objs[st_id],
+            )
+
+        px, py, pz = furn.position
+        rx, ry, rz = furn.rotation if furn.rotation else (0.0, 0.0, 0.0)
+        mat = _build_transform_matrix((px, py, pz), (rx, ry, rz))
+        ifcopenshell.api.run(
+            "geometry.edit_object_placement",
+            model,
+            product=furn_obj,
+            matrix=mat,
+        )
+        ifcopenshell_elem_objs[furn.tag] = furn_obj
+
+        dims = furn.element.dimensions
+        if dims:
+            w = float(dims.width)
+            d = float(dims.depth if dims.depth is not None else dims.width)
+            h = float(dims.height)
+
+            profile = model.createIfcRectangleProfileDef(
+                "AREA",
+                None,
+                model.createIfcAxis2Placement2D(
+                    model.createIfcCartesianPoint((0.0, 0.0))
+                ),
+                w,
+                d,
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                profile,
+                model.createIfcAxis2Placement3D(
+                    model.createIfcCartesianPoint((0.0, 0.0, 0.0))
+                ),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                h,
+            )
+            rep = model.createIfcShapeRepresentation(
+                body_context, "Body", "SweptSolid", [solid]
+            )
+            ifcopenshell.api.run(
+                "geometry.assign_representation",
+                model,
+                product=furn_obj,
+                representation=rep,
+            )
+
+    # 5. Custom Elements
     for custom in resolved.custom_elements:
         ifc_cls = derive_custom_ifc_class(custom.layer)
         custom_obj = ifcopenshell.api.run(

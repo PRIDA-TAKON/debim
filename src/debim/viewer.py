@@ -1539,6 +1539,44 @@ def generate_viewer_html(
                 "layer": plate.layer,
             })
 
+    # Furniture & Furnishing Elements
+    for furn in getattr(resolved, "furniture", []) or []:
+        w, d, h = furn.dimensions
+        cz = furn.position[2] + h / 2.0
+        rot = [0.0, 0.0, 0.0]
+        if furn.rotation:
+            rot = [math.radians(furn.rotation[0]), math.radians(furn.rotation[1]), math.radians(furn.rotation[2])]
+
+        tag_lower = furn.tag.lower()
+        if "bed" in tag_lower:
+            color = "#C5A880"
+        elif any(kw in tag_lower for kw in ["desk", "table"]):
+            color = "#D4A373"
+        elif "chair" in tag_lower:
+            color = "#8D99AE"
+        elif any(kw in tag_lower for kw in ["sofa", "couch"]):
+            color = "#6C757D"
+        elif any(kw in tag_lower for kw in ["cabinet", "credenza", "shelf"]):
+            color = "#8C6D53"
+        else:
+            color = "#B58A63"
+
+        elements_data.append({
+            "tag": furn.tag,
+            "class": furn.ifc_class,
+            "material": furn.element.material or "Furniture Material",
+            "position": [furn.position[0], furn.position[1], cz],
+            "rotation": rot,
+            "dimensions": {
+                "width": w,
+                "depth": d,
+                "height": h,
+            },
+            "color": color,
+            "layer": furn.layer,
+            "properties": furn.element.properties or {},
+        })
+
     # Custom Elements
     for custom in resolved.custom_elements:
         tag_upper = custom.tag.upper()

@@ -170,6 +170,21 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
     from debim.resolver import ResolvedSweptDisk
     import shapely.geometry
 
+    for furn in getattr(resolved, "furniture", []) or []:
+        w, d, h = [float(x) for x in furn.dimensions]
+        m = trimesh.creation.box(extents=(w, d, h))
+        rx, ry, rz = furn.rotation if furn.rotation else (0.0, 0.0, 0.0)
+        R = trimesh.transformations.euler_matrix(rx, ry, rz)[:3, :3]
+        loc_center = np.array([w / 2.0, -d / 2.0, h / 2.0], dtype=np.float64)
+        world_center = np.array(furn.position, dtype=np.float64) + R @ loc_center
+
+        if any(abs(r) > 1e-4 for r in (rx, ry, rz)):
+            T = trimesh.transformations.euler_matrix(rx, ry, rz)
+            m.apply_transform(T)
+
+        m.apply_translation(world_center)
+        meshes[furn.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+
     for custom in resolved.custom_elements:
         if custom.resolved_solid and isinstance(custom.resolved_solid, ResolvedSweptDisk):
             s = custom.resolved_solid
@@ -192,7 +207,16 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             d = float(custom.dimensions.depth if custom.dimensions.depth is not None else w)
             h = float(custom.dimensions.height)
             m = trimesh.creation.box(extents=(w, d, h))
-            m.apply_translation([0.0, -d / 2.0, h / 2.0])
+            rx, ry, rz = custom.rotation if custom.rotation else (0.0, 0.0, 0.0)
+            R = trimesh.transformations.euler_matrix(rx, ry, rz)[:3, :3]
+            loc_center = np.array([w / 2.0, -d / 2.0, h / 2.0], dtype=np.float64)
+            world_center = np.array(custom.position, dtype=np.float64) + R @ loc_center
+
+            if any(abs(r) > 1e-4 for r in (rx, ry, rz)):
+                T = trimesh.transformations.euler_matrix(rx, ry, rz)
+                m.apply_transform(T)
+
+            m.apply_translation(world_center)
             meshes[custom.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for proxy in resolved.proxies:
@@ -290,6 +314,12 @@ def extract_mesh_from_element(elem: Any, settings: Any) -> Optional[Tuple[np.nda
             return None
         verts = np.array(verts_flat, dtype=np.float64).reshape(-1, 3)
         faces = np.array(faces_flat, dtype=np.int32).reshape(-1, 3)
+
+        if hasattr(shape, "transformation") and shape.transformation:
+            T = np.array(shape.transformation.matrix, dtype=np.float64).reshape(4, 4)
+            verts_homo = np.hstack([verts, np.ones((len(verts), 1))])
+            verts = (verts_homo @ T)[:, :3]
+
         return verts, faces
     except Exception:
         return None

@@ -17,6 +17,7 @@ from debim.schema import (
     BeamReinforcement,
     CoveringPlacement,
     Dimensions,
+    FurniturePlacement,
     IfcBeam,
     IfcColumn,
     IfcCovering,
@@ -24,6 +25,8 @@ from debim.schema import (
     IfcFlowController,
     CustomElementPlacement,
     IfcDoor,
+    IfcFurnishingElement,
+    IfcFurniture,
     IfcRoof,
     IfcSlab,
     IfcWall,
@@ -1549,29 +1552,56 @@ def import_ifc_to_manifest(
         extracted_custom_ids.add(furn.GlobalId)
         tag = furn.Name or f"FURN-{furn.GlobalId[:8]}"
         name = furn.Name or tag
-        slug = _derive_furniture_slug(furn.Name)
         st_id = get_elem_storey(furn)
         placement, dims = extract_custom_placement_and_dims(furn, st_id)
 
-        source_path = f"assets/furniture/{slug}.glb"
-        if bake_assets:
-            baked = _bake_element_to_glb(furn, slug, assets_dir_path, geom_settings)
-            if baked:
-                source_path = baked
+        unit_scale = 1.0
+        if ifc_file is not None:
+            try:
+                import ifcopenshell.util.unit
+                unit_scale = ifcopenshell.util.unit.calculate_unit_scale(ifc_file) or 1.0
+            except Exception:
+                unit_scale = 1.0
 
-        elements.append(
-            IfcCustomElement(
-                **{
-                    "class": "IfcCustomElement",
-                    "tag": tag,
-                    "name": name,
-                    "source": source_path,
-                    "placement": placement,
-                    "dimensions": dims,
-                    "layer": "interior/furniture",
-                }
-            )
+        pos_m = (
+            round(placement.position[0] * unit_scale, 4),
+            round(placement.position[1] * unit_scale, 4),
+            round(placement.position[2] * unit_scale, 4),
         )
+
+        furniture_placement = FurniturePlacement(
+            position=pos_m,
+            storey=st_id,
+            rotation=placement.rotation,
+        )
+
+        if bake_assets:
+            slug = _derive_furniture_slug(furn.Name)
+            _bake_element_to_glb(furn, slug, assets_dir_path, geom_settings)
+
+        cls_type = "IfcFurniture" if furn.is_a("IfcFurniture") else "IfcFurnishingElement"
+        if cls_type == "IfcFurniture":
+            elements.append(
+                IfcFurniture(
+                    class_="IfcFurniture",
+                    tag=tag,
+                    name=name,
+                    dimensions=dims,
+                    placement=furniture_placement,
+                    layer="interior/furniture",
+                )
+            )
+        else:
+            elements.append(
+                IfcFurnishingElement(
+                    class_="IfcFurnishingElement",
+                    tag=tag,
+                    name=name,
+                    dimensions=dims,
+                    placement=furniture_placement,
+                    layer="interior/furniture",
+                )
+            )
 
     # 5.13 Extract MEP Flow Segments (IfcDuctSegment, IfcPipeSegment, IfcFlowSegment)
     for seg_cls in ["IfcDuctSegment", "IfcPipeSegment", "IfcFlowSegment"]:
