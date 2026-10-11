@@ -1305,17 +1305,71 @@ def import_ifc_to_manifest(
     for railing in ifc_file.by_type("IfcRailing"):
         tag = railing.Name or f"RAILING-{railing.GlobalId[:8]}"
         st_id = get_elem_storey(railing)
-        placement, dims = extract_custom_placement_and_dims(railing, st_id)
+
+        ps = ifcopenshell.util.element.get_psets(railing)
+        h = 1.00
+        if ps.get("Pset_RailingCommon", {}).get("Height"):
+            h = float(ps["Pset_RailingCommon"]["Height"])
+        elif ps.get("PSet_Revit_Type_Construction", {}).get("Railing Height"):
+            h = float(ps["PSet_Revit_Type_Construction"]["Railing Height"])
+
+        pred_type = "HANDRAIL"
+        if getattr(railing, "PredefinedType", None) and str(railing.PredefinedType) != "NOTDEFINED":
+            pred_type = str(railing.PredefinedType)
+        elif "GUARD" in tag.upper():
+            pred_type = "GUARDRAIL"
+
+        p1_x, p1_y, p1_z = 0.0, 0.0, 0.0
+        p2_x, p2_y, p2_z = 0.0, 3.0, 0.0
+
+        w_min, w_max = None, None
+        if geom_settings is not None:
+            try:
+                import numpy as np
+                mat = ifcopenshell.util.placement.get_local_placement(railing.ObjectPlacement)
+                shape = ifcopenshell.geom.create_shape(geom_settings, railing)
+                verts = np.array(shape.geometry.verts).reshape(-1, 3)
+                world_verts = (mat[:3, :3] @ verts.T).T + mat[:3, 3]
+
+                w_min = world_verts.min(axis=0)
+                w_max = world_verts.max(axis=0)
+
+                st_elev = storey_elevation_by_id.get(st_id, 0.0)
+
+                dx = w_max[0] - w_min[0]
+                dy = w_max[1] - w_min[1]
+
+                p1_z = float(w_min[2]) - st_elev
+                p2_z = float(w_max[2]) - h - st_elev
+                p1_y = w_min[1]
+                p2_y = w_max[1]
+                p1_x = (w_min[0] + w_max[0]) / 2.0
+                p2_x = p1_x
+            except Exception:
+                pass
+
+        gx1 = get_or_create_grid_x(p1_x)
+        gy1 = get_or_create_grid_y(p1_y)
+        gx2 = get_or_create_grid_x(p2_x)
+        gy2 = get_or_create_grid_y(p2_y)
+
+        from debim.schema import RailingPlacement, IfcRailing
         elements.append(
-            IfcCustomElement(
+            IfcRailing(
                 **{
-                    "class": "IfcCustomElement",
+                    "class": "IfcRailing",
                     "tag": tag,
-                    "name": tag,
-                    "source": f"ifc/railing/{tag}",
-                    "placement": placement,
-                    "dimensions": dims,
-                    "layer": "circulation/railings",
+                    "predefined_type": pred_type,
+                    "height": round(h, 3),
+                    "post_spacing": 1.50,
+                    "placement": RailingPlacement(
+                        storey=st_id,
+                        from_grid=(gx1, gy1),
+                        to_grid=(gx2, gy2),
+                        from_offset=(0.0, 0.0, round(p1_z, 3)),
+                        to_offset=(0.0, 0.0, round(p2_z, 3)),
+                    ),
+                    "layer": "architecture/railings",
                 }
             )
         )
