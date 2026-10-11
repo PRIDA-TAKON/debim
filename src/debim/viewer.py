@@ -691,6 +691,116 @@ def generate_viewer_html(
                 "layer": bridge.layer,
             })
 
+    # Civil Infrastructure Railways (IFC4.3)
+    for railway in resolved.railways:
+        pos = railway.position
+        elements_data.append({
+            "tag": railway.tag,
+            "class": "IfcRailway",
+            "predefined_type": railway.predefined_type,
+            "material": railway.element.material or "Steel Rails & Concrete Sleepers",
+            "position": [pos[0], pos[1], pos[2]],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": railway.length,
+                "depth": railway.track_gauge,
+                "height": 0.35,
+            },
+            "color": "#0284C7",
+            "layer": railway.layer,
+        })
+
+    # Civil Infrastructure Track Elements (IFC4.3)
+    for trk in resolved.track_elements:
+        pos = trk.position
+        elements_data.append({
+            "tag": trk.tag,
+            "class": "IfcTrackElement",
+            "predefined_type": trk.predefined_type,
+            "material": trk.element.material or "Steel",
+            "position": [pos[0], pos[1], pos[2]],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": trk.length,
+                "depth": trk.width,
+                "height": trk.height,
+            },
+            "color": "#0284C7",
+            "layer": trk.layer,
+        })
+
+    # Civil Infrastructure Marine Facilities (IFC4.3)
+    for marine in resolved.marine_facilities:
+        pos = marine.position
+        elements_data.append({
+            "tag": marine.tag,
+            "class": "IfcMarineFacility",
+            "predefined_type": marine.predefined_type,
+            "material": marine.element.material or "Reinforced Concrete Quay",
+            "position": [pos[0], pos[1], pos[2]],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": marine.length,
+                "depth": marine.width,
+                "height": marine.depth,
+            },
+            "color": "#0EA5E9",
+            "layer": marine.layer,
+        })
+
+    # Civil Geographic Elements & TIN Terrain (IFC4.3)
+    for geo in resolved.geographic_elements:
+        pos = geo.position
+        if geo.triangulated_mesh and hasattr(geo.triangulated_mesh, "coordinates"):
+            elements_data.append({
+                "tag": geo.tag,
+                "class": "IfcGeographicElement",
+                "predefined_type": geo.predefined_type,
+                "material": geo.element.material or "Terrain Surface",
+                "geometry_type": "polygon",
+                "points": geo.triangulated_mesh.coordinates,
+                "color": "#15803D",
+                "layer": geo.layer,
+                "dimensions": {
+                    "points_count": len(geo.triangulated_mesh.coordinates),
+                },
+            })
+        else:
+            elements_data.append({
+                "tag": geo.tag,
+                "class": "IfcGeographicElement",
+                "predefined_type": geo.predefined_type,
+                "material": geo.element.material or "Terrain Surface",
+                "position": [pos[0], pos[1], pos[2]],
+                "rotation": [0, 0, 0],
+                "dimensions": {
+                    "width": 100.0,
+                    "depth": 100.0,
+                    "height": 0.1,
+                },
+                "color": "#15803D",
+                "layer": geo.layer,
+            })
+
+    # Civil Spatial Facility Parts (IFC4.3)
+    for part in resolved.facility_parts:
+        pos = part.position
+        elements_data.append({
+            "tag": part.tag,
+            "class": "IfcFacilityPart",
+            "predefined_type": part.predefined_type,
+            "material": part.element.material or "Facility Section",
+            "position": [pos[0], pos[1], pos[2]],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": 10.0,
+                "depth": 10.0,
+                "height": 2.0,
+            },
+            "color": "#A855F7",
+            "layer": part.layer,
+        })
+
     # Civil Earthworks Cut
     for cut in resolved.earthworks_cuts:
         cz = cut.position[2] - cut.depth / 2.0

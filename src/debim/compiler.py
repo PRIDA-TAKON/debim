@@ -493,6 +493,91 @@ class StepSerializer:
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        for railway in resolved.railways:
+            st_id = railway.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcRailway",
+                generate_ifc_guid(),
+                None,
+                railway.tag,
+                None,
+                f"IfcRailway.{railway.predefined_type}",
+                None,
+                None,
+                f".{railway.predefined_type.upper()}.",
+            )
+            element_tag_refs[railway.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for trk in resolved.track_elements:
+            st_id = trk.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcTrackElement",
+                generate_ifc_guid(),
+                None,
+                trk.tag,
+                None,
+                f"IfcTrackElement.{trk.predefined_type}",
+                None,
+                None,
+                f".{trk.predefined_type.upper()}.",
+            )
+            element_tag_refs[trk.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for marine in resolved.marine_facilities:
+            st_id = marine.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcMarineFacility",
+                generate_ifc_guid(),
+                None,
+                marine.tag,
+                None,
+                f"IfcMarineFacility.{marine.predefined_type}",
+                None,
+                None,
+                f".{marine.predefined_type.upper()}.",
+            )
+            element_tag_refs[marine.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for geo in resolved.geographic_elements:
+            st_id = geo.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcGeographicElement",
+                generate_ifc_guid(),
+                None,
+                geo.tag,
+                None,
+                f"IfcGeographicElement.{geo.predefined_type}",
+                None,
+                None,
+                ".USERDEFINED.",
+            )
+            element_tag_refs[geo.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for part in resolved.facility_parts:
+            st_id = part.element.placement.storey
+            elem_ref = self.create_entity(
+                "IfcFacilityPart",
+                generate_ifc_guid(),
+                None,
+                part.tag,
+                None,
+                f"IfcFacilityPart.{part.predefined_type}",
+                None,
+                None,
+                f".{part.predefined_type.upper()}.",
+            )
+            element_tag_refs[part.tag] = elem_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
         for fill in resolved.earthworks_fills:
             st_id = fill.element.placement.storey
             elem_ref = self.create_entity(
@@ -2383,6 +2468,56 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = bridge.element.placement.storey
         if st_id and st_id in storey_products:
             storey_products[st_id].append(bridge_obj)
+
+    for railway in resolved.railways:
+        try:
+            r_obj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcRailway", name=railway.tag)
+        except Exception:
+            r_obj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuildingElementProxy", name=railway.tag)
+            r_obj.ObjectType = f"IfcRailway.{railway.predefined_type}"
+        st_id = railway.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(r_obj)
+
+    for trk in resolved.track_elements:
+        try:
+            t_obj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcTrackElement", name=trk.tag)
+        except Exception:
+            t_obj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuildingElementProxy", name=trk.tag)
+            t_obj.ObjectType = f"IfcTrackElement.{trk.predefined_type}"
+        st_id = trk.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(t_obj)
+
+    for marine in resolved.marine_facilities:
+        try:
+            m_obj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcMarineFacility", name=marine.tag)
+        except Exception:
+            m_obj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuildingElementProxy", name=marine.tag)
+            m_obj.ObjectType = f"IfcMarineFacility.{marine.predefined_type}"
+        st_id = marine.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(m_obj)
+
+    for geo in resolved.geographic_elements:
+        try:
+            g_obj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcGeographicElement", name=geo.tag)
+        except Exception:
+            g_obj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuildingElementProxy", name=geo.tag)
+            g_obj.ObjectType = f"IfcGeographicElement.{geo.predefined_type}"
+        st_id = geo.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(g_obj)
+
+    for part in resolved.facility_parts:
+        try:
+            p_obj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcFacilityPart", name=part.tag)
+        except Exception:
+            p_obj = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuildingElementProxy", name=part.tag)
+            p_obj.ObjectType = f"IfcFacilityPart.{part.predefined_type}"
+        st_id = part.element.placement.storey
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(p_obj)
 
     # 6. Roofs & Roof Openings / Skylights
     for roof in resolved.roofs:

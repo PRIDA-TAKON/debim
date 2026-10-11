@@ -28,13 +28,17 @@ from debim.schema import (
     IfcEarthworksCut,
     IfcEarthworksFill,
     IfcElectricDistributionBoard,
+    IfcFacilityPart,
     IfcFlowController,
     IfcFooting,
+    IfcGeographicElement,
     IfcLightFixture,
+    IfcMarineFacility,
     IfcOutlet,
     IfcPipeSegment,
     IfcPlate,
     IfcRailing,
+    IfcRailway,
     IfcRamp,
     IfcRetainingWall,
     IfcRoad,
@@ -44,6 +48,7 @@ from debim.schema import (
     IfcStair,
     IfcStairFlight,
     IfcSwitchingDevice,
+    IfcTrackElement,
     IfcUnitaryEquipment,
     IfcWall,
     IfcWasteTerminal,
@@ -1145,6 +1150,66 @@ class ResolvedBridge(BaseModel):
     layer: str = "civil/infrastructure/bridges"
 
 
+class ResolvedRailway(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcRailway
+    predefined_type: str = "RAILWAY"
+    track_gauge: float = 1.435
+    length: float = 100.0
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "civil/infrastructure/railways"
+
+
+class ResolvedTrackElement(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcTrackElement
+    predefined_type: str = "RAIL"
+    length: float = 10.0
+    width: float = 0.15
+    height: float = 0.18
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "civil/infrastructure/track"
+
+
+class ResolvedMarineFacility(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMarineFacility
+    predefined_type: str = "BERTH"
+    length: float = 50.0
+    width: float = 15.0
+    depth: float = 10.0
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "civil/infrastructure/marine"
+
+
+class ResolvedGeographicElement(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcGeographicElement
+    predefined_type: str = "TERRAIN"
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    triangulated_mesh: Optional[Any] = None
+    layer: str = "civil/terrain"
+
+
+class ResolvedFacilityPart(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcFacilityPart
+    predefined_type: str = "ROADWAY"
+    parent_facility: Optional[str] = None
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "civil/facility_part"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1178,6 +1243,11 @@ ResolvedElement = Union[
     ResolvedAlignment,
     ResolvedRoad,
     ResolvedBridge,
+    ResolvedRailway,
+    ResolvedTrackElement,
+    ResolvedMarineFacility,
+    ResolvedGeographicElement,
+    ResolvedFacilityPart,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1224,6 +1294,11 @@ class ResolvedManifest(BaseModel):
     alignments: List[ResolvedAlignment] = []
     roads: List[ResolvedRoad] = []
     bridges: List[ResolvedBridge] = []
+    railways: List[ResolvedRailway] = []
+    track_elements: List[ResolvedTrackElement] = []
+    marine_facilities: List[ResolvedMarineFacility] = []
+    geographic_elements: List[ResolvedGeographicElement] = []
+    facility_parts: List[ResolvedFacilityPart] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -4335,14 +4410,41 @@ class SpatialResolver:
         z_base = self.get_storey(align.placement.storey).elevation if align.placement.storey else align.placement.offset_z
 
         world_pts: List[Tuple[float, float, float]] = []
+        tot_length = 0.0
+
         if align.placement.points:
             for pt in align.placement.points:
                 world_pts.append((gx + pt.x, gy + pt.y, z_base + pt.z))
+            tot_length = sum(
+                math.dist(world_pts[i], world_pts[i + 1])
+                for i in range(len(world_pts) - 1)
+            )
+        elif align.horizontal_segments:
+            curr_x, curr_y = gx, gy
+            curr_z = z_base
+            world_pts.append((curr_x, curr_y, curr_z))
 
-        tot_length = sum(
-            math.dist(world_pts[i], world_pts[i + 1])
-            for i in range(len(world_pts) - 1)
-        )
+            for h_seg in align.horizontal_segments:
+                seg_len = h_seg.length
+                tot_length += seg_len
+                sx, sy = h_seg.start_point
+                dir_rad = h_seg.start_direction_rad
+                st = h_seg.segment_type
+
+                if st == "LINE":
+                    ex = sx + seg_len * math.cos(dir_rad)
+                    ey = sy + seg_len * math.sin(dir_rad)
+                    ez = curr_z
+                    world_pts.append((gx + ex, gy + ey, ez))
+                    curr_x, curr_y = gx + ex, gy + ey
+                else:
+                    n_steps = 10
+                    for s in range(1, n_steps + 1):
+                        frac = s / float(n_steps)
+                        px = sx + (seg_len * frac) * math.cos(dir_rad)
+                        py = sy + (seg_len * frac) * math.sin(dir_rad)
+                        world_pts.append((gx + px, gy + py, curr_z))
+
         st_chain = align.start_chainage
         end_chain = align.end_chainage if align.end_chainage is not None else (st_chain + tot_length)
 
@@ -4485,6 +4587,72 @@ class SpatialResolver:
             deck_position=deck_pos,
             pier_positions=pier_positions,
             layer=derive_default_layer(bridge),
+        )
+
+    def resolve_railway(self, rail: IfcRailway) -> ResolvedRailway:
+        z_base = self.get_storey(rail.placement.storey).elevation if rail.placement.storey else 0.0
+        pos = (rail.placement.offset_x, rail.placement.offset_y, z_base + rail.placement.offset_z)
+        return ResolvedRailway(
+            tag=rail.tag,
+            element=rail,
+            predefined_type=rail.predefined_type,
+            track_gauge=rail.track_gauge,
+            length=rail.length,
+            position=pos,
+            layer=derive_default_layer(rail),
+        )
+
+    def resolve_track_element(self, trk: IfcTrackElement) -> ResolvedTrackElement:
+        z_base = self.get_storey(trk.placement.storey).elevation if trk.placement.storey else 0.0
+        pos = (trk.placement.offset_x, trk.placement.offset_y, z_base + trk.placement.offset_z)
+        return ResolvedTrackElement(
+            tag=trk.tag,
+            element=trk,
+            predefined_type=trk.predefined_type,
+            length=trk.length,
+            width=trk.width,
+            height=trk.height,
+            position=pos,
+            layer=derive_default_layer(trk),
+        )
+
+    def resolve_marine_facility(self, marine: IfcMarineFacility) -> ResolvedMarineFacility:
+        z_base = self.get_storey(marine.placement.storey).elevation if marine.placement.storey else 0.0
+        pos = (marine.placement.offset_x, marine.placement.offset_y, z_base + marine.placement.offset_z)
+        return ResolvedMarineFacility(
+            tag=marine.tag,
+            element=marine,
+            predefined_type=marine.predefined_type,
+            length=marine.length,
+            width=marine.width,
+            depth=marine.depth,
+            position=pos,
+            layer=derive_default_layer(marine),
+        )
+
+    def resolve_geographic_element(self, geo: IfcGeographicElement) -> ResolvedGeographicElement:
+        z_base = self.get_storey(geo.placement.storey).elevation if geo.placement.storey else 0.0
+        pos = (geo.placement.offset_x, geo.placement.offset_y, z_base + geo.placement.offset_z)
+        return ResolvedGeographicElement(
+            tag=geo.tag,
+            element=geo,
+            predefined_type=geo.predefined_type,
+            position=pos,
+            triangulated_mesh=geo.triangulated_mesh,
+            layer=derive_default_layer(geo),
+        )
+
+    def resolve_facility_part(self, part: IfcFacilityPart) -> ResolvedFacilityPart:
+        z_base = self.get_storey(part.placement.storey).elevation if part.placement.storey else 0.0
+        pos = (part.placement.offset_x, part.placement.offset_y, z_base + part.placement.offset_z)
+        parent = part.facility or part.parent_facility
+        return ResolvedFacilityPart(
+            tag=part.tag,
+            element=part,
+            predefined_type=part.predefined_type,
+            parent_facility=parent,
+            position=pos,
+            layer=derive_default_layer(part),
         )
 
 
@@ -4726,6 +4894,26 @@ class SpatialResolver:
                 r_bridge = self.resolve_bridge(elem)
                 resolved_manifest.bridges.append(r_bridge)
                 resolved_manifest.elements.append(r_bridge)
+            elif isinstance(elem, IfcRailway):
+                r_rail = self.resolve_railway(elem)
+                resolved_manifest.railways.append(r_rail)
+                resolved_manifest.elements.append(r_rail)
+            elif isinstance(elem, IfcTrackElement):
+                r_trk = self.resolve_track_element(elem)
+                resolved_manifest.track_elements.append(r_trk)
+                resolved_manifest.elements.append(r_trk)
+            elif isinstance(elem, IfcMarineFacility):
+                r_marine = self.resolve_marine_facility(elem)
+                resolved_manifest.marine_facilities.append(r_marine)
+                resolved_manifest.elements.append(r_marine)
+            elif isinstance(elem, IfcGeographicElement):
+                r_geo = self.resolve_geographic_element(elem)
+                resolved_manifest.geographic_elements.append(r_geo)
+                resolved_manifest.elements.append(r_geo)
+            elif isinstance(elem, IfcFacilityPart):
+                r_part = self.resolve_facility_part(elem)
+                resolved_manifest.facility_parts.append(r_part)
+                resolved_manifest.elements.append(r_part)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

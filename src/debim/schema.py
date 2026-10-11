@@ -2014,10 +2014,15 @@ class IfcCovering(BaseModel):
     layer: Optional[str] = None
 
 
-# Civil Infrastructure (IFC4.3) Entities: Alignment, Road, Bridge
+# Civil Infrastructure (IFC4.3) Entities: Facility, FacilityPart, Alignment, Road, Bridge, Railway, TrackElement, Marine, Geographic
 
 RoadType = Literal["HIGHWAY", "CARRIAGEWAY", "ROUNDABOUT", "SERVICE_ROAD", "USERDEFINED"]
 BridgeType = Literal["GIRDER", "SLAB", "ARCH", "CABLE_STAYED", "USERDEFINED"]
+FacilityType = Literal["ROAD", "BRIDGE", "RAILWAY", "MARINEFACILITY", "USERDEFINED"]
+FacilityPartType = Literal["ROADWAY", "BRIDGE_DECK", "BRIDGE_PIER", "ABUTMENT", "TRACK", "SUBSTRUCTURE", "SUPERSTRUCTURE", "USERDEFINED"]
+RailwayType = Literal["RAILWAY", "LIGHTRAIL", "METRO", "MONORAIL", "USERDEFINED"]
+TrackElementType = Literal["RAIL", "SLEEPER", "TURNOUT", "BALLAST", "FASTENING", "USERDEFINED"]
+MarineFacilityType = Literal["BERTH", "JETTY", "QUAY", "BREAKWATER", "LOCK", "DOCK", "USERDEFINED"]
 
 
 class AlignmentPoint(BaseModel):
@@ -2038,6 +2043,25 @@ class AlignmentPoint(BaseModel):
         return data
 
 
+class FacilityPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    alignment: Optional[str] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    points: Optional[List[AlignmentPoint]] = None
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
 class AlignmentPlacement(BaseModel):
     storey: Optional[str] = None
     grid: Optional[Tuple[str, str]] = None
@@ -2054,6 +2078,39 @@ class AlignmentPlacement(BaseModel):
         return v
 
 
+class AlignmentHorizontalSegment(BaseModel):
+    start_point: Tuple[float, float]
+    start_direction_rad: float = Field(default=0.0, alias="start_direction")
+    length: float
+    start_radius: float = Field(default=0.0, alias="radius_start")
+    end_radius: float = Field(default=0.0, alias="radius_end")
+    segment_type: Literal["LINE", "ARC", "CLOTHOID"] = "LINE"
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class AlignmentVerticalSegment(BaseModel):
+    start_station: float
+    start_elevation: float
+    length: float
+    start_gradient: float
+    end_gradient: Optional[float] = None
+    segment_type: Literal["CONSTANT_GRADIENT", "PARABOLA", "CIRCULAR_ARC", "LINE"] = "CONSTANT_GRADIENT"
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_vert_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            st = data.get("segment_type")
+            if st == "LINE":
+                data["segment_type"] = "CONSTANT_GRADIENT"
+            if data.get("end_gradient") is None and "start_gradient" in data:
+                data["end_gradient"] = data["start_gradient"]
+        return data
+
+
 class IfcAlignment(BaseModel):
     class_: Literal["IfcAlignment"] = Field(alias="class", default="IfcAlignment")
     tag: str
@@ -2063,7 +2120,81 @@ class IfcAlignment(BaseModel):
     end_chainage: Optional[float] = None
     design_speed_kmh: Optional[float] = None
     placement: AlignmentPlacement
+    horizontal_segments: Optional[List[AlignmentHorizontalSegment]] = None
+    vertical_segments: Optional[List[AlignmentVerticalSegment]] = None
     layer: Optional[str] = None
+
+
+class IfcFacilityPart(BaseModel):
+    class_: Literal["IfcFacilityPart"] = Field(alias="class", default="IfcFacilityPart")
+    tag: str
+    predefined_type: FacilityPartType = "ROADWAY"
+    material: Optional[str] = None
+    parent_facility: Optional[str] = None
+    facility: Optional[str] = None
+    placement: Any
+    layer: Optional[str] = None
+
+
+class IfcRailway(BaseModel):
+    class_: Literal["IfcRailway"] = Field(alias="class", default="IfcRailway")
+    tag: str
+    predefined_type: RailwayType = "RAILWAY"
+    material: Optional[str] = None
+    track_gauge: float = 1.435  # Standard gauge in meters
+    length: float = 100.0
+    track_length: Optional[float] = None
+    placement: Any
+    layer: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_railway_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "track_length" in data and "length" not in data:
+                data["length"] = data["track_length"]
+        return data
+
+
+class IfcTrackElement(BaseModel):
+    class_: Literal["IfcTrackElement"] = Field(alias="class", default="IfcTrackElement")
+    tag: str
+    predefined_type: TrackElementType = "RAIL"
+    material: Optional[str] = None
+    length: float = 10.0
+    width: float = 0.15
+    height: float = 0.18
+    placement: Any
+    layer: Optional[str] = None
+
+
+class IfcMarineFacility(BaseModel):
+    class_: Literal["IfcMarineFacility"] = Field(alias="class", default="IfcMarineFacility")
+    tag: str
+    predefined_type: MarineFacilityType = "BERTH"
+    material: Optional[str] = None
+    length: float = 50.0
+    width: float = 15.0
+    depth: float = 10.0
+    placement: Any
+    layer: Optional[str] = None
+
+
+class IfcTriangulatedFaceSet(BaseModel):
+    coordinates: List[Tuple[float, float, float]]
+    coord_index: List[Tuple[int, int, int]]
+
+
+class IfcGeographicElement(BaseModel):
+    class_: Literal["IfcGeographicElement"] = Field(alias="class", default="IfcGeographicElement")
+    tag: str
+    predefined_type: Literal["TERRAIN", "VEGETATION", "SOIL", "USERDEFINED"] = "TERRAIN"
+    material: Optional[str] = None
+    triangulated_mesh: Optional[IfcTriangulatedFaceSet] = Field(default=None, alias="tin_mesh")
+    placement: Any
+    layer: Optional[str] = None
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class RoadPlacement(BaseModel):
@@ -2298,6 +2429,11 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcAlignment",
     "IfcRoad",
     "IfcBridge",
+    "IfcFacilityPart",
+    "IfcRailway",
+    "IfcTrackElement",
+    "IfcMarineFacility",
+    "IfcGeographicElement",
     "IfcCustomElement",
 }
 
@@ -2355,6 +2491,11 @@ Element = Annotated[
         Annotated[IfcAlignment, Tag("IfcAlignment")],
         Annotated[IfcRoad, Tag("IfcRoad")],
         Annotated[IfcBridge, Tag("IfcBridge")],
+        Annotated[IfcFacilityPart, Tag("IfcFacilityPart")],
+        Annotated[IfcRailway, Tag("IfcRailway")],
+        Annotated[IfcTrackElement, Tag("IfcTrackElement")],
+        Annotated[IfcMarineFacility, Tag("IfcMarineFacility")],
+        Annotated[IfcGeographicElement, Tag("IfcGeographicElement")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],

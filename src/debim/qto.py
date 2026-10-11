@@ -26,15 +26,19 @@ from debim.resolver import (
     ResolvedEarthworksCut,
     ResolvedEarthworksFill,
     ResolvedElement,
+    ResolvedFacilityPart,
     ResolvedFlowController,
     ResolvedFooting,
+    ResolvedGeographicElement,
     ResolvedLightFixture,
     ResolvedManifest,
+    ResolvedMarineFacility,
     ResolvedOutlet,
     ResolvedPipeSegment,
     ResolvedPlate,
     ResolvedProxy,
     ResolvedRailing,
+    ResolvedRailway,
     ResolvedRamp,
     ResolvedRetainingWall,
     ResolvedRevolvedArea,
@@ -47,6 +51,7 @@ from debim.resolver import (
     ResolvedSweptDisk,
     ResolvedSwitchingDevice,
     ResolvedTerminal,
+    ResolvedTrackElement,
     ResolvedUnitaryEquipment,
     ResolvedWall,
     ResolvedWasteTerminal,
@@ -1648,6 +1653,49 @@ def calculate_element_qto(
             concrete_volume=vol,
             formwork_area=formwork,
             bridge=bridge_qto,
+        )
+
+    elif isinstance(resolved, ResolvedRailway):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.length,
+        )
+
+    elif isinstance(resolved, ResolvedTrackElement):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.length,
+        )
+
+    elif isinstance(resolved, ResolvedMarineFacility):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+            length=resolved.length,
+        )
+
+    elif isinstance(resolved, ResolvedGeographicElement):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
+        )
+
+    elif isinstance(resolved, ResolvedFacilityPart):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class=elem.class_,
+            material=elem.material,
         )
 
     elif isinstance(resolved, ResolvedTerminal):
