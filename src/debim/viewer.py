@@ -1908,20 +1908,34 @@ def generate_viewer_html(
 
         else:
             if cov.polygon and len(cov.polygon) >= 3:
+                xs = [pt[0] for pt in cov.polygon]
+                ys = [pt[1] for pt in cov.polygon]
+                min_x, max_x = min(xs), max(xs)
+                min_y, max_y = min(ys), max(ys)
+                w = max_x - min_x
+                d = max_y - min_y
+                h = cov.thickness if cov.thickness > 0 else 0.015
+                cx = (min_x + max_x) / 2.0
+                cy = (min_y + max_y) / 2.0
+                cz = cov.center[2] + h / 2.0
+
                 elements_data.append({
                     "tag": cov.tag,
                     "class": "IfcCovering",
                     "material": cov.element.material,
-                    "geometry_type": "polygon",
-                    "points": cov.polygon,
+                    "position": [cx, cy, cz],
+                    "rotation": [0, 0, 0],
+                    "dimensions": {
+                        "width": w,
+                        "depth": d,
+                        "height": h,
+                        "polygon": [[pt[0], pt[1]] for pt in cov.polygon],
+                        "area": cov.area,
+                    },
                     "color": color,
                     "layer": cov_layer,
                     "covering_type": c_type,
                     "member_name": f"{c_th} - {cov.element.material}",
-                    "dimensions": {
-                        "area": cov.area,
-                        "thickness": cov.thickness,
-                    },
                     "transparent": True,
                     "opacity": opacity,
                 })
@@ -3238,7 +3252,7 @@ def generate_viewer_html(
                 }} else {{
                     geometry = new THREE.BoxGeometry(dim.length, dim.width || dim.thickness || 0.02, dim.height || dim.depth || 0.20);
                 }}
-            }} else if (data.class === "IfcSlab") {{
+            }} else if (data.class === "IfcSlab" || data.class === "IfcCovering") {{
                 if (dim.polygon && dim.polygon.length >= 3) {{
                     const s = new THREE.Shape();
                     s.moveTo(dim.polygon[0][0] - data.position[0], dim.polygon[0][1] - data.position[1]);

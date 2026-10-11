@@ -461,7 +461,35 @@ def slice_storey(
                 },
             ))
 
-    # 6. Calculate Bounding Box
+    # 6. Process Coverings (Low Projection)
+    for cov in getattr(resolved, "coverings", []) or []:
+        cov_z = cov.center[2]
+        if cov_z <= cut_elev:
+            if cov.polygon and len(cov.polygon) >= 3:
+                c_pts_2d = [(p[0], p[1]) for p in cov.polygon]
+                all_2d_points.extend(c_pts_2d)
+                cov_poly = Polygon(c_pts_2d)
+            else:
+                cx, cy = cov.center[0], cov.center[1]
+                all_2d_points.append((cx, cy))
+                w = math.sqrt(cov.area) if cov.area > 0 else 1.0
+                cov_poly = _create_rotated_box(cx, cy, w, w, 0.0)
+
+            projection_elements.append(ProjectionElement(
+                tag=cov.tag,
+                element_class="IfcCovering",
+                category="low_projection",
+                geometry=cov_poly,
+                layer=cov.layer,
+                properties={
+                    "covering_type": cov.covering_type,
+                    "material": cov.element.material if cov.element else None,
+                    "thickness": cov.thickness,
+                    "area": cov.area,
+                },
+            ))
+
+    # 7. Calculate Bounding Box
     if all_2d_points:
         xs = [p[0] for p in all_2d_points]
         ys = [p[1] for p in all_2d_points]
