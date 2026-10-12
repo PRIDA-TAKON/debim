@@ -54,6 +54,7 @@ from debim.schema import (
 
 
 import math
+import numpy as np
 
 
 def _extract_euler_angles(mat: Any) -> Optional[Tuple[float, float, float]]:
@@ -297,6 +298,7 @@ def import_ifc_to_manifest(
     import ifcopenshell
     import ifcopenshell.util.element
     import ifcopenshell.util.placement
+    import numpy as np
 
     # 0. Graceful Legacy Schema Handling
     unsupported_schemas = {"IFC20_LONGFORM", "IFC2X_FINAL", "IFC2X2_FINAL"}
@@ -633,8 +635,38 @@ def import_ifc_to_manifest(
         import ifcopenshell.util.placement
         import numpy as np
 
-        st_elev = storey_elevation_by_id.get(st_id, 0.0)
         ports = _get_connected_ports(elem)
+        st_elev = storey_elevation_by_id.get(st_id, 0.0)
+        if len(ports) < 2:
+            if geom_settings is not None:
+                try:
+                    import ifcopenshell.geom
+                    shape = ifcopenshell.geom.create_shape(geom_settings, elem)
+                    verts = np.array(shape.geometry.verts, dtype=np.float64).reshape(-1, 3)
+                    if len(verts) > 0:
+                        min_b = verts.min(axis=0)
+                        max_b = verts.max(axis=0)
+                        center_local = (min_b + max_b) / 2.0
+                        d_ext = max_b - min_b
+                        mat = ifcopenshell.util.placement.get_local_placement(elem.ObjectPlacement)
+                        world_center = (mat[:3, :3] @ center_local) + mat[:3, 3]
+                        w_val = round(float(d_ext[0]), 3)
+                        d_val = round(float(d_ext[1]), 3)
+                        h_val = round(float(d_ext[2]), 3)
+                        if w_val > 0 and d_val > 0 and h_val > 0:
+                            pos = (
+                                round(float(world_center[0]), 3),
+                                round(float(world_center[1]), 3),
+                                round(float(world_center[2] - h_val / 2.0 - st_elev), 3),
+                            )
+                            rot = _extract_euler_angles(mat)
+                            return (
+                                CustomElementPlacement(position=pos, storey=st_id, rotation=rot),
+                                Dimensions(width=w_val, depth=d_val, height=h_val),
+                            )
+                except Exception:
+                    pass
+            return extract_custom_placement_and_dims(elem, st_id)
         pos = _compute_fitting_junction(elem, ports, st_elev)
         rot = None
         try:
@@ -777,6 +809,13 @@ def import_ifc_to_manifest(
 
     # 5. Elements extraction
     elements: List[Any] = []
+    extracted_custom_ids = set()
+
+    def safe_by_type(type_name: str) -> List[Any]:
+        try:
+            return list(ifc_file.by_type(type_name))
+        except Exception:
+            return []
 
     # Build wall and roof children maps (IfcDoor and IfcWindow openings)
     wall_children_map: Dict[str, List[Union[IfcDoor, IfcWindow]]] = {}
@@ -877,6 +916,7 @@ def import_ifc_to_manifest(
             flipped=flipped,
         )
         if parent_host_elem:
+            extracted_custom_ids.add(door.GlobalId)
             if parent_host_elem.is_a("IfcRoof"):
                 roof_children_map.setdefault(parent_host_elem.GlobalId, []).append(d_obj)
             else:
@@ -971,6 +1011,7 @@ def import_ifc_to_manifest(
             flipped=flipped,
         )
         if parent_host_elem:
+            extracted_custom_ids.add(window.GlobalId)
             if parent_host_elem.is_a("IfcRoof"):
                 roof_children_map.setdefault(parent_host_elem.GlobalId, []).append(win_obj)
             else:
@@ -978,6 +1019,7 @@ def import_ifc_to_manifest(
 
     # 5.1 Extract Columns
     for col in ifc_file.by_type("IfcColumn"):
+        extracted_custom_ids.add(col.GlobalId)
         tag = col.Name or f"COL-{col.GlobalId[:8]}"
         w, d = 0.3, 0.3
 
@@ -1039,6 +1081,7 @@ def import_ifc_to_manifest(
 
     # 5.2 Extract Beams
     for idx, beam in enumerate(ifc_file.by_type("IfcBeam")):
+        extracted_custom_ids.add(beam.GlobalId)
         tag = beam.Name or f"BEAM-{beam.GlobalId[:8]}"
         w, d = 0.2, 0.4
         ps = ifcopenshell.util.element.get_psets(beam)
@@ -1090,6 +1133,24 @@ def import_ifc_to_manifest(
             if d > 10:
                 d /= 1000.0
 
+        beam_solid = None
+        if beam.Representation:
+            for rep in beam.Representation.Representations:
+                if rep.RepresentationType in ("SweptSolid", "AdvancedSweptSolid", "SolidModel"):
+                    for it in rep.Items:
+                        if it.is_a("IfcExtrudedAreaSolid"):
+                            beam_solid = it
+                            break
+
+        if beam_solid:
+            if hasattr(beam_solid, "Depth") and float(beam_solid.Depth) > 0:
+                length = float(beam_solid.Depth)
+            if hasattr(beam_solid, "SweptArea") and beam_solid.SweptArea:
+                sa = beam_solid.SweptArea
+                if sa.is_a("IfcRectangleProfileDef"):
+                    w = float(sa.XDim)
+                    d = float(sa.YDim)
+
         if (w == 0.2 and d == 0.4) or w <= 0 or d <= 0:
             bbox = _extract_bounding_box(beam)
             if bbox:
@@ -1104,6 +1165,19 @@ def import_ifc_to_manifest(
             mat = ifcopenshell.util.placement.get_local_placement(beam.ObjectPlacement)
             sx, sy = float(mat[0, 3]), float(mat[1, 3])
             dx, dy = float(mat[0, 0]), float(mat[1, 0])
+            if beam_solid:
+                ext_dir = np.array(beam_solid.ExtrudedDirection.DirectionRatios if hasattr(beam_solid, "ExtrudedDirection") else [0.0, 0.0, 1.0])
+                if hasattr(beam_solid, "Position") and beam_solid.Position:
+                    try:
+                        pos_mat = ifcopenshell.util.placement.get_axis2placement(beam_solid.Position)
+                        ext_dir = pos_mat[:3, :3] @ ext_dir
+                    except Exception:
+                        pass
+                world_dir = mat[:3, :3] @ ext_dir
+                w_dx, w_dy = float(world_dir[0]), float(world_dir[1])
+                norm = math.hypot(w_dx, w_dy)
+                if norm > 1e-4:
+                    dx, dy = w_dx / norm, w_dy / norm
             ex, ey = sx + dx * length, sy + dy * length
             from_g = (get_or_create_grid_x(sx), get_or_create_grid_y(sy))
             to_g = (get_or_create_grid_x(ex), get_or_create_grid_y(ey))
@@ -1149,6 +1223,7 @@ def import_ifc_to_manifest(
 
     # 5.3 Extract Walls (IfcWall and IfcWallStandardCase)
     for idx, wall in enumerate(ifc_file.by_type("IfcWall")):
+        extracted_custom_ids.add(wall.GlobalId)
         tag = wall.Name or f"WALL-{wall.GlobalId[:8]}"
         th = 0.15
         h = 2.8
@@ -1175,11 +1250,49 @@ def import_ifc_to_manifest(
             if h > 50:
                 h /= 1000.0
 
+        # Check solid representation for length/thickness/height
+        wall_solid = None
+        if hasattr(wall, "Representation") and wall.Representation:
+            for rep in wall.Representation.Representations:
+                for item in getattr(rep, "Items", []):
+                    if item.is_a("IfcExtrudedAreaSolid"):
+                        wall_solid = item
+                        break
+                if wall_solid:
+                    break
+
+        offset_local_x = 0.0
+        has_solid_rect = False
+        if wall_solid:
+            if getattr(wall_solid, "Depth", None):
+                h = float(wall_solid.Depth)
+            sa = getattr(wall_solid, "SweptArea", None)
+            if sa and sa.is_a("IfcRectangleProfileDef"):
+                length = float(sa.XDim)
+                th = float(sa.YDim)
+                has_solid_rect = True
+                pos_loc = getattr(getattr(sa, "Position", None), "Location", None)
+                if pos_loc and hasattr(pos_loc, "Coordinates"):
+                    offset_local_x = float(pos_loc.Coordinates[0])
+
         try:
             mat = ifcopenshell.util.placement.get_local_placement(wall.ObjectPlacement)
-            sx, sy = float(mat[0, 3]), float(mat[1, 3])
+            cx, cy = float(mat[0, 3]), float(mat[1, 3])
             dx, dy = float(mat[0, 0]), float(mat[1, 0])
-            ex, ey = sx + dx * length, sy + dy * length
+            norm = math.hypot(dx, dy)
+            if norm > 1e-6:
+                dx, dy = dx / norm, dy / norm
+            else:
+                dx, dy = 1.0, 0.0
+
+            if has_solid_rect:
+                start_l = offset_local_x - length / 2.0
+                end_l = offset_local_x + length / 2.0
+                sx, sy = cx + dx * start_l, cy + dy * start_l
+                ex, ey = cx + dx * end_l, cy + dy * end_l
+            else:
+                sx, sy = cx, cy
+                ex, ey = sx + dx * length, sy + dy * length
         except Exception:
             sx, sy = 0.0, 0.0
             ex, ey = 3.0, 0.0
@@ -1214,6 +1327,7 @@ def import_ifc_to_manifest(
 
     # 5.4 Extract Slabs (IfcSlab)
     for idx, slab in enumerate(ifc_file.by_type("IfcSlab")):
+        extracted_custom_ids.add(slab.GlobalId)
         tag = slab.Name or f"SLAB-{slab.GlobalId[:8]}"
         th = 0.15
         ps = ifcopenshell.util.element.get_psets(slab)
@@ -1297,6 +1411,7 @@ def import_ifc_to_manifest(
 
     # 5.5 Extract Footings
     for idx, footing in enumerate(ifc_file.by_type("IfcFooting")):
+        extracted_custom_ids.add(footing.GlobalId)
         tag = footing.Name or f"F2-{idx + 1:02d}"
         st_id = get_elem_storey(footing)
         placement, dims = extract_custom_placement_and_dims(footing, st_id)
@@ -1306,7 +1421,7 @@ def import_ifc_to_manifest(
                     "class": "IfcCustomElement",
                     "tag": tag,
                     "name": tag,
-                    "source": "assets/footing_f2.glb",
+                    "source": f"ifc/{footing.is_a()}/{tag}",
                     "placement": placement,
                     "dimensions": dims,
                     "layer": "structure/footings",
@@ -1316,26 +1431,60 @@ def import_ifc_to_manifest(
 
     # 5.6 Extract Roofs (IfcRoof)
     for idx, roof in enumerate(ifc_file.by_type("IfcRoof")):
+        extracted_custom_ids.add(roof.GlobalId)
         tag = roof.Name or f"ROOF-{roof.GlobalId[:8]}"
         st_id = get_elem_storey(roof)
         ps = ifcopenshell.util.element.get_psets(roof)
 
         pitch = 0.0
+        roof_verts = None
         if ps.get("PSet_Revit_Type_Construction", {}).get("Pitch"):
             pitch = float(ps["PSet_Revit_Type_Construction"]["Pitch"])
         elif "Flat Roof" in (roof.Name or ""):
             pitch = 0.0
+        elif geom_settings is not None:
+            try:
+                import ifcopenshell.geom
+                import numpy as np
+                shape = ifcopenshell.geom.create_shape(geom_settings, roof)
+                roof_verts = np.array(shape.geometry.verts, dtype=np.float64).reshape(-1, 3)
+                if len(roof_verts) > 0:
+                    min_z = float(roof_verts[:, 2].min())
+                    max_z = float(roof_verts[:, 2].max())
+                    dz = max_z - min_z
+                    min_x, max_x = float(roof_verts[:, 0].min()), float(roof_verts[:, 0].max())
+                    min_y, max_y = float(roof_verts[:, 1].min()), float(roof_verts[:, 1].max())
+                    span = min(max_x - min_x, max_y - min_y)
+                    if dz > 0.05 and span > 0.1:
+                        pitch_rad = math.atan(dz / (span / 2.0))
+                        pitch = round(math.degrees(pitch_rad), 1)
+            except Exception:
+                pass
 
         roof_type = "FLAT" if pitch == 0.0 else "HIP"
 
-        gx_keys = list(grid_x_vals.keys()) or ["GX_1", "GX_2"]
-        gy_keys = list(grid_y_vals.keys()) or ["GY_1", "GY_2"]
-        boundary = [
-            (gx_keys[0], gy_keys[0]),
-            (gx_keys[-1], gy_keys[0]),
-            (gx_keys[-1], gy_keys[-1]),
-            (gx_keys[0], gy_keys[-1]),
-        ]
+        if roof_verts is not None and len(roof_verts) > 0:
+            min_x, max_x = float(roof_verts[:, 0].min()), float(roof_verts[:, 0].max())
+            min_y, max_y = float(roof_verts[:, 1].min()), float(roof_verts[:, 1].max())
+            gx1 = get_or_create_grid_x(min_x)
+            gy1 = get_or_create_grid_y(min_y)
+            gx2 = get_or_create_grid_x(max_x)
+            gy2 = get_or_create_grid_y(max_y)
+            boundary = [
+                (gx1, gy1),
+                (gx2, gy1),
+                (gx2, gy2),
+                (gx1, gy2),
+            ]
+        else:
+            gx_keys = list(grid_x_vals.keys()) or ["GX_1", "GX_2"]
+            gy_keys = list(grid_y_vals.keys()) or ["GY_1", "GY_2"]
+            boundary = [
+                (gx_keys[0], gy_keys[0]),
+                (gx_keys[-1], gy_keys[0]),
+                (gx_keys[-1], gy_keys[-1]),
+                (gx_keys[0], gy_keys[-1]),
+            ]
 
         mat_id = resolve_material(roof, "CONC_280")
         roof_children = roof_children_map.get(roof.GlobalId, [])
@@ -1350,6 +1499,7 @@ def import_ifc_to_manifest(
                     "placement": RoofPlacement(
                         boundary=boundary,
                         storey=st_id,
+                        overhang=0.0,
                     ),
                     "covering": RoofCoveringConfig(pitch=pitch),
                     "children": roof_children,
@@ -1359,6 +1509,7 @@ def import_ifc_to_manifest(
 
     # 5.7 Extract Coverings (IfcCovering / Ceilings)
     for cov in ifc_file.by_type("IfcCovering"):
+        extracted_custom_ids.add(cov.GlobalId)
         tag = cov.Name or f"COV-{cov.GlobalId[:8]}"
         st_id = get_elem_storey(cov)
         st_elev = storey_elevation_by_id.get(st_id, 0.0)
@@ -1436,6 +1587,7 @@ def import_ifc_to_manifest(
 
     # 5.8 Extract Stairs
     for stair in ifc_file.by_type("IfcStair"):
+        extracted_custom_ids.add(stair.GlobalId)
         tag = stair.Name or f"STAIR-{stair.GlobalId[:8]}"
         st_id = get_elem_storey(stair)
         placement, dims = extract_custom_placement_and_dims(stair, st_id)
@@ -1445,7 +1597,7 @@ def import_ifc_to_manifest(
                     "class": "IfcCustomElement",
                     "tag": tag,
                     "name": tag,
-                    "source": f"ifc/stair/{tag}",
+                    "source": f"ifc/{stair.is_a()}/{tag}",
                     "placement": placement,
                     "dimensions": dims,
                     "layer": "circulation/stairs",
@@ -1455,6 +1607,7 @@ def import_ifc_to_manifest(
 
     # 5.9 Extract Stair Flights
     for flight in ifc_file.by_type("IfcStairFlight"):
+        extracted_custom_ids.add(flight.GlobalId)
         tag = flight.Name or f"FLIGHT-{flight.GlobalId[:8]}"
         st_id = get_elem_storey(flight)
         placement, dims = extract_custom_placement_and_dims(flight, st_id)
@@ -1464,7 +1617,7 @@ def import_ifc_to_manifest(
                     "class": "IfcCustomElement",
                     "tag": tag,
                     "name": tag,
-                    "source": f"ifc/stairflight/{tag}",
+                    "source": f"ifc/{flight.is_a()}/{tag}",
                     "placement": placement,
                     "dimensions": dims,
                     "layer": "circulation/stairflights",
@@ -1474,6 +1627,7 @@ def import_ifc_to_manifest(
 
     # 5.10 Extract Railings
     for railing in ifc_file.by_type("IfcRailing"):
+        extracted_custom_ids.add(railing.GlobalId)
         tag = railing.Name or f"RAILING-{railing.GlobalId[:8]}"
         st_id = get_elem_storey(railing)
 
@@ -1570,7 +1724,8 @@ def import_ifc_to_manifest(
 
                     dp = p2 - p1
                     L = float(np.linalg.norm(dp))
-                    if L > 1e-4 and abs(dp[2]) > 1e-4:
+
+                    if L > 1e-4 and abs(dp[2]) > 1e-4 and math.hypot(dp[0], dp[1]) > 1e-3:
                         phi = float(math.asin(max(-1.0, min(1.0, dp[2] / L))))
                         psi = float(math.atan2(dp[1], dp[0]))
 
@@ -1610,6 +1765,7 @@ def import_ifc_to_manifest(
 
     # 5.11 Extract Members
     for member in ifc_file.by_type("IfcMember"):
+        extracted_custom_ids.add(member.GlobalId)
         tag = member.Name or f"MEMBER-{member.GlobalId[:8]}"
         st_id = get_elem_storey(member)
         if member.Name and "stair" in member.Name.lower():
@@ -1622,7 +1778,7 @@ def import_ifc_to_manifest(
                     "class": "IfcCustomElement",
                     "tag": tag,
                     "name": tag,
-                    "source": f"ifc/member/{tag}",
+                    "source": f"ifc/{member.is_a()}/{tag}",
                     "placement": placement,
                     "dimensions": dims,
                     "layer": "structure/members",
@@ -1630,17 +1786,9 @@ def import_ifc_to_manifest(
             )
         )
 
-    def safe_by_type(type_name: str) -> List[Any]:
-        try:
-            return list(ifc_file.by_type(type_name))
-        except Exception:
-            return []
-
     assets_dir_path = Path(assets_dir)
 
     # 5.12 Extract Furnishing Elements & Furniture
-    extracted_custom_ids = set()
-
     for furn in safe_by_type("IfcFurnishingElement") + safe_by_type("IfcFurniture"):
         if furn.GlobalId in extracted_custom_ids:
             continue
@@ -1674,8 +1822,7 @@ def import_ifc_to_manifest(
             slug = _derive_furniture_slug(furn.Name)
             _bake_element_to_glb(furn, slug, assets_dir_path, geom_settings)
 
-        cls_type = "IfcFurniture" if furn.is_a("IfcFurniture") else "IfcFurnishingElement"
-        if cls_type == "IfcFurniture":
+        if furn.is_a("IfcFurniture"):
             elements.append(
                 IfcFurniture(
                     class_="IfcFurniture",
@@ -1686,7 +1833,7 @@ def import_ifc_to_manifest(
                     layer="interior/furniture",
                 )
             )
-        else:
+        elif furn.is_a() == "IfcFurnishingElement":
             elements.append(
                 IfcFurnishingElement(
                     class_="IfcFurnishingElement",
@@ -1695,6 +1842,20 @@ def import_ifc_to_manifest(
                     dimensions=dims,
                     placement=furniture_placement,
                     layer="interior/furniture",
+                )
+            )
+        else:
+            elements.append(
+                IfcCustomElement(
+                    **{
+                        "class": "IfcCustomElement",
+                        "tag": tag,
+                        "name": name,
+                        "source": f"ifc/{furn.is_a()}/{tag}",
+                        "placement": placement,
+                        "dimensions": dims,
+                        "layer": "interior/furniture",
+                    }
                 )
             )
 
@@ -1714,7 +1875,7 @@ def import_ifc_to_manifest(
                         "class": "IfcCustomElement",
                         "tag": tag,
                         "name": tag,
-                        "source": f"ifc/segment/{tag}",
+                        "source": f"ifc/{seg.is_a()}/{tag}",
                         "placement": placement,
                         "dimensions": dims,
                         "layer": layer,
@@ -1732,38 +1893,20 @@ def import_ifc_to_manifest(
         tag = fc_elem.Name or f"FLOW_CTRL-{fc_elem.GlobalId[:8]}"
         st_id = get_elem_storey(fc_elem)
         placement_custom, dims = extract_custom_placement_and_dims(fc_elem, st_id)
-        w = dims.width if dims else 0.8
-        d = dims.depth if (dims and dims.depth is not None) else 0.5
-        h = dims.height if dims else 0.4
-
-        gx = get_or_create_grid_x(placement_custom.position[0])
-        gy = get_or_create_grid_y(placement_custom.position[1])
-        rot_angle = placement_custom.rotation[2] if placement_custom.rotation else 0.0
-
-        term_placement = TerminalPlacement(
-            grid=(gx, gy),
-            storey=st_id,
-            offset_x=0.0,
-            offset_y=0.0,
-            offset_z=placement_custom.position[2],
-            rotation=round(rot_angle, 4),
-        )
+        if dims is None or dims.width <= 0 or (dims.depth is not None and dims.depth <= 0) or dims.height <= 0:
+            dims = Dimensions(width=0.8, depth=0.5, height=0.4)
 
         elements.append(
-            IfcFlowController(
-                class_="IfcFlowController",
-                tag=tag,
-                controller_type="AIR_CONTROLLER",
-                width=round(w, 3),
-                depth=round(d, 3),
-                height=round(h, 3),
-                placement=term_placement,
-                dimensions=TerminalDimensions(
-                    width=round(w, 3),
-                    depth=round(d, 3),
-                    height=round(h, 3)
-                ),
-                layer="mep/flow_controllers",
+            IfcCustomElement(
+                **{
+                    "class": "IfcCustomElement",
+                    "tag": tag,
+                    "name": tag,
+                    "source": f"ifc/{fc_elem.is_a()}/{tag}",
+                    "placement": placement_custom,
+                    "dimensions": dims,
+                    "layer": "mep/flow_controllers",
+                }
             )
         )
 
@@ -1788,7 +1931,7 @@ def import_ifc_to_manifest(
                         "class": "IfcCustomElement",
                         "tag": tag,
                         "name": tag,
-                        "source": f"ifc/{c_prefix.lower()}/{tag}",
+                        "source": f"ifc/{ctrl_elem.is_a()}/{tag}",
                         "placement": placement,
                         "dimensions": dims,
                         "layer": c_layer,
@@ -1809,14 +1952,13 @@ def import_ifc_to_manifest(
             else:
                 placement, dims = extract_custom_placement_and_dims(term, st_id)
 
-            source_path = f"ifc/terminal/{tag}"
-            if term.is_a("IfcSanitaryTerminal"):
+            source_path = f"ifc/{term.is_a()}/{tag}"
+            if term.is_a("IfcSanitaryTerminal") and bake_assets:
                 slug = _derive_furniture_slug(term.Name or tag)
                 source_path = f"assets/furniture/{slug}.glb"
-                if bake_assets:
-                    baked = _bake_element_to_glb(term, slug, assets_dir_path, geom_settings)
-                    if baked:
-                        source_path = baked
+                baked = _bake_element_to_glb(term, slug, assets_dir_path, geom_settings)
+                if baked:
+                    source_path = baked
 
             elements.append(
                 IfcCustomElement(
@@ -1847,7 +1989,7 @@ def import_ifc_to_manifest(
                         "class": "IfcCustomElement",
                         "tag": tag,
                         "name": tag,
-                        "source": f"ifc/fitting/{tag}",
+                        "source": f"ifc/{fit.is_a()}/{tag}",
                         "placement": placement,
                         "dimensions": dims,
                         "layer": "mep/fittings",
@@ -1886,20 +2028,35 @@ def import_ifc_to_manifest(
         tag = ecd.Name or f"ECD-{ecd.GlobalId[:8]}"
         st_id = get_elem_storey(ecd)
         placement_c, dims = extract_mep_spatial_placement_and_dims(ecd, st_id)
-        ecd_placement = EnergyConversionPlacement(
-            storey=st_id,
-            position=placement_c.position,
-            rotation=placement_c.rotation,
-        )
-        elements.append(
-            IfcEnergyConversionDevice(
-                tag=tag,
-                name=ecd.Name or tag,
-                dimensions=dims,
-                placement=ecd_placement,
-                layer="mep/energy_conversion",
+        if ecd.is_a() == "IfcEnergyConversionDevice":
+            ecd_placement = EnergyConversionPlacement(
+                storey=st_id,
+                position=placement_c.position,
+                rotation=placement_c.rotation,
             )
-        )
+            elements.append(
+                IfcEnergyConversionDevice(
+                    tag=tag,
+                    name=ecd.Name or tag,
+                    dimensions=dims,
+                    placement=ecd_placement,
+                    layer="mep/energy_conversion",
+                )
+            )
+        else:
+            elements.append(
+                IfcCustomElement(
+                    **{
+                        "class": "IfcCustomElement",
+                        "tag": tag,
+                        "name": ecd.Name or tag,
+                        "source": f"ifc/{ecd.is_a()}/{tag}",
+                        "placement": placement_c,
+                        "dimensions": dims,
+                        "layer": "mep/energy_conversion",
+                    }
+                )
+            )
 
     # 5.18 Extract MEP Flow Moving Devices (IfcFlowMovingDevice)
     for fmd in safe_by_type("IfcFlowMovingDevice"):
@@ -1909,20 +2066,35 @@ def import_ifc_to_manifest(
         tag = fmd.Name or f"FMD-{fmd.GlobalId[:8]}"
         st_id = get_elem_storey(fmd)
         placement_c, dims = extract_mep_spatial_placement_and_dims(fmd, st_id)
-        fmd_placement = FlowMovingPlacement(
-            storey=st_id,
-            position=placement_c.position,
-            rotation=placement_c.rotation,
-        )
-        elements.append(
-            IfcFlowMovingDevice(
-                tag=tag,
-                name=fmd.Name or tag,
-                dimensions=dims,
-                placement=fmd_placement,
-                layer="mep/flow_moving",
+        if fmd.is_a() == "IfcFlowMovingDevice":
+            fmd_placement = FlowMovingPlacement(
+                storey=st_id,
+                position=placement_c.position,
+                rotation=placement_c.rotation,
             )
-        )
+            elements.append(
+                IfcFlowMovingDevice(
+                    tag=tag,
+                    name=fmd.Name or tag,
+                    dimensions=dims,
+                    placement=fmd_placement,
+                    layer="mep/flow_moving",
+                )
+            )
+        else:
+            elements.append(
+                IfcCustomElement(
+                    **{
+                        "class": "IfcCustomElement",
+                        "tag": tag,
+                        "name": fmd.Name or tag,
+                        "source": f"ifc/{fmd.is_a()}/{tag}",
+                        "placement": placement_c,
+                        "dimensions": dims,
+                        "layer": "mep/flow_moving",
+                    }
+                )
+            )
 
     # 5.19 Extract Generic Proxies & Accessories (IfcBuildingElementProxy, IfcDiscreteAccessory)
     proxy_configs = [
@@ -1943,7 +2115,7 @@ def import_ifc_to_manifest(
                         "class": "IfcCustomElement",
                         "tag": tag,
                         "name": tag,
-                        "source": f"ifc/proxy/{tag}",
+                        "source": f"ifc/{proxy.is_a()}/{tag}",
                         "placement": placement,
                         "dimensions": dims,
                         "layer": p_layer,
@@ -1970,13 +2142,38 @@ def import_ifc_to_manifest(
                         "class": "IfcCustomElement",
                         "tag": tag,
                         "name": elem.Name or tag,
-                        "source": f"ifc/{p_prefix.lower()}/{tag}",
+                        "source": f"ifc/{elem.is_a()}/{tag}",
                         "placement": placement,
                         "dimensions": dims,
                         "layer": p_layer,
                     }
                 )
             )
+
+    # 5.18 Generic Catch-All for All Remaining Concrete IfcElement Entities
+    for elem in safe_by_type("IfcElement"):
+        if elem.GlobalId in extracted_custom_ids:
+            continue
+        if elem.is_a("IfcOpeningElement"):
+            continue
+        extracted_custom_ids.add(elem.GlobalId)
+        cls_name = elem.is_a()
+        tag = elem.Name or f"{cls_name.replace('Ifc', '').upper()}-{elem.GlobalId[:8]}"
+        st_id = get_elem_storey(elem)
+        placement, dims = extract_custom_placement_and_dims(elem, st_id)
+        elements.append(
+            IfcCustomElement(
+                **{
+                    "class": "IfcCustomElement",
+                    "tag": tag,
+                    "name": elem.Name or tag,
+                    "source": f"ifc/{cls_name}/{tag}",
+                    "placement": placement,
+                    "dimensions": dims,
+                    "layer": f"elements/{cls_name}",
+                }
+            )
+        )
 
     # Fallback grids if none created
     if not grid_x_vals:

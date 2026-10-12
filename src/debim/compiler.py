@@ -314,6 +314,12 @@ def derive_custom_ifc_class(layer: Optional[str]) -> str:
     """Derive appropriate target IFC entity class for a custom element based on its layer."""
     if not layer:
         return "IfcBuildingElementProxy"
+    clean = layer.strip().split("/")[-1]
+    reg = get_schema_registry()
+    if reg.validate_entity_type(clean):
+        return reg.get_entity_info(clean).name
+    if reg.validate_entity_type(f"Ifc{clean}"):
+        return reg.get_entity_info(f"Ifc{clean}").name
     l = layer.lower()
     if "furn" in l:
         return "IfcFurnishingElement"
@@ -3424,7 +3430,25 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
 
     # 5. Custom Elements
     for custom in resolved.custom_elements:
-        ifc_cls = derive_custom_ifc_class(custom.layer)
+        ifc_cls = None
+        src = getattr(custom.element, "source", "") or ""
+        if src.startswith("ifc/"):
+            parts = src.split("/")
+            if len(parts) >= 2:
+                cand = parts[1]
+                reg = get_schema_registry()
+                if reg.validate_entity_type(cand):
+                    ifc_cls = reg.get_entity_info(cand).name
+                elif reg.validate_entity_type(f"Ifc{cand}"):
+                    ifc_cls = reg.get_entity_info(f"Ifc{cand}").name
+        if not ifc_cls:
+            elem_cls = getattr(custom.element, "class_", None) or getattr(custom.element, "class", None)
+            reg = get_schema_registry()
+            if elem_cls and elem_cls != "IfcCustomElement" and reg.validate_entity_type(elem_cls):
+                ifc_cls = reg.get_entity_info(elem_cls).name
+            else:
+                ifc_cls = derive_custom_ifc_class(custom.layer)
+
         custom_obj = ifcopenshell.api.run(
             "root.create_entity",
             model,
@@ -3454,8 +3478,8 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         )
 
         solid_entity = None
-        if custom.element.solid or custom.resolved_solid:
-            c_solid = custom.element.solid or custom.resolved_solid
+        if custom.element.solid:
+            c_solid = custom.element.solid
             if isinstance(c_solid, (SweptDiskSolid, ResolvedSweptDisk)):
                 directrix_pts = c_solid.directrix
                 pt_objs = [model.createIfcCartesianPoint((float(p[0]), float(p[1]), float(p[2]))) for p in directrix_pts]
@@ -4875,7 +4899,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             controller_obj.ObjectType = controller.predefined_type
         _add_ifcopenshell_terminal_geometry(
             controller_obj, controller.position, getattr(controller, "rotation_angle", 0.0),
-            (
+            controller.dimensions if getattr(controller, "dimensions", None) else (
                 getattr(controller, "duct_width", getattr(controller, "width", 0.4)),
                 getattr(controller, "duct_depth", getattr(controller, "depth", 0.3)),
                 getattr(controller, "height", 0.3)

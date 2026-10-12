@@ -1,0 +1,51 @@
+schema: IFC4-Minimal
+project:
+  id: PRJ-IFCCABLEFITTING
+  name: Golden Round-Trip Test - IfcCableFitting
+  units:
+    length: METRE
+    angle: RADIAN
+    area: SQUARE_METRE
+    volume: CUBIC_METRE
+spatial_structure:
+  storeys:
+  - id: L1
+    name: Level 1
+    elevation: 0.0
+    height: 3.0
+  - id: L2
+    name: Level 2
+    elevation: 3.0
+    height: 3.0
+grids:
+  axes_x:
+    GX1: 0.0
+    GX2: 6.0
+  axes_y:
+    GY1: 0.0
+    GY2: 6.0
+materials:
+- id: MAT-01
+  name: Standard Structural Material
+  category: CONCRETE
+  unit_cost_ref: MAT-01
+elements:
+- class: IfcCustomElement
+  tag: IfcCableFitting-01
+  name: IfcCableFitting-GoldenTest
+  source: ifc/IfcCableFitting/IfcCableFitting-01
+  dimensions:
+    width: 1.0
+    depth: 0.5
+    height: 2.0
+  placement:
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    rotation:
+    - 0.0
+    - 0.0
+    - 0.0
+    storey: L1
+  layer: elements/ExtrudedSolid/IfcCableFitting

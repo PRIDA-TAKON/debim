@@ -2242,7 +2242,7 @@ class SpatialResolver:
         is_fitting = (
             "fitting" in layer_lower
             or "fitting" in tag_lower
-            or any(kw in tag_lower for kw in ["elbow", "tee", "transition", "bend", "reducer", "cross"])
+            or any(kw in tag_lower for kw in ["elbow", "tee", "transition", "bend", "reducer", "cross", "junction"])
         )
 
         if resolved_solid is None and is_fitting and dims is not None:
