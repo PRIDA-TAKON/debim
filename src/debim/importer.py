@@ -1227,21 +1227,57 @@ def import_ifc_to_manifest(
             if th > 10:
                 th /= 1000.0
 
-        area = float(dims.get("Area", 16.0)) if dims.get("Area") else 16.0
-        side = max(1.0, float(area) ** 0.5)
-
-        try:
-            mat = ifcopenshell.util.placement.get_local_placement(slab.ObjectPlacement)
-            sx, sy = float(mat[0, 3]), float(mat[1, 3])
-        except Exception:
-            sx, sy = float(idx * 5.0), 0.0
-
-        gx1 = get_or_create_grid_x(sx)
-        gy1 = get_or_create_grid_y(sy)
-        gx2 = get_or_create_grid_x(sx + side)
-        gy2 = get_or_create_grid_y(sy + side)
-
         st_id = get_elem_storey(slab)
+        st_elev = storey_elevation_by_id.get(st_id, 0.0)
+        offset_z = 0.0
+
+        if geom_settings is not None:
+            try:
+                import ifcopenshell.geom
+                import numpy as np
+                shape = ifcopenshell.geom.create_shape(geom_settings, slab)
+                verts = np.array(shape.geometry.verts, dtype=np.float64).reshape(-1, 3)
+                if len(verts) > 0:
+                    if hasattr(shape, "transformation") and shape.transformation:
+                        T = np.array(shape.transformation.matrix, dtype=np.float64).reshape(4, 4)
+                        verts_world = (np.hstack([verts, np.ones((len(verts), 1))]) @ T)[:, :3]
+                    else:
+                        mat = ifcopenshell.util.placement.get_local_placement(slab.ObjectPlacement)
+                        verts_world = (verts @ mat[:3, :3].T) + mat[:3, 3]
+                    min_w = verts_world.min(axis=0)
+                    max_w = verts_world.max(axis=0)
+                    gx1 = get_or_create_grid_x(min_w[0])
+                    gy1 = get_or_create_grid_y(min_w[1])
+                    gx2 = get_or_create_grid_x(max_w[0])
+                    gy2 = get_or_create_grid_y(max_w[1])
+                    if (max_w[2] - min_w[2]) > 0.005:
+                        th = float(max_w[2] - min_w[2])
+                    offset_z = float(max_w[2] - st_elev)
+            except Exception:
+                area = float(dims.get("Area", 16.0)) if dims.get("Area") else 16.0
+                side = max(1.0, float(area) ** 0.5)
+                try:
+                    mat = ifcopenshell.util.placement.get_local_placement(slab.ObjectPlacement)
+                    sx, sy = float(mat[0, 3]), float(mat[1, 3])
+                except Exception:
+                    sx, sy = float(idx * 5.0), 0.0
+                gx1 = get_or_create_grid_x(sx)
+                gy1 = get_or_create_grid_y(sy)
+                gx2 = get_or_create_grid_x(sx + side)
+                gy2 = get_or_create_grid_y(sy + side)
+        else:
+            area = float(dims.get("Area", 16.0)) if dims.get("Area") else 16.0
+            side = max(1.0, float(area) ** 0.5)
+            try:
+                mat = ifcopenshell.util.placement.get_local_placement(slab.ObjectPlacement)
+                sx, sy = float(mat[0, 3]), float(mat[1, 3])
+            except Exception:
+                sx, sy = float(idx * 5.0), 0.0
+            gx1 = get_or_create_grid_x(sx)
+            gy1 = get_or_create_grid_y(sy)
+            gx2 = get_or_create_grid_x(sx + side)
+            gy2 = get_or_create_grid_y(sy + side)
+
         mat_id = resolve_material(slab, "CONC_280")
         elements.append(
             IfcSlab(
@@ -1253,6 +1289,7 @@ def import_ifc_to_manifest(
                     "placement": SlabPlacement(
                         boundary=[(gx1, gy1), (gx2, gy1), (gx2, gy2), (gx1, gy2)],
                         storey=st_id,
+                        offset_z=round(offset_z, 3),
                     ),
                 }
             )
@@ -1575,7 +1612,10 @@ def import_ifc_to_manifest(
     for member in ifc_file.by_type("IfcMember"):
         tag = member.Name or f"MEMBER-{member.GlobalId[:8]}"
         st_id = get_elem_storey(member)
-        placement, dims = extract_member_placement_and_dims(member, st_id)
+        if member.Name and "stair" in member.Name.lower():
+            placement, dims = extract_custom_placement_and_dims(member, st_id)
+        else:
+            placement, dims = extract_member_placement_and_dims(member, st_id)
         elements.append(
             IfcCustomElement(
                 **{
@@ -1667,7 +1707,7 @@ def import_ifc_to_manifest(
             tag = seg.Name or f"SEG-{seg.GlobalId[:8]}"
             st_id = get_elem_storey(seg)
             layer = "mep/pipes" if seg.is_a("IfcPipeSegment") else "mep/ducts"
-            placement, dims = extract_custom_placement_and_dims(seg, st_id)
+            placement, dims = extract_mep_spatial_placement_and_dims(seg, st_id)
             elements.append(
                 IfcCustomElement(
                     **{
@@ -1764,7 +1804,7 @@ def import_ifc_to_manifest(
             extracted_custom_ids.add(term.GlobalId)
             tag = term.Name or f"TERM-{term.GlobalId[:8]}"
             st_id = get_elem_storey(term)
-            if term_cls == "IfcAirTerminal":
+            if term_cls in ("IfcAirTerminal", "IfcFlowTerminal"):
                 placement, dims = extract_mep_spatial_placement_and_dims(term, st_id)
             else:
                 placement, dims = extract_custom_placement_and_dims(term, st_id)

@@ -84,6 +84,13 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
         th = float(wall.thickness)
         h = float(wall.height)
         m = trimesh.creation.box(extents=(l, th, h))
+        p0 = np.array(wall.start_point)
+        p1 = np.array(wall.end_point)
+        mid = (p0 + p1) / 2.0
+        yaw = math.atan2(p1[1] - p0[1], p1[0] - p0[0])
+        R = trimesh.transformations.rotation_matrix(yaw, [0, 0, 1])
+        m.apply_transform(R)
+        m.apply_translation([mid[0], mid[1], p0[2] + h / 2.0])
         meshes[wall.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
         for child in wall.children:
@@ -151,6 +158,11 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             w = max(w, 0.5)
             d = max(d, 0.5)
             m = trimesh.creation.box(extents=(w, d, th))
+            cx = float((np.max(pts[:, 0]) + np.min(pts[:, 0])) / 2.0)
+            cy = float((np.max(pts[:, 1]) + np.min(pts[:, 1])) / 2.0)
+            top_z = slab.polygon[0][2] if len(slab.polygon[0]) > 2 else slab.center[2]
+            cz = top_z - th / 2.0
+            m.apply_translation([cx, cy, cz])
             meshes[slab.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for cov in resolved.coverings:
@@ -193,15 +205,22 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             h = float(s.bounding_box.get("height", 0.1))
             r = float(s.radius)
 
-            m = trimesh.creation.cylinder(radius=min(w, d) / 2.0, height=h, sections=32)
-            t_min = np.min(m.vertices, axis=0)
-            t_max = np.max(m.vertices, axis=0)
-            t_span = np.maximum(t_max - t_min, 1e-6)
-            m.vertices = m.vertices * (np.array([w, d, h]) / t_span)
-            t_min = np.min(m.vertices, axis=0)
-            m.vertices = m.vertices - t_min + np.array([0.0016, 0.0016, 0.0016])
+            m = trimesh.creation.box(extents=(w, d, h))
+            cx = (s.bounding_box.get("min_x", 0.0) + s.bounding_box.get("max_x", 0.0)) / 2.0
+            cy = (s.bounding_box.get("min_y", 0.0) + s.bounding_box.get("max_y", 0.0)) / 2.0
+            cz = (s.bounding_box.get("min_z", 0.0) + s.bounding_box.get("max_z", 0.0)) / 2.0
+            m.apply_translation([cx, cy, cz])
 
-            meshes[custom.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+            mesh_tuple = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+            meshes[custom.tag] = mesh_tuple
+            src = getattr(custom.element, "source", "") if hasattr(custom, "element") else ""
+            if src.startswith("ifc/"):
+                elem_kind = src.split("/")[1]
+                meshes[f"{elem_kind}:{custom.tag}"] = mesh_tuple
+                meshes[f"flow{elem_kind}:{custom.tag}"] = mesh_tuple
+                meshes[f"ifcflow{elem_kind}:{custom.tag}"] = mesh_tuple
+            if getattr(custom, "layer", None):
+                meshes[f"{custom.layer}:{custom.tag}"] = mesh_tuple
         elif custom.dimensions:
             w = float(custom.dimensions.width)
             d = float(custom.dimensions.depth if custom.dimensions.depth is not None else w)
@@ -213,7 +232,14 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
                 m.apply_transform(T)
 
             m.apply_translation([custom.position[0], custom.position[1], custom.position[2] + h / 2.0])
-            meshes[custom.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+            mesh_tuple = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+            meshes[custom.tag] = mesh_tuple
+            src = getattr(custom.element, "source", "") if hasattr(custom, "element") else ""
+            if src.startswith("ifc/"):
+                elem_kind = src.split("/")[1]
+                meshes[f"{elem_kind}:{custom.tag}"] = mesh_tuple
+            if getattr(custom, "layer", None):
+                meshes[f"{custom.layer}:{custom.tag}"] = mesh_tuple
 
     for chim in getattr(resolved, "chimneys", []) or []:
         w, d, h = [float(x) for x in chim.dimensions]
@@ -578,7 +604,7 @@ def run_visual_regression(
         t = e.is_a()
         if t == "IfcWallStandardCase":
             t = "IfcWall"
-        if target_class and t.lower() != target_class.lower():
+        if target_class and t.lower() != target_class.lower() and not e.is_a(target_class):
             continue
         by_category.setdefault(t, []).append(e)
 
@@ -609,8 +635,14 @@ def run_visual_regression(
 
             tag = elem.Name or f"{cls_name}-{elem.GlobalId[:6]}"
 
-            # Find matching debim mesh by tag or prefix
-            debim_mesh = debim_meshes.get(tag)
+            # Find matching debim mesh by class-qualified tag or direct tag
+            elem_kind = cls_name.lower().replace("ifc", "")
+            debim_mesh = (
+                debim_meshes.get(f"{elem_kind}:{tag}")
+                or debim_meshes.get(f"{cls_name.lower()}:{tag}")
+                or debim_meshes.get(f"{cls_name}:{tag}")
+                or debim_meshes.get(tag)
+            )
             if not debim_mesh:
                 # Fuzzy fallback by matching ID or class
                 for k, v in debim_meshes.items():
@@ -690,11 +722,12 @@ def run_visual_regression(
         class_ious.setdefault(r["class"], []).append(r["iou"])
 
     class_summary: Dict[str, Dict[str, Any]] = {}
-    structural_classes = {"IfcWall", "IfcColumn", "IfcBeam", "IfcSlab", "IfcFooting", "IfcMember", "IfcPlate", "IfcChimney"}
+    structural_classes = {"IfcWall", "IfcColumn", "IfcBeam", "IfcSlab", "IfcFooting", "IfcMember", "IfcPlate", "IfcChimney", "IfcStairFlight"}
     mep_classes = {
         "IfcPipeSegment", "IfcPipeFitting", "IfcDuctSegment", "IfcDuctFitting",
         "IfcDistributionPort", "IfcFlowTerminal", "IfcAirTerminal",
-        "IfcEnergyConversionDevice", "IfcFlowMovingDevice"
+        "IfcEnergyConversionDevice", "IfcFlowMovingDevice", "IfcFlowSegment",
+        "IfcFlowFitting",
     }
 
     struct_matches: List[float] = []
