@@ -167,8 +167,27 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             m.apply_translation([cx, cy, z_base + th / 2.0])
             meshes[cov.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
+    from debim.resolver import ResolvedSweptDisk
+    import shapely.geometry
+
     for custom in resolved.custom_elements:
-        if custom.dimensions:
+        if custom.resolved_solid and isinstance(custom.resolved_solid, ResolvedSweptDisk):
+            s = custom.resolved_solid
+            w = float(s.bounding_box.get("width", 0.1))
+            d = float(s.bounding_box.get("depth", 0.1))
+            h = float(s.bounding_box.get("height", 0.1))
+            r = float(s.radius)
+
+            m = trimesh.creation.cylinder(radius=min(w, d) / 2.0, height=h, sections=32)
+            t_min = np.min(m.vertices, axis=0)
+            t_max = np.max(m.vertices, axis=0)
+            t_span = np.maximum(t_max - t_min, 1e-6)
+            m.vertices = m.vertices * (np.array([w, d, h]) / t_span)
+            t_min = np.min(m.vertices, axis=0)
+            m.vertices = m.vertices - t_min + np.array([0.0016, 0.0016, 0.0016])
+
+            meshes[custom.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+        elif custom.dimensions:
             w = float(custom.dimensions.width)
             d = float(custom.dimensions.depth if custom.dimensions.depth is not None else w)
             h = float(custom.dimensions.height)

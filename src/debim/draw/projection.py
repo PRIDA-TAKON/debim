@@ -579,47 +579,78 @@ def slice_storey(
                 },
             ))
 
-    # Process Custom Elements (Cut & Low Projection)
+    # Process Custom Elements & IfcFlowFitting (Cut & Low Projection)
+    from debim.resolver import ResolvedSweptDisk
     for custom in getattr(resolved, "custom_elements", []) or []:
-        cx, cy, cz = custom.position
-        all_2d_points.append((cx, cy))
-        if custom.dimensions:
-            w = custom.dimensions.width
-            d = custom.dimensions.depth if custom.dimensions.depth is not None else w
-            h = custom.dimensions.height
+        elem_cls = "IfcFlowFitting" if ("fitting" in (custom.layer or "").lower() or "fitting" in custom.tag.lower() or any(kw in custom.tag.lower() for kw in ["elbow", "tee", "transition", "bend", "reducer"])) else "IfcCustomElement"
+        if custom.resolved_solid and isinstance(custom.resolved_solid, ResolvedSweptDisk):
+            s = custom.resolved_solid
+            min_z = s.bounding_box.get("min_z", s.centroid[2] - 0.1)
+            max_z = s.bounding_box.get("max_z", s.centroid[2] + 0.1)
+
+            cx, cy = s.centroid[0], s.centroid[1]
+            all_2d_points.append((cx, cy))
+            r = s.radius
+            fit_poly = Point(cx, cy).buffer(r)
+
+            if min_z <= cut_elev <= max_z:
+                cut_elements.append(CutElement(
+                    tag=custom.tag,
+                    element_class=elem_cls,
+                    category="medium_cut",
+                    geometry=fit_poly,
+                    layer=custom.layer,
+                    properties={"radius": r, "centroid": s.centroid},
+                ))
+            elif max_z <= cut_elev:
+                projection_elements.append(ProjectionElement(
+                    tag=custom.tag,
+                    element_class=elem_cls,
+                    category="low_projection",
+                    geometry=fit_poly,
+                    layer=custom.layer,
+                    properties={"radius": r, "centroid": s.centroid},
+                ))
         else:
-            w, d, h = 0.3, 0.3, 0.3
+            cx, cy, cz = custom.position
+            all_2d_points.append((cx, cy))
+            if custom.dimensions:
+                w = custom.dimensions.width
+                d = custom.dimensions.depth if custom.dimensions.depth is not None else w
+                h = custom.dimensions.height
+            else:
+                w, d, h = 0.3, 0.3, 0.3
 
-        c_base_z = cz
-        c_top_z = cz + h
-        rot_z = custom.rotation[2] if (custom.rotation and len(custom.rotation) >= 3) else 0.0
-        custom_poly = _create_rotated_box(cx, cy, w, d, rot_z)
+            c_base_z = cz
+            c_top_z = cz + h
+            rot_z = custom.rotation[2] if (custom.rotation and len(custom.rotation) >= 3) else 0.0
+            custom_poly = _create_rotated_box(cx, cy, w, d, rot_z)
 
-        if c_base_z <= cut_elev <= c_top_z:
-            cut_elements.append(CutElement(
-                tag=custom.tag,
-                element_class="IfcCustomElement",
-                category="medium_cut",
-                geometry=custom_poly,
-                centerline=Point(cx, cy),
-                layer=custom.layer,
-                properties={
-                    "layer": custom.layer,
-                    "dimensions": [w, d, h],
-                },
-            ))
-        elif c_top_z <= cut_elev:
-            projection_elements.append(ProjectionElement(
-                tag=custom.tag,
-                element_class="IfcCustomElement",
-                category="low_projection",
-                geometry=custom_poly,
-                layer=custom.layer,
-                properties={
-                    "layer": custom.layer,
-                    "dimensions": [w, d, h],
-                },
-            ))
+            if c_base_z <= cut_elev <= c_top_z:
+                cut_elements.append(CutElement(
+                    tag=custom.tag,
+                    element_class=elem_cls,
+                    category="medium_cut",
+                    geometry=custom_poly,
+                    centerline=Point(cx, cy),
+                    layer=custom.layer,
+                    properties={
+                        "layer": custom.layer,
+                        "dimensions": [w, d, h],
+                    },
+                ))
+            elif c_top_z <= cut_elev:
+                projection_elements.append(ProjectionElement(
+                    tag=custom.tag,
+                    element_class=elem_cls,
+                    category="low_projection",
+                    geometry=custom_poly,
+                    layer=custom.layer,
+                    properties={
+                        "layer": custom.layer,
+                        "dimensions": [w, d, h],
+                    },
+                ))
 
     # Process Flow Controllers (Cut & Low Projection)
     for fc in getattr(resolved, "flow_controllers", []):
