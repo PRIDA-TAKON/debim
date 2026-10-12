@@ -104,11 +104,12 @@ def test_covering_default_thickness_fallback(tmp_path):
 
 def test_extract_stairs_railings_members(duplex_manifest):
     """Verify stairs, stair flights, railings, and structural members are extracted."""
+    from debim.schema import IfcRailing
     customs = [e for e in duplex_manifest.elements if isinstance(e, IfcCustomElement)]
+    railings = [e for e in duplex_manifest.elements if isinstance(e, IfcRailing)]
 
     stairs = [c for c in customs if c.layer and "stairs" in c.layer and "stairflights" not in c.layer]
     flights = [c for c in customs if c.layer and "stairflights" in c.layer]
-    railings = [c for c in customs if c.layer and "railings" in c.layer]
     members = [c for c in customs if c.layer and "members" in c.layer]
 
     assert len(stairs) == 2, f"Expected 2 stairs, got {len(stairs)}"
