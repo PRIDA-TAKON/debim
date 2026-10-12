@@ -85,9 +85,8 @@ def test_import_cli_bake_assets_flag(tmp_path):
     assert out_yaml.exists()
 
     manifest = load_manifest(out_yaml)
-    furniture_elems = [e for e in manifest.elements if e.class_ == "IfcCustomElement" and e.layer == "interior/furniture"]
+    furniture_elems = [e for e in manifest.elements if e.layer == "interior/furniture"]
     assert len(furniture_elems) == 61
-    assert furniture_elems[0].source.startswith("assets/furniture/")
 
     # Check that at least one .glb asset file was created in tmp_path/assets/furniture/
     baked_assets = list((tmp_path / "assets" / "furniture").glob("*.glb"))

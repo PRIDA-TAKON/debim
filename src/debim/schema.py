@@ -1289,6 +1289,27 @@ class IfcDistributionPort(BaseModel):
         return v
 
 
+class FurniturePlacement(BaseModel):
+    position: Tuple[float, float, float]
+    storey: str
+    rotation: Optional[Tuple[float, float, float]] = None
+
+
+class IfcFurniture(BaseModel):
+    class_: Literal["IfcFurniture"] = Field(alias="class", default="IfcFurniture")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = None
+    dimensions: Optional[Dimensions] = None
+    placement: FurniturePlacement
+    properties: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    layer: Optional[str] = None
+
+
+class IfcFurnishingElement(IfcFurniture):
+    class_: Literal["IfcFurnishingElement"] = Field(alias="class", default="IfcFurnishingElement")
+
+
 class CustomElementPlacement(BaseModel):
     position: Tuple[float, float, float]
     storey: str
@@ -3013,6 +3034,8 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcMarinePart",
     "IfcMooringDevice",
     "IfcNavigationElement",
+    "IfcFurniture",
+    "IfcFurnishingElement",
     "IfcCustomElement",
 } | IFC4_DISTRIBUTION_CLASSES
 
@@ -3040,7 +3063,8 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
     "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
     "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcMarineFacility",
-    "IfcMarinePart", "IfcMooringDevice", "IfcNavigationElement", "IfcDistributionFlowElement", "IfcCustomElement", "IfcBuildingElementProxy"
+    "IfcMarinePart", "IfcMooringDevice", "IfcNavigationElement", "IfcDistributionFlowElement",
+    "IfcFurniture", "IfcFurnishingElement", "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
 
@@ -3107,6 +3131,8 @@ Element = Annotated[
         Annotated[IfcMooringDevice, Tag("IfcMooringDevice")],
         Annotated[IfcNavigationElement, Tag("IfcNavigationElement")],
         Annotated[IfcDistributionFlowElement, Tag("IfcDistributionFlowElement")],
+        Annotated[IfcFurniture, Tag("IfcFurniture")],
+        Annotated[IfcFurnishingElement, Tag("IfcFurnishingElement")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -3769,6 +3795,8 @@ def derive_default_layer(elem) -> str:
         return "civil/infrastructure/bridges/bearings"
     elif cls == "IfcMarineFacility":
         return "civil/marine/facility"
+    elif cls in ("IfcFurniture", "IfcFurnishingElement"):
+        return "interior/furniture"
     elif cls == "IfcCustomElement":
         return "general/custom"
     elif cls == "IfcBuildingElementProxy" or isinstance(elem, IfcBuildingElementProxy):

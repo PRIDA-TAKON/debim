@@ -36,6 +36,8 @@ from debim.schema import (
     IfcEarthworksCut,
     IfcEarthworksFill,
     IfcElectricDistributionBoard,
+    IfcFurnishingElement,
+    IfcFurniture,
     IfcGeotechnicalStratum,
     IfcSoil,
     IfcFlowController,
@@ -370,6 +372,19 @@ class ResolvedRevolvedArea(BaseModel):
     distance_to_axis: float
     profile_area: float
     profile_perimeter: float
+
+
+class ResolvedFurniture(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: Union[IfcFurniture, IfcFurnishingElement]
+    ifc_class: str = "IfcFurniture"
+    position: Tuple[float, float, float]
+    rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    dimensions: Tuple[float, float, float]
+    bounding_box: Dict[str, float]
+    layer: str = "interior/furniture"
 
 
 class ResolvedCustomElement(BaseModel):
@@ -1541,6 +1556,7 @@ ResolvedElement = Union[
     ResolvedMooringDevice,
     ResolvedNavigationElement,
     ResolvedDistributionFlowElement,
+    ResolvedFurniture,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1601,6 +1617,7 @@ class ResolvedManifest(BaseModel):
     mooring_devices: List[ResolvedMooringDevice] = []
     navigation_elements: List[ResolvedNavigationElement] = []
     distribution_flow_elements: List[ResolvedDistributionFlowElement] = []
+    furniture: List[ResolvedFurniture] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -1874,6 +1891,40 @@ class SpatialResolver:
         )
 
         return r_wall, resolved_doors, resolved_windows
+
+    def resolve_furniture(
+        self, furn: Union[IfcFurniture, IfcFurnishingElement]
+    ) -> ResolvedFurniture:
+        storey = self.get_storey(furn.placement.storey)
+        pos_x, pos_y, pos_z = furn.placement.position
+        world_pos = (pos_x, pos_y, storey.elevation + pos_z)
+        rot = furn.placement.rotation if furn.placement.rotation is not None else (0.0, 0.0, 0.0)
+
+        w = furn.dimensions.width if furn.dimensions else 0.8
+        d = furn.dimensions.depth if furn.dimensions and furn.dimensions.depth is not None else w
+        h = furn.dimensions.height if furn.dimensions else 0.8
+        vol = w * d * h
+
+        bbox = {
+            "min_x": world_pos[0] - w / 2.0, "max_x": world_pos[0] + w / 2.0,
+            "min_y": world_pos[1] - d / 2.0, "max_y": world_pos[1] + d / 2.0,
+            "min_z": world_pos[2], "max_z": world_pos[2] + h,
+            "width": w, "depth": d, "height": h,
+            "volume": vol,
+        }
+
+        ifc_cls = getattr(furn, "class_", "IfcFurniture")
+
+        return ResolvedFurniture(
+            tag=furn.tag,
+            element=furn,
+            ifc_class=ifc_cls,
+            position=world_pos,
+            rotation=rot,
+            dimensions=(w, d, h),
+            bounding_box=bbox,
+            layer=derive_default_layer(furn),
+        )
 
     def resolve_custom_element(
         self, custom: IfcCustomElement
@@ -6483,6 +6534,10 @@ class SpatialResolver:
                 r_dfe = self.resolve_distribution_flow_element(elem)
                 resolved_manifest.distribution_flow_elements.append(r_dfe)
                 resolved_manifest.elements.append(r_dfe)
+            elif isinstance(elem, (IfcFurniture, IfcFurnishingElement)):
+                r_furn = self.resolve_furniture(elem)
+                resolved_manifest.furniture.append(r_furn)
+                resolved_manifest.elements.append(r_furn)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

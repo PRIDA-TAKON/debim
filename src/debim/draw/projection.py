@@ -559,7 +559,27 @@ def slice_storey(
                 },
             ))
 
-    # 6. Process Sanitary & MEP Terminals (Low Projection)
+    # 6. Process Furniture (Low Projection / Medium Cut)
+    for furn in getattr(resolved, "furniture", []) or []:
+        if furn.position[2] <= cut_elev:
+            fx, fy, _ = furn.position
+            all_2d_points.append((fx, fy))
+            w, d, _ = furn.dimensions
+            rot_z_deg = math.degrees(furn.rotation[2]) if (furn.rotation and len(furn.rotation) >= 3) else 0.0
+            furn_poly = _create_rotated_box(fx, fy, w, d, rot_z_deg)
+
+            projection_elements.append(ProjectionElement(
+                tag=furn.tag,
+                element_class=furn.ifc_class,
+                category="low_projection",
+                geometry=furn_poly,
+                layer=furn.layer,
+                properties={
+                    "dimensions": furn.dimensions,
+                },
+            ))
+
+    # 7. Process Sanitary & MEP Terminals (Low Projection)
     for term in resolved.sanitary_terminals:
         if term.position[2] <= cut_elev:
             tx, ty, _ = term.position

@@ -39,7 +39,7 @@ def test_precision_elevation_correctness():
 
     # Find upper floor furniture (e.g. beds with tag M_Bed-Standard)
     beds = [
-        c for c in resolved.custom_elements if "Bed" in c.tag
+        c for c in resolved.furniture if "Bed" in c.tag
     ]
     assert len(beds) > 0
 
