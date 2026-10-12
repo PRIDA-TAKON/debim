@@ -1219,6 +1219,24 @@ def generate_viewer_html(
             "layer": md.layer,
         })
 
+    # Discrete Accessories (IfcDiscreteAccessory)
+    for da in getattr(resolved, "discrete_accessories", []) or []:
+        elements_data.append({
+            "tag": da.tag,
+            "class": "IfcDiscreteAccessory",
+            "predefined_type": da.predefined_type,
+            "material": da.element.material or "Steel Accessory",
+            "position": [da.position[0], da.position[1], da.position[2] + da.height / 2.0],
+            "rotation": list(da.rotation) if da.rotation else [0, 0, 0],
+            "dimensions": {
+                "width": da.width,
+                "depth": da.depth,
+                "height": da.height,
+            },
+            "color": "#475569",
+            "layer": da.layer,
+        })
+
     # Civil Infrastructure Bearings (IFC4.3)
     for br in getattr(resolved, "bearings", []) or []:
         elements_data.append({
