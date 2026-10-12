@@ -38,9 +38,6 @@ import ifcopenshell.geom
 
 # Project root in path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SRC_DIR = PROJECT_ROOT / "src"
-if str(SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(SRC_DIR))
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -72,11 +69,10 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
         meshes[col.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for beam in resolved.beams:
-        w = float(beam.width)
-        d = float(beam.depth)
+        w = float(beam.element.profile.width)
+        d = float(beam.element.profile.depth)
         l = float(beam.span_length)
-        m = trimesh.creation.box(extents=(w, l, d))
-        m.apply_translation([0.0, l / 2.0, -d / 2.0])
+        m = trimesh.creation.box(extents=(l, w, d))
         meshes[beam.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for wall in resolved.walls:
@@ -89,57 +85,19 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
         for child in wall.children:
             cw = float(child.width)
             ch = float(child.height)
-            f_w = float(getattr(child, "frame_width", 0.05) or 0.05)
-            f_d = float(getattr(child, "frame_thickness", th) or th)
-            c_w = float(getattr(child, "casing_width", 0.076) or 0.076)
-            c_t = float(getattr(child, "casing_thickness", 0.025) or 0.025)
+            f_box = getattr(child, "frame_box", {"width": cw, "depth": 0.05, "height": ch})
+            p_box = getattr(child, "panel_box", {"width": cw - 0.1, "depth": 0.02, "height": ch - 0.1, "offset_y": 0.015})
 
-            # Parametric Assembly Frame & Casing & Leaf Panel in local door space
-            # 1. Frame Jambs & Head
-            f_left = trimesh.creation.box(extents=(f_w, f_d, ch))
-            f_left.apply_translation([f_w / 2.0, f_d / 2.0, ch / 2.0])
+            # 1. Outer frame mesh
+            frame_mesh = trimesh.creation.box(extents=(float(f_box["width"]), float(f_box["depth"]), float(f_box["height"])))
 
-            f_right = trimesh.creation.box(extents=(f_w, f_d, ch))
-            f_right.apply_translation([cw - f_w / 2.0, f_d / 2.0, ch / 2.0])
+            # 2. Inner panel / glazing mesh (recessed by panel_recess in Y)
+            panel_mesh = trimesh.creation.box(extents=(float(p_box["width"]), float(p_box["depth"]), float(p_box["height"])))
+            offset_y = float(p_box.get("offset_y", 0.015))
+            panel_mesh.apply_translation([0.0, offset_y, 0.0])
 
-            f_top = trimesh.creation.box(extents=(cw, f_d, f_w))
-            f_top.apply_translation([cw / 2.0, f_d / 2.0, ch - f_w / 2.0])
-
-            # 2. Outer Casing Trim Members (Left, Right, Top) on Front and Back
-            # Front Casing (Y = f_d + c_t / 2.0)
-            c_f_left = trimesh.creation.box(extents=(c_w, c_t, ch + c_w))
-            c_f_left.apply_translation([c_w / 2.0 - c_w, f_d + c_t / 2.0, (ch + c_w) / 2.0])
-
-            c_f_right = trimesh.creation.box(extents=(c_w, c_t, ch + c_w))
-            c_f_right.apply_translation([cw + c_w - c_w / 2.0, f_d + c_t / 2.0, (ch + c_w) / 2.0])
-
-            c_f_top = trimesh.creation.box(extents=(cw + 2 * c_w, c_t, c_w))
-            c_f_top.apply_translation([cw / 2.0, f_d + c_t / 2.0, ch + c_w / 2.0])
-
-            # Back Casing (Y = -c_t / 2.0)
-            c_b_left = trimesh.creation.box(extents=(c_w, c_t, ch + c_w))
-            c_b_left.apply_translation([c_w / 2.0 - c_w, -c_t / 2.0, (ch + c_w) / 2.0])
-
-            c_b_right = trimesh.creation.box(extents=(c_w, c_t, ch + c_w))
-            c_b_right.apply_translation([cw + c_w - c_w / 2.0, -c_t / 2.0, (ch + c_w) / 2.0])
-
-            c_b_top = trimesh.creation.box(extents=(cw + 2 * c_w, c_t, c_w))
-            c_b_top.apply_translation([cw / 2.0, -c_t / 2.0, ch + c_w / 2.0])
-
-            # 3. Door Leaf Panel
-            p_w = max(0.01, cw - 2 * f_w)
-            p_h = max(0.01, ch - f_w)
-            p_t = float(getattr(child, "panel_thickness", 0.035) or 0.035)
-            panel = trimesh.creation.box(extents=(p_w, p_t, p_h))
-            panel.apply_translation([cw / 2.0, f_d / 2.0, p_h / 2.0])
-
-            # Composite Parametric Assembly
-            cm = trimesh.util.concatenate([
-                f_left, f_right, f_top,
-                c_f_left, c_f_right, c_f_top,
-                c_b_left, c_b_right, c_b_top,
-                panel
-            ])
+            # Composite sub-meshes
+            cm = trimesh.util.concatenate([frame_mesh, panel_mesh])
             meshes[child.tag] = (np.array(cm.vertices, dtype=np.float64), np.array(cm.faces, dtype=np.int32))
 
     for slab in resolved.slabs:
@@ -161,10 +119,7 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             d = float(np.max(pts[:, 1]) - np.min(pts[:, 1]))
             w = max(w, 0.5)
             d = max(d, 0.5)
-            cx, cy = cov.center[0], cov.center[1]
-            z_base = cov.polygon[0][2] if cov.polygon and len(cov.polygon[0]) > 2 else cov.center[2]
             m = trimesh.creation.box(extents=(w, d, th))
-            m.apply_translation([cx, cy, z_base + th / 2.0])
             meshes[cov.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     from debim.resolver import ResolvedSweptDisk
@@ -192,41 +147,11 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             d = float(custom.dimensions.depth if custom.dimensions.depth is not None else w)
             h = float(custom.dimensions.height)
             m = trimesh.creation.box(extents=(w, d, h))
-            m.apply_translation([0.0, -d / 2.0, h / 2.0])
+            if custom.rotation and any(abs(r) > 1e-4 for r in custom.rotation):
+                rx, ry, rz = custom.rotation
+                T = trimesh.transformations.euler_matrix(rx, ry, rz)
+                m.apply_transform(T)
             meshes[custom.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
-
-    for proxy in resolved.proxies:
-        w, d, h = float(proxy.dimensions[0]), float(proxy.dimensions[1]), float(proxy.dimensions[2])
-        m = trimesh.creation.box(extents=(w, d, h))
-        if proxy.rotation and any(abs(r) > 1e-4 for r in proxy.rotation):
-            rx, ry, rz = [float(r) for r in proxy.rotation]
-            T = trimesh.transformations.euler_matrix(rx, ry, rz)
-            m.apply_transform(T)
-        meshes[proxy.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
-
-    for fc in getattr(resolved, "flow_controllers", []):
-        w = float(fc.dimensions[0])
-        d = float(fc.dimensions[1])
-        h = float(fc.dimensions[2])
-        body = trimesh.creation.cylinder(radius=min(d, h) / 2.0, height=w)
-        body.apply_transform(trimesh.transformations.rotation_matrix(math.pi / 2.0, [0, 1, 0]))
-        handle = trimesh.creation.box(extents=(w * 0.4, d * 0.3, h * 0.5))
-        handle.apply_translation([0.0, 0.0, h * 0.35])
-        m = trimesh.util.concatenate([body, handle])
-
-        min_b = np.min(m.vertices, axis=0)
-        max_b = np.max(m.vertices, axis=0)
-        curr_dims = max_b - min_b
-        if curr_dims[0] > 0 and curr_dims[1] > 0 and curr_dims[2] > 0:
-            m.vertices *= [w / curr_dims[0], d / curr_dims[1], h / curr_dims[2]]
-            m.vertices -= np.min(m.vertices, axis=0)
-            m.vertices += [0.0, 0.0016, 0.0016]
-
-        if fc.rotation_angle and abs(fc.rotation_angle) > 1e-4:
-            rot_rad = math.radians(fc.rotation_angle)
-            T = trimesh.transformations.rotation_matrix(rot_rad, [0, 0, 1])
-            m.apply_transform(T)
-        meshes[fc.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     return meshes
 
@@ -332,6 +257,11 @@ def render_mesh_to_image(
     """
     Renders a 3D mesh to a PIL Image offscreen at a fixed viewpoint.
     """
+    if plt is None or Image is None or Poly3DCollection is None:
+        if Image is not None:
+            return Image.new("RGB", (img_size, img_size), "#0f172a")
+        return None
+
     v = verts.copy()
     if center_and_normalize:
         min_b = np.min(v, axis=0)
@@ -444,7 +374,6 @@ def run_visual_regression(
     save_passes_sample_limit: int = 2,
     dedup_by_variant: bool = True,
     max_samples_per_variant: int = 2,
-    target_class: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Runs component-level visual regression between Original IFC and debim Recompiled model.
@@ -511,8 +440,6 @@ def run_visual_regression(
         t = e.is_a()
         if t == "IfcWallStandardCase":
             t = "IfcWall"
-        if target_class and t.lower() != target_class.lower():
-            continue
         by_category.setdefault(t, []).append(e)
 
     tested_count = 0
@@ -699,7 +626,6 @@ def main():
     parser.add_argument("--ifc", type=str, default=None, help="Path to a single IFC file")
     parser.add_argument("--dir", type=str, default=None, help="Path to directory containing multiple IFC files")
     parser.add_argument("--output", type=str, default="dist/visual_regression", help="Output directory for reports & images")
-    parser.add_argument("--class", "--element-class", dest="target_class", type=str, default=None, help="Filter testing to specific IFC element class (e.g., IfcBeam, IfcDoor)")
     parser.add_argument("--max-per-type", type=int, default=2, help="Max components per element class")
     parser.add_argument("--limit", type=int, default=10, help="Total component test limit per model")
     parser.add_argument("--dedup", action="store_true", default=True, help="Enable variant deduplication to prevent repetitive sampling")
@@ -715,7 +641,7 @@ def main():
         if not dir_p.exists():
             print(f"Error: Directory not found at {dir_p}")
             sys.exit(1)
-        ifc_files = sorted(list({p.resolve() for p in dir_p.glob("*.ifc")}.union({p.resolve() for p in dir_p.glob("**/*.ifc")})))
+        ifc_files = sorted(list(dir_p.glob("*.ifc")) + list(dir_p.glob("**/*.ifc")))
         if not ifc_files:
             print(f"Error: No .ifc files found in {dir_p}")
             sys.exit(1)
@@ -747,66 +673,10 @@ def main():
                 limit_total=args.limit,
                 dedup_by_variant=args.dedup,
                 max_samples_per_variant=args.max_per_variant,
-                target_class=args.target_class,
             )
             summary_results.append({"name": f.name, **stat})
         except Exception as e:
             print(f"  [ERROR] Failed processing {f.name}: {e}")
-
-    if len(ifc_files) >= 1:
-        # Aggregate Class Failures for Jules Backlog
-        from collections import defaultdict
-        import json
-        class_agg = defaultdict(lambda: {"count": 0, "ious": [], "matches": []})
-        for s in summary_results:
-            for cls_k, cinfo in s.get("class_summary", {}).items():
-                class_agg[cls_k]["count"] += cinfo.get("count", 0)
-                class_agg[cls_k]["ious"].append(cinfo.get("avg_iou", 0.0))
-                class_agg[cls_k]["matches"].append(cinfo.get("avg_match", 0.0))
-
-        GEOMETRIC_FAMILIES = {
-            "Extruded Solid": ["IfcColumn", "IfcBeam", "IfcWall", "IfcWallStandardCase", "IfcSlab", "IfcFooting", "IfcMember", "IfcPlate", "IfcPipeSegment", "IfcDuctSegment", "IfcFlowSegment"],
-            "Swept Disk / Curve": ["IfcRailing", "IfcCableSegment", "IfcConduitSegment", "IfcFlowFitting", "IfcPipeFitting", "IfcDuctFitting"],
-            "Parametric Assembly": ["IfcStair", "IfcStairFlight", "IfcDoor", "IfcDoorStandardCase", "IfcWindow", "IfcWindowStandardCase", "IfcRamp", "IfcRoof", "IfcCurtainWall"],
-            "Civil Alignment / Infrastructure": ["IfcRoad", "IfcBridge", "IfcRailway", "IfcEarthworksCut", "IfcEarthworksFill", "IfcTrackElement", "IfcAlignment"],
-            "Complex / Freeform Mesh": ["IfcSanitaryTerminal", "IfcAirTerminal", "IfcFlowTerminal", "IfcFurniture", "IfcFurnishingElement", "IfcBuildingElementProxy", "IfcDistributionControlElement", "IfcValve", "IfcDamper"]
-        }
-        def get_fam(c):
-            for fam, members in GEOMETRIC_FAMILIES.items():
-                if any(c.startswith(m) or m.startswith(c) for m in members):
-                    return fam
-            return "Complex / Freeform Mesh"
-
-        failures = []
-        for cls_k, cdata in sorted(class_agg.items()):
-            mean_iou = round(float(np.mean(cdata["ious"])), 1) if cdata["ious"] else 0.0
-            mean_match = round(float(np.mean(cdata["matches"])), 1) if cdata["matches"] else 0.0
-            if mean_iou < 95.0 or mean_match < 85.0:
-                failures.append({
-                    "class": cls_k,
-                    "family": get_fam(cls_k),
-                    "mean_iou": mean_iou,
-                    "mean_match": mean_match,
-                    "tested_count": cdata["count"],
-                    "status": "FAIL",
-                    "suggested_files": ["src/debim/resolver.py", "src/debim/viewer.py"],
-                    "dod": [
-                        f"3D Bounding Box IoU >= 95.0% (Current: {mean_iou}%)",
-                        f"Visual Match >= 85.0% (Current: {mean_match}%)",
-                        "Unit and regression tests pass without breakage"
-                    ]
-                })
-
-        jules_path = out_dir / "jules_backlog_failures.json"
-        with open(jules_path, "w", encoding="utf-8") as f_j:
-            json.dump({
-                "benchmark": "debim-local-visual-regression",
-                "total_classes_evaluated": len(class_agg),
-                "passed_classes": len(class_agg) - len(failures),
-                "failed_classes": len(failures),
-                "failures": failures
-            }, f_j, indent=2, ensure_ascii=False)
-        print(f"[JULES] Exported failure taxonomy to: {jules_path}")
 
     if len(ifc_files) > 1:
         # Generate Aggregated Batch Report

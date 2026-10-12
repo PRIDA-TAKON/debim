@@ -421,13 +421,13 @@ class SheetRenderer:
             '  <!-- Background -->',
             f'  <rect x="0" y="0" width="{paper_w:.1f}" height="{paper_h:.1f}" fill="#ffffff" />',
             '  <!-- Outer Sheet Border & Margin -->',
-            f'  <rect x="{printable_x:.1f}" y="{printable_y:.1f}" width="{printable_w:.1f}" height="{printable_h:.1f}" class="sheet-border" fill="none" />',
+            f'  <rect x="{printable_x:.1f}" y="{printable_y:.1f}" width="{printable_w:.1f}" height="{printable_h:.1f}" class="sheet-border" />',
         ]
 
         # Inner Margin Line
         inner_m = 2.0
         svg_lines.append(
-            f'  <rect x="{printable_x + inner_m:.1f}" y="{printable_y + inner_m:.1f}" width="{printable_w - 2*inner_m:.1f}" height="{printable_h - 2*inner_m:.1f}" class="sheet-inner-border" fill="none" />'
+            f'  <rect x="{printable_x + inner_m:.1f}" y="{printable_y + inner_m:.1f}" width="{printable_w - 2*inner_m:.1f}" height="{printable_h - 2*inner_m:.1f}" class="sheet-inner-border" />'
         )
 
         # Group for Model Geometry
@@ -1064,12 +1064,12 @@ class SheetRenderer:
             '  <!-- Background -->',
             f'  <rect x="0" y="0" width="{paper_w:.1f}" height="{paper_h:.1f}" fill="#ffffff" />',
             '  <!-- Outer Sheet Border & Margin -->',
-            f'  <rect x="{printable_x:.1f}" y="{printable_y:.1f}" width="{printable_w:.1f}" height="{printable_h:.1f}" class="sheet-border" fill="none" />',
+            f'  <rect x="{printable_x:.1f}" y="{printable_y:.1f}" width="{printable_w:.1f}" height="{printable_h:.1f}" class="sheet-border" />',
         ]
 
         inner_m = 2.0
         svg_lines.append(
-            f'  <rect x="{printable_x + inner_m:.1f}" y="{printable_y + inner_m:.1f}" width="{printable_w - 2*inner_m:.1f}" height="{printable_h - 2*inner_m:.1f}" class="sheet-inner-border" fill="none" />'
+            f'  <rect x="{printable_x + inner_m:.1f}" y="{printable_y + inner_m:.1f}" width="{printable_w - 2*inner_m:.1f}" height="{printable_h - 2*inner_m:.1f}" class="sheet-inner-border" />'
         )
 
         svg_lines.append('  <g id="drawing-viewport">')
@@ -1321,11 +1321,11 @@ class SheetRenderer:
             '  </defs>',
             '  <!-- Background -->',
             f'  <rect x="0" y="0" width="{paper_w:.1f}" height="{paper_h:.1f}" fill="#ffffff" />',
-            f'  <rect x="{printable_x:.1f}" y="{printable_y:.1f}" width="{printable_w:.1f}" height="{printable_h:.1f}" class="sheet-border" fill="none" />',
+            f'  <rect x="{printable_x:.1f}" y="{printable_y:.1f}" width="{printable_w:.1f}" height="{printable_h:.1f}" class="sheet-border" />',
         ]
 
         inner_m = 2.0
-        svg_lines.append(f'  <rect x="{printable_x + inner_m:.1f}" y="{printable_y + inner_m:.1f}" width="{printable_w - 2*inner_m:.1f}" height="{printable_h - 2*inner_m:.1f}" class="sheet-inner-border" fill="none" />')
+        svg_lines.append(f'  <rect x="{printable_x + inner_m:.1f}" y="{printable_y + inner_m:.1f}" width="{printable_w - 2*inner_m:.1f}" height="{printable_h - 2*inner_m:.1f}" class="sheet-inner-border" />')
 
         svg_lines.append('  <g id="drawing-viewport">')
 

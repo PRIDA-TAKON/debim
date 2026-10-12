@@ -212,22 +212,6 @@ class ResolvedBeam(BaseModel):
     waypoints: List[Tuple[float, float, float]] = []
     layer: str = "structure/framing/beams"
 
-    @property
-    def width(self) -> float:
-        prof = self.element.profile
-        w = getattr(prof, "width", getattr(prof, "overall_width", getattr(prof, "flange_width", None)))
-        if w is None:
-            w = getattr(prof, "diameter", getattr(prof, "radius", 0.2))
-        return float(w)
-
-    @property
-    def depth(self) -> float:
-        prof = self.element.profile
-        d = getattr(prof, "depth", getattr(prof, "overall_depth", None))
-        if d is None:
-            d = getattr(prof, "diameter", getattr(prof, "radius", 0.4))
-        return float(d)
-
 
 class ResolvedDoor(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -239,10 +223,8 @@ class ResolvedDoor(BaseModel):
     height: float
     offset_distance: float
     sill_height: float
-    frame_thickness: float = 0.15
+    frame_thickness: float = 0.05
     frame_width: float = 0.05
-    casing_width: float = 0.076
-    casing_thickness: float = 0.025
     panel_recess: float = 0.015
     panel_thickness: float = 0.035
     operation_type: Optional[str] = None
@@ -267,21 +249,10 @@ class ResolvedDoor(BaseModel):
         }
 
     @property
-    def casing_box(self) -> Dict[str, float]:
-        return {
-            "width": self.width + 2 * self.casing_width,
-            "depth": self.frame_thickness + 2 * self.casing_thickness,
-            "height": self.height + self.casing_width,
-            "casing_width": self.casing_width,
-            "casing_thickness": self.casing_thickness,
-        }
-
-    @property
     def sub_meshes(self) -> Dict[str, Dict[str, float]]:
         return {
             "frame": self.frame_box,
             "panel": self.panel_box,
-            "casing": self.casing_box,
         }
 
 
@@ -1049,8 +1020,6 @@ class ResolvedFlowController(BaseModel):
     duct_width: Optional[float] = None
     duct_depth: Optional[float] = None
     duct_diameter: Optional[float] = None
-    bounding_box: Dict[str, float] = Field(default_factory=dict)
-    local_offset: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     layer: str = "mep/hvac/equipment"
 
 
@@ -1819,7 +1788,7 @@ class SpatialResolver:
             child_pos = (child_x, child_y, child_z)
 
             if isinstance(child, IfcDoor):
-                f_thick = child.frame_thickness if child.frame_thickness is not None else wall.thickness
+                f_thick = child.frame_thickness if child.frame_thickness is not None else 0.05
                 r_door = ResolvedDoor(
                     tag=child.tag,
                     element=child,
@@ -1830,8 +1799,6 @@ class SpatialResolver:
                     sill_height=child.sill_height,
                     frame_thickness=f_thick,
                     frame_width=0.05,
-                    casing_width=0.076,
-                    casing_thickness=0.025,
                     panel_recess=0.015,
                     panel_thickness=0.035,
                     operation_type=child.operation_type,
@@ -4497,36 +4464,14 @@ class SpatialResolver:
 
     def resolve_flow_controller(self, controller: IfcFlowController) -> ResolvedFlowController:
         r_term = self.resolve_terminal(controller)
-        w = controller.width
-        d = controller.depth
-        h = controller.height
-        if controller.dimensions:
-            w = controller.dimensions.width
-            d = controller.dimensions.depth if controller.dimensions.depth is not None else w
-            h = controller.dimensions.height
-
-        if w <= 0 or d <= 0 or h <= 0:
-            default_dims = DEFAULT_TERMINAL_DIMENSIONS.get(controller.controller_type, (0.80, 0.50, 0.40))
-            w = w if w > 0 else default_dims[0]
-            d = d if d > 0 else default_dims[1]
-            h = h if h > 0 else default_dims[2]
-
-        dims = (round(float(w), 4), round(float(d), 4), round(float(h), 4))
+        dims = (
+            (controller.dimensions.width, controller.dimensions.depth, controller.dimensions.height)
+            if controller.dimensions
+            else (controller.width, controller.depth, controller.height)
+            if (controller.width or controller.depth or controller.height)
+            else DEFAULT_TERMINAL_DIMENSIONS.get(controller.controller_type, (0.80, 0.50, 0.40))
+        )
         color = DEFAULT_TERMINAL_COLORS.get(controller.controller_type, "#475569")
-
-        px, py, pz = r_term.position
-        bbox = {
-            "min_x": round(float(px), 4),
-            "max_x": round(float(px + w), 4),
-            "min_y": round(float(py), 4),
-            "max_y": round(float(py + d), 4),
-            "min_z": round(float(pz), 4),
-            "max_z": round(float(pz + h), 4),
-            "width": round(float(w), 4),
-            "depth": round(float(d), 4),
-            "height": round(float(h), 4),
-        }
-
         return ResolvedFlowController(
             tag=controller.tag,
             element=controller,
@@ -4541,8 +4486,6 @@ class SpatialResolver:
             duct_width=controller.duct_width or dims[0],
             duct_depth=controller.duct_depth or dims[1],
             duct_diameter=controller.duct_diameter,
-            bounding_box=bbox,
-            local_offset=(0.0, 0.0, 0.0),
             layer=derive_default_layer(controller),
         )
 
@@ -6549,99 +6492,26 @@ class SpatialResolver:
 
         st_elev = storey.elevation if storey else 0.0
 
-        if proxy.placement.wall and proxy.placement.wall in self.walls_by_tag:
-            r_wall = self.walls_by_tag[proxy.placement.wall]
-            wall_elem = r_wall.element
-            storey_id = proxy.placement.storey or wall_elem.placement.storey
-            if storey_id in self.storeys:
-                storey = self.storeys[storey_id]
-                st_elev = storey.elevation
+        px, py, pz = 0.0, 0.0, 0.0
+        if proxy.placement.position:
+            px, py, pz = proxy.placement.position
+        elif proxy.placement.grid:
+            gx, gy = self.get_grid_xy(proxy.placement.grid)
+            off_x = proxy.placement.offset_x + (proxy.placement.offset[0] if proxy.placement.offset else 0.0)
+            off_y = proxy.placement.offset_y + (proxy.placement.offset[1] if proxy.placement.offset else 0.0)
+            off_z = proxy.placement.offset_z + (proxy.placement.offset[2] if proxy.placement.offset else 0.0)
+            px = gx + off_x
+            py = gy + off_y
+            pz = off_z
+        elif proxy.placement.offset:
+            px, py, pz = proxy.placement.offset
 
-            x1, y1, _ = r_wall.start_point
-            x2, y2, _ = r_wall.end_point
-            wall_len = r_wall.length
-            thickness = r_wall.thickness
+        world_pos = (px, py, st_elev + pz)
 
-            if wall_len > 0:
-                ux = (x2 - x1) / wall_len
-                uy = (y2 - y1) / wall_len
-            else:
-                ux, uy = 1.0, 0.0
-
-            nx, ny = -uy, ux
-
-            p_base_x = x1 + proxy.placement.distance * ux
-            p_base_y = y1 + proxy.placement.distance * uy
-
-            dims_obj = proxy.get_resolved_dimensions()
-            w = dims_obj.width
-            d = dims_obj.depth if dims_obj.depth is not None else w
-            h = dims_obj.height
-
-            standoff = proxy.placement.standoff
-            if proxy.placement.side == "CENTER":
-                offset_dist = 0.0
-            elif proxy.placement.side == "EXTERIOR":
-                offset_dist = -(thickness / 2.0 + standoff + d / 2.0)
-            else:  # INTERIOR
-                offset_dist = +(thickness / 2.0 + standoff + d / 2.0)
-
-            px = p_base_x + offset_dist * nx
-            py = p_base_y + offset_dist * ny
-            pz = st_elev + proxy.placement.offset_z
-
-            if proxy.placement.rotation is not None:
-                if isinstance(proxy.placement.rotation, (int, float)):
-                    rot = (0.0, 0.0, float(proxy.placement.rotation))
-                else:
-                    rot = tuple(float(r) for r in proxy.placement.rotation)
-            else:
-                if proxy.placement.side == "EXTERIOR":
-                    rot_angle = math.degrees(math.atan2(-ny, -nx))
-                else:
-                    rot_angle = math.degrees(math.atan2(ny, nx))
-                rot = (0.0, 0.0, rot_angle)
-
-            world_pos = (px, py, pz)
-        else:
-            px, py, pz = 0.0, 0.0, 0.0
-            if proxy.placement.position:
-                px, py, pz = proxy.placement.position
-                px += proxy.placement.offset_x
-                py += proxy.placement.offset_y
-                pz += proxy.placement.offset_z
-            elif proxy.placement.grid:
-                gx, gy = self.get_grid_xy(proxy.placement.grid)
-                off_x = proxy.placement.offset_x + (proxy.placement.offset[0] if proxy.placement.offset else 0.0)
-                off_y = proxy.placement.offset_y + (proxy.placement.offset[1] if proxy.placement.offset else 0.0)
-                off_z = proxy.placement.offset_z + (proxy.placement.offset[2] if proxy.placement.offset else 0.0)
-                px = gx + off_x
-                py = gy + off_y
-                pz = off_z
-            elif proxy.placement.offset:
-                px = proxy.placement.offset_x + proxy.placement.offset[0]
-                py = proxy.placement.offset_y + proxy.placement.offset[1]
-                pz = proxy.placement.offset_z + proxy.placement.offset[2]
-            else:
-                px = proxy.placement.offset_x
-                py = proxy.placement.offset_y
-                pz = proxy.placement.offset_z
-
-            world_pos = (px, py, st_elev + pz)
-
-            dims_obj = proxy.get_resolved_dimensions()
-            w = dims_obj.width
-            d = dims_obj.depth if dims_obj.depth is not None else w
-            h = dims_obj.height
-
-            if proxy.placement.rotation is not None:
-                if isinstance(proxy.placement.rotation, (int, float)):
-                    rot = (0.0, 0.0, float(proxy.placement.rotation))
-                else:
-                    rot = tuple(float(r) for r in proxy.placement.rotation)
-            else:
-                rot = (0.0, 0.0, 0.0)
-
+        dims_obj = proxy.get_resolved_dimensions()
+        w = dims_obj.width
+        d = dims_obj.depth if dims_obj.depth is not None else w
+        h = dims_obj.height
         vol = w * d * h
         footprint = w * d
 
@@ -6653,6 +6523,7 @@ class SpatialResolver:
             "volume": vol, "footprint_area": footprint,
         }
 
+        rot = proxy.placement.rotation if proxy.placement.rotation else (0.0, 0.0, 0.0)
         ifc_cls = proxy.ifc_class or proxy.class_ or "IfcBuildingElementProxy"
 
         return ResolvedProxy(

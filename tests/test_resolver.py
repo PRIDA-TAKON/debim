@@ -195,17 +195,3 @@ def test_resolver_stair(sample_project_path):
     assert res_stair.total_formwork_area > 0.0
 
 
-def test_resolver_door_parametric_properties(sample_project_path):
-    manifest = load_manifest(sample_project_path)
-    resolved = resolve_manifest(manifest)
-
-    door = resolved.doors[0]
-    assert isinstance(door, ResolvedDoor)
-    assert door.width == 0.90
-    assert door.height == 2.00
-    assert door.frame_thickness > 0
-    assert "frame" in door.sub_meshes
-    assert "panel" in door.sub_meshes
-    assert "casing" in door.sub_meshes
-    assert door.frame_box["width"] == 0.90
-    assert door.casing_box["width"] == pytest.approx(0.90 + 2 * 0.076)

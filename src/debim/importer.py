@@ -21,7 +21,6 @@ from debim.schema import (
     IfcColumn,
     IfcCovering,
     IfcCustomElement,
-    IfcFlowController,
     CustomElementPlacement,
     IfcDoor,
     IfcRoof,
@@ -32,8 +31,6 @@ from debim.schema import (
     RoofPlacement,
     WallPlacement,
     SlabPlacement,
-    TerminalPlacement,
-    TerminalDimensions,
     Material,
     ProjectInfo,
     ProjectManifest,
@@ -378,44 +375,6 @@ def import_ifc_to_manifest(
         st_elev = storey_elevation_by_id.get(st_id, 0.0)
         pos = (0.0, 0.0, 0.0)
         rot = None
-
-        if geom_settings is not None:
-            try:
-                import ifcopenshell.geom
-                import numpy as np
-
-                shape = ifcopenshell.geom.create_shape(geom_settings, elem)
-                verts = np.array(shape.geometry.verts, dtype=np.float64).reshape(-1, 3)
-                if len(verts) > 0:
-                    min_b = verts.min(axis=0)
-                    max_b = verts.max(axis=0)
-                    center_local = (min_b + max_b) / 2.0
-                    d_ext = max_b - min_b
-
-                    mat = ifcopenshell.util.placement.get_local_placement(elem.ObjectPlacement)
-                    world_center = (mat[:3, :3] @ center_local) + mat[:3, 3]
-
-                    w_val = round(float(d_ext[0]), 3)
-                    d_val = round(float(d_ext[1]), 3)
-                    h_val = round(float(d_ext[2]), 3)
-
-                    if w_val > 0 and d_val > 0 and h_val > 0:
-                        pos = (
-                            round(float(world_center[0]), 3),
-                            round(float(world_center[1]), 3),
-                            round(float(world_center[2] - h_val / 2.0 - st_elev), 3),
-                        )
-                        rot = _extract_euler_angles(mat)
-                        placement = CustomElementPlacement(
-                            position=pos,
-                            storey=st_id,
-                            rotation=rot,
-                        )
-                        dims = Dimensions(width=w_val, depth=d_val, height=h_val)
-                        return placement, dims
-            except Exception:
-                pass
-
         try:
             mat = ifcopenshell.util.placement.get_local_placement(elem.ObjectPlacement)
             pos = (
@@ -985,24 +944,11 @@ def import_ifc_to_manifest(
         w, d = 0.2, 0.4
         ps = ifcopenshell.util.element.get_psets(beam)
         dims = ps.get("Dimensions", {}) or ps.get("PSet_Revit_Dimensions", {}) or ps.get("Qto_BeamBaseQuantities", {})
-        type_dims = ps.get("PSet_Revit_Type_Dimensions", {}) or ps.get("PSet_Revit_Type_Construction", {}) or ps.get("Pset_BeamCommon", {}) or {}
         length = float(dims.get("Length", 4.0)) if dims.get("Length") else 4.0
         if length > 100:
             length /= 1000.0
 
-        if "bf" in type_dims and type_dims["bf"]:
-            w = float(type_dims["bf"])
-            if w > 10:
-                w /= 1000.0
-        elif "FlangeWidth" in type_dims and type_dims["FlangeWidth"]:
-            w = float(type_dims["FlangeWidth"])
-            if w > 10:
-                w /= 1000.0
-        elif "Width" in type_dims and type_dims["Width"]:
-            w = float(type_dims["Width"])
-            if w > 10:
-                w /= 1000.0
-        elif "Width" in dims and dims["Width"]:
+        if "Width" in dims and dims["Width"]:
             w = float(dims["Width"])
             if w > 10:
                 w /= 1000.0
@@ -1011,19 +957,7 @@ def import_ifc_to_manifest(
             if w > 10:
                 w /= 1000.0
 
-        if "d" in type_dims and type_dims["d"]:
-            d = float(type_dims["d"])
-            if d > 10:
-                d /= 1000.0
-        elif "OverallDepth" in type_dims and type_dims["OverallDepth"]:
-            d = float(type_dims["OverallDepth"])
-            if d > 10:
-                d /= 1000.0
-        elif "Depth" in type_dims and type_dims["Depth"]:
-            d = float(type_dims["Depth"])
-            if d > 10:
-                d /= 1000.0
-        elif "Depth" in dims and dims["Depth"]:
+        if "Depth" in dims and dims["Depth"]:
             d = float(dims["Depth"])
             if d > 10:
                 d /= 1000.0
@@ -1031,16 +965,6 @@ def import_ifc_to_manifest(
             d = float(dims["OverallDepth"])
             if d > 10:
                 d /= 1000.0
-
-        if (w == 0.2 and d == 0.4) or w <= 0 or d <= 0:
-            bbox = _extract_bounding_box(beam)
-            if bbox:
-                if bbox.width > 0:
-                    w = bbox.width
-                if bbox.height > 0:
-                    d = bbox.height
-                elif bbox.depth > 0:
-                    d = bbox.depth
 
         try:
             mat = ifcopenshell.util.placement.get_local_placement(beam.ObjectPlacement)
@@ -1381,71 +1305,17 @@ def import_ifc_to_manifest(
     for railing in ifc_file.by_type("IfcRailing"):
         tag = railing.Name or f"RAILING-{railing.GlobalId[:8]}"
         st_id = get_elem_storey(railing)
-
-        ps = ifcopenshell.util.element.get_psets(railing)
-        h = 1.00
-        if ps.get("Pset_RailingCommon", {}).get("Height"):
-            h = float(ps["Pset_RailingCommon"]["Height"])
-        elif ps.get("PSet_Revit_Type_Construction", {}).get("Railing Height"):
-            h = float(ps["PSet_Revit_Type_Construction"]["Railing Height"])
-
-        pred_type = "HANDRAIL"
-        if getattr(railing, "PredefinedType", None) and str(railing.PredefinedType) != "NOTDEFINED":
-            pred_type = str(railing.PredefinedType)
-        elif "GUARD" in tag.upper():
-            pred_type = "GUARDRAIL"
-
-        p1_x, p1_y, p1_z = 0.0, 0.0, 0.0
-        p2_x, p2_y, p2_z = 0.0, 3.0, 0.0
-
-        w_min, w_max = None, None
-        if geom_settings is not None:
-            try:
-                import numpy as np
-                mat = ifcopenshell.util.placement.get_local_placement(railing.ObjectPlacement)
-                shape = ifcopenshell.geom.create_shape(geom_settings, railing)
-                verts = np.array(shape.geometry.verts).reshape(-1, 3)
-                world_verts = (mat[:3, :3] @ verts.T).T + mat[:3, 3]
-
-                w_min = world_verts.min(axis=0)
-                w_max = world_verts.max(axis=0)
-
-                st_elev = storey_elevation_by_id.get(st_id, 0.0)
-
-                dx = w_max[0] - w_min[0]
-                dy = w_max[1] - w_min[1]
-
-                p1_z = float(w_min[2]) - st_elev
-                p2_z = float(w_max[2]) - h - st_elev
-                p1_y = w_min[1]
-                p2_y = w_max[1]
-                p1_x = (w_min[0] + w_max[0]) / 2.0
-                p2_x = p1_x
-            except Exception:
-                pass
-
-        gx1 = get_or_create_grid_x(p1_x)
-        gy1 = get_or_create_grid_y(p1_y)
-        gx2 = get_or_create_grid_x(p2_x)
-        gy2 = get_or_create_grid_y(p2_y)
-
-        from debim.schema import RailingPlacement, IfcRailing
+        placement, dims = extract_custom_placement_and_dims(railing, st_id)
         elements.append(
-            IfcRailing(
+            IfcCustomElement(
                 **{
-                    "class": "IfcRailing",
+                    "class": "IfcCustomElement",
                     "tag": tag,
-                    "predefined_type": pred_type,
-                    "height": round(h, 3),
-                    "post_spacing": 1.50,
-                    "placement": RailingPlacement(
-                        storey=st_id,
-                        from_grid=(gx1, gy1),
-                        to_grid=(gx2, gy2),
-                        from_offset=(0.0, 0.0, round(p1_z, 3)),
-                        to_offset=(0.0, 0.0, round(p2_z, 3)),
-                    ),
-                    "layer": "architecture/railings",
+                    "name": tag,
+                    "source": f"ifc/railing/{tag}",
+                    "placement": placement,
+                    "dimensions": dims,
+                    "layer": "circulation/railings",
                 }
             )
         )
@@ -1598,53 +1468,10 @@ def import_ifc_to_manifest(
             )
 
     # 5.17 Extract MEP Valves, Dampers, Flow Controllers & Distribution Control Elements
-    for fc_elem in safe_by_type("IfcFlowController"):
-        if fc_elem.is_a() != "IfcFlowController":
-            continue
-        if fc_elem.GlobalId in extracted_custom_ids:
-            continue
-        extracted_custom_ids.add(fc_elem.GlobalId)
-        tag = fc_elem.Name or f"FLOW_CTRL-{fc_elem.GlobalId[:8]}"
-        st_id = get_elem_storey(fc_elem)
-        placement_custom, dims = extract_custom_placement_and_dims(fc_elem, st_id)
-        w = dims.width if dims else 0.8
-        d = dims.depth if (dims and dims.depth is not None) else 0.5
-        h = dims.height if dims else 0.4
-
-        gx = get_or_create_grid_x(placement_custom.position[0])
-        gy = get_or_create_grid_y(placement_custom.position[1])
-        rot_angle = placement_custom.rotation[2] if placement_custom.rotation else 0.0
-
-        term_placement = TerminalPlacement(
-            grid=(gx, gy),
-            storey=st_id,
-            offset_x=0.0,
-            offset_y=0.0,
-            offset_z=placement_custom.position[2],
-            rotation=round(rot_angle, 4),
-        )
-
-        elements.append(
-            IfcFlowController(
-                class_="IfcFlowController",
-                tag=tag,
-                controller_type="AIR_CONTROLLER",
-                width=round(w, 3),
-                depth=round(d, 3),
-                height=round(h, 3),
-                placement=term_placement,
-                dimensions=TerminalDimensions(
-                    width=round(w, 3),
-                    depth=round(d, 3),
-                    height=round(h, 3)
-                ),
-                layer="mep/flow_controllers",
-            )
-        )
-
     mep_ctrl_configs = [
         ("IfcValve", "mep/valves", "VALVE"),
         ("IfcDamper", "mep/dampers", "DAMPER"),
+        ("IfcFlowController", "mep/flow_controllers", "FLOW_CTRL"),
         ("IfcDistributionControlElement", "mep/controls", "CTRL_ELEM"),
     ]
     for c_cls, c_layer, c_prefix in mep_ctrl_configs:

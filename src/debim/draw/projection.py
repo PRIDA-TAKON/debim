@@ -24,11 +24,9 @@ from debim.resolver import (
     ResolvedCurtainWall,
     ResolvedCustomElement,
     ResolvedDoor,
-    ResolvedFlowController,
     ResolvedManifest,
     ResolvedPipeSegment,
     ResolvedPlate,
-    ResolvedProxy,
     ResolvedRailing,
     ResolvedRamp,
     ResolvedSanitaryTerminal,
@@ -278,45 +276,17 @@ def slice_storey(
                 frame_poly = _create_rotated_box(c_center_x, c_center_y, w_child, f_thick, wall_angle_deg)
 
                 elem_cls = "IfcDoor" if isinstance(child, ResolvedDoor) else "IfcWindow"
-
-                # For doors, generate door leaf line and 90-degree swing arc projection
-                if isinstance(child, ResolvedDoor):
-                    hinge_x = x1 + d1 * ux
-                    hinge_y = y1 + d1 * uy
-                    door_w = child.width
-
-                    # Open leaf line at 90 deg relative to wall direction
-                    leaf_x = hinge_x + door_w * (-uy)
-                    leaf_y = hinge_y + door_w * ux
-                    door_leaf_geom = LineString([(hinge_x, hinge_y), (leaf_x, leaf_y)])
-
-                    projection_elements.append(ProjectionElement(
-                        tag=f"{child.tag}-Leaf",
-                        element_class="IfcDoorLeaf",
-                        category="low_projection",
-                        geometry=door_leaf_geom,
-                        layer=f"{child.layer}/leaf",
-                        properties={
-                            "host_door": child.tag,
-                            "width": child.width,
-                            "hinge_point": (hinge_x, hinge_y),
-                        },
-                    ))
-
                 cut_elements.append(CutElement(
                     tag=child.tag,
                     element_class=elem_cls,
                     category="medium_cut",
                     geometry=frame_poly,
-                    centerline=LineString([(x1 + d1 * ux, y1 + d1 * uy), (x1 + d2 * ux, y1 + d2 * uy)]),
                     layer=child.layer,
                     properties={
                         "host_wall": wall.tag,
                         "width": child.width,
                         "height": child.height,
                         "sill_height": child.sill_height,
-                        "frame_thickness": f_thick,
-                        "has_leaf": isinstance(child, ResolvedDoor),
                     },
                 ))
 
@@ -397,74 +367,6 @@ def slice_storey(
             },
         ))
 
-    # 2b. Process Beams
-    for beam in resolved.beams:
-        x1, y1, z1 = beam.start_point
-        x2, y2, z2 = beam.end_point
-        all_2d_points.extend([(x1, y1), (x2, y2)])
-
-        b_width = beam.width
-        b_depth = beam.depth
-
-        z_top = max(z1, z2)
-        z_soffit = min(z1, z2) - b_depth
-
-        # Check if cut-plane intersects or views the beam
-        is_cut = (z_soffit <= cut_elev <= z_top)
-        is_projection = (z_top >= storey_elev and z_soffit <= cut_elev + 2.0)
-
-        if not (is_cut or is_projection):
-            continue
-
-        dx = x2 - x1
-        dy = y2 - y1
-        span = math.hypot(dx, dy)
-        if span <= 0:
-            continue
-
-        ux = dx / span
-        uy = dy / span
-        nx, ny = -uy, ux
-
-        hw = b_width / 2.0
-        p0 = (x1 + hw * nx, y1 + hw * ny)
-        p1 = (x2 + hw * nx, y2 + hw * ny)
-        p2 = (x2 - hw * nx, y2 - hw * ny)
-        p3 = (x1 - hw * nx, y1 - hw * ny)
-
-        beam_poly = Polygon([p0, p1, p2, p3])
-        all_2d_points.extend([p0, p1, p2, p3])
-
-        if is_cut:
-            cut_elements.append(CutElement(
-                tag=beam.tag,
-                element_class="IfcBeam",
-                category="medium_cut",
-                geometry=beam_poly,
-                centerline=LineString([(x1, y1), (x2, y2)]),
-                layer=beam.layer,
-                properties={
-                    "material": beam.element.material,
-                    "width": b_width,
-                    "depth": b_depth,
-                    "span_length": beam.span_length,
-                },
-            ))
-        else:
-            projection_elements.append(ProjectionElement(
-                tag=beam.tag,
-                element_class="IfcBeam",
-                category="low_projection",
-                geometry=beam_poly,
-                layer=beam.layer,
-                properties={
-                    "material": beam.element.material,
-                    "width": b_width,
-                    "depth": b_depth,
-                    "span_length": beam.span_length,
-                },
-            ))
-
     # 3. Process Floor Slabs (Low Projection)
     for slab in resolved.slabs:
         s_z = slab.center[2]
@@ -520,46 +422,7 @@ def slice_storey(
                     },
                 ))
 
-    # 5. Process Proxies
-    for proxy in resolved.proxies:
-        px, py, pz = proxy.position
-        w, d, h = proxy.dimensions
-        p_base_z = pz
-        p_top_z = pz + h
-        rot_z = proxy.rotation[2] if (proxy.rotation and len(proxy.rotation) >= 3) else 0.0
-
-        all_2d_points.append((px, py))
-        proxy_poly = _create_rotated_box(px, py, w, d, rot_z)
-
-        if p_base_z <= cut_elev <= p_top_z:
-            cut_elements.append(CutElement(
-                tag=proxy.tag,
-                element_class=proxy.ifc_class,
-                category="medium_cut",
-                geometry=proxy_poly,
-                centerline=Point(px, py),
-                layer=proxy.layer,
-                properties={
-                    "ifc_class": proxy.ifc_class,
-                    "predefined_type": proxy.predefined_type,
-                    "dimensions": proxy.dimensions,
-                },
-            ))
-        elif p_top_z <= cut_elev:
-            projection_elements.append(ProjectionElement(
-                tag=proxy.tag,
-                element_class=proxy.ifc_class,
-                category="low_projection",
-                geometry=proxy_poly,
-                layer=proxy.layer,
-                properties={
-                    "ifc_class": proxy.ifc_class,
-                    "predefined_type": proxy.predefined_type,
-                    "dimensions": proxy.dimensions,
-                },
-            ))
-
-    # 6. Process Sanitary & MEP Terminals (Low Projection)
+    # 5. Process Sanitary & MEP Terminals (Low Projection)
     for term in resolved.sanitary_terminals:
         if term.position[2] <= cut_elev:
             tx, ty, _ = term.position
@@ -579,9 +442,29 @@ def slice_storey(
                 },
             ))
 
-    # Process Custom Elements & IfcFlowFitting (Cut & Low Projection)
+    for term in resolved.waste_terminals:
+        if term.position[2] <= cut_elev:
+            tx, ty, _ = term.position
+            all_2d_points.append((tx, ty))
+            w, d, _ = term.dimensions
+            term_poly = _create_rotated_box(tx, ty, w, d, term.rotation)
+
+            projection_elements.append(ProjectionElement(
+                tag=term.tag,
+                element_class="IfcWasteTerminal",
+                category="low_projection",
+                geometry=term_poly,
+                layer=term.layer,
+                properties={
+                    "terminal_type": term.terminal_type,
+                    "dimensions": term.dimensions,
+                },
+            ))
+
+    # 5.1. Process Custom Elements & IfcFlowFitting (Swept Disk / Curve Cut & Projection)
     from debim.resolver import ResolvedSweptDisk
-    for custom in getattr(resolved, "custom_elements", []) or []:
+    from shapely.geometry import Point
+    for custom in resolved.custom_elements:
         elem_cls = "IfcFlowFitting" if ("fitting" in (custom.layer or "").lower() or "fitting" in custom.tag.lower() or any(kw in custom.tag.lower() for kw in ["elbow", "tee", "transition", "bend", "reducer"])) else "IfcCustomElement"
         if custom.resolved_solid and isinstance(custom.resolved_solid, ResolvedSweptDisk):
             s = custom.resolved_solid
@@ -611,131 +494,24 @@ def slice_storey(
                     layer=custom.layer,
                     properties={"radius": r, "centroid": s.centroid},
                 ))
-        else:
-            cx, cy, cz = custom.position
-            all_2d_points.append((cx, cy))
-            if custom.dimensions:
-                w = custom.dimensions.width
-                d = custom.dimensions.depth if custom.dimensions.depth is not None else w
-                h = custom.dimensions.height
-            else:
-                w, d, h = 0.3, 0.3, 0.3
-
-            c_base_z = cz
-            c_top_z = cz + h
-            rot_z = custom.rotation[2] if (custom.rotation and len(custom.rotation) >= 3) else 0.0
-            custom_poly = _create_rotated_box(cx, cy, w, d, rot_z)
-
-            if c_base_z <= cut_elev <= c_top_z:
-                cut_elements.append(CutElement(
-                    tag=custom.tag,
-                    element_class=elem_cls,
-                    category="medium_cut",
-                    geometry=custom_poly,
-                    centerline=Point(cx, cy),
-                    layer=custom.layer,
-                    properties={
-                        "layer": custom.layer,
-                        "dimensions": [w, d, h],
-                    },
-                ))
-            elif c_top_z <= cut_elev:
-                projection_elements.append(ProjectionElement(
-                    tag=custom.tag,
-                    element_class=elem_cls,
-                    category="low_projection",
-                    geometry=custom_poly,
-                    layer=custom.layer,
-                    properties={
-                        "layer": custom.layer,
-                        "dimensions": [w, d, h],
-                    },
-                ))
-
-    # Process Flow Controllers (Cut & Low Projection)
-    for fc in getattr(resolved, "flow_controllers", []):
-        fc_base_z = fc.position[2]
-        fc_top_z = fc_base_z + fc.dimensions[2]
-        cx, cy, _ = fc.position
-        all_2d_points.append((cx, cy))
-        w, d = fc.dimensions[0], fc.dimensions[1]
-        fc_poly = _create_rotated_box(cx, cy, w, d, fc.rotation_angle)
-
-        if fc_base_z <= cut_elev <= fc_top_z:
-            cut_elements.append(CutElement(
-                tag=fc.tag,
-                element_class="IfcFlowController",
-                category="medium_cut",
-                geometry=fc_poly,
-                centerline=Point(cx, cy),
-                layer=fc.layer,
-                properties={
-                    "controller_type": fc.controller_type,
-                    "predefined_type": fc.predefined_type,
-                    "air_flow_rate_m3h": fc.air_flow_rate_m3h,
-                },
-            ))
-        elif fc_base_z < cut_elev:
-            projection_elements.append(ProjectionElement(
-                tag=fc.tag,
-                element_class="IfcFlowController",
-                category="low_projection",
-                geometry=fc_poly,
-                layer=fc.layer,
-                properties={
-                    "controller_type": fc.controller_type,
-                    "predefined_type": fc.predefined_type,
-                },
-            ))
-
-    for term in resolved.waste_terminals:
-        if term.position[2] <= cut_elev:
-            tx, ty, _ = term.position
+        elif custom.dimensions and custom.position[2] <= cut_elev:
+            tx, ty = custom.position[0], custom.position[1]
             all_2d_points.append((tx, ty))
-            w, d, _ = term.dimensions
-            term_poly = _create_rotated_box(tx, ty, w, d, term.rotation)
+            w = custom.dimensions.width
+            d = custom.dimensions.depth if custom.dimensions.depth is not None else w
+            rot_deg = math.degrees(custom.rotation[2]) if custom.rotation and len(custom.rotation) >= 3 else 0.0
+            fit_poly = _create_rotated_box(tx, ty, w, d, rot_deg)
 
             projection_elements.append(ProjectionElement(
-                tag=term.tag,
-                element_class="IfcWasteTerminal",
+                tag=custom.tag,
+                element_class=elem_cls,
                 category="low_projection",
-                geometry=term_poly,
-                layer=term.layer,
-                properties={
-                    "terminal_type": term.terminal_type,
-                    "dimensions": term.dimensions,
-                },
+                geometry=fit_poly,
+                layer=custom.layer,
+                properties={"dimensions": custom.dimensions},
             ))
 
-    # 6. Process Coverings (Low Projection)
-    for cov in getattr(resolved, "coverings", []) or []:
-        cov_z = cov.center[2]
-        if cov_z <= cut_elev:
-            if cov.polygon and len(cov.polygon) >= 3:
-                c_pts_2d = [(p[0], p[1]) for p in cov.polygon]
-                all_2d_points.extend(c_pts_2d)
-                cov_poly = Polygon(c_pts_2d)
-            else:
-                cx, cy = cov.center[0], cov.center[1]
-                all_2d_points.append((cx, cy))
-                w = math.sqrt(cov.area) if cov.area > 0 else 1.0
-                cov_poly = _create_rotated_box(cx, cy, w, w, 0.0)
-
-            projection_elements.append(ProjectionElement(
-                tag=cov.tag,
-                element_class="IfcCovering",
-                category="low_projection",
-                geometry=cov_poly,
-                layer=cov.layer,
-                properties={
-                    "covering_type": cov.covering_type,
-                    "material": cov.element.material if cov.element else None,
-                    "thickness": cov.thickness,
-                    "area": cov.area,
-                },
-            ))
-
-    # 7. Calculate Bounding Box
+    # 6. Calculate Bounding Box
     if all_2d_points:
         xs = [p[0] for p in all_2d_points]
         ys = [p[1] for p in all_2d_points]

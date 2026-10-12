@@ -202,10 +202,3 @@ def test_viewer_live_reload_script_injection(sample_project_path: Path):
     assert "debim Live Hot-Reload Watcher" in html
     assert "sessionStorage.setItem('debim_cam_state'" in html
 
-
-def test_door_parametric_assembly_viewer_rendering(sample_project_path: Path):
-    html = generate_viewer_html(sample_project_path)
-    assert "IfcDoor" in html
-    assert "casing_width" in html
-    assert "frame_thickness" in html
-    assert "data.class === \"IfcDoor\"" in html

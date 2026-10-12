@@ -97,6 +97,12 @@ def test_ifc_flow_fitting_2d_projection():
 
 
 def test_ifc_flow_fitting_visual_regression():
+    try:
+        import matplotlib
+        import PIL
+    except ImportError:
+        pytest.skip("matplotlib/Pillow not installed in test environment.")
+
     ifc_path = Path("tests/fixtures/Duplex_MEP_20110907.ifc")
     if not ifc_path.exists():
         pytest.skip("Fixture Duplex_MEP_20110907.ifc not found.")

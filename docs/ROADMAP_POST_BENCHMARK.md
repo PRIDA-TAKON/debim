@@ -137,33 +137,17 @@ Addressing the remaining failure modes identified in the 255-model benchmark:
 
 ---
 
-## 🌊 Wave 5: Full IFC Catalog 3D Geometry Parity (IN PROGRESS — Issues #180 – #202)
+## 🌊 Wave 5: Fast Human Visual Audit & 3D Web Viewer UX (Future Backlog)
 
-Dispatched to Jules autonomous agents across 23 atomic GitHub issues to eliminate all remaining 3D rendering discrepancies:
+Designed for Human-AI Super-Collaboration to enable 2-second visual audits:
 
-- [ ] **Task 5.1:** `fix(geometry): Implement Missing 3D Primitives for MEP Boilers & Pumps` (Issues #180, #181 - IfcEnergyConversionDevice & IfcFlowMovingDevice from 0.0% to $\ge 85.0\%$)
-- [ ] **Task 5.2:** `feat(mep): Implement Curved Swept-Disk Trajectory for Flow Fittings` (Issue #182 - IfcFlowFitting elbows and tees)
-- [ ] **Task 5.3:** `feat(architecture): Sub-Frame & Glazing Geometry for Doors, Windows & Railings` (Issues #188, #189 - IfcDoor, IfcRailing)
-- [ ] **Task 5.4:** `feat(testing): Build Automated Round-Trip Golden Test Suite for All IFC Classes` (Issue #202 - Reference Golden Fixtures for 800+ entities)
-- [ ] **Task 5.5:** `feat(proxies): Enhanced Geometric Classification for Long-Tail Proxies` (Issue #183)
-
----
-
-## 🏛️ Wave 6: Declarative 2D Construction Blueprint Engine (THE NEXT HORIZON)
-
-The ultimate production milestone: Compiling declarative 3D YAML manifests directly into production-grade, permit-ready 2D Architectural & Structural blueprints (A3/A1 Vector PDFs & DXF):
-
-- **Task 6.1:** `feat(draw): Topological Cut-Plane Slicing (src/debim/draw/projection.py)`
-  - Exact 2D polygon boolean merging for walls, columns, and openings at $+1.20\text{ m}$ cut-plane via `shapely`.
-- **Task 6.2:** `feat(draw): Collision-Free Automated Dimensions & Grid Bubbles`
-  - Zero-overlap dimension chains for structural grids, overall envelope, and window/door rough openings.
-- **Task 6.3:** `feat(draw): Web-Native Vector Sheet Builder (SVG + CSS Paged Media + Sarabun Font)`
-  - 100% Thai font compliance with zero vowel distortion printed to sharp vector PDF A3/A4.
-- **Task 6.4:** `feat(draw): Standalone 2D Blueprint Web Viewer (src/debim/draw/viewer_2d.py)`
-  - Lightweight mobile/tablet site viewer with sheet drawer and interactive digital measurement ruler.
-- **Task 6.5:** `feat(draw): Export-Only AutoCAD DXF Generator (src/debim/draw/dxf.py)`
-  - Standard CAD layer mapping (`A-WALL`, `S-COLS`, `A-GRID`) for legacy engineering handovers.
-
-> *Full technical specification:* [`docs/ROADMAP_2D_DRAWINGS.md`](ROADMAP_2D_DRAWINGS.md)
+- **Task 5.1:** `feat(viewer): Implement Traffic-Light Audit Overlay Mode (Green/Yellow/Red)`
+  - Toggle between standard materials and audit heatmap (Emissive Red for orientation errors, Emissive Yellow for unverified proxies).
+- **Task 5.2:** `feat(viewer): Implement 1-Click Ghost Shell / X-Ray Transparency Mode (Opacity 10%)`
+  - Keyboard shortcut `X` to make walls and slabs 10-15% semi-transparent, allowing immediate inspection of internal pipes and structural framing.
+- **Task 5.3:** `feat(viewer): Add Clickable Review Checklist with Smooth Camera Fly-To Zoom`
+  - Side panel listing flagged items; clicking smoothly flies the camera to a close-up focus with outline glow.
+- **Task 5.4:** `feat(viewer): Add Storey Slicer Cross-Section Clipping Plane Slider`
+  - Three.js horizontal clipping plane slider to inspect building floor-by-floor in 3D isometric view.
 
 
