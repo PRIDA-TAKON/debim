@@ -15,13 +15,19 @@ from debim.schema import (
     ColumnReinforcement,
     BeamPlacement,
     BeamReinforcement,
+    ChimneyPlacement,
     CoveringPlacement,
     Dimensions,
+    EnergyConversionPlacement,
+    FlowMovingPlacement,
     FurniturePlacement,
     IfcBeam,
+    IfcChimney,
     IfcColumn,
     IfcCovering,
     IfcCustomElement,
+    IfcEnergyConversionDevice,
+    IfcFlowMovingDevice,
     IfcFlowController,
     CustomElementPlacement,
     IfcDoor,
@@ -440,6 +446,55 @@ def import_ifc_to_manifest(
             rotation=rot,
         )
         return placement, dims
+
+    def extract_mep_spatial_placement_and_dims(
+        elem: Any,
+        st_id: str,
+    ) -> Tuple[CustomElementPlacement, Optional[Dimensions]]:
+        st_elev = storey_elevation_by_id.get(st_id, 0.0)
+        if geom_settings is not None:
+            try:
+                import ifcopenshell.geom
+                import numpy as np
+
+                shape = ifcopenshell.geom.create_shape(geom_settings, elem)
+                verts = np.array(shape.geometry.verts, dtype=np.float64).reshape(-1, 3)
+                if len(verts) > 0:
+                    if hasattr(shape, "transformation") and shape.transformation:
+                        T = np.array(shape.transformation.matrix, dtype=np.float64).reshape(4, 4)
+                        verts_world = (np.hstack([verts, np.ones((len(verts), 1))]) @ T)[:, :3]
+                        min_b = verts_world.min(axis=0)
+                        max_b = verts_world.max(axis=0)
+                        center_world = (min_b + max_b) / 2.0
+                        d_ext = max_b - min_b
+                    else:
+                        min_b = verts.min(axis=0)
+                        max_b = verts.max(axis=0)
+                        center_local = (min_b + max_b) / 2.0
+                        d_ext = max_b - min_b
+                        mat = ifcopenshell.util.placement.get_local_placement(elem.ObjectPlacement)
+                        center_world = (mat[:3, :3] @ center_local) + mat[:3, 3]
+
+                    w_val = round(float(d_ext[0]), 3)
+                    d_val = round(float(d_ext[1]), 3)
+                    h_val = round(float(d_ext[2]), 3)
+
+                    if w_val > 0 and d_val > 0 and h_val > 0:
+                        pos = (
+                            round(float(center_world[0]), 3),
+                            round(float(center_world[1]), 3),
+                            round(float(min_b[2] - st_elev), 3),
+                        )
+                        placement = CustomElementPlacement(
+                            position=pos,
+                            storey=st_id,
+                            rotation=(0.0, 0.0, 0.0),
+                        )
+                        dims = Dimensions(width=w_val, depth=d_val, height=h_val)
+                        return placement, dims
+            except Exception:
+                pass
+        return extract_custom_placement_and_dims(elem, st_id)
 
     def _get_connected_ports(elem: Any) -> List[Any]:
         """Retrieve connected IfcDistributionPort entities for an element via IfcRelConnectsPortToElement."""
@@ -1709,7 +1764,10 @@ def import_ifc_to_manifest(
             extracted_custom_ids.add(term.GlobalId)
             tag = term.Name or f"TERM-{term.GlobalId[:8]}"
             st_id = get_elem_storey(term)
-            placement, dims = extract_custom_placement_and_dims(term, st_id)
+            if term_cls == "IfcAirTerminal":
+                placement, dims = extract_mep_spatial_placement_and_dims(term, st_id)
+            else:
+                placement, dims = extract_custom_placement_and_dims(term, st_id)
 
             source_path = f"ifc/terminal/{tag}"
             if term.is_a("IfcSanitaryTerminal"):
@@ -1757,10 +1815,78 @@ def import_ifc_to_manifest(
                 )
             )
 
-    # 5.16 Extract Generic Proxies & Accessories (IfcBuildingElementProxy, IfcChimney, IfcDiscreteAccessory)
+    # 5.16 Extract Chimneys (IfcChimney)
+    for chim in safe_by_type("IfcChimney"):
+        if chim.GlobalId in extracted_custom_ids:
+            continue
+        extracted_custom_ids.add(chim.GlobalId)
+        tag = chim.Name or f"CHIMNEY-{chim.GlobalId[:8]}"
+        st_id = get_elem_storey(chim)
+        placement_c, dims = extract_mep_spatial_placement_and_dims(chim, st_id)
+        chim_placement = ChimneyPlacement(
+            storey=st_id,
+            position=placement_c.position,
+            rotation=placement_c.rotation,
+        )
+        elements.append(
+            IfcChimney(
+                tag=tag,
+                name=chim.Name or tag,
+                dimensions=dims,
+                placement=chim_placement,
+                layer="architecture/chimneys",
+            )
+        )
+
+    # 5.17 Extract MEP Energy Conversion Devices (IfcEnergyConversionDevice)
+    for ecd in safe_by_type("IfcEnergyConversionDevice"):
+        if ecd.GlobalId in extracted_custom_ids:
+            continue
+        extracted_custom_ids.add(ecd.GlobalId)
+        tag = ecd.Name or f"ECD-{ecd.GlobalId[:8]}"
+        st_id = get_elem_storey(ecd)
+        placement_c, dims = extract_mep_spatial_placement_and_dims(ecd, st_id)
+        ecd_placement = EnergyConversionPlacement(
+            storey=st_id,
+            position=placement_c.position,
+            rotation=placement_c.rotation,
+        )
+        elements.append(
+            IfcEnergyConversionDevice(
+                tag=tag,
+                name=ecd.Name or tag,
+                dimensions=dims,
+                placement=ecd_placement,
+                layer="mep/energy_conversion",
+            )
+        )
+
+    # 5.18 Extract MEP Flow Moving Devices (IfcFlowMovingDevice)
+    for fmd in safe_by_type("IfcFlowMovingDevice"):
+        if fmd.GlobalId in extracted_custom_ids:
+            continue
+        extracted_custom_ids.add(fmd.GlobalId)
+        tag = fmd.Name or f"FMD-{fmd.GlobalId[:8]}"
+        st_id = get_elem_storey(fmd)
+        placement_c, dims = extract_mep_spatial_placement_and_dims(fmd, st_id)
+        fmd_placement = FlowMovingPlacement(
+            storey=st_id,
+            position=placement_c.position,
+            rotation=placement_c.rotation,
+        )
+        elements.append(
+            IfcFlowMovingDevice(
+                tag=tag,
+                name=fmd.Name or tag,
+                dimensions=dims,
+                placement=fmd_placement,
+                layer="mep/flow_moving",
+            )
+        )
+
+    # 5.19 Extract Generic Proxies & Accessories (IfcBuildingElementProxy, IfcDiscreteAccessory)
     proxy_configs = [
         ("IfcBuildingElementProxy", "architecture/proxies", "PROXY"),
-        ("IfcChimney", "architecture/chimneys", "CHIMNEY"),
         ("IfcDiscreteAccessory", "structure/accessories", "ACC"),
     ]
     for p_cls, p_layer, p_prefix in proxy_configs:

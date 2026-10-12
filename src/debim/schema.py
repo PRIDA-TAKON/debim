@@ -1468,6 +1468,53 @@ class IfcBuildingElementProxy(BaseModel):
         return Dimensions(width=1.0, depth=1.0, height=1.0)
 
 
+class ChimneyPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    position: Optional[Tuple[float, float, float]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    rotation: Optional[Union[float, Tuple[float, float, float]]] = None
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_chimney_grid(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("position", mode="before")
+    @classmethod
+    def convert_chimney_pos(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(float(x) for x in v)
+        return v
+
+    @field_validator("rotation", mode="before")
+    @classmethod
+    def convert_chimney_rotation(cls, v):
+        if isinstance(v, (int, float)):
+            return (0.0, 0.0, float(v))
+        if isinstance(v, (list, tuple)):
+            if len(v) == 1:
+                return (0.0, 0.0, float(v[0]))
+            return tuple(float(x) for x in v)
+        return v
+
+
+class IfcChimney(BaseModel):
+    class_: Literal["IfcChimney"] = Field(alias="class", default="IfcChimney")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = None
+    predefined_type: Optional[str] = None
+    dimensions: Optional[Dimensions] = None
+    placement: ChimneyPlacement = Field(default_factory=ChimneyPlacement)
+    properties: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    layer: Optional[str] = "architecture/chimneys"
+
+
 # Roof element definitions
 RoofType = Literal["GABLE", "HIP", "SHED", "FLAT", "MANSARD"]
 RidgeOrientation = Literal["X", "Y", "ALONG_LENGTH", "ALONG_WIDTH"]
@@ -2030,6 +2077,100 @@ class IfcUnitaryEquipment(BaseModel):
     cooling_capacity_btu: Optional[float] = 12000.0
     ports: Optional[List[IfcDistributionPort]] = Field(default_factory=list)
     layer: Optional[str] = None
+
+
+class EnergyConversionPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    position: Optional[Tuple[float, float, float]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    rotation: Optional[Union[float, Tuple[float, float, float]]] = None
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_ecd_grid(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("position", mode="before")
+    @classmethod
+    def convert_ecd_pos(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(float(x) for x in v)
+        return v
+
+    @field_validator("rotation", mode="before")
+    @classmethod
+    def convert_ecd_rotation(cls, v):
+        if isinstance(v, (int, float)):
+            return (0.0, 0.0, float(v))
+        if isinstance(v, (list, tuple)):
+            if len(v) == 1:
+                return (0.0, 0.0, float(v[0]))
+            return tuple(float(x) for x in v)
+        return v
+
+
+class IfcEnergyConversionDevice(BaseModel):
+    class_: Literal["IfcEnergyConversionDevice"] = Field(alias="class", default="IfcEnergyConversionDevice")
+    tag: str
+    name: Optional[str] = None
+    predefined_type: Optional[str] = None
+    material: Optional[str] = None
+    dimensions: Optional[Dimensions] = None
+    placement: EnergyConversionPlacement = Field(default_factory=EnergyConversionPlacement)
+    properties: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    layer: Optional[str] = "mep/energy_conversion"
+
+
+class FlowMovingPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    position: Optional[Tuple[float, float, float]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    rotation: Optional[Union[float, Tuple[float, float, float]]] = None
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_fmd_grid(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("position", mode="before")
+    @classmethod
+    def convert_fmd_pos(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(float(x) for x in v)
+        return v
+
+    @field_validator("rotation", mode="before")
+    @classmethod
+    def convert_fmd_rotation(cls, v):
+        if isinstance(v, (int, float)):
+            return (0.0, 0.0, float(v))
+        if isinstance(v, (list, tuple)):
+            if len(v) == 1:
+                return (0.0, 0.0, float(v[0]))
+            return tuple(float(x) for x in v)
+        return v
+
+
+class IfcFlowMovingDevice(BaseModel):
+    class_: Literal["IfcFlowMovingDevice"] = Field(alias="class", default="IfcFlowMovingDevice")
+    tag: str
+    name: Optional[str] = None
+    predefined_type: Optional[str] = None
+    material: Optional[str] = None
+    dimensions: Optional[Dimensions] = None
+    placement: FlowMovingPlacement = Field(default_factory=FlowMovingPlacement)
+    properties: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    layer: Optional[str] = "mep/flow_moving"
 
 
 CoveringType = Literal["CEILING", "FLOORING", "SKIRTING", "CLADDING", "ROOFING", "INSULATION", "MEMBRANE"]
@@ -3118,7 +3259,8 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
     "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcDiscreteAccessory", "IfcMarineFacility",
     "IfcMarinePart", "IfcMooringDevice", "IfcNavigationElement", "IfcDistributionFlowElement",
-    "IfcFurniture", "IfcFurnishingElement", "IfcCustomElement", "IfcBuildingElementProxy"
+    "IfcFurniture", "IfcFurnishingElement", "IfcChimney", "IfcEnergyConversionDevice",
+    "IfcFlowMovingDevice", "IfcCustomElement", "IfcBuildingElementProxy"
 }
 
 
@@ -3188,6 +3330,9 @@ Element = Annotated[
         Annotated[IfcDistributionFlowElement, Tag("IfcDistributionFlowElement")],
         Annotated[IfcFurniture, Tag("IfcFurniture")],
         Annotated[IfcFurnishingElement, Tag("IfcFurnishingElement")],
+        Annotated[IfcChimney, Tag("IfcChimney")],
+        Annotated[IfcEnergyConversionDevice, Tag("IfcEnergyConversionDevice")],
+        Annotated[IfcFlowMovingDevice, Tag("IfcFlowMovingDevice")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
@@ -3854,6 +3999,12 @@ def derive_default_layer(elem) -> str:
         return "civil/marine/facility"
     elif cls in ("IfcFurniture", "IfcFurnishingElement"):
         return "interior/furniture"
+    elif cls == "IfcChimney":
+        return "architecture/chimneys"
+    elif cls == "IfcEnergyConversionDevice":
+        return "mep/energy_conversion"
+    elif cls == "IfcFlowMovingDevice":
+        return "mep/flow_moving"
     elif cls == "IfcCustomElement":
         return "general/custom"
     elif cls == "IfcBuildingElementProxy" or isinstance(elem, IfcBuildingElementProxy):

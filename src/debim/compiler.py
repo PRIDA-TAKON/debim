@@ -1956,6 +1956,59 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        # 5.01 Chimneys, Energy Conversion & Flow Moving Devices
+        mep_s_configs = [
+            (getattr(resolved, "chimneys", []) or [], "IfcChimney"),
+            (getattr(resolved, "energy_conversion_devices", []) or [], "IfcEnergyConversionDevice"),
+            (getattr(resolved, "flow_moving_devices", []) or [], "IfcFlowMovingDevice"),
+        ]
+        for m_list, m_cls in mep_s_configs:
+            for m_elem in m_list:
+                st_id = getattr(m_elem, "storey", None) or getattr(m_elem.element.placement, "storey", None)
+                st_pl_ref = storey_pl_refs.get(st_id)
+                st_elev = storey_elevations.get(st_id, 0.0)
+                px, py, pz = m_elem.position
+                rel_z = float(pz - st_elev)
+                elem_pt = self.create_entity("IfcCartesianPoint", (float(px), float(py), rel_z))
+                rx, ry, rz = m_elem.rotation if m_elem.rotation else (0.0, 0.0, 0.0)
+                if abs(rz) > 1e-4 or abs(rx) > 1e-4 or abs(ry) > 1e-4:
+                    rz_r = math.radians(float(rz))
+                    ref_dir = self.create_entity("IfcDirection", (round(math.cos(rz_r), 6), round(math.sin(rz_r), 6), 0.0))
+                    axis_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                    elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, axis_dir, ref_dir)
+                else:
+                    elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+                elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
+                prod_shape_ref = None
+                dims = m_elem.dimensions
+                if dims:
+                    w, d, h = [float(x) for x in dims]
+                    pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                    axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                    rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, w, d)
+                    pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                    axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                    ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                    solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, h)
+                    shape_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "SweptSolid", [solid])
+                    prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
+                elem_ref = self.create_entity(
+                    m_cls,
+                    generate_ifc_guid(),
+                    None,
+                    m_elem.tag,
+                    None,
+                    None,
+                    elem_pl,
+                    prod_shape_ref,
+                    None,
+                )
+                element_tag_refs[m_elem.tag] = elem_ref
+                if st_id in storey_elements:
+                    storey_elements[st_id].append(elem_ref)
+
         # 5.1 Curtain Walls
         for cw in resolved.curtain_walls:
             st_id = cw.element.placement.storey
@@ -3462,6 +3515,71 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                     "geometry.assign_representation",
                     model,
                     product=custom_obj,
+                    representation=rep,
+                )
+
+    # 5.01 Chimneys, Energy Conversion & Flow Moving Devices
+    mep_m_configs = [
+        (getattr(resolved, "chimneys", []) or [], "IfcChimney"),
+        (getattr(resolved, "energy_conversion_devices", []) or [], "IfcEnergyConversionDevice"),
+        (getattr(resolved, "flow_moving_devices", []) or [], "IfcFlowMovingDevice"),
+    ]
+    for m_list, m_cls in mep_m_configs:
+        for m_elem in m_list:
+            m_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class=m_cls,
+                name=m_elem.tag,
+            )
+            st_id = getattr(m_elem, "storey", None) or getattr(m_elem.element.placement, "storey", None)
+            if st_id in storey_products:
+                storey_products[st_id].append(m_obj)
+            if st_id in storey_objs:
+                ifcopenshell.api.run(
+                    "spatial.assign_container",
+                    model,
+                    products=[m_obj],
+                    relating_structure=storey_objs[st_id],
+                )
+            px, py, pz = m_elem.position
+            rx, ry, rz = m_elem.rotation if m_elem.rotation else (0.0, 0.0, 0.0)
+            mat = _build_transform_matrix((px, py, pz), (rx, ry, rz))
+            ifcopenshell.api.run(
+                "geometry.edit_object_placement",
+                model,
+                product=m_obj,
+                matrix=mat,
+            )
+            dims = m_elem.dimensions
+            if dims:
+                w, d, h = [float(x) for x in dims]
+                profile = model.createIfcRectangleProfileDef(
+                    "AREA",
+                    None,
+                    model.createIfcAxis2Placement2D(
+                        model.createIfcCartesianPoint((0.0, 0.0))
+                    ),
+                    w,
+                    d,
+                )
+                solid = model.createIfcExtrudedAreaSolid(
+                    profile,
+                    model.createIfcAxis2Placement3D(
+                        model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                        model.createIfcDirection((0.0, 0.0, 1.0)),
+                        model.createIfcDirection((1.0, 0.0, 0.0)),
+                    ),
+                    model.createIfcDirection((0.0, 0.0, 1.0)),
+                    h,
+                )
+                rep = model.createIfcShapeRepresentation(
+                    body_context, "Body", "SweptSolid", [solid]
+                )
+                ifcopenshell.api.run(
+                    "geometry.assign_representation",
+                    model,
+                    product=m_obj,
                     representation=rep,
                 )
 

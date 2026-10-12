@@ -23,6 +23,7 @@ from debim.schema import (
     IfcNavigationElement,
     IfcBuiltSystem,
     IfcCableCarrierSegment,
+    IfcChimney,
     IfcColumn,
     IfcCovering,
     IfcCurtainWall,
@@ -37,6 +38,8 @@ from debim.schema import (
     IfcEarthworksCut,
     IfcEarthworksFill,
     IfcElectricDistributionBoard,
+    IfcEnergyConversionDevice,
+    IfcFlowMovingDevice,
     IfcFurnishingElement,
     IfcFurniture,
     IfcGeotechnicalStratum,
@@ -386,6 +389,45 @@ class ResolvedFurniture(BaseModel):
     dimensions: Tuple[float, float, float]
     bounding_box: Dict[str, float]
     layer: str = "interior/furniture"
+
+
+class ResolvedChimney(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcChimney
+    ifc_class: str = "IfcChimney"
+    position: Tuple[float, float, float]
+    rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    dimensions: Tuple[float, float, float]
+    bounding_box: Dict[str, float]
+    layer: str = "architecture/chimneys"
+
+
+class ResolvedEnergyConversionDevice(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcEnergyConversionDevice
+    ifc_class: str = "IfcEnergyConversionDevice"
+    position: Tuple[float, float, float]
+    rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    dimensions: Tuple[float, float, float]
+    bounding_box: Dict[str, float]
+    layer: str = "mep/energy_conversion"
+
+
+class ResolvedFlowMovingDevice(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcFlowMovingDevice
+    ifc_class: str = "IfcFlowMovingDevice"
+    position: Tuple[float, float, float]
+    rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    dimensions: Tuple[float, float, float]
+    bounding_box: Dict[str, float]
+    layer: str = "mep/flow_moving"
 
 
 class ResolvedCustomElement(BaseModel):
@@ -1573,6 +1615,9 @@ ResolvedElement = Union[
     ResolvedNavigationElement,
     ResolvedDistributionFlowElement,
     ResolvedFurniture,
+    ResolvedChimney,
+    ResolvedEnergyConversionDevice,
+    ResolvedFlowMovingDevice,
     ResolvedCustomElement,
     ResolvedTerminal,
     ResolvedDoor,
@@ -1635,6 +1680,9 @@ class ResolvedManifest(BaseModel):
     navigation_elements: List[ResolvedNavigationElement] = []
     distribution_flow_elements: List[ResolvedDistributionFlowElement] = []
     furniture: List[ResolvedFurniture] = []
+    chimneys: List[ResolvedChimney] = []
+    energy_conversion_devices: List[ResolvedEnergyConversionDevice] = []
+    flow_moving_devices: List[ResolvedFlowMovingDevice] = []
     custom_elements: List[ResolvedCustomElement] = []
     terminals: List[ResolvedTerminal] = []
     proxies: List[ResolvedProxy] = []
@@ -1941,6 +1989,144 @@ class SpatialResolver:
             dimensions=(w, d, h),
             bounding_box=bbox,
             layer=derive_default_layer(furn),
+        )
+
+    def resolve_chimney(self, elem: IfcChimney) -> ResolvedChimney:
+        st_id = elem.placement.storey if elem.placement and elem.placement.storey else (list(self.storeys.keys())[0] if self.storeys else "STOREY-1")
+        storey = self.get_storey(st_id)
+        st_elev = storey.elevation if storey else 0.0
+
+        if elem.placement and elem.placement.position is not None:
+            pos_x, pos_y, pos_z = elem.placement.position
+        elif elem.placement and elem.placement.grid:
+            gx, gy = elem.placement.grid
+            pos_x = self.get_grid_x(gx) + elem.placement.offset_x
+            pos_y = self.get_grid_y(gy) + elem.placement.offset_y
+            pos_z = elem.placement.offset_z
+        else:
+            pos_x, pos_y, pos_z = (0.0, 0.0, 0.0)
+
+        world_pos = (pos_x, pos_y, st_elev + pos_z)
+        rot = elem.placement.rotation if elem.placement and elem.placement.rotation is not None else (0.0, 0.0, 0.0)
+        if isinstance(rot, (int, float)):
+            rot = (0.0, 0.0, float(rot))
+        elif len(rot) == 1:
+            rot = (0.0, 0.0, float(rot[0]))
+
+        w = elem.dimensions.width if elem.dimensions else 0.5
+        d = elem.dimensions.depth if elem.dimensions and elem.dimensions.depth is not None else w
+        h = elem.dimensions.height if elem.dimensions else 2.0
+        vol = w * d * h
+
+        bbox = {
+            "min_x": world_pos[0] - w / 2.0, "max_x": world_pos[0] + w / 2.0,
+            "min_y": world_pos[1] - d / 2.0, "max_y": world_pos[1] + d / 2.0,
+            "min_z": world_pos[2], "max_z": world_pos[2] + h,
+            "width": w, "depth": d, "height": h,
+            "volume": vol,
+        }
+
+        return ResolvedChimney(
+            tag=elem.tag,
+            element=elem,
+            ifc_class="IfcChimney",
+            position=world_pos,
+            rotation=rot,
+            dimensions=(w, d, h),
+            bounding_box=bbox,
+            layer=elem.layer or "architecture/chimneys",
+        )
+
+    def resolve_energy_conversion_device(self, elem: IfcEnergyConversionDevice) -> ResolvedEnergyConversionDevice:
+        st_id = elem.placement.storey if elem.placement and elem.placement.storey else (list(self.storeys.keys())[0] if self.storeys else "STOREY-1")
+        storey = self.get_storey(st_id)
+        st_elev = storey.elevation if storey else 0.0
+
+        if elem.placement and elem.placement.position is not None:
+            pos_x, pos_y, pos_z = elem.placement.position
+        elif elem.placement and elem.placement.grid:
+            gx, gy = elem.placement.grid
+            pos_x = self.get_grid_x(gx) + elem.placement.offset_x
+            pos_y = self.get_grid_y(gy) + elem.placement.offset_y
+            pos_z = elem.placement.offset_z
+        else:
+            pos_x, pos_y, pos_z = (0.0, 0.0, 0.0)
+
+        world_pos = (pos_x, pos_y, st_elev + pos_z)
+        rot = elem.placement.rotation if elem.placement and elem.placement.rotation is not None else (0.0, 0.0, 0.0)
+        if isinstance(rot, (int, float)):
+            rot = (0.0, 0.0, float(rot))
+        elif len(rot) == 1:
+            rot = (0.0, 0.0, float(rot[0]))
+
+        w = elem.dimensions.width if elem.dimensions else 0.6
+        d = elem.dimensions.depth if elem.dimensions and elem.dimensions.depth is not None else w
+        h = elem.dimensions.height if elem.dimensions else 0.6
+        vol = w * d * h
+
+        bbox = {
+            "min_x": world_pos[0] - w / 2.0, "max_x": world_pos[0] + w / 2.0,
+            "min_y": world_pos[1] - d / 2.0, "max_y": world_pos[1] + d / 2.0,
+            "min_z": world_pos[2], "max_z": world_pos[2] + h,
+            "width": w, "depth": d, "height": h,
+            "volume": vol,
+        }
+
+        return ResolvedEnergyConversionDevice(
+            tag=elem.tag,
+            element=elem,
+            ifc_class="IfcEnergyConversionDevice",
+            position=world_pos,
+            rotation=rot,
+            dimensions=(w, d, h),
+            bounding_box=bbox,
+            layer=elem.layer or "mep/energy_conversion",
+        )
+
+    def resolve_flow_moving_device(self, elem: IfcFlowMovingDevice) -> ResolvedFlowMovingDevice:
+        st_id = elem.placement.storey if elem.placement and elem.placement.storey else (list(self.storeys.keys())[0] if self.storeys else "STOREY-1")
+        storey = self.get_storey(st_id)
+        st_elev = storey.elevation if storey else 0.0
+
+        if elem.placement and elem.placement.position is not None:
+            pos_x, pos_y, pos_z = elem.placement.position
+        elif elem.placement and elem.placement.grid:
+            gx, gy = elem.placement.grid
+            pos_x = self.get_grid_x(gx) + elem.placement.offset_x
+            pos_y = self.get_grid_y(gy) + elem.placement.offset_y
+            pos_z = elem.placement.offset_z
+        else:
+            pos_x, pos_y, pos_z = (0.0, 0.0, 0.0)
+
+        world_pos = (pos_x, pos_y, st_elev + pos_z)
+        rot = elem.placement.rotation if elem.placement and elem.placement.rotation is not None else (0.0, 0.0, 0.0)
+        if isinstance(rot, (int, float)):
+            rot = (0.0, 0.0, float(rot))
+        elif len(rot) == 1:
+            rot = (0.0, 0.0, float(rot[0]))
+
+        w = elem.dimensions.width if elem.dimensions else 0.6
+        d = elem.dimensions.depth if elem.dimensions and elem.dimensions.depth is not None else w
+        h = elem.dimensions.height if elem.dimensions else 0.6
+        vol = w * d * h
+
+        bbox = {
+            "min_x": world_pos[0] - w / 2.0, "max_x": world_pos[0] + w / 2.0,
+            "min_y": world_pos[1] - d / 2.0, "max_y": world_pos[1] + d / 2.0,
+            "min_z": world_pos[2], "max_z": world_pos[2] + h,
+            "width": w, "depth": d, "height": h,
+            "volume": vol,
+        }
+
+        return ResolvedFlowMovingDevice(
+            tag=elem.tag,
+            element=elem,
+            ifc_class="IfcFlowMovingDevice",
+            position=world_pos,
+            rotation=rot,
+            dimensions=(w, d, h),
+            bounding_box=bbox,
+            layer=elem.layer or "mep/flow_moving",
         )
 
     def resolve_custom_element(
@@ -6615,6 +6801,18 @@ class SpatialResolver:
                 r_furn = self.resolve_furniture(elem)
                 resolved_manifest.furniture.append(r_furn)
                 resolved_manifest.elements.append(r_furn)
+            elif isinstance(elem, IfcChimney):
+                r_chim = self.resolve_chimney(elem)
+                resolved_manifest.chimneys.append(r_chim)
+                resolved_manifest.elements.append(r_chim)
+            elif isinstance(elem, IfcEnergyConversionDevice):
+                r_ecd = self.resolve_energy_conversion_device(elem)
+                resolved_manifest.energy_conversion_devices.append(r_ecd)
+                resolved_manifest.elements.append(r_ecd)
+            elif isinstance(elem, IfcFlowMovingDevice):
+                r_fmd = self.resolve_flow_moving_device(elem)
+                resolved_manifest.flow_moving_devices.append(r_fmd)
+                resolved_manifest.elements.append(r_fmd)
             elif isinstance(elem, IfcCustomElement):
                 r_custom = self.resolve_custom_element(elem)
                 resolved_manifest.custom_elements.append(r_custom)

@@ -208,16 +208,42 @@ def extract_all_resolved_meshes(resolved: Any) -> Dict[str, Tuple[np.ndarray, np
             h = float(custom.dimensions.height)
             m = trimesh.creation.box(extents=(w, d, h))
             rx, ry, rz = custom.rotation if custom.rotation else (0.0, 0.0, 0.0)
-            R = trimesh.transformations.euler_matrix(rx, ry, rz)[:3, :3]
-            loc_center = np.array([w / 2.0, -d / 2.0, h / 2.0], dtype=np.float64)
-            world_center = np.array(custom.position, dtype=np.float64) + R @ loc_center
-
             if any(abs(r) > 1e-4 for r in (rx, ry, rz)):
                 T = trimesh.transformations.euler_matrix(rx, ry, rz)
                 m.apply_transform(T)
 
-            m.apply_translation(world_center)
+            m.apply_translation([custom.position[0], custom.position[1], custom.position[2] + h / 2.0])
             meshes[custom.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+
+    for chim in getattr(resolved, "chimneys", []) or []:
+        w, d, h = [float(x) for x in chim.dimensions]
+        m = trimesh.creation.box(extents=(w, d, h))
+        rx, ry, rz = chim.rotation if chim.rotation else (0.0, 0.0, 0.0)
+        if any(abs(r) > 1e-4 for r in (rx, ry, rz)):
+            T = trimesh.transformations.euler_matrix(rx, ry, rz)
+            m.apply_transform(T)
+        m.apply_translation([chim.position[0], chim.position[1], chim.position[2] + h / 2.0])
+        meshes[chim.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+
+    for ecd in getattr(resolved, "energy_conversion_devices", []) or []:
+        w, d, h = [float(x) for x in ecd.dimensions]
+        m = trimesh.creation.box(extents=(w, d, h))
+        rx, ry, rz = ecd.rotation if ecd.rotation else (0.0, 0.0, 0.0)
+        if any(abs(r) > 1e-4 for r in (rx, ry, rz)):
+            T = trimesh.transformations.euler_matrix(rx, ry, rz)
+            m.apply_transform(T)
+        m.apply_translation([ecd.position[0], ecd.position[1], ecd.position[2] + h / 2.0])
+        meshes[ecd.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
+
+    for fmd in getattr(resolved, "flow_moving_devices", []) or []:
+        w, d, h = [float(x) for x in fmd.dimensions]
+        m = trimesh.creation.box(extents=(w, d, h))
+        rx, ry, rz = fmd.rotation if fmd.rotation else (0.0, 0.0, 0.0)
+        if any(abs(r) > 1e-4 for r in (rx, ry, rz)):
+            T = trimesh.transformations.euler_matrix(rx, ry, rz)
+            m.apply_transform(T)
+        m.apply_translation([fmd.position[0], fmd.position[1], fmd.position[2] + h / 2.0])
+        meshes[fmd.tag] = (np.array(m.vertices, dtype=np.float64), np.array(m.faces, dtype=np.int32))
 
     for proxy in resolved.proxies:
         w, d, h = float(proxy.dimensions[0]), float(proxy.dimensions[1]), float(proxy.dimensions[2])
@@ -664,8 +690,12 @@ def run_visual_regression(
         class_ious.setdefault(r["class"], []).append(r["iou"])
 
     class_summary: Dict[str, Dict[str, Any]] = {}
-    structural_classes = {"IfcWall", "IfcColumn", "IfcBeam", "IfcSlab", "IfcFooting", "IfcMember", "IfcPlate"}
-    mep_classes = {"IfcPipeSegment", "IfcPipeFitting", "IfcDuctSegment", "IfcDuctFitting", "IfcDistributionPort", "IfcFlowTerminal"}
+    structural_classes = {"IfcWall", "IfcColumn", "IfcBeam", "IfcSlab", "IfcFooting", "IfcMember", "IfcPlate", "IfcChimney"}
+    mep_classes = {
+        "IfcPipeSegment", "IfcPipeFitting", "IfcDuctSegment", "IfcDuctFitting",
+        "IfcDistributionPort", "IfcFlowTerminal", "IfcAirTerminal",
+        "IfcEnergyConversionDevice", "IfcFlowMovingDevice"
+    }
 
     struct_matches: List[float] = []
     mep_matches: List[float] = []
