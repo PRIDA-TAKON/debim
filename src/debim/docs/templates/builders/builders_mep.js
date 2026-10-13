@@ -73,6 +73,312 @@ function buildPump(sample3d, options) {
     return group;
 }
 
+function buildAudiovisualDisplay(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 1.20;
+    const h = sample3d.height || 0.70;
+    const d = sample3d.depth || 0.10;
+
+    const bezelMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.8
+    });
+    const screenMat = new THREE.MeshStandardMaterial({
+        color: 0x0284c7,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.3,
+        wireframe: wireframeMode,
+        roughness: 0.1,
+        metalness: 0.9
+    });
+    const bracketMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.7
+    });
+    const speakerMat = new THREE.MeshStandardMaterial({
+        color: 0x64748b,
+        wireframe: wireframeMode,
+        roughness: 0.5,
+        metalness: 0.3
+    });
+
+    // Main widescreen monitor body
+    const bezelMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d * 0.4), bezelMat);
+    bezelMesh.position.set(0, 0, 0);
+    group.add(bezelMesh);
+
+    // Front screen glass display panel
+    const screenMesh = new THREE.Mesh(new THREE.BoxGeometry(w * 0.94, h * 0.90, 0.005), screenMat);
+    screenMesh.position.set(0, 0, d * 0.20 + 0.003);
+    group.add(screenMesh);
+
+    // VESA wall mounting bracket at rear
+    const wallPlate = new THREE.Mesh(new THREE.BoxGeometry(w * 0.35, h * 0.45, 0.015), bracketMat);
+    wallPlate.position.set(0, 0, -d * 0.20 - 0.015);
+    group.add(wallPlate);
+
+    const armUpper = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, d * 0.30), bracketMat);
+    armUpper.position.set(0, h * 0.10, -d * 0.10);
+    group.add(armUpper);
+
+    const armLower = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, d * 0.30), bracketMat);
+    armLower.position.set(0, -h * 0.10, -d * 0.10);
+    group.add(armLower);
+
+    // PA Ceiling / Wall Horn Speaker accessory mounted below screen
+    const hornBase = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.04, 16), speakerMat);
+    hornBase.position.set(0, -h / 2.0 - 0.10, 0);
+    group.add(hornBase);
+
+    const hornCone = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.05, 0.14, 20), speakerMat);
+    hornCone.rotation.x = Math.PI / 2.0;
+    hornCone.position.set(0, -h / 2.0 - 0.10, 0.08);
+    group.add(hornCone);
+
+    const hornBezel = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.012, 8, 24), bezelMat);
+    hornBezel.position.set(0, -h / 2.0 - 0.10, 0.15);
+    group.add(hornBezel);
+
+    return group;
+}
+
+function buildNetworkRouterRack(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.48;
+    const d = sample3d.depth || 0.35;
+    const h = sample3d.height || 0.08;
+
+    const chassisMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const earMat = new THREE.MeshStandardMaterial({
+        color: 0x475569,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.9
+    });
+    const portMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        wireframe: wireframeMode,
+        roughness: 0.8,
+        metalness: 0.2
+    });
+    const ledGreen = new THREE.MeshStandardMaterial({
+        color: 0x22c55e,
+        emissive: 0x22c55e,
+        emissiveIntensity: 0.8,
+        wireframe: wireframeMode
+    });
+    const ledAmber = new THREE.MeshStandardMaterial({
+        color: 0xf59e0b,
+        emissive: 0xf59e0b,
+        emissiveIntensity: 0.8,
+        wireframe: wireframeMode
+    });
+
+    // 19-inch 1U/2U metal rack chassis body
+    const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(w * 0.88, h, d), chassisMat);
+    group.add(bodyMesh);
+
+    // 19-inch rack mounting ears on left and right sides
+    [-w * 0.47, w * 0.47].forEach(xPos => {
+        const ear = new THREE.Mesh(new THREE.BoxGeometry(w * 0.06, h, 0.015), earMat);
+        ear.position.set(xPos, 0, d / 2.0 - 0.008);
+        group.add(ear);
+
+        // Rack screw holes
+        [-h * 0.30, h * 0.30].forEach(yPos => {
+            const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.02, 12), portMat);
+            hole.rotation.x = Math.PI / 2.0;
+            hole.position.set(xPos, yPos, d / 2.0 - 0.008);
+            group.add(hole);
+        });
+    });
+
+    // RJ45 Port Arrays on front face (2 banks of 12 ports)
+    [-w * 0.20, w * 0.15].forEach(bankX => {
+        const bankHousing = new THREE.Mesh(new THREE.BoxGeometry(w * 0.28, h * 0.50, 0.012), portMat);
+        bankHousing.position.set(bankX, 0, d / 2.0 + 0.004);
+        group.add(bankHousing);
+
+        for (let row = 0; row < 2; row++) {
+            for (let colIdx = 0; colIdx < 6; colIdx++) {
+                const px = bankX - w * 0.11 + colIdx * (w * 0.042);
+                const py = -h * 0.12 + row * (h * 0.24);
+
+                const rj45 = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.010, 0.008), chassisMat);
+                rj45.position.set(px, py, d / 2.0 + 0.008);
+                group.add(rj45);
+
+                // Blinking activity LED indicators above each port
+                const ledMat = (row + colIdx) % 3 === 0 ? ledAmber : ledGreen;
+                const led = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.004, 0.004), ledMat);
+                led.position.set(px, py + 0.008, d / 2.0 + 0.009);
+                group.add(led);
+            }
+        }
+    });
+
+    // Status display & console port section on far right
+    const consolePort = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.012, 12), chassisMat);
+    consolePort.rotation.x = Math.PI / 2.0;
+    consolePort.position.set(w * 0.34, -h * 0.10, d / 2.0 + 0.005);
+    group.add(consolePort);
+
+    for (let i = 0; i < 4; i++) {
+        const sysLed = new THREE.Mesh(new THREE.SphereGeometry(0.003, 8, 8), i === 0 ? ledGreen : ledAmber);
+        sysLed.position.set(w * 0.34 + i * 0.012 - 0.018, h * 0.20, d / 2.0 + 0.005);
+        group.add(sysLed);
+    }
+
+    return group;
+}
+
+function buildThermostatController(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.12;
+    const h = sample3d.height || 0.12;
+    const d = sample3d.depth || 0.03;
+
+    const bodyMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.1
+    });
+    const lcdMat = new THREE.MeshStandardMaterial({
+        color: 0x0284c7,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.4,
+        wireframe: wireframeMode,
+        roughness: 0.1,
+        metalness: 0.8
+    });
+    const ringMat = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.9
+    });
+    const backPlateMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        wireframe: wireframeMode,
+        roughness: 0.5,
+        metalness: 0.4
+    });
+
+    // Wall back mounting plate
+    const backPlate = new THREE.Mesh(new THREE.BoxGeometry(w * 0.95, h * 0.95, 0.008), backPlateMat);
+    backPlate.position.set(0, 0, -d / 2.0 + 0.004);
+    group.add(backPlate);
+
+    // Front main housing body (rounded smart thermostat enclosure)
+    const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d * 0.70), bodyMat);
+    bodyMesh.position.set(0, 0, 0);
+    group.add(bodyMesh);
+
+    // Backlit LCD digital temperature display screen
+    const lcdMesh = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.32, w * 0.32, 0.006, 32), lcdMat);
+    lcdMesh.rotation.x = Math.PI / 2.0;
+    lcdMesh.position.set(0, h * 0.10, d / 2.0 + 0.002);
+    group.add(lcdMesh);
+
+    // Circular metallic rotary encoder dial ring
+    const ringMesh = new THREE.Mesh(new THREE.TorusGeometry(w * 0.34, 0.008, 12, 32), ringMat);
+    ringMesh.position.set(0, h * 0.10, d / 2.0 + 0.004);
+    group.add(ringMesh);
+
+    // Lower capacitive touch / push buttons
+    [-w * 0.22, 0, w * 0.22].forEach(xPos => {
+        const btn = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.004, 16), ringMat);
+        btn.rotation.x = Math.PI / 2.0;
+        btn.position.set(xPos, -h * 0.30, d / 2.0 + 0.002);
+        group.add(btn);
+    });
+
+    return group;
+}
+
+function buildTimerRelay(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.07;
+    const d = sample3d.depth || 0.06;
+    const h = sample3d.height || 0.09;
+
+    const bodyMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.2
+    });
+    const dialMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.3
+    });
+    const pinMat = new THREE.MeshStandardMaterial({
+        color: 0xdc2626,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.5
+    });
+    const terminalMat = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.9
+    });
+
+    // DIN-rail modular casing body
+    const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), bodyMat);
+    group.add(bodyMesh);
+
+    // Front raised section with transparent window cover
+    const faceMesh = new THREE.Mesh(new THREE.BoxGeometry(w * 0.88, h * 0.65, d * 0.35), bodyMat);
+    faceMesh.position.set(0, 0, d / 2.0 + d * 0.175);
+    group.add(faceMesh);
+
+    // Analog 24-hr dial clock face
+    const dialFace = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.35, w * 0.35, 0.006, 24), dialMat);
+    dialFace.rotation.x = Math.PI / 2.0;
+    dialFace.position.set(0, h * 0.05, d / 2.0 + d * 0.35 + 0.002);
+    group.add(dialFace);
+
+    // 24-hr programming pushpins surrounding the dial
+    for (let i = 0; i < 12; i++) {
+        const angle = (i / 12.0) * Math.PI * 2.0;
+        const pinX = Math.cos(angle) * (w * 0.30);
+        const pinY = h * 0.05 + Math.sin(angle) * (w * 0.30);
+
+        const pin = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.003, 0.008), pinMat);
+        pin.position.set(pinX, pinY, d / 2.0 + d * 0.35 + 0.006);
+        group.add(pin);
+    }
+
+    // Screw terminals on top and bottom
+    [-h * 0.42, h * 0.42].forEach(yPos => {
+        [-w * 0.28, w * 0.28].forEach(xPos => {
+            const terminal = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.010, 12), terminalMat);
+            terminal.position.set(xPos, yPos, d / 2.0 - 0.015);
+            group.add(terminal);
+        });
+    });
+
+    return group;
+}
+
 function buildSolarPanel(sample3d, options) {
     const { wireframeMode, col } = options;
     const group = new THREE.Group();

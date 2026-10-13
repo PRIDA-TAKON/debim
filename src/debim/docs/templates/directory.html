@@ -635,6 +635,14 @@ currentMesh = buildStructuralFastener(sample3d, options);
                 currentMesh = buildAlarmDevice(sample3d, options);
             } else if (sample3d.shape === 'battery_storage') {
                 currentMesh = buildBatteryStorage(sample3d, options);
+            } else if (sample3d.shape === 'audiovisual_display') {
+                currentMesh = buildAudiovisualDisplay(sample3d, options);
+            } else if (sample3d.shape === 'network_router_rack') {
+                currentMesh = buildNetworkRouterRack(sample3d, options);
+            } else if (sample3d.shape === 'thermostat_controller') {
+                currentMesh = buildThermostatController(sample3d, options);
+            } else if (sample3d.shape === 'timer_relay') {
+                currentMesh = buildTimerRelay(sample3d, options);
             } else {
                 let geom;
                 if (sample3d.shape === 'cylinder') {
