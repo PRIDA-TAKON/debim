@@ -173,6 +173,16 @@ def test_procedural_3d_shapes_payloads():
     assert by_class["IfcMarineFacility"]["shape"] == "marine_facility"
     assert by_class["IfcMarinePart"]["shape"] == "marine_facility"
 
+    # Enclosure & Vertical Transport additions
+    assert by_class["IfcTransportElement"]["shape"] == "transport_element"
+    assert by_class["IfcCurtainWall"]["shape"] == "curtain_wall"
+    assert by_class["IfcShadingDevice"]["shape"] == "shading_device"
+    assert by_class["IfcWall"]["shape"] == "wall_system"
+    assert by_class["IfcWallStandardCase"]["shape"] == "wall_system"
+    assert by_class["IfcWallElementedCase"]["shape"] == "wall_system"
+    assert by_class["IfcCovering"]["shape"] == "covering"
+    assert by_class["IfcChimney"]["shape"] == "chimney"
+
 
 def test_procedural_3d_geometry_handlers_in_html():
     """Test that generated HTML contains Three.js composite geometry handlers."""
@@ -196,3 +206,9 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "railway_infrastructure" in html_str
     assert "road_infrastructure" in html_str
     assert "marine_facility" in html_str
+    assert "transport_element" in html_str
+    assert "curtain_wall" in html_str
+    assert "shading_device" in html_str
+    assert "wall_system" in html_str
+    assert "covering" in html_str
+    assert "chimney" in html_str

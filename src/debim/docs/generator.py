@@ -191,16 +191,26 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "box", "width": 0.30, "depth": 0.30, "height": 3.50, "color": "#64748B", "is_reinforced_concrete": True, "rebar_type": "column"}
     elif "beam" in c:
         return {"shape": "box", "width": 4.00, "depth": 0.20, "height": 0.40, "color": "#475569", "is_reinforced_concrete": True, "rebar_type": "beam"}
-    elif "slab" in c or "covering" in c or "plate" in c:
+    elif "slab" in c or "plate" in c:
         return {"shape": "box", "width": 4.00, "depth": 4.00, "height": 0.15, "color": "#94A3B8", "is_reinforced_concrete": True, "rebar_type": "slab"}
+    elif "covering" in c:
+        return {"shape": "covering", "width": 3.60, "depth": 3.60, "height": 0.10, "color": "#f8fafc"}
     elif "footing" in c or "retaining" in c:
         return {"shape": "box", "width": 1.20, "depth": 1.20, "height": 0.50, "color": "#64748B", "is_reinforced_concrete": True, "rebar_type": "footing"}
     elif "pipe" in c or "conduit" in c or "cable" in c:
         return {"shape": "pipe", "radius": 0.025, "length": 5.0, "color": "#0284C7"}
     elif "duct" in c:
         return {"shape": "box", "width": 6.0, "depth": 0.40, "height": 0.25, "color": "#CBD5E1"}
-    elif "wall" in c or "curtain" in c:
-        return {"shape": "box", "width": 4.00, "depth": 0.10, "height": 3.00, "color": "#CBD5E1"}
+    elif "curtain" in c:
+        return {"shape": "curtain_wall", "width": 4.00, "depth": 0.15, "height": 3.00, "color": "#38bdf8"}
+    elif "shading" in c:
+        return {"shape": "shading_device", "width": 2.40, "depth": 0.80, "height": 1.50, "color": "#64748b"}
+    elif "wall" in c:
+        return {"shape": "wall_system", "width": 4.00, "depth": 0.22, "height": 3.00, "color": "#cbd5e1"}
+    elif "chimney" in c:
+        return {"shape": "chimney", "width": 0.80, "depth": 0.80, "height": 4.50, "color": "#78350f"}
+    elif "transport" in c:
+        return {"shape": "transport_element", "width": 1.60, "depth": 1.80, "height": 2.60, "color": "#0284c7"}
     elif "door" in c:
         return {"shape": "door", "width": 0.9, "height": 2.1, "depth": 0.1, "color": "#78350F"}
     elif "window" in c:
