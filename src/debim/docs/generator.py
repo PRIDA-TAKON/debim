@@ -187,7 +187,7 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
     """Generate sample_3d payload with realistic geometric dimensions and color scheme."""
     c = class_name.lower()
 
-    if "column" in c or "pile" in c:
+    if "column" in c:
         return {"shape": "box", "width": 0.30, "depth": 0.30, "height": 3.50, "color": "#64748B", "is_reinforced_concrete": True, "rebar_type": "column"}
     elif "beam" in c:
         return {"shape": "box", "width": 4.00, "depth": 0.20, "height": 0.40, "color": "#475569", "is_reinforced_concrete": True, "rebar_type": "beam"}
@@ -195,8 +195,18 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "box", "width": 4.00, "depth": 4.00, "height": 0.15, "color": "#94A3B8", "is_reinforced_concrete": True, "rebar_type": "slab"}
     elif "covering" in c:
         return {"shape": "covering", "width": 3.60, "depth": 3.60, "height": 0.10, "color": "#f8fafc"}
-    elif "footing" in c or "retaining" in c:
-        return {"shape": "box", "width": 1.20, "depth": 1.20, "height": 0.50, "color": "#64748B", "is_reinforced_concrete": True, "rebar_type": "footing"}
+    elif "earthwork" in c or "soil" in c or "stratum" in c or "geotechnical" in c:
+        return {"shape": "earthworks_embankment", "width": 6.00, "depth": 8.00, "height": 2.50, "color": "#d97706"}
+    elif "retaining" in c or "geographic" in c:
+        return {"shape": "retaining_structure", "width": 4.00, "depth": 2.50, "height": 3.00, "color": "#64748b", "is_reinforced_concrete": True, "rebar_type": "retaining_wall"}
+    elif "footing" in c or "pile" in c:
+        return {"shape": "deep_foundation", "width": 2.40, "depth": 2.40, "height": 4.00, "color": "#64748b", "is_reinforced_concrete": True, "rebar_type": "footing"}
+    elif "tendon" in c:
+        return {"shape": "tendon_anchor", "width": 0.40, "depth": 0.40, "height": 2.50, "color": "#f59e0b"}
+    elif "fastener" in c or "accessory" in c:
+        return {"shape": "structural_fastener", "width": 0.30, "depth": 0.30, "height": 0.40, "color": "#334155"}
+    elif "vibration" in c or "member" in c:
+        return {"shape": "vibration_isolator", "width": 0.50, "depth": 0.50, "height": 0.45, "color": "#0284c7"}
     elif "pipe" in c or "conduit" in c or "cable" in c:
         return {"shape": "pipe", "radius": 0.025, "length": 5.0, "color": "#0284C7"}
     elif "duct" in c:
