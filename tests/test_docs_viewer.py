@@ -134,6 +134,22 @@ def test_procedural_3d_shapes_payloads():
     assert by_class["IfcSystemFurnitureElement"]["shape"] == "furniture"
     assert by_class["IfcFurnishingElement"]["shape"] == "furniture"
 
+    assert by_class["IfcPump"]["shape"] == "pump"
+    assert by_class["IfcFlowMovingDevice"]["shape"] == "pump"
+
+    assert by_class["IfcValve"]["shape"] == "valve"
+    assert by_class["IfcFlowController"]["shape"] == "valve"
+
+    assert by_class["IfcSanitaryTerminal"]["shape"] == "sanitary_terminal"
+    assert by_class["IfcWasteTerminal"]["shape"] == "sanitary_terminal"
+
+    assert by_class["IfcBoiler"]["shape"] == "equipment_vessel"
+    assert by_class["IfcChiller"]["shape"] == "equipment_vessel"
+    assert by_class["IfcTank"]["shape"] == "equipment_vessel"
+
+    assert by_class["IfcAirTerminal"]["shape"] == "air_terminal"
+    assert by_class["IfcDamper"]["shape"] == "air_terminal"
+
 
 def test_procedural_3d_geometry_handlers_in_html():
     """Test that generated HTML contains Three.js composite geometry handlers."""
@@ -145,3 +161,8 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "window" in html_str
     assert "roof" in html_str
     assert "furniture" in html_str
+    assert "pump" in html_str
+    assert "valve" in html_str
+    assert "sanitary_terminal" in html_str
+    assert "equipment_vessel" in html_str
+    assert "air_terminal" in html_str
