@@ -183,6 +183,25 @@ def test_procedural_3d_shapes_payloads():
     assert by_class["IfcCovering"]["shape"] == "covering"
     assert by_class["IfcChimney"]["shape"] == "chimney"
 
+    # HVAC, Mechanical Plant & Fire Suppression additions
+    assert by_class["IfcDuctSegment"]["shape"] == "duct_assembly"
+    assert by_class["IfcDuctFitting"]["shape"] == "duct_assembly"
+    assert by_class["IfcDuctSilencer"]["shape"] == "duct_assembly"
+
+    assert by_class["IfcFan"]["shape"] == "fan_assembly"
+    assert by_class["IfcAirToAirHeatRecovery"]["shape"] == "fan_assembly"
+
+    assert by_class["IfcCoolingTower"]["shape"] == "cooling_tower"
+    assert by_class["IfcEvaporativeCooler"]["shape"] == "cooling_tower"
+    assert by_class["IfcHeatExchanger"]["shape"] == "cooling_tower"
+
+    assert by_class["IfcFireSuppressionTerminal"]["shape"] == "fire_suppression"
+    assert by_class["IfcStackTerminal"]["shape"] == "fire_suppression"
+
+    assert by_class["IfcTransformer"]["shape"] == "power_plant"
+    assert by_class["IfcElectricGenerator"]["shape"] == "power_plant"
+    assert by_class["IfcElectricMotor"]["shape"] == "power_plant"
+
 
 def test_procedural_3d_geometry_handlers_in_html():
     """Test that generated HTML contains Three.js composite geometry handlers."""
@@ -212,3 +231,8 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "wall_system" in html_str
     assert "covering" in html_str
     assert "chimney" in html_str
+    assert "duct_assembly" in html_str
+    assert "fan_assembly" in html_str
+    assert "cooling_tower" in html_str
+    assert "fire_suppression" in html_str
+    assert "power_plant" in html_str

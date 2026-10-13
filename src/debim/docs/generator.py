@@ -200,7 +200,15 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
     elif "pipe" in c or "conduit" in c or "cable" in c:
         return {"shape": "pipe", "radius": 0.025, "length": 5.0, "color": "#0284C7"}
     elif "duct" in c:
-        return {"shape": "box", "width": 6.0, "depth": 0.40, "height": 0.25, "color": "#CBD5E1"}
+        return {"shape": "duct_assembly", "width": 2.4, "depth": 0.50, "height": 0.35, "color": "#cbd5e1"}
+    elif "fan" in c or "heatrecovery" in c:
+        return {"shape": "fan_assembly", "width": 1.2, "depth": 1.0, "height": 1.1, "color": "#0284c7"}
+    elif "coolingtower" in c or "evaporativecooler" in c or "heatexchanger" in c:
+        return {"shape": "cooling_tower", "width": 1.8, "depth": 1.8, "height": 2.4, "color": "#0284c7"}
+    elif "firesuppression" in c or "stackterminal" in c:
+        return {"shape": "fire_suppression", "width": 0.25, "depth": 0.25, "height": 0.35, "color": "#dc2626"}
+    elif "transformer" in c or "electricgenerator" in c or "electricmotor" in c:
+        return {"shape": "power_plant", "width": 1.6, "depth": 1.2, "height": 1.4, "color": "#475569"}
     elif "curtain" in c:
         return {"shape": "curtain_wall", "width": 4.00, "depth": 0.15, "height": 3.00, "color": "#38bdf8"}
     elif "shading" in c:
