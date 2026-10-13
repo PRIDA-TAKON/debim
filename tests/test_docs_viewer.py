@@ -250,6 +250,13 @@ def test_procedural_3d_shapes_payloads():
     assert by_class["IfcAlarm"]["shape"] == "alarm_device"
     assert by_class["IfcElectricFlowStorageDevice"]["shape"] == "battery_storage"
 
+    # Flow meters, instruments, interceptors, actuators & humidifiers
+    assert by_class["IfcFlowMeter"]["shape"] == "flow_meter"
+    assert by_class["IfcFlowInstrument"]["shape"] == "flow_instrument"
+    assert by_class["IfcActuator"]["shape"] == "valve_actuator"
+    assert by_class["IfcInterceptor"]["shape"] == "grease_oil_interceptor"
+    assert by_class["IfcHumidifier"]["shape"] == "humidifier_unit"
+
     # Audio-Visual, Communications & Controller additions
     assert by_class["IfcAudioVisualAppliance"]["shape"] == "audiovisual_display"
     assert by_class["IfcCommunicationsAppliance"]["shape"] == "network_router_rack"
@@ -313,6 +320,11 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "circuit_breaker" in html_str
     assert "alarm_device" in html_str
     assert "battery_storage" in html_str
+    assert "flow_meter" in html_str
+    assert "flow_instrument" in html_str
+    assert "valve_actuator" in html_str
+    assert "grease_oil_interceptor" in html_str
+    assert "humidifier_unit" in html_str
     assert "audiovisual_display" in html_str
     assert "network_router_rack" in html_str
     assert "thermostat_controller" in html_str

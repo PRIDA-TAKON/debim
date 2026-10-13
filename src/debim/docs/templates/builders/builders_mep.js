@@ -1684,3 +1684,371 @@ function buildCombustionBurner(sample3d, options) {
 
     return group;
 }
+
+function buildFlowMeter(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.35;
+    const d = sample3d.depth || 0.20;
+    const h = sample3d.height || 0.25;
+
+    const brassMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const stainlessMat = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.85
+    });
+    const housingMat = new THREE.MeshStandardMaterial({
+        color: 0x0284c7,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.5
+    });
+    const lcdMat = new THREE.MeshStandardMaterial({
+        color: 0x065f46,
+        emissive: 0x047857,
+        emissiveIntensity: 0.4,
+        wireframe: wireframeMode
+    });
+    const darkMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        wireframe: wireframeMode
+    });
+
+    const tubeGeom = new THREE.CylinderGeometry(0.045, 0.045, w, 24);
+    tubeGeom.rotateZ(Math.PI / 2.0);
+    const tubeMesh = new THREE.Mesh(tubeGeom, brassMat);
+    group.add(tubeMesh);
+
+    [-w / 2.0 + 0.01, w / 2.0 - 0.01].forEach(xPos => {
+        const flangeGeom = new THREE.CylinderGeometry(0.075, 0.075, 0.02, 20);
+        flangeGeom.rotateZ(Math.PI / 2.0);
+        const flangeMesh = new THREE.Mesh(flangeGeom, brassMat);
+        flangeMesh.position.set(xPos, 0, 0);
+        group.add(flangeMesh);
+
+        const ringMesh = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.01, 8, 20), darkMat);
+        ringMesh.rotation.y = Math.PI / 2.0;
+        ringMesh.position.set(xPos, 0, 0);
+        group.add(ringMesh);
+    });
+
+    const sensorBodyGeom = new THREE.CylinderGeometry(0.06, 0.06, w * 0.40, 20);
+    sensorBodyGeom.rotateZ(Math.PI / 2.0);
+    const sensorBody = new THREE.Mesh(sensorBodyGeom, housingMat);
+    group.add(sensorBody);
+
+    const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, h * 0.35, 16), stainlessMat);
+    neckMesh.position.set(0, h * 0.15, 0);
+    group.add(neckMesh);
+
+    const headHousing = new THREE.Mesh(new THREE.CylinderGeometry(d * 0.40, d * 0.40, h * 0.38, 24), housingMat);
+    headHousing.rotation.x = Math.PI / 2.0;
+    headHousing.position.set(0, h * 0.35, 0);
+    group.add(headHousing);
+
+    const screenMesh = new THREE.Mesh(new THREE.BoxGeometry(d * 0.50, h * 0.22, 0.008), lcdMat);
+    screenMesh.position.set(0, h * 0.35, d * 0.20 + 0.005);
+    group.add(screenMesh);
+
+    const bezelMesh = new THREE.Mesh(new THREE.BoxGeometry(d * 0.58, h * 0.28, 0.005), darkMat);
+    bezelMesh.position.set(0, h * 0.35, d * 0.20 + 0.002);
+    group.add(bezelMesh);
+
+    return group;
+}
+
+function buildFlowInstrument(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.15;
+    const h = sample3d.height || 0.25;
+
+    const stainlessMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.85
+    });
+    const brassMat = new THREE.MeshStandardMaterial({
+        color: 0xd97706,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const dialMat = new THREE.MeshStandardMaterial({
+        color: 0xf8fafc,
+        wireframe: wireframeMode,
+        roughness: 0.1
+    });
+    const needleMat = new THREE.MeshStandardMaterial({
+        color: 0xdc2626,
+        wireframe: wireframeMode
+    });
+    const glassMat = new THREE.MeshStandardMaterial({
+        color: 0xe0f2fe,
+        transparent: true,
+        opacity: 0.4,
+        wireframe: wireframeMode
+    });
+
+    const probeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, h * 0.45, 12), stainlessMat);
+    probeMesh.position.set(0, -h * 0.22, 0);
+    group.add(probeMesh);
+
+    const hexFitting = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.025, 6), brassMat);
+    hexFitting.position.set(0, -0.02, 0);
+    group.add(hexFitting);
+
+    const caseGeom = new THREE.CylinderGeometry(w * 0.45, w * 0.45, 0.035, 24);
+    caseGeom.rotateX(Math.PI / 2.0);
+    const caseMesh = new THREE.Mesh(caseGeom, stainlessMat);
+    caseMesh.position.set(0, h * 0.20, 0);
+    group.add(caseMesh);
+
+    const dialGeom = new THREE.CylinderGeometry(w * 0.40, w * 0.40, 0.004, 24);
+    dialGeom.rotateX(Math.PI / 2.0);
+    const dialMesh = new THREE.Mesh(dialGeom, dialMat);
+    dialMesh.position.set(0, h * 0.20, 0.018);
+    group.add(dialMesh);
+
+    const needleMesh = new THREE.Mesh(new THREE.BoxGeometry(0.004, w * 0.30, 0.002), needleMat);
+    needleMesh.position.set(0, h * 0.20 + 0.02, 0.021);
+    needleMesh.rotation.z = -Math.PI / 4.0;
+    group.add(needleMesh);
+
+    const pinMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.006, 12), brassMat);
+    pinMesh.rotation.x = Math.PI / 2.0;
+    pinMesh.position.set(0, h * 0.20, 0.022);
+    group.add(pinMesh);
+
+    const bezelMesh = new THREE.Mesh(new THREE.TorusGeometry(w * 0.44, 0.006, 8, 24), stainlessMat);
+    bezelMesh.position.set(0, h * 0.20, 0.020);
+    group.add(bezelMesh);
+
+    const glassGeom = new THREE.CylinderGeometry(w * 0.42, w * 0.42, 0.002, 24);
+    glassGeom.rotateX(Math.PI / 2.0);
+    const glassMesh = new THREE.Mesh(glassGeom, glassMat);
+    glassMesh.position.set(0, h * 0.20, 0.023);
+    group.add(glassMesh);
+
+    return group;
+}
+
+function buildValveActuator(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.25;
+    const d = sample3d.depth || 0.20;
+    const h = sample3d.height || 0.30;
+
+    const housingMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.5
+    });
+    const steelMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.7
+    });
+    const leverMat = new THREE.MeshStandardMaterial({
+        color: 0xdc2626,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.3
+    });
+    const indicatorMat = new THREE.MeshStandardMaterial({
+        color: 0x16a34a,
+        wireframe: wireframeMode
+    });
+
+    const housingMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.55, d), housingMat);
+    group.add(housingMesh);
+
+    const stemMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, h * 0.25, 16), steelMat);
+    stemMesh.position.set(0, -h * 0.38, 0);
+    group.add(stemMesh);
+
+    const flangeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.015, 16), steelMat);
+    flangeMesh.position.set(0, -h * 0.48, 0);
+    group.add(flangeMesh);
+
+    const leverShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, w * 0.65, 12), steelMat);
+    leverShaft.rotation.z = Math.PI / 2.0;
+    leverShaft.position.set(0, h * 0.30, 0);
+    group.add(leverShaft);
+
+    const leverHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.012, 0.08, 12), leverMat);
+    leverHandle.position.set(w * 0.32, h * 0.30, 0);
+    group.add(leverHandle);
+
+    const indicatorDome = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.025, 16), indicatorMat);
+    indicatorDome.position.set(0, h * 0.31, 0);
+    group.add(indicatorDome);
+
+    const arrowLine = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.004, 0.05), leverMat);
+    arrowLine.position.set(0, h * 0.325, 0);
+    group.add(arrowLine);
+
+    const glandBox = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 0.05), housingMat);
+    glandBox.position.set(-w / 2.0 - 0.02, -h * 0.08, 0);
+    group.add(glandBox);
+
+    const glandNut = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.03, 12), steelMat);
+    glandNut.rotation.z = Math.PI / 2.0;
+    glandNut.position.set(-w / 2.0 - 0.04, -h * 0.08, 0);
+    group.add(glandNut);
+
+    return group;
+}
+
+function buildGreaseOilInterceptor(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 1.20;
+    const d = sample3d.depth || 0.80;
+    const h = sample3d.height || 0.70;
+
+    const tankMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.5,
+        metalness: 0.3
+    });
+    const baffleMat = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.6
+    });
+    const pipeMat = new THREE.MeshStandardMaterial({
+        color: 0x0284c7,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.5
+    });
+    const coverMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        wireframe: wireframeMode,
+        roughness: 0.6,
+        metalness: 0.4
+    });
+
+    const tankMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), tankMat);
+    group.add(tankMesh);
+
+    const rimFrame = new THREE.Mesh(new THREE.BoxGeometry(w * 1.04, 0.03, d * 1.04), tankMat);
+    rimFrame.position.set(0, h / 2.0 + 0.015, 0);
+    group.add(rimFrame);
+
+    const baffle1 = new THREE.Mesh(new THREE.BoxGeometry(0.015, h * 0.75, d * 0.92), baffleMat);
+    baffle1.position.set(-w * 0.18, -h * 0.10, 0);
+    group.add(baffle1);
+
+    const baffle2 = new THREE.Mesh(new THREE.BoxGeometry(0.015, h * 0.70, d * 0.92), baffleMat);
+    baffle2.position.set(w * 0.18, h * 0.08, 0);
+    group.add(baffle2);
+
+    const inletPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.15, 16), pipeMat);
+    inletPipe.rotation.z = Math.PI / 2.0;
+    inletPipe.position.set(-w / 2.0 - 0.06, h * 0.18, 0);
+    group.add(inletPipe);
+
+    const inletDrop = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, h * 0.40, 16), pipeMat);
+    inletDrop.position.set(-w / 2.0 + 0.05, 0, 0);
+    group.add(inletDrop);
+
+    const outletPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.15, 16), pipeMat);
+    outletPipe.rotation.z = Math.PI / 2.0;
+    outletPipe.position.set(w / 2.0 + 0.06, h * 0.12, 0);
+    group.add(outletPipe);
+
+    const outletDrop = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, h * 0.45, 16), pipeMat);
+    outletDrop.position.set(w / 2.0 - 0.05, -h * 0.05, 0);
+    group.add(outletDrop);
+
+    [-w * 0.25, w * 0.25].forEach(xPos => {
+        const manhole = new THREE.Mesh(new THREE.CylinderGeometry(d * 0.24, d * 0.24, 0.025, 20), coverMat);
+        manhole.position.set(xPos, h / 2.0 + 0.03, 0);
+        group.add(manhole);
+
+        const boltRing = new THREE.Mesh(new THREE.TorusGeometry(d * 0.22, 0.008, 8, 20), baffleMat);
+        boltRing.rotation.x = Math.PI / 2.0;
+        boltRing.position.set(xPos, h / 2.0 + 0.04, 0);
+        group.add(boltRing);
+    });
+
+    return group;
+}
+
+function buildHumidifierUnit(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.80;
+    const d = sample3d.depth || 0.50;
+    const h = sample3d.height || 0.60;
+
+    const cabinetMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.5
+    });
+    const panelMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        wireframe: wireframeMode
+    });
+    const stainlessMat = new THREE.MeshStandardMaterial({
+        color: 0xcbd5e1,
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.85
+    });
+    const brassMat = new THREE.MeshStandardMaterial({
+        color: 0xd97706,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+
+    const cabinetMesh = new THREE.Mesh(new THREE.BoxGeometry(w * 0.48, h, d), cabinetMat);
+    cabinetMesh.position.set(-w * 0.25, 0, 0);
+    group.add(cabinetMesh);
+
+    const controlPanel = new THREE.Mesh(new THREE.BoxGeometry(0.01, h * 0.35, d * 0.45), panelMat);
+    controlPanel.position.set(-w * 0.49 - 0.002, h * 0.15, 0);
+    group.add(controlPanel);
+
+    [-h * 0.15, h * 0.15].forEach(yPos => {
+        const manifoldTube = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, w * 0.58, 16), stainlessMat);
+        manifoldTube.rotation.z = Math.PI / 2.0;
+        manifoldTube.position.set(w * 0.18, yPos, 0);
+        group.add(manifoldTube);
+
+        for (let i = 0; i < 5; i++) {
+            const nx = -w * 0.05 + i * (w * 0.11);
+            const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.018, 12), stainlessMat);
+            nozzle.position.set(nx, yPos + 0.02, 0);
+            group.add(nozzle);
+        }
+    });
+
+    const waterInlet = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.06, 12), brassMat);
+    waterInlet.position.set(-w * 0.35, -h / 2.0 - 0.03, d * 0.20);
+    group.add(waterInlet);
+
+    const drainValve = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.06, 12), brassMat);
+    drainValve.position.set(-w * 0.35, -h / 2.0 - 0.03, -d * 0.20);
+    group.add(drainValve);
+
+    return group;
+}
