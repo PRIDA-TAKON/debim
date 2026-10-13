@@ -102,25 +102,68 @@
             background: #f8fafc;
         }
 
+        .discipline-group {
+            margin-bottom: 8px;
+        }
+
         .discipline-group-title {
             font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.8px;
             color: #0284c7;
-            margin-bottom: 6px;
+            padding: 8px 10px;
+            background: #e2e8f0;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .discipline-group-title:hover {
+            background: #cbd5e1;
+            color: #0369a1;
+        }
+
+        .discipline-group-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .discipline-chevron {
+            font-size: 0.65rem;
+            transition: transform 0.2s ease;
+            display: inline-block;
+        }
+
+        .discipline-group.collapsed .discipline-chevron {
+            transform: rotate(-90deg);
+        }
+
+        .discipline-items-container {
+            margin-top: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            transition: max-height 0.2s ease;
+        }
+
+        .discipline-group.collapsed .discipline-items-container {
+            display: none;
         }
 
         .discipline-badge {
-            background: #e0f2fe;
+            background: #ffffff;
             color: #0369a1;
             font-size: 0.68rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-weight: 700;
+            border: 1px solid #bfdbfe;
         }
 
         .class-item {
@@ -130,7 +173,7 @@
             border: 1px solid #e2e8f0;
             cursor: pointer;
             transition: all 0.15s ease;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .class-item:hover {
@@ -557,6 +600,7 @@
                     <div id="viewport-3d-container">
                         <canvas id="canvas-3d"></canvas>
                         <div class="controls-overlay">
+                            <button class="tool-btn active" id="edges-btn" onclick="toggleEdges()">SketchUp Edges (เส้นขอบ)</button>
                             <button class="tool-btn active" id="rebar-btn" onclick="toggleRebar()" style="display:none;">Rebar Cage (เหล็กเสริม)</button>
                             <button class="tool-btn active" id="xray-btn" onclick="toggleXRay()" style="display:none;">X-Ray Concrete</button>
                             <button class="tool-btn" id="wireframe-btn" onclick="toggleWireframe()">Wireframe</button>
@@ -657,6 +701,9 @@
         let bboxMode = false;
         let bboxHelper = null;
 
+        let edgesMode = true;
+        let edgesGroup = null;
+
         // Init App
         function init() {
             renderNavList(classesData);
@@ -683,7 +730,7 @@
             window.addEventListener('resize', onWindowResize);
         }
 
-        // Render Nav List in Sidebar
+        // Render Nav List in Sidebar with Collapsible Accordion Groups
         function renderNavList(data) {
             const navEl = document.getElementById('nav-list');
             navEl.innerHTML = '';
@@ -695,12 +742,23 @@
                 if (filtered.length === 0) return;
 
                 const groupEl = document.createElement('div');
-                groupEl.innerHTML = `
-                    <div class="discipline-group-title">
+                groupEl.className = 'discipline-group';
+                groupEl.id = `group-${disc.toLowerCase()}`;
+
+                const titleEl = document.createElement('div');
+                titleEl.className = 'discipline-group-title';
+                titleEl.onclick = () => toggleDisciplineGroup(disc.toLowerCase());
+                titleEl.innerHTML = `
+                    <div class="discipline-group-left">
+                        <span class="discipline-chevron">▼</span>
                         <span>${disc}</span>
-                        <span class="discipline-badge">${filtered.length}</span>
                     </div>
+                    <span class="discipline-badge">${filtered.length}</span>
                 `;
+                groupEl.appendChild(titleEl);
+
+                const itemsContainer = document.createElement('div');
+                itemsContainer.className = 'discipline-items-container';
 
                 filtered.forEach(item => {
                     const idx = data.indexOf(item);
@@ -712,22 +770,43 @@
                         <div class="class-name">${item.class_name}</div>
                         <div class="class-th-name">${item.name_th}</div>
                     `;
-                    groupEl.appendChild(itemEl);
+                    itemsContainer.appendChild(itemEl);
                 });
 
+                groupEl.appendChild(itemsContainer);
                 navEl.appendChild(groupEl);
             });
         }
 
-        // Filter Nav Items via Search Input
+        function toggleDisciplineGroup(discLower) {
+            const groupEl = document.getElementById(`group-${discLower}`);
+            if (groupEl) {
+                groupEl.classList.toggle('collapsed');
+            }
+        }
+
+        // Filter Nav Items via Search Input (Auto-uncollapse matched groups)
         function filterClasses(query) {
             const q = query.toLowerCase().trim();
-            const items = document.querySelectorAll('.class-item');
-            items.forEach(item => {
-                const idx = parseInt(item.dataset.index);
-                const classObj = classesData[idx];
-                const match = !q || classObj.class_name.toLowerCase().includes(q) || classObj.name_th.toLowerCase().includes(q) || classObj.discipline.toLowerCase().includes(q);
-                item.style.display = match ? 'block' : 'none';
+            const groups = document.querySelectorAll('.discipline-group');
+
+            groups.forEach(group => {
+                const items = group.querySelectorAll('.class-item');
+                let visibleCount = 0;
+                items.forEach(item => {
+                    const idx = parseInt(item.dataset.index);
+                    const classObj = classesData[idx];
+                    const match = !q || classObj.class_name.toLowerCase().includes(q) || classObj.name_th.toLowerCase().includes(q) || classObj.discipline.toLowerCase().includes(q);
+                    item.style.display = match ? 'block' : 'none';
+                    if (match) visibleCount++;
+                });
+
+                if (q) {
+                    group.classList.remove('collapsed');
+                    group.style.display = visibleCount > 0 ? 'block' : 'none';
+                } else {
+                    group.style.display = 'block';
+                }
             });
         }
 
@@ -736,6 +815,14 @@
             if (index < 0 || index >= classesData.length) return;
             activeClassIndex = index;
             const item = classesData[index];
+
+            // Auto-expand the discipline group of the selected item
+            if (item.discipline) {
+                const groupEl = document.getElementById(`group-${item.discipline.toLowerCase()}`);
+                if (groupEl) {
+                    groupEl.classList.remove('collapsed');
+                }
+            }
 
             // Highlight nav item
             document.querySelectorAll('.class-item').forEach((el, i) => {
@@ -1049,11 +1136,47 @@
             return group;
         }
 
+        // Attach SketchUp-Style Edge Lines to Geometry
+        function attachSketchupEdges(targetObject) {
+            const edgeLinesGroup = new THREE.Group();
+            const edgeMat = new THREE.LineBasicMaterial({
+                color: 0x0f172a, // Slate-900 Crisp SketchUp edge
+                linewidth: 1
+            });
+
+            targetObject.updateMatrixWorld(true);
+
+            targetObject.traverse((child) => {
+                // Skip rebar cage lines and bounding boxes
+                if (child.isMesh && child.geometry && child !== currentRebarGroup && !child.parent?.isRebarGroup) {
+                    // Check if child is part of rebar group
+                    let p = child.parent;
+                    let isRebar = false;
+                    while (p) {
+                        if (p === currentRebarGroup) { isRebar = true; break; }
+                        p = p.parent;
+                    }
+                    if (isRebar) return;
+
+                    const edgesGeom = new THREE.EdgesGeometry(child.geometry, 28);
+                    const line = new THREE.LineSegments(edgesGeom, edgeMat);
+                    line.applyMatrix4(child.matrixWorld);
+                    edgeLinesGroup.add(line);
+                }
+            });
+
+            return edgeLinesGroup;
+        }
+
         // Update 3D Model Shape
         function update3DModel(sample3d) {
             if (currentMesh) {
                 scene.remove(currentMesh);
                 currentMesh = null;
+            }
+            if (edgesGroup) {
+                scene.remove(edgesGroup);
+                edgesGroup = null;
             }
             if (bboxHelper) {
                 scene.remove(bboxHelper);
@@ -3066,12 +3189,26 @@
             currentMesh.position.y = meshHeight / 2.0;
             scene.add(currentMesh);
 
+            // Generate SketchUp-style crisp edge outlines
+            edgesGroup = attachSketchupEdges(currentMesh);
+            edgesGroup.visible = edgesMode;
+            scene.add(edgesGroup);
+
             if (bboxMode) {
                 bboxHelper = new THREE.BoxHelper(currentMesh, 0xf59e0b);
                 scene.add(bboxHelper);
             }
 
             reset3DCamera();
+        }
+
+        function toggleEdges() {
+            edgesMode = !edgesMode;
+            const btn = document.getElementById('edges-btn');
+            if (btn) btn.classList.toggle('active', edgesMode);
+            if (edgesGroup) {
+                edgesGroup.visible = edgesMode;
+            }
         }
 
         function toggleRebar() {
