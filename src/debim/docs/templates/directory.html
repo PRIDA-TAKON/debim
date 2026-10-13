@@ -595,6 +595,14 @@
                 currentMesh = buildFanAssembly(sample3d, options);
             } else if (sample3d.shape === 'cooling_tower') {
                 currentMesh = buildCoolingTower(sample3d, options);
+            } else if (sample3d.shape === 'coil_heat_exchanger') {
+                currentMesh = buildCoilHeatExchanger(sample3d, options);
+            } else if (sample3d.shape === 'air_filter') {
+                currentMesh = buildAirFilter(sample3d, options);
+            } else if (sample3d.shape === 'radiator_heater') {
+                currentMesh = buildRadiatorHeater(sample3d, options);
+            } else if (sample3d.shape === 'combustion_burner') {
+                currentMesh = buildCombustionBurner(sample3d, options);
             } else if (sample3d.shape === 'fire_suppression') {
                 currentMesh = buildFireSuppression(sample3d, options);
             } else if (sample3d.shape === 'power_plant') {

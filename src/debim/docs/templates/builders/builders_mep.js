@@ -1055,3 +1055,326 @@ function buildVibrationIsolator(sample3d, options) {
 
     return group;
 }
+
+function buildCoilHeatExchanger(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 1.2;
+    const h = sample3d.height || 0.80;
+    const d = sample3d.depth || 0.40;
+
+    const frameMat = new THREE.MeshStandardMaterial({
+        color: 0x475569,
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.6
+    });
+    const finMat = new THREE.MeshStandardMaterial({
+        color: 0xcbd5e1,
+        wireframe: wireframeMode,
+        roughness: 0.5,
+        metalness: 0.5
+    });
+    const copperMat = new THREE.MeshStandardMaterial({
+        color: 0xb45309,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const headerMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.7
+    });
+
+    const topFrame = new THREE.Mesh(new THREE.BoxGeometry(w, 0.03, d), frameMat);
+    topFrame.position.set(0, h / 2.0 - 0.015, 0);
+    group.add(topFrame);
+
+    const botFrame = new THREE.Mesh(new THREE.BoxGeometry(w, 0.03, d), frameMat);
+    botFrame.position.set(0, -h / 2.0 + 0.015, 0);
+    group.add(botFrame);
+
+    const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.03, h - 0.06, d), frameMat);
+    sideL.position.set(-w / 2.0 + 0.015, 0, 0);
+    group.add(sideL);
+
+    const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.03, h - 0.06, d), frameMat);
+    sideR.position.set(w / 2.0 - 0.015, 0, 0);
+    group.add(sideR);
+
+    const finPack = new THREE.Mesh(new THREE.BoxGeometry(w * 0.78, h * 0.88, d * 0.55), finMat);
+    group.add(finPack);
+
+    const nFins = 8;
+    for (let i = 0; i < nFins; i++) {
+        const fy = -h * 0.40 + (i + 0.5) * (h * 0.80 / nFins);
+        const finLine = new THREE.Mesh(new THREE.BoxGeometry(w * 0.80, 0.01, d * 0.58), finMat);
+        finLine.position.set(0, fy, 0);
+        group.add(finLine);
+    }
+
+    const rows = 4;
+    const cols = 2;
+    for (let r = 0; r < rows; r++) {
+        const ry = -h * 0.32 + r * (h * 0.22);
+        for (let c = 0; c < cols; c++) {
+            const rz = -d * 0.15 + c * (d * 0.30);
+
+            const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, w * 0.82, 12), copperMat);
+            tube.rotation.z = Math.PI / 2.0;
+            tube.position.set(0, ry, rz);
+            group.add(tube);
+
+            const ubend = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.015, 8, 16, Math.PI), copperMat);
+            ubend.position.set(-w * 0.39, ry, rz);
+            ubend.rotation.y = Math.PI / 2.0;
+            group.add(ubend);
+        }
+    }
+
+    [-d * 0.15, d * 0.15].forEach((hz, idx) => {
+        const header = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, h * 0.90, 16), headerMat);
+        header.position.set(w * 0.42, 0, hz);
+        group.add(header);
+
+        const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.12, 12), headerMat);
+        nozzle.rotation.z = Math.PI / 2.0;
+        nozzle.position.set(w * 0.42 + 0.06, idx === 0 ? h * 0.25 : -h * 0.25, hz);
+        group.add(nozzle);
+
+        const flange = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 8, 16), frameMat);
+        flange.rotation.y = Math.PI / 2.0;
+        flange.position.set(w * 0.42 + 0.12, idx === 0 ? h * 0.25 : -h * 0.25, hz);
+        group.add(flange);
+    });
+
+    return group;
+}
+
+function buildAirFilter(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.60;
+    const h = sample3d.height || 0.60;
+    const d = sample3d.depth || 0.30;
+
+    const frameMat = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.7
+    });
+    const mediaMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.8,
+        metalness: 0.1
+    });
+    const sealMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        wireframe: wireframeMode,
+        roughness: 0.9,
+        metalness: 0.1
+    });
+
+    const frameThickness = 0.025;
+
+    const topFrame = new THREE.Mesh(new THREE.BoxGeometry(w, frameThickness, d), frameMat);
+    topFrame.position.set(0, h / 2.0 - frameThickness / 2.0, 0);
+    group.add(topFrame);
+
+    const botFrame = new THREE.Mesh(new THREE.BoxGeometry(w, frameThickness, d), frameMat);
+    botFrame.position.set(0, -h / 2.0 + frameThickness / 2.0, 0);
+    group.add(botFrame);
+
+    const leftFrame = new THREE.Mesh(new THREE.BoxGeometry(frameThickness, h - 2 * frameThickness, d), frameMat);
+    leftFrame.position.set(-w / 2.0 + frameThickness / 2.0, 0, 0);
+    group.add(leftFrame);
+
+    const rightFrame = new THREE.Mesh(new THREE.BoxGeometry(frameThickness, h - 2 * frameThickness, d), frameMat);
+    rightFrame.position.set(w / 2.0 - frameThickness / 2.0, 0, 0);
+    group.add(rightFrame);
+
+    const headerLip = new THREE.Mesh(new THREE.BoxGeometry(w + 0.02, h + 0.02, 0.015), frameMat);
+    headerLip.position.set(0, 0, d / 2.0);
+    group.add(headerLip);
+
+    const gasket = new THREE.Mesh(new THREE.BoxGeometry(w + 0.01, h + 0.01, 0.01), sealMat);
+    gasket.position.set(0, 0, -d / 2.0);
+    group.add(gasket);
+
+    const nVBanks = 4;
+    const vWidth = (w - 2 * frameThickness) / nVBanks;
+    const innerH = h - 2 * frameThickness;
+    const innerD = d - 0.04;
+
+    for (let i = 0; i < nVBanks; i++) {
+        const vx = -w / 2.0 + frameThickness + (i + 0.5) * vWidth;
+
+        const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.01, innerH, innerD * 0.95), mediaMat);
+        leg1.position.set(vx - vWidth * 0.22, 0, 0);
+        leg1.rotation.y = 0.28;
+        group.add(leg1);
+
+        const leg2 = new THREE.Mesh(new THREE.BoxGeometry(0.01, innerH, innerD * 0.95), mediaMat);
+        leg2.position.set(vx + vWidth * 0.22, 0, 0);
+        leg2.rotation.y = -0.28;
+        group.add(leg2);
+    }
+
+    return group;
+}
+
+function buildRadiatorHeater(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 1.0;
+    const h = sample3d.height || 0.60;
+    const d = sample3d.depth || 0.15;
+
+    const bodyMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.1
+    });
+    const valveMat = new THREE.MeshStandardMaterial({
+        color: 0xf8fafc,
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.3
+    });
+    const chromeMat = new THREE.MeshStandardMaterial({
+        color: 0xe2e8f0,
+        wireframe: wireframeMode,
+        roughness: 0.1,
+        metalness: 0.9
+    });
+
+    const topPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, w, 16), chromeMat);
+    topPipe.rotation.z = Math.PI / 2.0;
+    topPipe.position.set(0, h / 2.0 - 0.03, 0);
+    group.add(topPipe);
+
+    const botPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, w, 16), chromeMat);
+    botPipe.rotation.z = Math.PI / 2.0;
+    botPipe.position.set(0, -h / 2.0 + 0.03, 0);
+    group.add(botPipe);
+
+    const nCols = 10;
+    for (let i = 0; i < nCols; i++) {
+        const cx = -w / 2.0 + (i + 0.5) * (w / nCols);
+
+        const column = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, h - 0.08, 16), bodyMat);
+        column.position.set(cx, 0, 0);
+        group.add(column);
+
+        const finFront = new THREE.Mesh(new THREE.BoxGeometry(w / nCols * 0.85, h - 0.08, 0.01), bodyMat);
+        finFront.position.set(cx, 0, d / 2.0 - 0.01);
+        group.add(finFront);
+
+        const finBack = new THREE.Mesh(new THREE.BoxGeometry(w / nCols * 0.85, h - 0.08, 0.01), bodyMat);
+        finBack.position.set(cx, 0, -d / 2.0 + 0.01);
+        group.add(finBack);
+    }
+
+    const trvBase = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.08, 12), chromeMat);
+    trvBase.position.set(w / 2.0 + 0.04, h / 2.0 - 0.03, 0);
+    trvBase.rotation.z = Math.PI / 2.0;
+    group.add(trvBase);
+
+    const trvKnob = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.035, 0.06, 16), valveMat);
+    trvKnob.position.set(w / 2.0 + 0.10, h / 2.0 - 0.03, 0);
+    trvKnob.rotation.z = Math.PI / 2.0;
+    group.add(trvKnob);
+
+    const dialRing = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.005, 8, 16), chromeMat);
+    dialRing.rotation.y = Math.PI / 2.0;
+    dialRing.position.set(w / 2.0 + 0.08, h / 2.0 - 0.03, 0);
+    group.add(dialRing);
+
+    const retElbow = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.08, 12), chromeMat);
+    retElbow.position.set(w / 2.0 + 0.04, -h / 2.0 + 0.03, 0);
+    retElbow.rotation.z = Math.PI / 2.0;
+    group.add(retElbow);
+
+    return group;
+}
+
+function buildCombustionBurner(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.80;
+    const h = sample3d.height || 0.50;
+    const d = sample3d.depth || 0.50;
+
+    const casingMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.5
+    });
+    const stainlessMat = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.8
+    });
+    const darkMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.6
+    });
+    const brassMat = new THREE.MeshStandardMaterial({
+        color: 0xd97706,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.7
+    });
+
+    const housing = new THREE.Mesh(new THREE.BoxGeometry(w * 0.50, h * 0.75, d * 0.70), casingMat);
+    housing.position.set(-w * 0.15, 0, 0);
+    group.add(housing);
+
+    const motor = new THREE.Mesh(new THREE.CylinderGeometry(h * 0.22, h * 0.22, d * 0.35, 20), darkMat);
+    motor.rotation.x = Math.PI / 2.0;
+    motor.position.set(-w * 0.15, 0, -d * 0.42);
+    group.add(motor);
+
+    const blastTube = new THREE.Mesh(new THREE.CylinderGeometry(h * 0.22, h * 0.22, w * 0.45, 24), stainlessMat);
+    blastTube.rotation.z = Math.PI / 2.0;
+    blastTube.position.set(w * 0.25, h * 0.05, 0);
+    group.add(blastTube);
+
+    const mountingFlange = new THREE.Mesh(new THREE.CylinderGeometry(h * 0.32, h * 0.32, 0.025, 24), stainlessMat);
+    mountingFlange.rotation.z = Math.PI / 2.0;
+    mountingFlange.position.set(w * 0.12, h * 0.05, 0);
+    group.add(mountingFlange);
+
+    const fuelPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, d * 0.60, 16), brassMat);
+    fuelPipe.rotation.x = Math.PI / 2.0;
+    fuelPipe.position.set(-w * 0.10, -h * 0.38, d * 0.15);
+    group.add(fuelPipe);
+
+    const solenoidValve = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.08), darkMat);
+    solenoidValve.position.set(-w * 0.10, -h * 0.32, d * 0.15);
+    group.add(solenoidValve);
+
+    const valveCoil = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.06, 12), brassMat);
+    valveCoil.position.set(-w * 0.10, -h * 0.23, d * 0.15);
+    group.add(valveCoil);
+
+    const controlBox = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.08), darkMat);
+    controlBox.position.set(-w * 0.15, h * 0.20, d * 0.38);
+    group.add(controlBox);
+
+    const flameScanner = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.15, 12), brassMat);
+    flameScanner.rotation.z = Math.PI / 2.0;
+    flameScanner.position.set(0, h * 0.20, d * 0.38);
+    group.add(flameScanner);
+
+    return group;
+}

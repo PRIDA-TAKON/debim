@@ -221,6 +221,14 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "fan_assembly", "width": 1.2, "depth": 1.0, "height": 1.1, "color": "#0284c7"}
     elif "coolingtower" in c or "evaporativecooler" in c or "heatexchanger" in c:
         return {"shape": "cooling_tower", "width": 1.8, "depth": 1.8, "height": 2.4, "color": "#0284c7"}
+    elif "coil" in c or "evaporator" in c or "condenser" in c:
+        return {"shape": "coil_heat_exchanger", "width": 1.2, "depth": 0.40, "height": 0.80, "color": "#0284c7"}
+    elif "filter" in c:
+        return {"shape": "air_filter", "width": 0.60, "depth": 0.30, "height": 0.60, "color": "#cbd5e1"}
+    elif "spaceheater" in c:
+        return {"shape": "radiator_heater", "width": 1.0, "depth": 0.15, "height": 0.60, "color": "#f8fafc"}
+    elif "burner" in c or "engine" in c:
+        return {"shape": "combustion_burner", "width": 0.80, "depth": 0.50, "height": 0.50, "color": "#dc2626"}
     elif "firesuppression" in c or "stackterminal" in c:
         return {"shape": "fire_suppression", "width": 0.25, "depth": 0.25, "height": 0.35, "color": "#dc2626"}
     elif "transformer" in c or "electricgenerator" in c or "electricmotor" in c:
