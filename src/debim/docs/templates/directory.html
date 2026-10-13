@@ -617,6 +617,16 @@ currentMesh = buildStructuralFastener(sample3d, options);
                 currentMesh = buildReinforcingMesh(sample3d, options);
             } else if (sample3d.shape === 'vibration_isolator') {
                 currentMesh = buildVibrationIsolator(sample3d, options);
+            } else if (sample3d.shape === 'solar_panel') {
+                currentMesh = buildSolarPanel(sample3d, options);
+            } else if (sample3d.shape === 'junction_box') {
+                currentMesh = buildJunctionBox(sample3d, options);
+            } else if (sample3d.shape === 'circuit_breaker') {
+                currentMesh = buildCircuitBreaker(sample3d, options);
+            } else if (sample3d.shape === 'alarm_device') {
+                currentMesh = buildAlarmDevice(sample3d, options);
+            } else if (sample3d.shape === 'battery_storage') {
+                currentMesh = buildBatteryStorage(sample3d, options);
             } else {
                 let geom;
                 if (sample3d.shape === 'cylinder') {
