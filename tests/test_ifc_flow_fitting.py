@@ -101,6 +101,12 @@ def test_ifc_flow_fitting_visual_regression():
     if not ifc_path.exists():
         pytest.skip("Fixture Duplex_MEP_20110907.ifc not found.")
 
+    try:
+        import matplotlib
+        import PIL
+    except ImportError:
+        pytest.skip("matplotlib or PIL not installed for visual regression rendering.")
+
     res = run_visual_regression(
         ifc_path=ifc_path,
         output_dir=Path("dist/test_visual_reg"),
