@@ -279,6 +279,14 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "electric_panel", "width": 0.60, "depth": 0.20, "height": 0.80, "color": "#475569"}
     elif "outlet" in c or "switchingdevice" in c or "sensor" in c:
         return {"shape": "outlet_switch", "width": 0.12, "depth": 0.04, "height": 0.12, "color": "#f8fafc"}
+    elif "audiovisual" in c:
+        return {"shape": "audiovisual_display", "width": 1.20, "depth": 0.10, "height": 0.70, "color": "#0f172a"}
+    elif "communications" in c:
+        return {"shape": "network_router_rack", "width": 0.48, "depth": 0.35, "height": 0.08, "color": "#1e293b"}
+    elif "controller" in c or "unitarycontrol" in c or "distributioncontrol" in c:
+        return {"shape": "thermostat_controller", "width": 0.12, "depth": 0.03, "height": 0.12, "color": "#f8fafc"}
+    elif "electrictimecontrol" in c or "timecontrol" in c:
+        return {"shape": "timer_relay", "width": 0.07, "depth": 0.06, "height": 0.09, "color": "#e2e8f0"}
     elif "solardevice" in c or "solar" in c:
         return {"shape": "solar_panel", "width": 1.00, "depth": 1.60, "height": 0.15, "color": "#1e3a8a"}
     elif "junctionbox" in c:
