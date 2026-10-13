@@ -215,6 +215,16 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "roof", "width": 6.0, "depth": 4.0, "height": 1.5, "color": "#B91C1C"}
     elif "furniture" in c or "furnish" in c:
         return {"shape": "furniture", "width": 1.4, "depth": 0.7, "height": 0.75, "color": "#A16207"}
+    elif "pump" in c or "flowmovingdevice" in c:
+        return {"shape": "pump", "width": 0.8, "depth": 0.45, "height": 0.55, "color": "#0284c7"}
+    elif "valve" in c or "flowcontroller" in c:
+        return {"shape": "valve", "width": 0.4, "depth": 0.25, "height": 0.45, "color": "#475569"}
+    elif "sanitary" in c or "wasteterminal" in c:
+        return {"shape": "sanitary_terminal", "width": 0.45, "depth": 0.65, "height": 0.80, "color": "#f8fafc"}
+    elif "boiler" in c or "chiller" in c or "tank" in c or "energyconversion" in c or "compressor" in c:
+        return {"shape": "equipment_vessel", "width": 1.4, "depth": 0.9, "height": 1.1, "color": "#0ea5e9"}
+    elif "airterminal" in c or "damper" in c:
+        return {"shape": "air_terminal", "width": 0.6, "depth": 0.6, "height": 0.2, "color": "#f1f5f9"}
     elif "road" in c or "bridge" in c or "alignment" in c or "railway" in c:
         return {"shape": "box", "width": 10.0, "depth": 7.0, "height": 0.40, "color": "#334155"}
 
