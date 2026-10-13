@@ -3170,6 +3170,166 @@
                 });
 
                 currentMesh = group;
+            } else if (sample3d.shape === 'structural_member') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 0.20;
+                const d = sample3d.depth || 0.20;
+                const h = sample3d.height || 3.00;
+                const tf = 0.015; // flange thickness
+                const tw = 0.010; // web thickness
+
+                const memberMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.7
+                });
+
+                // H-Beam section extruding along vertical column / brace height (Y axis)
+                // Top Flange
+                const topFlange = new THREE.Mesh(new THREE.BoxGeometry(w, h, tf), memberMat);
+                topFlange.position.set(0, 0, d / 2.0 - tf / 2.0);
+                group.add(topFlange);
+
+                // Bottom Flange
+                const botFlange = new THREE.Mesh(new THREE.BoxGeometry(w, h, tf), memberMat);
+                botFlange.position.set(0, 0, -d / 2.0 + tf / 2.0);
+                group.add(botFlange);
+
+                // Central Web
+                const web = new THREE.Mesh(new THREE.BoxGeometry(tw, h, d - 2 * tf), memberMat);
+                web.position.set(0, 0, 0);
+                group.add(web);
+
+                // Stiffener Plates at mid-height and ends
+                [-h / 2.0 + 0.10, 0, h / 2.0 - 0.10].forEach(yPos => {
+                    [-w / 4.0, w / 4.0].forEach(xOff => {
+                        const stiffener = new THREE.Mesh(new THREE.BoxGeometry(w / 2.0 - tw / 2.0, tf, (d - 2 * tf) / 2.0 - 0.005), memberMat);
+                        stiffener.position.set(xOff > 0 ? (w / 4.0 + tw / 4.0) : (-w / 4.0 - tw / 4.0), yPos, (d - 2 * tf) / 4.0);
+                        group.add(stiffener);
+
+                        const stiffener2 = new THREE.Mesh(new THREE.BoxGeometry(w / 2.0 - tw / 2.0, tf, (d - 2 * tf) / 2.0 - 0.005), memberMat);
+                        stiffener2.position.set(xOff > 0 ? (w / 4.0 + tw / 4.0) : (-w / 4.0 - tw / 4.0), yPos, -(d - 2 * tf) / 4.0);
+                        group.add(stiffener2);
+                    });
+                });
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'reinforcing_bar') {
+                const group = new THREE.Group();
+                const dia = sample3d.diameter || 0.02;
+                const r = dia / 2.0;
+                const h = sample3d.height || sample3d.length || 2.50;
+                const barColor = new THREE.Color(col || "#f59e0b");
+
+                const rebarMat = new THREE.MeshStandardMaterial({
+                    color: barColor,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+
+                // Main vertical cylindrical shaft (straight body)
+                const mainBodyLen = h - 0.30;
+                const mainBodyGeom = new THREE.CylinderGeometry(r, r, mainBodyLen, 16);
+                const mainBody = new THREE.Mesh(mainBodyGeom, rebarMat);
+                group.add(mainBody);
+
+                // Transverse ribbed lugs (บั้งเหล็กข้ออ้อย) along the length
+                const nLugs = Math.floor(mainBodyLen / 0.04);
+                const lugGeom = new THREE.TorusGeometry(r * 1.15, r * 0.25, 8, 16);
+                lugGeom.rotateX(Math.PI / 2.0);
+
+                for (let i = 0; i < nLugs; i++) {
+                    const yPos = -mainBodyLen / 2.0 + 0.02 + i * 0.04;
+                    const lug = new THREE.Mesh(lugGeom, rebarMat);
+                    lug.position.set(0, yPos, 0);
+                    lug.rotation.z = 0.25; // Angled rib lug orientation
+                    group.add(lug);
+                }
+
+                // Top End Hook (งอขอ 180° / 90° bend)
+                const hookRadius = 0.08;
+                const hookBendGeom = new THREE.TorusGeometry(hookRadius, r, 12, 24, Math.PI);
+                const topHookBend = new THREE.Mesh(hookBendGeom, rebarMat);
+                topHookBend.position.set(hookRadius, mainBodyLen / 2.0, 0);
+                group.add(topHookBend);
+
+                const topTailGeom = new THREE.CylinderGeometry(r, r, 0.12, 16);
+                const topTail = new THREE.Mesh(topTailGeom, rebarMat);
+                topTail.position.set(2 * hookRadius, mainBodyLen / 2.0 - 0.06, 0);
+                group.add(topTail);
+
+                // Bottom End Hook (งอขอ 90° bend)
+                const botBendGeom = new THREE.TorusGeometry(hookRadius, r, 12, 24, Math.PI / 2.0);
+                const botHookBend = new THREE.Mesh(botBendGeom, rebarMat);
+                botHookBend.rotation.z = Math.PI;
+                botHookBend.position.set(-hookRadius, -mainBodyLen / 2.0, 0);
+                group.add(botHookBend);
+
+                const botTailGeom = new THREE.CylinderGeometry(r, r, 0.15, 16);
+                botTailGeom.rotateZ(Math.PI / 2.0);
+                const botTail = new THREE.Mesh(botTailGeom, rebarMat);
+                botTail.position.set(-hookRadius - 0.075, -mainBodyLen / 2.0 - hookRadius, 0);
+                group.add(botTail);
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'reinforcing_mesh') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 2.00;
+                const d = sample3d.depth || 3.00;
+                const dia = 0.008; // 8mm wire mesh
+                const r = dia / 2.0;
+                const pitch = 0.20; // 200mm grid spacing
+                const meshColor = new THREE.Color(col || "#f59e0b");
+
+                const wireMat = new THREE.MeshStandardMaterial({
+                    color: meshColor,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+
+                const weldMat = new THREE.MeshStandardMaterial({
+                    color: meshColor.clone().multiplyScalar(0.85),
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.9
+                });
+
+                // Longitudinal wires (parallel to Z axis)
+                const nLong = Math.floor(w / pitch) + 1;
+                const longWireGeom = new THREE.CylinderGeometry(r, r, d, 12);
+                longWireGeom.rotateX(Math.PI / 2.0);
+
+                for (let i = 0; i < nLong; i++) {
+                    const xPos = -w / 2.0 + i * pitch;
+                    const wire = new THREE.Mesh(longWireGeom, wireMat);
+                    wire.position.set(xPos, r, 0);
+                    group.add(wire);
+                }
+
+                // Transverse cross wires (parallel to X axis, laid on top)
+                const nTrans = Math.floor(d / pitch) + 1;
+                const transWireGeom = new THREE.CylinderGeometry(r, r, w, 12);
+                transWireGeom.rotateZ(Math.PI / 2.0);
+
+                for (let j = 0; j < nTrans; j++) {
+                    const zPos = -d / 2.0 + j * pitch;
+                    const wire = new THREE.Mesh(transWireGeom, wireMat);
+                    wire.position.set(0, 3 * r, zPos);
+                    group.add(wire);
+
+                    // Welding joint nuggets at grid intersections
+                    for (let i = 0; i < nLong; i++) {
+                        const xPos = -w / 2.0 + i * pitch;
+                        const joint = new THREE.Mesh(new THREE.SphereGeometry(r * 1.4, 8, 8), weldMat);
+                        joint.position.set(xPos, 2 * r, zPos);
+                        group.add(joint);
+                    }
+                }
+
+                currentMesh = group;
             } else if (sample3d.shape === 'vibration_isolator') {
                 const group = new THREE.Group();
                 const w = sample3d.width || 0.50;
