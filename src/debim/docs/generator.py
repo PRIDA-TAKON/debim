@@ -443,11 +443,41 @@ DEFAULT_CLASS_DIRECTORY_DATA: List[Dict[str, Any]] = generate_all_class_director
 
 
 def _load_template_html() -> str:
-    """Load HTML template from src/debim/docs/templates/directory.html."""
-    tmpl_path = Path(__file__).parent / "templates" / "directory.html"
-    if tmpl_path.exists():
-        return tmpl_path.read_text(encoding="utf-8")
-    raise FileNotFoundError(f"Class Directory HTML template not found at {tmpl_path}")
+    """
+    Load HTML template, styles, and builder partials from src/debim/docs/templates/
+    and assemble them into a unified standalone HTML template string.
+    """
+    tmpl_dir = Path(__file__).parent / "templates"
+    tmpl_path = tmpl_dir / "directory.html"
+    styles_path = tmpl_dir / "styles.css"
+    builders_dir = tmpl_dir / "builders"
+
+    if not tmpl_path.exists():
+        raise FileNotFoundError(f"Class Directory HTML template not found at {tmpl_path}")
+
+    html_content = tmpl_path.read_text(encoding="utf-8")
+
+    # Load and inject CSS styles
+    css_content = styles_path.read_text(encoding="utf-8") if styles_path.exists() else ""
+    html_content = html_content.replace("__INJECT_CSS__", css_content)
+
+    # Load and concatenate builder scripts in deterministic order
+    builder_files = [
+        "builders_struct.js",
+        "builders_arch.js",
+        "builders_mep.js",
+        "builders_civil.js",
+    ]
+    builders_js_list = []
+    for bf in builder_files:
+        bf_path = builders_dir / bf
+        if bf_path.exists():
+            builders_js_list.append(bf_path.read_text(encoding="utf-8"))
+
+    builders_content = "\n\n".join(builders_js_list)
+    html_content = html_content.replace("__INJECT_BUILDERS__", builders_content)
+
+    return html_content
 
 
 def generate_class_directory_html(classes_data: Optional[List[Dict[str, Any]]] = None) -> str:
