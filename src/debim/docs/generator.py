@@ -137,6 +137,10 @@ def _get_thai_title(class_name: str, discipline: str) -> str:
         "IfcSensor": "เซ็นเซอร์ตรวจวัดและอุปกรณ์ตรวจจับ (Sensor Device)",
         "IfcAlarm": "อุปกรณ์ส่งสัญญาณแจ้งเตือนภัย (Alarm Device)",
         "IfcFlowMeter": "มิเตอร์วัดปริมาณการไหล (Flow Meter)",
+        "IfcFlowInstrument": "เกจวัดการไหล/ความดัน/อุณหภูมิ (Flow Instrument)",
+        "IfcActuator": "ชุดหัวขับวาล์ว/แดมเปอร์ (Valve/Damper Actuator)",
+        "IfcInterceptor": "ถังดักไขมัน/ถังแยกน้ำมัน (Grease & Oil Interceptor)",
+        "IfcHumidifier": "เครื่องเพิ่มความชื้นในอากาศ (Air Humidifier)",
         "IfcTransformer": "หม้อแปลงไฟฟ้าแรงสูง/แรงต่ำ (Power Transformer)",
         "IfcElectricGenerator": "เครื่องกำเนิดไฟฟ้าสำรอง (Electric Generator)",
         "IfcElectricMotor": "มอเตอร์ไฟฟ้าขับเคลื่อน (Electric Motor)",
@@ -283,6 +287,16 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "circuit_breaker", "width": 0.18, "depth": 0.12, "height": 0.10, "color": "#f8fafc"}
     elif "alarm" in c:
         return {"shape": "alarm_device", "width": 0.15, "depth": 0.15, "height": 0.10, "color": "#dc2626"}
+    elif "flowmeter" in c or "flow_meter" in c:
+        return {"shape": "flow_meter", "width": 0.35, "depth": 0.20, "height": 0.25, "color": "#d97706"}
+    elif "flowinstrument" in c or "flow_instrument" in c:
+        return {"shape": "flow_instrument", "width": 0.15, "depth": 0.15, "height": 0.25, "color": "#94a3b8"}
+    elif "actuator" in c:
+        return {"shape": "valve_actuator", "width": 0.25, "depth": 0.20, "height": 0.30, "color": "#0284c7"}
+    elif "interceptor" in c:
+        return {"shape": "grease_oil_interceptor", "width": 1.20, "depth": 0.80, "height": 0.70, "color": "#475569"}
+    elif "humidifier" in c:
+        return {"shape": "humidifier_unit", "width": 0.80, "depth": 0.50, "height": 0.60, "color": "#0284c7"}
     elif "electricflowstoragedevice" in c or "flowstoragedevice" in c:
         return {"shape": "battery_storage", "width": 1.00, "depth": 0.80, "height": 2.00, "color": "#1e293b"}
     elif "bridge" in c or "bearing" in c:

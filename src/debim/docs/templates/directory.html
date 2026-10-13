@@ -635,6 +635,16 @@ currentMesh = buildStructuralFastener(sample3d, options);
                 currentMesh = buildAlarmDevice(sample3d, options);
             } else if (sample3d.shape === 'battery_storage') {
                 currentMesh = buildBatteryStorage(sample3d, options);
+            } else if (sample3d.shape === 'flow_meter') {
+                currentMesh = buildFlowMeter(sample3d, options);
+            } else if (sample3d.shape === 'flow_instrument') {
+                currentMesh = buildFlowInstrument(sample3d, options);
+            } else if (sample3d.shape === 'valve_actuator') {
+                currentMesh = buildValveActuator(sample3d, options);
+            } else if (sample3d.shape === 'grease_oil_interceptor') {
+                currentMesh = buildGreaseOilInterceptor(sample3d, options);
+            } else if (sample3d.shape === 'humidifier_unit') {
+                currentMesh = buildHumidifierUnit(sample3d, options);
             } else {
                 let geom;
                 if (sample3d.shape === 'cylinder') {
