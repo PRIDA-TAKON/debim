@@ -233,8 +233,10 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "door", "width": 0.9, "height": 2.1, "depth": 0.1, "color": "#78350F"}
     elif "window" in c:
         return {"shape": "window", "width": 1.5, "height": 1.2, "depth": 0.08, "color": "#0284C7"}
-    elif "stair" in c:
+    elif "stairflight" in c or "stair_flight" in c:
         return {"shape": "stair_flight", "width": 1.2, "depth": 2.5, "height": 2.4, "steps": 10, "color": "#D4A373"}
+    elif "stair" in c:
+        return {"shape": "stair_concrete", "width": 1.2, "depth": 2.5, "height": 2.4, "steps": 10, "color": "#64748B", "is_reinforced_concrete": True, "rebar_type": "stair"}
     elif "ramp" in c:
         return {"shape": "ramp", "width": 1.5, "depth": 4.0, "height": 1.0, "color": "#94A3B8"}
     elif "railing" in c:
