@@ -106,3 +106,42 @@ def test_cli_docs_directory(tmp_path):
     assert out_file.exists()
     assert out_file.stat().st_size > 5000
     assert "Class Directory Web Application Exported Successfully" in result.output
+
+
+def test_procedural_3d_shapes_payloads():
+    """Test that architectural and circulation classes return procedural sample_3d payloads."""
+    by_class = {item["class_name"]: item["sample_3d"] for item in DEFAULT_CLASS_DIRECTORY_DATA}
+
+    assert by_class["IfcStair"]["shape"] == "stair_flight"
+    assert by_class["IfcStair"]["steps"] == 10
+    assert by_class["IfcStairFlight"]["shape"] == "stair_flight"
+
+    assert by_class["IfcRamp"]["shape"] == "ramp"
+    assert by_class["IfcRampFlight"]["shape"] == "ramp"
+
+    assert by_class["IfcRailing"]["shape"] == "railing"
+    assert "length" in by_class["IfcRailing"]
+
+    assert by_class["IfcDoor"]["shape"] == "door"
+    assert by_class["IfcDoorStandardCase"]["shape"] == "door"
+
+    assert by_class["IfcWindow"]["shape"] == "window"
+    assert by_class["IfcWindowStandardCase"]["shape"] == "window"
+
+    assert by_class["IfcRoof"]["shape"] == "roof"
+
+    assert by_class["IfcFurniture"]["shape"] == "furniture"
+    assert by_class["IfcSystemFurnitureElement"]["shape"] == "furniture"
+    assert by_class["IfcFurnishingElement"]["shape"] == "furniture"
+
+
+def test_procedural_3d_geometry_handlers_in_html():
+    """Test that generated HTML contains Three.js composite geometry handlers."""
+    html_str = generate_class_directory_html()
+    assert "stair_flight" in html_str
+    assert "ramp" in html_str
+    assert "railing" in html_str
+    assert "door" in html_str
+    assert "window" in html_str
+    assert "roof" in html_str
+    assert "furniture" in html_str

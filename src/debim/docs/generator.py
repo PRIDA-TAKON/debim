@@ -201,10 +201,20 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "box", "width": 6.0, "depth": 0.40, "height": 0.25, "color": "#CBD5E1"}
     elif "wall" in c or "curtain" in c:
         return {"shape": "box", "width": 4.00, "depth": 0.10, "height": 3.00, "color": "#CBD5E1"}
-    elif "door" in c or "window" in c:
-        return {"shape": "box", "width": 0.90, "depth": 0.10, "height": 2.00, "color": "#8B4513"}
-    elif "stair" in c or "ramp" in c:
-        return {"shape": "stair_flight", "width": 1.20, "steps": 8, "color": "#D4A373"}
+    elif "door" in c:
+        return {"shape": "door", "width": 0.9, "height": 2.1, "depth": 0.1, "color": "#78350F"}
+    elif "window" in c:
+        return {"shape": "window", "width": 1.5, "height": 1.2, "depth": 0.08, "color": "#0284C7"}
+    elif "stair" in c:
+        return {"shape": "stair_flight", "width": 1.2, "depth": 2.5, "height": 2.4, "steps": 10, "color": "#D4A373"}
+    elif "ramp" in c:
+        return {"shape": "ramp", "width": 1.5, "depth": 4.0, "height": 1.0, "color": "#94A3B8"}
+    elif "railing" in c:
+        return {"shape": "railing", "length": 3.0, "height": 1.0, "color": "#475569"}
+    elif "roof" in c:
+        return {"shape": "roof", "width": 6.0, "depth": 4.0, "height": 1.5, "color": "#B91C1C"}
+    elif "furniture" in c or "furnish" in c:
+        return {"shape": "furniture", "width": 1.4, "depth": 0.7, "height": 0.75, "color": "#A16207"}
     elif "road" in c or "bridge" in c or "alignment" in c or "railway" in c:
         return {"shape": "box", "width": 10.0, "depth": 7.0, "height": 0.40, "color": "#334155"}
 

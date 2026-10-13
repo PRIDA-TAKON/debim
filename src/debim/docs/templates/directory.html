@@ -1070,43 +1070,344 @@
             if (rebarBtn) rebarBtn.style.display = isRC ? 'inline-block' : 'none';
             if (xrayBtn) xrayBtn.style.display = isRC ? 'inline-block' : 'none';
 
-            let geom;
             const col = sample3d.color || "#38bdf8";
 
-            if (sample3d.shape === 'cylinder') {
-                geom = new THREE.CylinderGeometry(sample3d.radius||0.2, sample3d.radius||0.2, sample3d.height||2, 32);
-            } else if (sample3d.shape === 'pipe') {
-                geom = new THREE.CylinderGeometry(sample3d.radius||0.05, sample3d.radius||0.05, sample3d.length||3, 16);
-                geom.rotateZ(Math.PI/2);
+            if (sample3d.shape === 'stair_flight') {
+                const group = new THREE.Group();
+                const steps = sample3d.steps || 10;
+                const w = sample3d.width || 1.2;
+                const h = sample3d.height || 2.4;
+                const d = sample3d.depth || 2.5;
+                const rh = h / steps;
+                const td = d / steps;
+                const mainMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.5,
+                    metalness: 0.2
+                });
+
+                for (let i = 0; i < steps; i++) {
+                    const stepDepth = td * (steps - i);
+                    const stepGeom = new THREE.BoxGeometry(w, rh, stepDepth);
+                    const stepMesh = new THREE.Mesh(stepGeom, mainMat);
+                    const yPos = -h / 2.0 + i * rh + rh / 2.0;
+                    const zPos = d / 2.0 - stepDepth / 2.0;
+                    stepMesh.position.set(0, yPos, zPos);
+                    group.add(stepMesh);
+                }
+
+                const stringerLength = Math.hypot(d, h);
+                const stringerAngle = Math.atan2(h, d);
+                const stringerGeom = new THREE.BoxGeometry(0.06, 0.18, stringerLength);
+                const stringerMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col).multiplyScalar(0.8),
+                    wireframe: wireframeMode,
+                    roughness: 0.6,
+                    metalness: 0.3
+                });
+
+                [-w / 2.0 + 0.03, w / 2.0 - 0.03].forEach(xOffset => {
+                    const stringerMesh = new THREE.Mesh(stringerGeom, stringerMat);
+                    stringerMesh.position.set(xOffset, 0, 0);
+                    stringerMesh.rotation.x = -stringerAngle;
+                    group.add(stringerMesh);
+                });
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'ramp') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 1.5;
+                const d = sample3d.depth || 4.0;
+                const h = sample3d.height || 1.0;
+                const rampLength = Math.hypot(d, h);
+                const rampAngle = Math.atan2(h, d);
+
+                const rampMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.6,
+                    metalness: 0.1
+                });
+
+                const slabGeom = new THREE.BoxGeometry(w, 0.12, rampLength);
+                const slabMesh = new THREE.Mesh(slabGeom, rampMat);
+                slabMesh.rotation.x = -rampAngle;
+                group.add(slabMesh);
+
+                const curbGeom = new THREE.BoxGeometry(0.08, 0.25, rampLength);
+                const curbMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col).multiplyScalar(0.75),
+                    wireframe: wireframeMode,
+                    roughness: 0.5,
+                    metalness: 0.2
+                });
+
+                [-w / 2.0 + 0.04, w / 2.0 - 0.04].forEach(xOffset => {
+                    const curbMesh = new THREE.Mesh(curbGeom, curbMat);
+                    curbMesh.position.set(xOffset, 0.08 * Math.cos(rampAngle), 0);
+                    curbMesh.rotation.x = -rampAngle;
+                    group.add(curbMesh);
+                });
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'railing') {
+                const group = new THREE.Group();
+                const len = sample3d.length || 3.0;
+                const h = sample3d.height || 1.0;
+
+                const metalMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.7
+                });
+
+                const topGeom = new THREE.CylinderGeometry(0.025, 0.025, len, 16);
+                topGeom.rotateZ(Math.PI / 2.0);
+                const topMesh = new THREE.Mesh(topGeom, metalMat);
+                topMesh.position.set(0, h / 2.0 - 0.025, 0);
+                group.add(topMesh);
+
+                const botGeom = new THREE.CylinderGeometry(0.015, 0.015, len, 16);
+                botGeom.rotateZ(Math.PI / 2.0);
+                const botMesh = new THREE.Mesh(botGeom, metalMat);
+                botMesh.position.set(0, -h / 2.0 + 0.05, 0);
+                group.add(botMesh);
+
+                const postSpacing = 0.15;
+                const nPosts = Math.max(2, Math.floor(len / postSpacing) + 1);
+                const postHeight = h - 0.08;
+                const postGeom = new THREE.CylinderGeometry(0.012, 0.012, postHeight, 8);
+
+                for (let i = 0; i < nPosts; i++) {
+                    const xPos = -len / 2.0 + (i / (nPosts - 1)) * len;
+                    const postMesh = new THREE.Mesh(postGeom, metalMat);
+                    postMesh.position.set(xPos, 0, 0);
+                    group.add(postMesh);
+                }
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'door') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 0.9;
+                const h = sample3d.height || 2.1;
+                const d = sample3d.depth || 0.1;
+
+                const frameMat = new THREE.MeshStandardMaterial({
+                    color: 0x3d1e03,
+                    wireframe: wireframeMode,
+                    roughness: 0.5,
+                    metalness: 0.3
+                });
+
+                const leafMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.1
+                });
+
+                const handleMat = new THREE.MeshStandardMaterial({
+                    color: 0xd4af37,
+                    wireframe: wireframeMode,
+                    roughness: 0.2,
+                    metalness: 0.9
+                });
+
+                const jambGeom = new THREE.BoxGeometry(0.06, h, d);
+                const leftJamb = new THREE.Mesh(jambGeom, frameMat);
+                leftJamb.position.set(-w / 2.0 + 0.03, 0, 0);
+                group.add(leftJamb);
+
+                const rightJamb = new THREE.Mesh(jambGeom, frameMat);
+                rightJamb.position.set(w / 2.0 - 0.03, 0, 0);
+                group.add(rightJamb);
+
+                const headerGeom = new THREE.BoxGeometry(w - 0.12, 0.06, d);
+                const headerMesh = new THREE.Mesh(headerGeom, frameMat);
+                headerMesh.position.set(0, h / 2.0 - 0.03, 0);
+                group.add(headerMesh);
+
+                const leafGeom = new THREE.BoxGeometry(w - 0.12, h - 0.06, 0.04);
+                const leafMesh = new THREE.Mesh(leafGeom, leafMat);
+                leafMesh.position.set(0, -0.03, 0);
+                group.add(leafMesh);
+
+                const knobBaseGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.05, 12);
+                knobBaseGeom.rotateX(Math.PI / 2.0);
+                const knobBase = new THREE.Mesh(knobBaseGeom, handleMat);
+                knobBase.position.set(w / 2.0 - 0.12, -h / 2.0 + 1.0, 0.03);
+                group.add(knobBase);
+
+                const leverBarGeom = new THREE.CylinderGeometry(0.01, 0.01, 0.10, 12);
+                leverBarGeom.rotateZ(Math.PI / 2.0);
+                const leverBar = new THREE.Mesh(leverBarGeom, handleMat);
+                leverBar.position.set(w / 2.0 - 0.16, -h / 2.0 + 1.0, 0.055);
+                group.add(leverBar);
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'window') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 1.5;
+                const h = sample3d.height || 1.2;
+                const d = sample3d.depth || 0.08;
+
+                const frameMat = new THREE.MeshStandardMaterial({
+                    color: 0xe2e8f0,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.5
+                });
+
+                const mullionMat = new THREE.MeshStandardMaterial({
+                    color: 0xcbd5e1,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.5
+                });
+
+                const glassMat = new THREE.MeshStandardMaterial({
+                    color: 0x38bdf8,
+                    wireframe: wireframeMode,
+                    transparent: true,
+                    opacity: 0.35,
+                    roughness: 0.1,
+                    metalness: 0.1
+                });
+
+                const vertFrameGeom = new THREE.BoxGeometry(0.05, h, d);
+                const leftFrame = new THREE.Mesh(vertFrameGeom, frameMat);
+                leftFrame.position.set(-w / 2.0 + 0.025, 0, 0);
+                group.add(leftFrame);
+
+                const rightFrame = new THREE.Mesh(vertFrameGeom, frameMat);
+                rightFrame.position.set(w / 2.0 - 0.025, 0, 0);
+                group.add(rightFrame);
+
+                const horizFrameGeom = new THREE.BoxGeometry(w - 0.10, 0.05, d);
+                const topFrame = new THREE.Mesh(horizFrameGeom, frameMat);
+                topFrame.position.set(0, h / 2.0 - 0.025, 0);
+                group.add(topFrame);
+
+                const botFrame = new THREE.Mesh(horizFrameGeom, frameMat);
+                botFrame.position.set(0, -h / 2.0 + 0.025, 0);
+                group.add(botFrame);
+
+                const vertMullion = new THREE.Mesh(new THREE.BoxGeometry(0.03, h - 0.10, d * 0.8), mullionMat);
+                group.add(vertMullion);
+
+                const horizMullion = new THREE.Mesh(new THREE.BoxGeometry(w - 0.10, 0.03, d * 0.8), mullionMat);
+                group.add(horizMullion);
+
+                const glassMesh = new THREE.Mesh(new THREE.BoxGeometry(w - 0.10, h - 0.10, 0.01), glassMat);
+                group.add(glassMesh);
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'roof') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 6.0;
+                const d = sample3d.depth || 4.0;
+                const h = sample3d.height || 1.5;
+
+                const roofMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.5,
+                    metalness: 0.1
+                });
+
+                const shape = new THREE.Shape();
+                shape.moveTo(-w / 2.0, -h / 2.0);
+                shape.lineTo(w / 2.0, -h / 2.0);
+                shape.lineTo(0, h / 2.0);
+                shape.closePath();
+
+                const extrudeSettings = { depth: d, bevelEnabled: false };
+                const roofGeom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                roofGeom.center();
+
+                const roofMesh = new THREE.Mesh(roofGeom, roofMat);
+                group.add(roofMesh);
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'furniture') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 1.4;
+                const d = sample3d.depth || 0.7;
+                const h = sample3d.height || 0.75;
+
+                const topMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.1
+                });
+
+                const legMat = new THREE.MeshStandardMaterial({
+                    color: 0x334155,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+
+                const topMesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.04, d), topMat);
+                topMesh.position.set(0, h / 2.0 - 0.02, 0);
+                group.add(topMesh);
+
+                const legHeight = h - 0.04;
+                const legGeom = new THREE.CylinderGeometry(0.025, 0.025, legHeight, 12);
+
+                const xOffsets = [-w / 2.0 + 0.08, w / 2.0 - 0.08];
+                const zOffsets = [-d / 2.0 + 0.08, d / 2.0 - 0.08];
+
+                xOffsets.forEach(lx => {
+                    zOffsets.forEach(lz => {
+                        const legMesh = new THREE.Mesh(legGeom, legMat);
+                        legMesh.position.set(lx, -0.02, lz);
+                        group.add(legMesh);
+                    });
+                });
+
+                currentMesh = group;
             } else {
-                geom = new THREE.BoxGeometry(sample3d.width||1, sample3d.height||1, sample3d.depth||1);
+                let geom;
+                if (sample3d.shape === 'cylinder') {
+                    geom = new THREE.CylinderGeometry(sample3d.radius||0.2, sample3d.radius||0.2, sample3d.height||2, 32);
+                } else if (sample3d.shape === 'pipe') {
+                    geom = new THREE.CylinderGeometry(sample3d.radius||0.05, sample3d.radius||0.05, sample3d.length||3, 16);
+                    geom.rotateZ(Math.PI/2);
+                } else {
+                    geom = new THREE.BoxGeometry(sample3d.width||1, sample3d.height||1, sample3d.depth||1);
+                }
+
+                const isTransparent = isRC && xrayMode;
+                const mat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: isRC ? 0.7 : 0.4,
+                    metalness: isRC ? 0.1 : 0.2,
+                    transparent: isTransparent,
+                    opacity: isTransparent ? 0.38 : 1.0,
+                    depthWrite: !isTransparent
+                });
+
+                currentConcreteMesh = new THREE.Mesh(geom, mat);
+
+                if (isRC) {
+                    currentMesh = new THREE.Group();
+                    currentMesh.add(currentConcreteMesh);
+
+                    currentRebarGroup = buildRebarCage(sample3d);
+                    currentRebarGroup.visible = rebarMode;
+                    currentMesh.add(currentRebarGroup);
+                } else {
+                    currentMesh = currentConcreteMesh;
+                }
             }
 
-            const isTransparent = isRC && xrayMode;
-            const mat = new THREE.MeshStandardMaterial({
-                color: new THREE.Color(col),
-                wireframe: wireframeMode,
-                roughness: isRC ? 0.7 : 0.4,
-                metalness: isRC ? 0.1 : 0.2,
-                transparent: isTransparent,
-                opacity: isTransparent ? 0.38 : 1.0,
-                depthWrite: !isTransparent
-            });
-
-            currentConcreteMesh = new THREE.Mesh(geom, mat);
-
-            if (isRC) {
-                currentMesh = new THREE.Group();
-                currentMesh.add(currentConcreteMesh);
-
-                currentRebarGroup = buildRebarCage(sample3d);
-                currentRebarGroup.visible = rebarMode;
-                currentMesh.add(currentRebarGroup);
-            } else {
-                currentMesh = currentConcreteMesh;
-            }
-
-            currentMesh.position.y = (sample3d.height || 1) / 2.0;
+            const meshHeight = sample3d.height || 1;
+            currentMesh.position.y = meshHeight / 2.0;
             scene.add(currentMesh);
 
             if (bboxMode) {
@@ -1141,8 +1442,12 @@
         function toggleWireframe() {
             wireframeMode = !wireframeMode;
             document.getElementById('wireframe-btn').classList.toggle('active', wireframeMode);
-            if (currentConcreteMesh && currentConcreteMesh.material) {
-                currentConcreteMesh.material.wireframe = wireframeMode;
+            if (currentMesh) {
+                currentMesh.traverse((child) => {
+                    if (child.isMesh && child.material) {
+                        child.material.wireframe = wireframeMode;
+                    }
+                });
             }
         }
 
