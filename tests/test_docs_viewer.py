@@ -250,6 +250,16 @@ def test_procedural_3d_shapes_payloads():
     assert by_class["IfcAlarm"]["shape"] == "alarm_device"
     assert by_class["IfcElectricFlowStorageDevice"]["shape"] == "battery_storage"
 
+    # Audio-Visual, Communications & Controller additions
+    assert by_class["IfcAudioVisualAppliance"]["shape"] == "audiovisual_display"
+    assert by_class["IfcCommunicationsAppliance"]["shape"] == "network_router_rack"
+    assert by_class["IfcController"]["shape"] == "thermostat_controller"
+    if "IfcUnitaryControlElement" in by_class:
+        assert by_class["IfcUnitaryControlElement"]["shape"] == "thermostat_controller"
+    if "IfcDistributionControlElement" in by_class:
+        assert by_class["IfcDistributionControlElement"]["shape"] == "thermostat_controller"
+    assert by_class["IfcElectricTimeControl"]["shape"] == "timer_relay"
+
 
 def test_procedural_3d_geometry_handlers_in_html():
     """Test that generated HTML contains Three.js composite geometry handlers."""
@@ -303,3 +313,7 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "circuit_breaker" in html_str
     assert "alarm_device" in html_str
     assert "battery_storage" in html_str
+    assert "audiovisual_display" in html_str
+    assert "network_router_rack" in html_str
+    assert "thermostat_controller" in html_str
+    assert "timer_relay" in html_str
