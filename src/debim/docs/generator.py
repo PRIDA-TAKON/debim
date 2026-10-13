@@ -275,6 +275,16 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "electric_panel", "width": 0.60, "depth": 0.20, "height": 0.80, "color": "#475569"}
     elif "outlet" in c or "switchingdevice" in c or "sensor" in c:
         return {"shape": "outlet_switch", "width": 0.12, "depth": 0.04, "height": 0.12, "color": "#f8fafc"}
+    elif "solardevice" in c or "solar" in c:
+        return {"shape": "solar_panel", "width": 1.00, "depth": 1.60, "height": 0.15, "color": "#1e3a8a"}
+    elif "junctionbox" in c:
+        return {"shape": "junction_box", "width": 0.15, "depth": 0.15, "height": 0.10, "color": "#64748b"}
+    elif "protectivedevice" in c:
+        return {"shape": "circuit_breaker", "width": 0.18, "depth": 0.12, "height": 0.10, "color": "#f8fafc"}
+    elif "alarm" in c:
+        return {"shape": "alarm_device", "width": 0.15, "depth": 0.15, "height": 0.10, "color": "#dc2626"}
+    elif "electricflowstoragedevice" in c or "flowstoragedevice" in c:
+        return {"shape": "battery_storage", "width": 1.00, "depth": 0.80, "height": 2.00, "color": "#1e293b"}
     elif "bridge" in c or "bearing" in c:
         return {"shape": "bridge_structure", "width": 8.0, "depth": 4.0, "height": 3.50, "color": "#64748b"}
     elif "railway" in c or "trackelement" in c:
