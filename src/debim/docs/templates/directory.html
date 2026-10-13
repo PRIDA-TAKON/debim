@@ -2378,6 +2378,281 @@
                 });
 
                 currentMesh = group;
+            } else if (sample3d.shape === 'duct_assembly') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 2.4;
+                const h = sample3d.height || 0.35;
+                const d = sample3d.depth || 0.50;
+
+                const sheetMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+                const flangeMat = new THREE.MeshStandardMaterial({
+                    color: 0x475569,
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.8
+                });
+                const silencerMat = new THREE.MeshStandardMaterial({
+                    color: 0x334155,
+                    wireframe: wireframeMode,
+                    roughness: 0.5,
+                    metalness: 0.5
+                });
+
+                const ductBody = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.7, d * 0.7), sheetMat);
+                group.add(ductBody);
+
+                [-w / 2.0 + 0.02, -w / 4.0, w / 4.0, w / 2.0 - 0.02].forEach(fx => {
+                    const flange = new THREE.Mesh(new THREE.BoxGeometry(0.04, h * 0.82, d * 0.82), flangeMat);
+                    flange.position.set(fx, 0, 0);
+                    group.add(flange);
+                });
+
+                const silencerMesh = new THREE.Mesh(new THREE.BoxGeometry(w * 0.40, h, d), silencerMat);
+                group.add(silencerMesh);
+
+                [-w * 0.20, w * 0.20].forEach(sx => {
+                    const trimCap = new THREE.Mesh(new THREE.BoxGeometry(0.03, h + 0.04, d + 0.04), flangeMat);
+                    trimCap.position.set(sx, 0, 0);
+                    group.add(trimCap);
+                });
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'fan_assembly') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 1.2;
+                const h = sample3d.height || 1.1;
+                const d = sample3d.depth || 1.0;
+
+                const scrollMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.5
+                });
+                const motorMat = new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.7
+                });
+                const steelMat = new THREE.MeshStandardMaterial({
+                    color: 0x475569,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+
+                const baseFrame = new THREE.Mesh(new THREE.BoxGeometry(w, 0.06, d), steelMat);
+                baseFrame.position.set(0, -h / 2.0 + 0.03, 0);
+                group.add(baseFrame);
+
+                const scrollGeom = new THREE.CylinderGeometry(h * 0.38, h * 0.42, d * 0.45, 24);
+                scrollGeom.rotateX(Math.PI / 2.0);
+                const scrollMesh = new THREE.Mesh(scrollGeom, scrollMat);
+                scrollMesh.position.set(-w * 0.10, 0.05, 0);
+                group.add(scrollMesh);
+
+                const dischargeDuct = new THREE.Mesh(new THREE.BoxGeometry(w * 0.35, h * 0.40, d * 0.45), scrollMat);
+                dischargeDuct.position.set(w * 0.15, h * 0.18, 0);
+                group.add(dischargeDuct);
+
+                const bellmouthGeom = new THREE.CylinderGeometry(h * 0.28, h * 0.22, 0.12, 24);
+                bellmouthGeom.rotateX(Math.PI / 2.0);
+                const bellmouth = new THREE.Mesh(bellmouthGeom, steelMat);
+                bellmouth.position.set(-w * 0.10, 0.05, d * 0.28);
+                group.add(bellmouth);
+
+                const motorGeom = new THREE.CylinderGeometry(h * 0.20, h * 0.20, w * 0.35, 20);
+                motorGeom.rotateZ(Math.PI / 2.0);
+                const motorMesh = new THREE.Mesh(motorGeom, motorMat);
+                motorMesh.position.set(-w * 0.10, 0.05, -d * 0.30);
+                group.add(motorMesh);
+
+                const beltGuard = new THREE.Mesh(new THREE.BoxGeometry(0.12, h * 0.45, d * 0.25), steelMat);
+                beltGuard.position.set(-w * 0.26, 0.05, -d * 0.12);
+                group.add(beltGuard);
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'cooling_tower') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 1.8;
+                const h = sample3d.height || 2.4;
+                const d = sample3d.depth || 1.8;
+
+                const casingMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.3
+                });
+                const louverMat = new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    wireframe: wireframeMode,
+                    roughness: 0.6,
+                    metalness: 0.4
+                });
+                const pipeMat = new THREE.MeshStandardMaterial({
+                    color: 0x475569,
+                    wireframe: wireframeMode,
+                    roughness: 0.2,
+                    metalness: 0.8
+                });
+
+                const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.55, d), casingMat);
+                bodyMesh.position.set(0, h * 0.05, 0);
+                group.add(bodyMesh);
+
+                const inletMesh = new THREE.Mesh(new THREE.BoxGeometry(w * 0.95, h * 0.25, d * 0.95), louverMat);
+                inletMesh.position.set(0, -h / 2.0 + h * 0.125, 0);
+                group.add(inletMesh);
+
+                const cowlGeom = new THREE.CylinderGeometry(w * 0.28, w * 0.36, h * 0.20, 24);
+                const cowlMesh = new THREE.Mesh(cowlGeom, casingMat);
+                cowlMesh.position.set(0, h / 2.0 - h * 0.10, 0);
+                group.add(cowlMesh);
+
+                const fanHub = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.04, 16), pipeMat);
+                fanHub.position.set(0, h / 2.0, 0);
+                group.add(fanHub);
+
+                const guardRing = new THREE.Mesh(new THREE.TorusGeometry(w * 0.27, 0.015, 8, 24), pipeMat);
+                guardRing.rotation.x = Math.PI / 2.0;
+                guardRing.position.set(0, h / 2.0, 0);
+                group.add(guardRing);
+
+                const pipeHeader = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, w * 0.60, 16), pipeMat);
+                pipeHeader.rotation.z = Math.PI / 2.0;
+                pipeHeader.position.set(0, h * 0.10, d / 2.0 + 0.06);
+                group.add(pipeHeader);
+
+                [-w * 0.20, w * 0.20].forEach(px => {
+                    const flange = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.02, 16), pipeMat);
+                    flange.rotation.z = Math.PI / 2.0;
+                    flange.position.set(px, h * 0.10, d / 2.0 + 0.06);
+                    group.add(flange);
+                });
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'fire_suppression') {
+                const group = new THREE.Group();
+                const h = sample3d.height || 0.35;
+
+                const brassMat = new THREE.MeshStandardMaterial({
+                    color: 0xd97706,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+                const bulbMat = new THREE.MeshStandardMaterial({
+                    color: 0xef4444,
+                    emissive: 0xdc2626,
+                    emissiveIntensity: 0.5,
+                    wireframe: wireframeMode,
+                    transparent: true,
+                    opacity: 0.85
+                });
+
+                const nippleMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, h * 0.25, 16), brassMat);
+                nippleMesh.position.set(0, h / 2.0 - h * 0.125, 0);
+                group.add(nippleMesh);
+
+                [-0.012, 0.012].forEach(ry => {
+                    const threadRing = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.003, 8, 16), brassMat);
+                    threadRing.rotation.x = Math.PI / 2.0;
+                    threadRing.position.set(0, h / 2.0 - h * 0.125 + ry, 0);
+                    group.add(threadRing);
+                });
+
+                const armGeom = new THREE.CylinderGeometry(0.006, 0.006, h * 0.45, 12);
+                [-0.03, 0.03].forEach((ax, idx) => {
+                    const arm = new THREE.Mesh(armGeom, brassMat);
+                    arm.position.set(ax, 0, 0);
+                    arm.rotation.z = idx === 0 ? -0.15 : 0.15;
+                    group.add(arm);
+                });
+
+                const bulbMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, h * 0.22, 12), bulbMat);
+                bulbMesh.position.set(0, 0.02, 0);
+                group.add(bulbMesh);
+
+                const deflectorMesh = new THREE.Mesh(new THREE.CylinderGeometry(h * 0.35, h * 0.35, 0.008, 16), brassMat);
+                deflectorMesh.position.set(0, -h / 2.0 + 0.02, 0);
+                group.add(deflectorMesh);
+
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2.0;
+                    const notch = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.009, h * 0.12), brassMat);
+                    notch.position.set(Math.cos(angle) * h * 0.25, -h / 2.0 + 0.02, Math.sin(angle) * h * 0.25);
+                    notch.rotation.y = -angle;
+                    group.add(notch);
+                }
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'power_plant') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 1.6;
+                const h = sample3d.height || 1.4;
+                const d = sample3d.depth || 1.2;
+
+                const bodyMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.6
+                });
+                const skidMat = new THREE.MeshStandardMaterial({
+                    color: 0x334155,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+                const porcelainMat = new THREE.MeshStandardMaterial({
+                    color: 0x78350f,
+                    wireframe: wireframeMode,
+                    roughness: 0.2,
+                    metalness: 0.2
+                });
+
+                const skidMesh = new THREE.Mesh(new THREE.BoxGeometry(w * 1.05, 0.08, d * 1.05), skidMat);
+                skidMesh.position.set(0, -h / 2.0 + 0.04, 0);
+                group.add(skidMesh);
+
+                const mainTank = new THREE.Mesh(new THREE.BoxGeometry(w * 0.70, h * 0.58, d * 0.60), bodyMat);
+                mainTank.position.set(0, -0.02, 0);
+                group.add(mainTank);
+
+                [-w * 0.40, w * 0.40].forEach(rx => {
+                    for (let i = -3; i <= 3; i++) {
+                        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.015, h * 0.48, d * 0.10), bodyMat);
+                        fin.position.set(rx, -0.02, i * (d * 0.08));
+                        group.add(fin);
+                    }
+                });
+
+                [-w * 0.18, 0, w * 0.18].forEach(bx => {
+                    const bushingBase = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, h * 0.15, 12), porcelainMat);
+                    bushingBase.position.set(bx, h * 0.32, -d * 0.10);
+                    group.add(bushingBase);
+
+                    for (let r = 0; r < 3; r++) {
+                        const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.03, 0.015, 12), porcelainMat);
+                        rib.position.set(bx, h * 0.28 + r * 0.04, -d * 0.10);
+                        group.add(rib);
+                    }
+                });
+
+                const conservatorGeom = new THREE.CylinderGeometry(0.12, 0.12, w * 0.50, 20);
+                conservatorGeom.rotateZ(Math.PI / 2.0);
+                const conservator = new THREE.Mesh(conservatorGeom, bodyMat);
+                conservator.position.set(0, h * 0.38, d * 0.15);
+                group.add(conservator);
+
+                currentMesh = group;
             } else {
                 let geom;
                 if (sample3d.shape === 'cylinder') {
