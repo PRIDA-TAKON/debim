@@ -4,9 +4,10 @@ Generates minimal, syntactically valid .debim manifests and element dictionaries
 for all supported IFC classes and universal proxy entities.
 """
 
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 import yaml
-from debim.schema import EXPLICIT_TYPED_ELEMENT_CLASSES, ProjectManifest, load_manifest
+from debim.schema import ProjectManifest, load_manifest
 
 # Standard material definitions for exemplar manifests
 EXEMPLAR_MATERIALS = [
@@ -24,11 +25,26 @@ EXEMPLAR_MATERIALS = [
     {"id": "SOIL_COMPACTED", "name": "Compacted Earth Fill", "category": "Earthworks", "unit_cost_ref": "MAT-SOIL-FILL"},
     {"id": "ASPHALT_CONCRETE", "name": "Asphalt Concrete Wearing Course", "category": "Pavement", "unit_cost_ref": "MAT-ASPHALT"},
     {"id": "CAST_IRON", "name": "Cast Iron", "category": "Metal", "unit_cost_ref": "MAT-CAST-IRON"},
+    {"id": "WOOD", "name": "Natural Wood Timber", "category": "Wood", "unit_cost_ref": "MAT-TIMBER"},
 ]
 
-SUPPORTED_CLASSES = list(EXPLICIT_TYPED_ELEMENT_CLASSES) + [
-    "IfcPump", "IfcBoiler", "IfcChiller", "IfcSensor", "IfcFlowMeter", "IfcFan", "IfcTank"
+# Discover golden entity classes from fixtures if available
+_GOLDEN_FIXTURES_DIR = Path(__file__).resolve().parent.parent.parent.parent / "tests" / "fixtures" / "golden_entities"
+if not _GOLDEN_FIXTURES_DIR.exists():
+    _GOLDEN_FIXTURES_DIR = Path("tests/fixtures/golden_entities")
+
+_GOLDEN_CLASSES = []
+if _GOLDEN_FIXTURES_DIR.exists():
+    _GOLDEN_CLASSES = sorted([f.stem for f in _GOLDEN_FIXTURES_DIR.glob("*.yaml")])
+
+_CIVIL_EXTRA_CLASSES = [
+    "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
+    "IfcTrackElement", "IfcEarthworksElement", "IfcEarthworksCut", "IfcEarthworksFill",
+    "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall", "IfcPump", "IfcBoiler",
+    "IfcChiller", "IfcSensor", "IfcFlowMeter", "IfcFan", "IfcTank"
 ]
+
+SUPPORTED_CLASSES = sorted(list(set(_GOLDEN_CLASSES + _CIVIL_EXTRA_CLASSES)))
 
 
 def generate_exemplar_element(class_name: str, tag_suffix: str = "01") -> Dict[str, Any]:
@@ -38,9 +54,10 @@ def generate_exemplar_element(class_name: str, tag_suffix: str = "01") -> Dict[s
     norm_cls = class_name.strip()
 
     if norm_cls == "IfcColumn":
+        prefix = "C" if tag_suffix == "A1" else "COL"
         return {
-            "class": "IfcColumn",
-            "tag": f"COL-{tag_suffix}",
+            "class": norm_cls,
+            "tag": f"{prefix}-{tag_suffix}",
             "material": "CONCRETE_C30",
             "profile": {"shape": "BOX", "width": 0.30, "depth": 0.30},
             "placement": {
@@ -51,9 +68,10 @@ def generate_exemplar_element(class_name: str, tag_suffix: str = "01") -> Dict[s
         }
 
     elif norm_cls == "IfcBeam":
+        prefix = "B" if tag_suffix == "A1" else "BM"
         return {
-            "class": "IfcBeam",
-            "tag": f"BM-{tag_suffix}",
+            "class": norm_cls,
+            "tag": f"{prefix}-{tag_suffix}",
             "material": "CONCRETE_C30",
             "profile": {"shape": "BOX", "width": 0.20, "depth": 0.40},
             "placement": {
@@ -65,9 +83,10 @@ def generate_exemplar_element(class_name: str, tag_suffix: str = "01") -> Dict[s
         }
 
     elif norm_cls == "IfcWall":
+        prefix = "W" if tag_suffix == "A1" else "WALL"
         return {
-            "class": "IfcWall",
-            "tag": f"WALL-{tag_suffix}",
+            "class": norm_cls,
+            "tag": f"{prefix}-{tag_suffix}",
             "material": "BRICK_MASONRY",
             "thickness": 0.10,
             "height": 3.0,
@@ -79,9 +98,10 @@ def generate_exemplar_element(class_name: str, tag_suffix: str = "01") -> Dict[s
         }
 
     elif norm_cls == "IfcFooting":
+        prefix = "F" if tag_suffix == "A1" else "FTG"
         return {
-            "class": "IfcFooting",
-            "tag": f"FTG-{tag_suffix}",
+            "class": norm_cls,
+            "tag": f"{prefix}-{tag_suffix}",
             "material": "CONCRETE_C30",
             "profile": {"shape": "BOX", "width": 1.20, "depth": 1.20, "thickness": 0.35},
             "placement": {
@@ -92,9 +112,10 @@ def generate_exemplar_element(class_name: str, tag_suffix: str = "01") -> Dict[s
         }
 
     elif norm_cls == "IfcSlab":
+        prefix = "S" if tag_suffix == "A1" else "SLAB"
         return {
-            "class": "IfcSlab",
-            "tag": f"SLAB-{tag_suffix}",
+            "class": norm_cls,
+            "tag": f"{prefix}-{tag_suffix}",
             "material": "CONCRETE_C30",
             "thickness": 0.15,
             "placement": {
@@ -263,24 +284,12 @@ def generate_exemplar_element(class_name: str, tag_suffix: str = "01") -> Dict[s
             },
         }
 
-    elif norm_cls == "IfcSanitaryTerminal":
+    elif norm_cls in ("IfcSanitaryTerminal", "IfcWasteTerminal"):
         return {
-            "class": "IfcSanitaryTerminal",
+            "class": norm_cls,
             "tag": f"SAN-{tag_suffix}",
-            "terminal_type": "WATER_CLOSET",
-            "material": "CERAMIC_TILE",
-            "placement": {
-                "storey": "L1",
-                "grid": ["1", "A"],
-            },
-        }
-
-    elif norm_cls == "IfcWasteTerminal":
-        return {
-            "class": "IfcWasteTerminal",
-            "tag": f"WST-{tag_suffix}",
-            "terminal_type": "FLOOR_DRAIN",
-            "material": "STAINLESS_STEEL",
+            "terminal_type": "WATER_CLOSET" if norm_cls == "IfcSanitaryTerminal" else "FLOOR_DRAIN",
+            "material": "CERAMIC_TILE" if norm_cls == "IfcSanitaryTerminal" else "STAINLESS_STEEL",
             "placement": {
                 "storey": "L1",
                 "grid": ["1", "A"],
@@ -347,70 +356,11 @@ def generate_exemplar_element(class_name: str, tag_suffix: str = "01") -> Dict[s
             },
         }
 
-    elif norm_cls == "IfcDamper":
-        return {
-            "class": "IfcDamper",
-            "tag": f"DMP-{tag_suffix}",
-            "damper_type": "VOLUME_CONTROL_DAMPER",
-            "material": "GALVANIZED_STEEL",
-            "placement": {
-                "storey": "L1",
-                "grid": ["1", "A"],
-            },
-        }
-
-    elif norm_cls == "IfcFlowController":
-        return {
-            "class": "IfcFlowController",
-            "tag": f"FLC-{tag_suffix}",
-            "controller_type": "AIR_CONTROLLER",
-            "material": "GALVANIZED_STEEL",
-            "placement": {
-                "storey": "L1",
-                "grid": ["1", "A"],
-            },
-        }
-
-    elif norm_cls == "IfcUnitaryEquipment":
-        return {
-            "class": "IfcUnitaryEquipment",
-            "tag": f"AC-{tag_suffix}",
-            "equipment_type": "AC_INDOOR_WALL",
-            "material": "PLASTIC_PVC",
-            "placement": {
-                "storey": "L1",
-                "grid": ["1", "A"],
-            },
-        }
-
     elif norm_cls == "IfcEarthworksElement":
         return {
-            "class": "IfcEarthworksElement",
+            "class": norm_cls,
             "tag": f"EW-{tag_suffix}",
             "predefined_type": "RETAINING_STRUCTURE",
-            "material": "CONCRETE_C30",
-            "placement": {
-                "storey": "L1",
-                "grid": ["1", "A"],
-            },
-        }
-
-    elif norm_cls == "IfcEarthworksCut":
-        return {
-            "class": "IfcEarthworksCut",
-            "tag": f"CUT-{tag_suffix}",
-            "predefined_type": "CUT",
-            "placement": {
-                "storey": "L1",
-                "grid": ["1", "A"],
-            },
-        }
-
-    elif norm_cls == "IfcEarthworksFill":
-        return {
-            "class": "IfcEarthworksFill",
-            "tag": f"FILL-{tag_suffix}",
-            "predefined_type": "EMBANKMENT",
             "material": "SOIL_COMPACTED",
             "placement": {
                 "storey": "L1",
@@ -418,133 +368,50 @@ def generate_exemplar_element(class_name: str, tag_suffix: str = "01") -> Dict[s
             },
         }
 
-    elif norm_cls == "IfcGeotechnicalStratum":
+    elif norm_cls in ("IfcEarthworksCut", "IfcEarthworksFill"):
         return {
-            "class": "IfcGeotechnicalStratum",
-            "tag": f"STRATUM-{tag_suffix}",
-            "predefined_type": "SOLID",
-            "soil_type": "clay",
+            "class": norm_cls,
+            "tag": f"EW-{tag_suffix}",
+            "predefined_type": "CUT" if norm_cls == "IfcEarthworksCut" else "EMBANKMENT",
+            "material": "SOIL_COMPACTED",
             "placement": {
                 "storey": "L1",
                 "grid": ["1", "A"],
             },
         }
 
-    elif norm_cls == "IfcSoil":
+    elif norm_cls in ("IfcFurniture", "IfcFurnishingElement"):
         return {
-            "class": "IfcSoil",
-            "tag": f"SOIL-{tag_suffix}",
-            "soil_type": "topsoil",
-            "placement": {
-                "storey": "L1",
-                "grid": ["1", "A"],
-            },
-        }
-
-    elif norm_cls == "IfcRetainingWall":
-        return {
-            "class": "IfcRetainingWall",
-            "tag": f"RET-{tag_suffix}",
-            "material": "CONCRETE_C30",
-            "placement": {
-                "storey": "L1",
-                "from_grid": ["1", "A"],
-                "to_grid": ["2", "A"],
-            },
-        }
-
-    elif norm_cls == "IfcAlignment":
-        return {
-            "class": "IfcAlignment",
-            "tag": f"ALIGN-{tag_suffix}",
-            "placement": {
-                "storey": "L1",
-                "points": [
-                    {"x": 0.0, "y": 0.0, "z": 0.0},
-                    {"x": 10.0, "y": 0.0, "z": 0.0},
-                ],
-            },
-        }
-
-    elif norm_cls == "IfcRoad":
-        return {
-            "class": "IfcRoad",
-            "tag": f"ROAD-{tag_suffix}",
-            "material": "ASPHALT_CONCRETE",
-            "placement": {
-                "storey": "L1",
-                "from_grid": ["1", "A"],
-                "to_grid": ["2", "A"],
-            },
-        }
-
-    elif norm_cls == "IfcBridge":
-        return {
-            "class": "IfcBridge",
-            "tag": f"BRG-{tag_suffix}",
-            "material": "CONCRETE_C30",
-            "placement": {
-                "storey": "L1",
-                "from_grid": ["1", "A"],
-                "to_grid": ["2", "A"],
-            },
-        }
-
-    elif norm_cls == "IfcRailway":
-        return {
-            "class": "IfcRailway",
-            "tag": f"RLW-{tag_suffix}",
-            "placement": {
-                "storey": "L1",
-                "from_grid": ["1", "A"],
-                "to_grid": ["2", "A"],
-            },
-        }
-
-    elif norm_cls == "IfcRailwayPart":
-        return {
-            "class": "IfcRailwayPart",
-            "tag": f"RLWP-{tag_suffix}",
-            "predefined_type": "TRACK",
-            "placement": {
-                "storey": "L1",
-                "from_grid": ["1", "A"],
-                "to_grid": ["2", "A"],
-            },
-        }
-
-    elif norm_cls == "IfcTrackElement":
-        return {
-            "class": "IfcTrackElement",
-            "tag": f"TRK-{tag_suffix}",
-            "predefined_type": "RAIL",
-            "material": "STEEL_SS400",
-            "placement": {
-                "storey": "L1",
-                "from_grid": ["1", "A"],
-                "to_grid": ["2", "A"],
-            },
-        }
-
-    elif norm_cls == "IfcCustomElement":
-        return {
-            "class": "IfcCustomElement",
-            "tag": f"CUST-{tag_suffix}",
-            "name": "Custom Procedural Component",
+            "class": norm_cls,
+            "tag": f"FURN-{tag_suffix}",
+            "name": f"Exemplar {norm_cls}",
+            "material": "WOOD",
+            "dimensions": {"width": 1.0, "depth": 0.8, "height": 0.75},
             "placement": {
                 "storey": "L1",
                 "position": [0.0, 0.0, 0.0],
             },
         }
 
+    elif norm_cls in ("IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart", "IfcTrackElement", "IfcRetainingWall"):
+        return {
+            "class": norm_cls,
+            "tag": f"CIV-{tag_suffix}",
+            "material": "CONCRETE_C30" if "Bridge" in norm_cls or "Retaining" in norm_cls else "ASPHALT_CONCRETE",
+            "placement": {
+                "storey": "L1",
+                "from_grid": ["1", "A"],
+                "to_grid": ["2", "A"],
+            },
+        }
+
     else:
-        # Universal Proxy fallback (e.g. IfcBuildingElementProxy or dynamic classes like IfcPump)
         clean_tag_prefix = norm_cls.replace("Ifc", "").upper()[:4]
         return {
             "class": "IfcBuildingElementProxy",
             "ifc_class": norm_cls,
             "tag": f"{clean_tag_prefix}-{tag_suffix}",
-            "material": "CAST_IRON" if "Pump" in norm_cls or "Boiler" in norm_cls or "Chiller" in norm_cls else "STEEL_SS400",
+            "material": "CAST_IRON" if any(k in norm_cls for k in ("Pump", "Boiler", "Chiller", "Tank", "Engine")) else "STEEL_SS400",
             "dimensions": {"width": 1.0, "depth": 1.0, "height": 1.0},
             "placement": {
                 "storey": "L1",

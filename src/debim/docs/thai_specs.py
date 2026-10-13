@@ -103,6 +103,23 @@ THAI_SPEC_LIBRARY: Dict[str, ThaiSpecClause] = {
             "- ตรวจสอบการเปิด-ปิดราบรื่น ไม่ติดขัด และระบบล็อกทำงานสมบูรณ์"
         ),
     ),
+    "12 00 00": ThaiSpecClause(
+        masterformat_code="12 00 00",
+        masterformat_title="Furnishings & Interior Elements (งานครุภัณฑ์ตกแต่งภายใน)",
+        material_standards=(
+            "- ไม้อัดสัก หรือไม้สังเคราะห์คุณภาพเกรด E1 ปราศจากสารระเหยฟอร์มาลดีไฮด์\n"
+            "- อุปกรณ์ฟิตติ้งบานพับเปิด-ปิดระบบ Soft-Close มาตรฐาน ISO 9001\n"
+            "- ผ้าหุ้มเบาะและวัสดุซับเสียงทนไฟมาตรฐาน มอก. 838"
+        ),
+        workmanship_requirements=(
+            "- ติดตั้งประกอบลอยตัวและลอยแขวนยึดพุกแน่นหนา ได้ระดับฉากตามแบบสถาปัตยกรรม\n"
+            "- ทำความสะอาดผิว ปิดขอบลามิเนตเนียนเรียบ ปราศจากรอยขีดข่วน"
+        ),
+        testing_inspection=(
+            "- ตรวจสอบการรับน้ำหนักลิ้นชักและบานตู้ (Load Bearing Test) ปราศจากการตกท้องช้าง\n"
+            "- ตรวจสอบการยึดติดของวัสดุผิวปิด (Adhesion Test)"
+        ),
+    ),
     "22 11 00": ThaiSpecClause(
         masterformat_code="22 11 00",
         masterformat_title="Facility Water Distribution & Plumbing (งานระบบสุขาภิบาลและประปา)",
@@ -112,7 +129,7 @@ THAI_SPEC_LIBRARY: Dict[str, ThaiSpecClause] = {
             "- วาล์วน้ำทองเหลือง/สแตนเลส มาตรฐาน มอก. 389 หรือ BS 5154"
         ),
         workmanship_requirements=(
-            "- การต่อท่อและข้อต่อ: ทาเคมีประสานท่อตามมาตรฐานผู้ผลิต ท่อ PPR เชื่อมหลอมด้วยความร้อนเป็เนื้อเดียวกัน\n"
+            "- การต่อท่อและข้อต่อ: ทาเคมีประสานท่อตามมาตรฐานผู้ผลิต ท่อ PPR เชื่อมหลอมด้วยความร้อนเป็นเนื้อเดียวกัน\n"
             "- การสโลปทางเดินท่อ (Pipe Slope): ท่อน้ำทิ้งและท่อโสโครกต้องมีความลาดเอียงไม่น้อยกว่า 1:100 (1%) หรือ 1:50 (2%)\n"
             "- การยึดแขวนท่อ (Pipe Hangers): ติดตั้งชีแคลมป์หรือพุกยึดรับน้ำหนักท่อทุกระยะไม่เกิน 1.50 - 2.00 ม."
         ),
@@ -192,49 +209,159 @@ THAI_SPEC_LIBRARY: Dict[str, ThaiSpecClause] = {
 
 # Mapping from IFC Class name to CSI MasterFormat Division Code
 ENTITY_MASTERFORMAT_MAP: Dict[str, str] = {
+    # Structure (03 30 00 & 05 12 00)
     "IfcColumn": "03 30 00",
+    "IfcColumnStandardCase": "03 30 00",
     "IfcBeam": "03 30 00",
+    "IfcBeamStandardCase": "03 30 00",
     "IfcFooting": "03 30 00",
+    "IfcPile": "03 30 00",
     "IfcSlab": "03 30 00",
+    "IfcSlabStandardCase": "03 30 00",
+    "IfcSlabElementedCase": "03 30 00",
     "IfcStair": "03 30 00",
     "IfcStairFlight": "03 30 00",
     "IfcRamp": "03 30 00",
-    "IfcWall": "04 20 00",
-    "IfcRailing": "05 12 00",
+    "IfcRampFlight": "03 30 00",
+    "IfcReinforcingBar": "03 30 00",
+    "IfcReinforcingElement": "03 30 00",
+    "IfcReinforcingMesh": "03 30 00",
+    "IfcTendon": "03 30 00",
+    "IfcTendonAnchor": "03 30 00",
+    "IfcVibrationIsolator": "03 30 00",
+    "IfcMember": "05 12 00",
+    "IfcMemberStandardCase": "05 12 00",
     "IfcPlate": "05 12 00",
-    "IfcCurtainWall": "08 10 00",
-    "IfcDoor": "08 10 00",
-    "IfcWindow": "08 10 00",
+    "IfcPlateStandardCase": "05 12 00",
+    "IfcRailing": "05 12 00",
+    "IfcFastener": "05 12 00",
+    "IfcMechanicalFastener": "05 12 00",
+    "IfcDiscreteAccessory": "05 12 00",
+
+    # Architecture (04 20 00, 08 10 00, 12 00 00)
+    "IfcWall": "04 20 00",
+    "IfcWallStandardCase": "04 20 00",
+    "IfcWallElementedCase": "04 20 00",
     "IfcCovering": "04 20 00",
+    "IfcChimney": "04 20 00",
+    "IfcDoor": "08 10 00",
+    "IfcDoorStandardCase": "08 10 00",
+    "IfcWindow": "08 10 00",
+    "IfcWindowStandardCase": "08 10 00",
     "IfcRoof": "08 10 00",
+    "IfcCurtainWall": "08 10 00",
+    "IfcShadingDevice": "08 10 00",
+    "IfcFurniture": "12 00 00",
+    "IfcFurnishingElement": "12 00 00",
+    "IfcSystemFurnitureElement": "12 00 00",
+    "IfcBuildingElementPart": "04 20 00",
+    "IfcBuildingElementProxy": "05 12 00",
+    "IfcElementAssembly": "05 12 00",
+    "IfcTransportElement": "05 12 00",
+    "IfcVirtualElement": "04 20 00",
+
+    # Plumbing & Water (22 11 00)
     "IfcPipeSegment": "22 11 00",
+    "IfcPipeFitting": "22 11 00",
     "IfcSanitaryTerminal": "22 11 00",
     "IfcWasteTerminal": "22 11 00",
+    "IfcStackTerminal": "22 11 00",
+    "IfcFireSuppressionTerminal": "22 11 00",
+    "IfcPump": "22 11 00",
+    "IfcTank": "22 11 00",
+    "IfcInterceptor": "22 11 00",
+    "IfcValve": "22 11 00",
+    "IfcFlowTreatmentDevice": "22 11 00",
+    "IfcFlowStorageDevice": "22 11 00",
+
+    # HVAC & Mechanical (23 00 00)
     "IfcDuctSegment": "23 00 00",
+    "IfcDuctFitting": "23 00 00",
+    "IfcDuctSilencer": "23 00 00",
     "IfcAirTerminal": "23 00 00",
+    "IfcAirTerminalBox": "23 00 00",
+    "IfcAirToAirHeatRecovery": "23 00 00",
     "IfcDamper": "23 00 00",
     "IfcFlowController": "23 00 00",
     "IfcUnitaryEquipment": "23 00 00",
+    "IfcBoiler": "23 00 00",
+    "IfcChiller": "23 00 00",
+    "IfcBurner": "23 00 00",
+    "IfcCoil": "23 00 00",
+    "IfcCompressor": "23 00 00",
+    "IfcCondenser": "23 00 00",
+    "IfcCooledBeam": "23 00 00",
+    "IfcCoolingTower": "23 00 00",
+    "IfcEvaporativeCooler": "23 00 00",
+    "IfcEvaporator": "23 00 00",
+    "IfcFan": "23 00 00",
+    "IfcFilter": "23 00 00",
+    "IfcHeatExchanger": "23 00 00",
+    "IfcHumidifier": "23 00 00",
+    "IfcSpaceHeater": "23 00 00",
+    "IfcTubeBundle": "23 00 00",
+    "IfcEnergyConversionDevice": "23 00 00",
+    "IfcEngine": "23 00 00",
+
+    # Electrical & Communications (26 05 00)
     "IfcCableCarrierSegment": "26 05 00",
+    "IfcCableCarrierFitting": "26 05 00",
+    "IfcCableSegment": "26 05 00",
+    "IfcCableFitting": "26 05 00",
     "IfcDistributionBoard": "26 05 00",
     "IfcElectricDistributionBoard": "26 05 00",
     "IfcLightFixture": "26 05 00",
+    "IfcLamp": "26 05 00",
     "IfcSwitchingDevice": "26 05 00",
     "IfcOutlet": "26 05 00",
+    "IfcJunctionBox": "26 05 00",
+    "IfcElectricAppliance": "26 05 00",
+    "IfcElectricGenerator": "26 05 00",
+    "IfcElectricMotor": "26 05 00",
+    "IfcElectricTimeControl": "26 05 00",
+    "IfcElectricFlowStorageDevice": "26 05 00",
+    "IfcMotorConnection": "26 05 00",
+    "IfcProtectiveDevice": "26 05 00",
+    "IfcProtectiveDeviceTrippingUnit": "26 05 00",
+    "IfcSolarDevice": "26 05 00",
+    "IfcTransformer": "26 05 00",
+    "IfcActuator": "26 05 00",
+    "IfcAlarm": "26 05 00",
+    "IfcAudioVisualAppliance": "26 05 00",
+    "IfcCommunicationsAppliance": "26 05 00",
+    "IfcController": "26 05 00",
+    "IfcDistributionControlElement": "26 05 00",
+    "IfcDistributionElement": "26 05 00",
+    "IfcDistributionFlowElement": "26 05 00",
+    "IfcDistributionChamberElement": "26 05 00",
+    "IfcFlowInstrument": "26 05 00",
+    "IfcFlowMeter": "26 05 00",
+    "IfcFlowMovingDevice": "26 05 00",
+    "IfcFlowSegment": "26 05 00",
+    "IfcFlowFitting": "26 05 00",
+    "IfcFlowTerminal": "26 05 00",
+    "IfcMedicalDevice": "26 05 00",
+    "IfcSensor": "26 05 00",
+    "IfcUnitaryControlElement": "26 05 00",
+
+    # Civil & Infrastructure (31 20 00 & 34 11 00)
+    "IfcAlignment": "31 20 00",
+    "IfcRoad": "31 20 00",
+    "IfcBridge": "03 30 00",
     "IfcEarthworksElement": "31 20 00",
     "IfcEarthworksCut": "31 20 00",
     "IfcEarthworksFill": "31 20 00",
     "IfcGeotechnicalStratum": "31 20 00",
     "IfcSoil": "31 20 00",
     "IfcRetainingWall": "03 30 00",
-    "IfcAlignment": "31 20 00",
-    "IfcRoad": "31 20 00",
-    "IfcBridge": "03 30 00",
+    "IfcCivilElement": "31 20 00",
+    "IfcGeographicElement": "31 20 00",
     "IfcRailway": "34 11 00",
     "IfcRailwayPart": "34 11 00",
     "IfcTrackElement": "34 11 00",
+
+    # Custom
     "IfcCustomElement": "03 30 00",
-    "IfcBuildingElementProxy": "05 12 00",
 }
 
 
