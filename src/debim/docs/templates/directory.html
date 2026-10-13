@@ -608,7 +608,13 @@
             } else if (sample3d.shape === 'tendon_anchor') {
                 currentMesh = buildTendonAnchor(sample3d, options);
             } else if (sample3d.shape === 'structural_fastener') {
-                currentMesh = buildStructuralFastener(sample3d, options);
+currentMesh = buildStructuralFastener(sample3d, options);
+            } else if (sample3d.shape === 'structural_member') {
+                currentMesh = buildStructuralMember(sample3d, options);
+            } else if (sample3d.shape === 'reinforcing_bar') {
+                currentMesh = buildReinforcingBar(sample3d, options);
+            } else if (sample3d.shape === 'reinforcing_mesh') {
+                currentMesh = buildReinforcingMesh(sample3d, options);
             } else if (sample3d.shape === 'vibration_isolator') {
                 currentMesh = buildVibrationIsolator(sample3d, options);
             } else {
