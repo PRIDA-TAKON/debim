@@ -27,7 +27,7 @@ runner = CliRunner()
 def test_supported_classes_list():
     classes = get_supported_exemplar_classes()
     assert isinstance(classes, list)
-    assert len(classes) >= 40
+    assert len(classes) >= 125
     assert "IfcColumn" in classes
     assert "IfcWall" in classes
     assert "IfcPipeSegment" in classes
@@ -54,7 +54,7 @@ def test_generate_exemplar_manifest_single():
 def test_generate_exemplar_manifest_all():
     manifest = generate_exemplar_manifest(class_name="ALL")
     assert isinstance(manifest, ProjectManifest)
-    assert len(manifest.elements) >= 40
+    assert len(manifest.elements) >= 125
     # Confirm every element validates and is well-formed
     dict_dump = manifest.model_dump(by_alias=True, exclude_none=True)
     revalidated = ProjectManifest.model_validate(dict_dump)

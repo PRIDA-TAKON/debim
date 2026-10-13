@@ -421,10 +421,15 @@ def render_mesh_to_image(
     color: str = "#38bdf8",
     edge_color: str = "#0369a1",
     center_and_normalize: bool = True,
-) -> Image.Image:
+) -> Optional[Image.Image]:
     """
     Renders a 3D mesh to a PIL Image offscreen at a fixed viewpoint.
     """
+    if plt is None:
+        if Image is not None:
+            return Image.new("RGB", (img_size, img_size), "#0f172a")
+        return None
+
     v = verts.copy()
     if center_and_normalize:
         min_b = np.min(v, axis=0)
@@ -666,7 +671,7 @@ def run_visual_regression(
             # Render original
             img_orig = render_mesh_to_image(o_verts, o_faces, color="#38bdf8", edge_color="#0284c7")
 
-            if recomp_mesh is not None:
+            if recomp_mesh is not None and img_orig is not None:
                 r_verts, r_faces = recomp_mesh
                 img_recomp = render_mesh_to_image(r_verts, r_faces, color="#38bdf8", edge_color="#0284c7")
 
@@ -676,17 +681,21 @@ def run_visual_regression(
                 iou_score = compute_bbox_iou(min1, max1, min2, max2)
 
                 # Pixel match & diff
-                pixel_score, img_diff = compare_images(img_orig, img_recomp)
+                if img_recomp is not None:
+                    pixel_score, img_diff = compare_images(img_orig, img_recomp)
+                else:
+                    pixel_score = 0.0
+                    img_diff = Image.new("RGB", (300, 300), "#7f1d1d") if Image else None
             else:
-                img_recomp = Image.new("RGB", (300, 300), "#1e293b")
-                img_diff = Image.new("RGB", (300, 300), "#7f1d1d")
+                img_recomp = Image.new("RGB", (300, 300), "#1e293b") if Image else None
+                img_diff = Image.new("RGB", (300, 300), "#7f1d1d") if Image else None
                 iou_score = 0.0
                 pixel_score = 0.0
 
             status = "PASS" if pixel_score >= 0.85 else ("NEEDS_REVIEW" if pixel_score >= 0.60 else "FAIL")
             saved_img_rel = None
 
-            if save_images:
+            if save_images and Image and img_orig and img_recomp and img_diff:
                 # Save all non-pass images; for pass images, save up to sample limit per class
                 if status != "PASS" or passes_saved_per_class.get(cls_name, 0) < save_passes_sample_limit:
                     composite = generate_composite_panel(

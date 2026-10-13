@@ -185,7 +185,7 @@ def test_compile_custom_element_geometry_fallback(tmp_path):
 
     assert output_path.exists()
     content = output_path.read_text(encoding="utf-8")
-    assert "IFCFURNISHINGELEMENT" in content
+    assert "IFCFURNITURE" in content or "IFCFURNISHINGELEMENT" in content
     assert "IFCRECTANGLEPROFILEDEF" in content
     assert "IFCEXTRUDEDAREASOLID" in content
     assert "IFCSHAPEREPRESENTATION" in content

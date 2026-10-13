@@ -2,6 +2,7 @@
 Unit tests for debim Class Directory & Encyclopedia Documentation Engine.
 """
 
+import re
 import time
 from pathlib import Path
 from typer.testing import CliRunner
@@ -23,6 +24,14 @@ def test_generate_class_directory_html_basic():
     assert len(html_str) > 1000
     assert "<!DOCTYPE html>" in html_str
     assert "debim BIM Class Directory & Encyclopedia" in html_str
+
+
+def test_125_class_coverage():
+    """Test that DEFAULT_CLASS_DIRECTORY_DATA and HTML output cover all 125+ IFC physical element classes."""
+    assert len(DEFAULT_CLASS_DIRECTORY_DATA) >= 125
+    html_str = generate_class_directory_html()
+    matches = re.findall(r'\"class_name\":\s*\"([^\"]+)\"', html_str)
+    assert len(matches) >= 125, f"Expected >= 125 classes, found {len(matches)}"
 
 
 def test_export_class_directory(tmp_path):

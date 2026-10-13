@@ -16,6 +16,7 @@ import ifcopenshell.geom
 
 from debim.compiler import StepSerializer, compile_to_ifc
 from debim.cost import CostEstimate, PriceCatalog, estimate_cost
+from debim.docs.exemplar import EXEMPLAR_MATERIALS, generate_exemplar_element
 from debim.draw.renderer import SheetConfig, render_sheet
 from debim.qto import ProjectQTO, calculate_qto
 from debim.resolver import ResolvedManifest, resolve_manifest
@@ -127,6 +128,19 @@ def get_exemplar_manifest(element_class: str) -> ProjectManifest:
 
     cls_key = cls_clean.lower().replace("ifc", "")
 
+    if cls_key == "column":
+        elem = generate_exemplar_element("IfcColumn", tag_suffix="A1")
+    elif cls_key == "wall":
+        elem = generate_exemplar_element("IfcWall", tag_suffix="A1")
+    elif cls_key == "beam":
+        elem = generate_exemplar_element("IfcBeam", tag_suffix="A1")
+    elif cls_key == "slab":
+        elem = generate_exemplar_element("IfcSlab", tag_suffix="A1")
+    elif cls_key == "footing":
+        elem = generate_exemplar_element("IfcFooting", tag_suffix="A1")
+    else:
+        elem = generate_exemplar_element(cls_clean, tag_suffix="01")
+
     base_dict = {
         "schema": "IFC4-Minimal",
         "project": {
@@ -140,87 +154,13 @@ def get_exemplar_manifest(element_class: str) -> ProjectManifest:
             ]
         },
         "grids": {
-            "axes_x": {"A": 0.0, "B": 4.0},
-            "axes_y": {"1": 0.0, "2": 5.0},
+            "axes_x": {"1": 0.0, "2": 6.0, "3": 12.0},
+            "axes_y": {"A": 0.0, "B": 6.0, "C": 12.0},
         },
-        "materials": [
-            {
-                "id": "CONC_240",
-                "name": "Concrete 240 ksc",
-                "category": "concrete",
-                "unit_cost_ref": "MAT-CONC-01",
-            }
-        ],
+        "materials": EXEMPLAR_MATERIALS,
+        "elements": [elem],
     }
 
-    if cls_key == "column":
-        elem = {
-            "class": "IfcColumn",
-            "tag": "C-A1",
-            "material": "CONC_240",
-            "profile": {"shape": "BOX", "width": 0.3, "depth": 0.3},
-            "placement": {
-                "grid": ["A", "1"],
-                "base_storey": "L1",
-                "top_storey": "L2",
-            },
-            "reinforcement": {"main": "4-DB16", "stirrups": "RB6 @ 0.15m"},
-        }
-    elif cls_key == "wall":
-        elem = {
-            "class": "IfcWall",
-            "tag": "W-A1",
-            "material": "CONC_240",
-            "thickness": 0.15,
-            "height": 3.0,
-            "placement": {
-                "from_grid": ["A", "1"],
-                "to_grid": ["B", "1"],
-                "storey": "L1",
-            },
-        }
-    elif cls_key == "beam":
-        elem = {
-            "class": "IfcBeam",
-            "tag": "B-A1",
-            "material": "CONC_240",
-            "profile": {"shape": "BOX", "width": 0.2, "depth": 0.4},
-            "placement": {
-                "from_grid": ["A", "1"],
-                "to_grid": ["B", "1"],
-                "storey": "L1",
-            },
-        }
-    elif cls_key == "slab":
-        elem = {
-            "class": "IfcSlab",
-            "tag": "S-A1",
-            "material": "CONC_240",
-            "thickness": 0.15,
-            "placement": {
-                "storey": "L1",
-                "boundary": [["A", "1"], ["B", "1"], ["B", "2"], ["A", "2"]],
-            },
-        }
-    elif cls_key == "footing":
-        elem = {
-            "class": "IfcFooting",
-            "tag": "F-A1",
-            "material": "CONC_240",
-            "profile": {"shape": "BOX", "width": 1.2, "depth": 1.2, "thickness": 0.4},
-            "placement": {"grid": ["A", "1"], "storey": "L1"},
-        }
-    else:
-        # Default fallback custom proxy element
-        elem = {
-            "class": cls_clean,
-            "tag": f"E-{cls_clean.upper()[:3]}",
-            "name": f"Exemplar {cls_clean}",
-            "placement": {"position": [0.0, 0.0, 0.0], "storey": "L1"},
-            "dimensions": {"width": 1.0, "depth": 1.0, "height": 1.0},
-        }
-
-    base_dict["elements"] = [elem]
     return ProjectManifest.model_validate(base_dict)
 
 
