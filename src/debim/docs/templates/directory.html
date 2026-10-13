@@ -2653,6 +2653,379 @@
                 group.add(conservator);
 
                 currentMesh = group;
+            } else if (sample3d.shape === 'earthworks_embankment') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 6.00;
+                const d = sample3d.depth || 8.00;
+                const h = sample3d.height || 2.50;
+
+                const topsoilMat = new THREE.MeshStandardMaterial({
+                    color: 0x3f6212, // Dark Organic Topsoil Green/Brown
+                    wireframe: wireframeMode,
+                    roughness: 0.9,
+                    metalness: 0.1
+                });
+                const subsoilMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col), // Subsoil Amber/Brown
+                    wireframe: wireframeMode,
+                    roughness: 0.8,
+                    metalness: 0.1
+                });
+                const bedrockMat = new THREE.MeshStandardMaterial({
+                    color: 0x475569, // Bedrock Slate Grey
+                    wireframe: wireframeMode,
+                    roughness: 0.7,
+                    metalness: 0.2
+                });
+
+                // Layer 1: Bedrock Strata (Bottom Layer)
+                const shapeBedrock = new THREE.Shape();
+                shapeBedrock.moveTo(-w / 2.0, -h / 2.0);
+                shapeBedrock.lineTo(w / 2.0, -h / 2.0);
+                shapeBedrock.lineTo(w * 0.42, -h / 2.0 + h * 0.35);
+                shapeBedrock.lineTo(-w * 0.42, -h / 2.0 + h * 0.35);
+                shapeBedrock.closePath();
+                const bedrockGeom = new THREE.ExtrudeGeometry(shapeBedrock, { depth: d, bevelEnabled: false });
+                bedrockGeom.center();
+                const bedrockMesh = new THREE.Mesh(bedrockGeom, bedrockMat);
+                bedrockMesh.position.set(0, -h * 0.325, 0);
+                group.add(bedrockMesh);
+
+                // Layer 2: Subsoil Layer (Middle Layer)
+                const shapeSubsoil = new THREE.Shape();
+                shapeSubsoil.moveTo(-w * 0.42, -h / 2.0 + h * 0.35);
+                shapeSubsoil.lineTo(w * 0.42, -h / 2.0 + h * 0.35);
+                shapeSubsoil.lineTo(w * 0.30, -h / 2.0 + h * 0.82);
+                shapeSubsoil.lineTo(-w * 0.30, -h / 2.0 + h * 0.82);
+                shapeSubsoil.closePath();
+                const subsoilGeom = new THREE.ExtrudeGeometry(shapeSubsoil, { depth: d, bevelEnabled: false });
+                subsoilGeom.center();
+                const subsoilMesh = new THREE.Mesh(subsoilGeom, subsoilMat);
+                subsoilMesh.position.set(0, h * 0.085, 0);
+                group.add(subsoilMesh);
+
+                // Layer 3: Topsoil Crust Layer (Top Layer)
+                const shapeTopsoil = new THREE.Shape();
+                shapeTopsoil.moveTo(-w * 0.30, -h / 2.0 + h * 0.82);
+                shapeTopsoil.lineTo(w * 0.30, -h / 2.0 + h * 0.82);
+                shapeTopsoil.lineTo(w * 0.25, h / 2.0);
+                shapeTopsoil.lineTo(-w * 0.25, h / 2.0);
+                shapeTopsoil.closePath();
+                const topsoilGeom = new THREE.ExtrudeGeometry(shapeTopsoil, { depth: d, bevelEnabled: false });
+                topsoilGeom.center();
+                const topsoilMesh = new THREE.Mesh(topsoilGeom, topsoilMat);
+                topsoilMesh.position.set(0, h * 0.41, 0);
+                group.add(topsoilMesh);
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'retaining_structure') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 4.00;
+                const d = sample3d.depth || 2.50;
+                const h = sample3d.height || 3.00;
+
+                const concMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.6,
+                    metalness: 0.1
+                });
+                const soilMat = new THREE.MeshStandardMaterial({
+                    color: 0x92400e, // Backfill Soil Brown
+                    wireframe: wireframeMode,
+                    roughness: 0.85,
+                    metalness: 0.1
+                });
+                const pipeMat = new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.6
+                });
+
+                // Stepped Footing Base Slab
+                const heelSlab = new THREE.Mesh(new THREE.BoxGeometry(w, 0.40, d), concMat);
+                heelSlab.position.set(0, -h / 2.0 + 0.20, 0);
+                group.add(heelSlab);
+
+                const toeKey = new THREE.Mesh(new THREE.BoxGeometry(w, 0.30, d * 0.35), concMat);
+                toeKey.position.set(0, -h / 2.0 - 0.15, -d * 0.25);
+                group.add(toeKey);
+
+                // Cantilevered Stem Wall
+                const stemShape = new THREE.Shape();
+                stemShape.moveTo(-d * 0.20, -h / 2.0 + 0.40);
+                stemShape.lineTo(-d * 0.20 + 0.35, -h / 2.0 + 0.40);
+                stemShape.lineTo(-d * 0.20 + 0.20, h / 2.0);
+                stemShape.lineTo(-d * 0.20, h / 2.0);
+                stemShape.closePath();
+                const stemGeom = new THREE.ExtrudeGeometry(stemShape, { depth: w, bevelEnabled: false });
+                stemGeom.center();
+                stemGeom.rotateY(Math.PI / 2.0);
+                const stemMesh = new THREE.Mesh(stemGeom, concMat);
+                stemMesh.position.set(0, 0.20, 0);
+                group.add(stemMesh);
+
+                // Retained Soil Backfill Prism
+                const soilShape = new THREE.Shape();
+                soilShape.moveTo(-d * 0.20 + 0.35, -h / 2.0 + 0.40);
+                soilShape.lineTo(d / 2.0, -h / 2.0 + 0.40);
+                soilShape.lineTo(d / 2.0, h / 2.0);
+                soilShape.lineTo(-d * 0.20 + 0.20, h / 2.0);
+                soilShape.closePath();
+                const soilGeom = new THREE.ExtrudeGeometry(soilShape, { depth: w * 0.98, bevelEnabled: false });
+                soilGeom.center();
+                soilGeom.rotateY(Math.PI / 2.0);
+                const soilMesh = new THREE.Mesh(soilGeom, soilMat);
+                soilMesh.position.set(0, 0.20, 0);
+                group.add(soilMesh);
+
+                // Weep Holes through Stem Base
+                [-w * 0.35, 0, w * 0.35].forEach(wx => {
+                    const weepHole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.50, 16), pipeMat);
+                    weepHole.rotateX(Math.PI / 2.0);
+                    weepHole.position.set(wx, -h / 2.0 + 0.60, -d * 0.025);
+                    group.add(weepHole);
+                });
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'deep_foundation') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 2.40;
+                const d = sample3d.depth || 2.40;
+                const h = sample3d.height || 4.00;
+
+                const concreteMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.6,
+                    metalness: 0.1
+                });
+                const pileMat = new THREE.MeshStandardMaterial({
+                    color: 0x475569,
+                    wireframe: wireframeMode,
+                    roughness: 0.5,
+                    metalness: 0.2
+                });
+
+                // Reinforced Pile Cap Block
+                const pileCapH = 0.80;
+                const pileCapMesh = new THREE.Mesh(new THREE.BoxGeometry(w, pileCapH, d), concreteMat);
+                pileCapMesh.position.set(0, h / 2.0 - pileCapH / 2.0, 0);
+                group.add(pileCapMesh);
+
+                // Quad Cylindrical Foundation Piles
+                const pileRadius = 0.25;
+                const pileLength = h - pileCapH;
+                const pileGeom = new THREE.CylinderGeometry(pileRadius, pileRadius, pileLength, 24);
+
+                const pxOffsets = [-w / 3.2, w / 3.2];
+                const pzOffsets = [-d / 3.2, d / 3.2];
+
+                pxOffsets.forEach(px => {
+                    pzOffsets.forEach(pz => {
+                        const pileMesh = new THREE.Mesh(pileGeom, pileMat);
+                        pileMesh.position.set(px, -h / 2.0 + pileLength / 2.0, pz);
+                        group.add(pileMesh);
+                    });
+                });
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'tendon_anchor') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 0.40;
+                const d = sample3d.depth || 0.40;
+                const h = sample3d.height || 2.50;
+
+                const steelMat = new THREE.MeshStandardMaterial({
+                    color: 0x334155,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+                const strandMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col), // Strand Gold / Steel
+                    wireframe: wireframeMode,
+                    roughness: 0.2,
+                    metalness: 0.9
+                });
+                const anchorHeadMat = new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    wireframe: wireframeMode,
+                    roughness: 0.2,
+                    metalness: 0.95
+                });
+
+                // Central Prestressing Tendon Duct Tube
+                const ductGeom = new THREE.CylinderGeometry(w * 0.25, w * 0.25, h - 0.40, 24);
+                const ductMesh = new THREE.Mesh(ductGeom, steelMat);
+                ductMesh.position.set(0, -0.20, 0);
+                group.add(ductMesh);
+
+                // Strand Wire Bundle inside Duct
+                for (let i = 0; i < 7; i++) {
+                    const angle = (i / 6) * Math.PI * 2;
+                    const radius = i === 0 ? 0 : w * 0.12;
+                    const strandX = i === 0 ? 0 : Math.cos(angle) * radius;
+                    const strandZ = i === 0 ? 0 : Math.sin(angle) * radius;
+
+                    const strand = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, h, 12), strandMat);
+                    strand.position.set(strandX, 0, strandZ);
+                    group.add(strand);
+                }
+
+                // Bearing Plate at Anchor Head Base
+                const bearingPlate = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), steelMat);
+                bearingPlate.position.set(0, h / 2.0 - 0.20, 0);
+                group.add(bearingPlate);
+
+                // Flared Trumpet
+                const trumpetGeom = new THREE.CylinderGeometry(w * 0.40, w * 0.25, 0.25, 24);
+                const trumpet = new THREE.Mesh(trumpetGeom, steelMat);
+                trumpet.position.set(0, h / 2.0 - 0.325, 0);
+                group.add(trumpet);
+
+                // Wedged Anchor Head Block
+                const anchorHead = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.38, w * 0.38, 0.14, 24), anchorHeadMat);
+                anchorHead.position.set(0, h / 2.0 - 0.09, 0);
+                group.add(anchorHead);
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'structural_fastener') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 0.30;
+                const d = sample3d.depth || 0.30;
+                const h = sample3d.height || 0.40;
+
+                const gussetMat = new THREE.MeshStandardMaterial({
+                    color: 0x475569,
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.7
+                });
+                const boltMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.2,
+                    metalness: 0.85
+                });
+                const washerMat = new THREE.MeshStandardMaterial({
+                    color: 0x94a3b8,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+
+                // Steel Gusset Connection Plate
+                const plateThickness = 0.03;
+                const gussetPlate = new THREE.Mesh(new THREE.BoxGeometry(w, h, plateThickness), gussetMat);
+                group.add(gussetPlate);
+
+                // 2x2 Bolt Array Assembly
+                const bxOffsets = [-w * 0.28, w * 0.28];
+                const byOffsets = [-h * 0.28, h * 0.28];
+
+                bxOffsets.forEach(bx => {
+                    byOffsets.forEach(by => {
+                        // Circular Washer Front
+                        const washerFront = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.008, 16), washerMat);
+                        washerFront.rotateX(Math.PI / 2.0);
+                        washerFront.position.set(bx, by, plateThickness / 2.0 + 0.004);
+                        group.add(washerFront);
+
+                        // Hexagonal Bolt Head Front
+                        const boltHeadFront = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.025, 6), boltMat);
+                        boltHeadFront.rotateX(Math.PI / 2.0);
+                        boltHeadFront.position.set(bx, by, plateThickness / 2.0 + 0.008 + 0.0125);
+                        group.add(boltHeadFront);
+
+                        // Threaded Cylinder Shank passing through
+                        const shank = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.08, 12), boltMat);
+                        shank.rotateX(Math.PI / 2.0);
+                        shank.position.set(bx, by, 0);
+                        group.add(shank);
+
+                        // Circular Washer Back
+                        const washerBack = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.008, 16), washerMat);
+                        washerBack.rotateX(Math.PI / 2.0);
+                        washerBack.position.set(bx, by, -plateThickness / 2.0 - 0.004);
+                        group.add(washerBack);
+
+                        // Hexagonal Clamping Nut Back
+                        const hexNutBack = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.022, 6), boltMat);
+                        hexNutBack.rotateX(Math.PI / 2.0);
+                        hexNutBack.position.set(bx, by, -plateThickness / 2.0 - 0.008 - 0.011);
+                        group.add(hexNutBack);
+                    });
+                });
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'vibration_isolator') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 0.50;
+                const d = sample3d.depth || 0.50;
+                const h = sample3d.height || 0.45;
+
+                const plateMat = new THREE.MeshStandardMaterial({
+                    color: 0x334155,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+                const springMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.2,
+                    metalness: 0.85
+                });
+                const padMat = new THREE.MeshStandardMaterial({
+                    color: 0x0f172a, // Elastomeric Damping Rubber
+                    wireframe: wireframeMode,
+                    roughness: 0.9,
+                    metalness: 0.05
+                });
+
+                // Top & Bottom Mounting Steel Plates
+                const plateThickness = 0.025;
+                const topPlate = new THREE.Mesh(new THREE.BoxGeometry(w, plateThickness, d), plateMat);
+                topPlate.position.set(0, h / 2.0 - plateThickness / 2.0, 0);
+                group.add(topPlate);
+
+                const botPlate = new THREE.Mesh(new THREE.BoxGeometry(w, plateThickness, d), plateMat);
+                botPlate.position.set(0, -h / 2.0 + plateThickness / 2.0, 0);
+                group.add(botPlate);
+
+                // Damping Rubber Pads
+                const topPad = new THREE.Mesh(new THREE.BoxGeometry(w * 0.90, 0.02, d * 0.90), padMat);
+                topPad.position.set(0, h / 2.0 - plateThickness - 0.01, 0);
+                group.add(topPad);
+
+                const botPad = new THREE.Mesh(new THREE.BoxGeometry(w * 0.90, 0.02, d * 0.90), padMat);
+                botPad.position.set(0, -h / 2.0 + plateThickness + 0.01, 0);
+                group.add(botPad);
+
+                // Quad Helical Spiral Spring Coils
+                const springRadius = 0.08;
+                const springTubeRadius = 0.015;
+                const springH = h - 2 * plateThickness - 0.04;
+                const nTurns = 4;
+
+                const sxOffsets = [-w * 0.25, w * 0.25];
+                const szOffsets = [-d * 0.25, d * 0.25];
+
+                sxOffsets.forEach(sx => {
+                    szOffsets.forEach(sz => {
+                        for (let t = 0; t < nTurns; t++) {
+                            const torusY = -springH / 2.0 + (t + 0.5) * (springH / nTurns);
+                            const springTurn = new THREE.Mesh(new THREE.TorusGeometry(springRadius, springTubeRadius, 10, 24), springMat);
+                            springTurn.rotation.x = Math.PI / 2.0;
+                            springTurn.position.set(sx, torusY, sz);
+                            group.add(springTurn);
+                        }
+                    });
+                });
+
+                currentMesh = group;
             } else {
                 let geom;
                 if (sample3d.shape === 'cylinder') {

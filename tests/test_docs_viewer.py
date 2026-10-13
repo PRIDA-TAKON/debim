@@ -202,6 +202,30 @@ def test_procedural_3d_shapes_payloads():
     assert by_class["IfcElectricGenerator"]["shape"] == "power_plant"
     assert by_class["IfcElectricMotor"]["shape"] == "power_plant"
 
+    # Civil Earthworks, Foundations & Structural Fasteners additions
+    assert by_class["IfcEarthworksCut"]["shape"] == "earthworks_embankment"
+    assert by_class["IfcEarthworksFill"]["shape"] == "earthworks_embankment"
+    assert by_class["IfcEarthworksElement"]["shape"] == "earthworks_embankment"
+    assert by_class["IfcGeotechnicalStratum"]["shape"] == "earthworks_embankment"
+    assert by_class["IfcSoil"]["shape"] == "earthworks_embankment"
+
+    assert by_class["IfcRetainingWall"]["shape"] == "retaining_structure"
+    assert by_class["IfcGeographicElement"]["shape"] == "retaining_structure"
+
+    assert by_class["IfcFooting"]["shape"] == "deep_foundation"
+    assert by_class["IfcPile"]["shape"] == "deep_foundation"
+
+    assert by_class["IfcTendonAnchor"]["shape"] == "tendon_anchor"
+    assert by_class["IfcTendon"]["shape"] == "tendon_anchor"
+
+    assert by_class["IfcFastener"]["shape"] == "structural_fastener"
+    assert by_class["IfcMechanicalFastener"]["shape"] == "structural_fastener"
+    assert by_class["IfcDiscreteAccessory"]["shape"] == "structural_fastener"
+
+    assert by_class["IfcVibrationIsolator"]["shape"] == "vibration_isolator"
+    assert by_class["IfcMember"]["shape"] == "vibration_isolator"
+    assert by_class["IfcMemberStandardCase"]["shape"] == "vibration_isolator"
+
 
 def test_procedural_3d_geometry_handlers_in_html():
     """Test that generated HTML contains Three.js composite geometry handlers."""
@@ -236,3 +260,9 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "cooling_tower" in html_str
     assert "fire_suppression" in html_str
     assert "power_plant" in html_str
+    assert "earthworks_embankment" in html_str
+    assert "retaining_structure" in html_str
+    assert "deep_foundation" in html_str
+    assert "tendon_anchor" in html_str
+    assert "structural_fastener" in html_str
+    assert "vibration_isolator" in html_str
