@@ -1131,6 +1131,42 @@
                     sm.position.set(x, 0, 0);
                     group.add(sm);
                 }
+            } else if (rebarType === 'stair') {
+                const rBar = 0.008;
+                const rDist = 0.005;
+                const length = Math.hypot(d, h);
+                const angle = Math.atan2(h, d);
+                const nMain = 6;
+                const waistThick = 0.14;
+
+                const mainBarGeom = new THREE.CylinderGeometry(rBar, rBar, length - 2 * c, 8);
+                mainBarGeom.rotateX(Math.PI / 2);
+
+                [-waistThick / 2 + c, waistThick / 2 - c].forEach(yLayer => {
+                    for (let i = 0; i < nMain; i++) {
+                        const x = -w / 2 + c + (i / (nMain - 1)) * (w - 2 * c);
+                        const m = new THREE.Mesh(mainBarGeom, mainMat);
+                        m.position.set(x, 0, 0);
+                        m.rotation.x = -angle;
+                        m.translateOnAxis(new THREE.Vector3(0, 1, 0), yLayer);
+                        group.add(m);
+                    }
+                });
+
+                const nDist = 10;
+                const distBarGeom = new THREE.CylinderGeometry(rDist, rDist, w - 2 * c, 8);
+                distBarGeom.rotateZ(Math.PI / 2);
+
+                for (let i = 0; i < nDist; i++) {
+                    const frac = (i + 0.5) / nDist - 0.5;
+                    const z = frac * (d - 2 * c);
+                    const y = frac * (h - 2 * c);
+                    [-waistThick / 2 + c + 0.012, waistThick / 2 - c - 0.012].forEach(yOff => {
+                        const m = new THREE.Mesh(distBarGeom, stirrupMat);
+                        m.position.set(0, y + yOff * Math.cos(angle), z - yOff * Math.sin(angle));
+                        group.add(m);
+                    });
+                }
             }
 
             return group;
@@ -1195,7 +1231,57 @@
 
             const col = sample3d.color || "#38bdf8";
 
-            if (sample3d.shape === 'stair_flight') {
+            if (sample3d.shape === 'stair_concrete') {
+                const concreteGroup = new THREE.Group();
+                const steps = sample3d.steps || 10;
+                const w = sample3d.width || 1.2;
+                const h = sample3d.height || 2.4;
+                const d = sample3d.depth || 2.5;
+                const rh = h / steps;
+                const td = d / steps;
+                const slopeAngle = Math.atan2(h, d);
+                const slopeLen = Math.hypot(d, h);
+                const waistThick = 0.14;
+
+                const isTransparent = isRC && xrayMode;
+                const concreteMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.7,
+                    metalness: 0.1,
+                    transparent: isTransparent,
+                    opacity: isTransparent ? 0.38 : 1.0,
+                    depthWrite: !isTransparent
+                });
+
+                const slabGeom = new THREE.BoxGeometry(w, waistThick, slopeLen);
+                const slabMesh = new THREE.Mesh(slabGeom, concreteMat);
+                slabMesh.rotation.x = -slopeAngle;
+                slabMesh.translateOnAxis(new THREE.Vector3(0, 1, 0), -waistThick / 2.0);
+                concreteGroup.add(slabMesh);
+
+                const stepGeom = new THREE.BoxGeometry(w, rh, td);
+                for (let i = 0; i < steps; i++) {
+                    const stepMesh = new THREE.Mesh(stepGeom, concreteMat);
+                    const yPos = -h / 2.0 + i * rh + rh / 2.0;
+                    const zPos = d / 2.0 - i * td - td / 2.0;
+                    stepMesh.position.set(0, yPos, zPos);
+                    concreteGroup.add(stepMesh);
+                }
+
+                currentConcreteMesh = concreteGroup;
+
+                if (isRC) {
+                    currentMesh = new THREE.Group();
+                    currentMesh.add(currentConcreteMesh);
+
+                    currentRebarGroup = buildRebarCage(sample3d);
+                    currentRebarGroup.visible = rebarMode;
+                    currentMesh.add(currentRebarGroup);
+                } else {
+                    currentMesh = currentConcreteMesh;
+                }
+            } else if (sample3d.shape === 'stair_flight') {
                 const group = new THREE.Group();
                 const steps = sample3d.steps || 10;
                 const w = sample3d.width || 1.2;
@@ -1203,31 +1289,15 @@
                 const d = sample3d.depth || 2.5;
                 const rh = h / steps;
                 const td = d / steps;
-                const mainMat = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color(col),
-                    wireframe: wireframeMode,
-                    roughness: 0.5,
-                    metalness: 0.2
-                });
-
-                for (let i = 0; i < steps; i++) {
-                    const stepDepth = td * (steps - i);
-                    const stepGeom = new THREE.BoxGeometry(w, rh, stepDepth);
-                    const stepMesh = new THREE.Mesh(stepGeom, mainMat);
-                    const yPos = -h / 2.0 + i * rh + rh / 2.0;
-                    const zPos = d / 2.0 - stepDepth / 2.0;
-                    stepMesh.position.set(0, yPos, zPos);
-                    group.add(stepMesh);
-                }
 
                 const stringerLength = Math.hypot(d, h);
                 const stringerAngle = Math.atan2(h, d);
-                const stringerGeom = new THREE.BoxGeometry(0.06, 0.18, stringerLength);
+                const stringerGeom = new THREE.BoxGeometry(0.06, 0.20, stringerLength);
                 const stringerMat = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color(col).multiplyScalar(0.8),
+                    color: new THREE.Color(col).multiplyScalar(0.7),
                     wireframe: wireframeMode,
-                    roughness: 0.6,
-                    metalness: 0.3
+                    roughness: 0.4,
+                    metalness: 0.5
                 });
 
                 [-w / 2.0 + 0.03, w / 2.0 - 0.03].forEach(xOffset => {
@@ -1236,6 +1306,23 @@
                     stringerMesh.rotation.x = -stringerAngle;
                     group.add(stringerMesh);
                 });
+
+                const treadMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.5,
+                    metalness: 0.2
+                });
+                const treadThick = 0.04;
+                const treadGeom = new THREE.BoxGeometry(w - 0.10, treadThick, td);
+
+                for (let i = 0; i < steps; i++) {
+                    const treadMesh = new THREE.Mesh(treadGeom, treadMat);
+                    const yPos = -h / 2.0 + (i + 1) * rh - treadThick / 2.0;
+                    const zPos = d / 2.0 - i * td - td / 2.0;
+                    treadMesh.position.set(0, yPos, zPos);
+                    group.add(treadMesh);
+                }
 
                 currentMesh = group;
             } else if (sample3d.shape === 'ramp') {
@@ -3224,11 +3311,15 @@
             xrayMode = !xrayMode;
             const btn = document.getElementById('xray-btn');
             if (btn) btn.classList.toggle('active', xrayMode);
-            if (currentConcreteMesh && currentConcreteMesh.material) {
-                currentConcreteMesh.material.transparent = xrayMode;
-                currentConcreteMesh.material.opacity = xrayMode ? 0.38 : 1.0;
-                currentConcreteMesh.material.depthWrite = !xrayMode;
-                currentConcreteMesh.material.needsUpdate = true;
+            if (currentConcreteMesh) {
+                currentConcreteMesh.traverse((child) => {
+                    if (child.isMesh && child.material) {
+                        child.material.transparent = xrayMode;
+                        child.material.opacity = xrayMode ? 0.38 : 1.0;
+                        child.material.depthWrite = !xrayMode;
+                        child.material.needsUpdate = true;
+                    }
+                });
             }
         }
 
