@@ -1146,7 +1146,7 @@
                     for (let i = 0; i < nMain; i++) {
                         const x = -w / 2 + c + (i / (nMain - 1)) * (w - 2 * c);
                         const m = new THREE.Mesh(mainBarGeom, mainMat);
-                        m.position.set(x, 0, 0);
+                        m.position.set(x, -waistThick * 0.50, 0);
                         m.rotation.x = -angle;
                         m.translateOnAxis(new THREE.Vector3(0, 1, 0), yLayer);
                         group.add(m);
@@ -1160,10 +1160,10 @@
                 for (let i = 0; i < nDist; i++) {
                     const frac = (i + 0.5) / nDist - 0.5;
                     const z = frac * (d - 2 * c);
-                    const y = frac * (h - 2 * c);
+                    const y = -waistThick * 0.50 + frac * (h - 2 * c);
                     [-waistThick / 2 + c + 0.012, waistThick / 2 - c - 0.012].forEach(yOff => {
                         const m = new THREE.Mesh(distBarGeom, stirrupMat);
-                        m.position.set(0, y + yOff * Math.cos(angle), z - yOff * Math.sin(angle));
+                        m.position.set(0, y + yOff * Math.cos(angle), z + yOff * Math.sin(angle));
                         group.add(m);
                     });
                 }
@@ -1256,15 +1256,15 @@
 
                 const slabGeom = new THREE.BoxGeometry(w, waistThick, slopeLen);
                 const slabMesh = new THREE.Mesh(slabGeom, concreteMat);
-                slabMesh.rotation.x = -slopeAngle;
-                slabMesh.translateOnAxis(new THREE.Vector3(0, 1, 0), -waistThick / 2.0);
+                slabMesh.position.set(0, -waistThick * 0.50, 0);
+                slabMesh.rotation.x = slopeAngle;
                 concreteGroup.add(slabMesh);
 
                 const stepGeom = new THREE.BoxGeometry(w, rh, td);
                 for (let i = 0; i < steps; i++) {
                     const stepMesh = new THREE.Mesh(stepGeom, concreteMat);
                     const yPos = -h / 2.0 + i * rh + rh / 2.0;
-                    const zPos = d / 2.0 - i * td - td / 2.0;
+                    const zPos = -d / 2.0 + i * td + td / 2.0;
                     stepMesh.position.set(0, yPos, zPos);
                     concreteGroup.add(stepMesh);
                 }
@@ -1290,9 +1290,9 @@
                 const rh = h / steps;
                 const td = d / steps;
 
-                const stringerLength = Math.hypot(d, h);
+                const stringerLength = Math.hypot(d, h) + 0.30;
                 const stringerAngle = Math.atan2(h, d);
-                const stringerGeom = new THREE.BoxGeometry(0.06, 0.20, stringerLength);
+                const stringerGeom = new THREE.BoxGeometry(0.06, 0.22, stringerLength);
                 const stringerMat = new THREE.MeshStandardMaterial({
                     color: new THREE.Color(col).multiplyScalar(0.7),
                     wireframe: wireframeMode,
@@ -1303,7 +1303,7 @@
                 [-w / 2.0 + 0.03, w / 2.0 - 0.03].forEach(xOffset => {
                     const stringerMesh = new THREE.Mesh(stringerGeom, stringerMat);
                     stringerMesh.position.set(xOffset, 0, 0);
-                    stringerMesh.rotation.x = -stringerAngle;
+                    stringerMesh.rotation.x = stringerAngle;
                     group.add(stringerMesh);
                 });
 
@@ -1319,7 +1319,7 @@
                 for (let i = 0; i < steps; i++) {
                     const treadMesh = new THREE.Mesh(treadGeom, treadMat);
                     const yPos = -h / 2.0 + (i + 1) * rh - treadThick / 2.0;
-                    const zPos = d / 2.0 - i * td - td / 2.0;
+                    const zPos = -d / 2.0 + i * td + td / 2.0;
                     treadMesh.position.set(0, yPos, zPos);
                     group.add(treadMesh);
                 }
