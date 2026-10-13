@@ -230,6 +230,15 @@ def test_procedural_3d_shapes_payloads():
     assert by_class["IfcReinforcingBar"]["shape"] == "reinforcing_bar"
     assert by_class["IfcReinforcingMesh"]["shape"] == "reinforcing_mesh"
 
+    # Electrical & Low-Voltage additions
+    assert by_class["IfcSolarDevice"]["shape"] == "solar_panel"
+    assert by_class["IfcJunctionBox"]["shape"] == "junction_box"
+    assert by_class["IfcProtectiveDevice"]["shape"] == "circuit_breaker"
+    if "IfcProtectiveDeviceTrippingUnit" in by_class:
+        assert by_class["IfcProtectiveDeviceTrippingUnit"]["shape"] == "circuit_breaker"
+    assert by_class["IfcAlarm"]["shape"] == "alarm_device"
+    assert by_class["IfcElectricFlowStorageDevice"]["shape"] == "battery_storage"
+
 
 def test_procedural_3d_geometry_handlers_in_html():
     """Test that generated HTML contains Three.js composite geometry handlers."""
@@ -274,3 +283,8 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "structural_member" in html_str
     assert "reinforcing_bar" in html_str
     assert "reinforcing_mesh" in html_str
+    assert "solar_panel" in html_str
+    assert "junction_box" in html_str
+    assert "circuit_breaker" in html_str
+    assert "alarm_device" in html_str
+    assert "battery_storage" in html_str
