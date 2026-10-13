@@ -38,10 +38,11 @@ if _GOLDEN_FIXTURES_DIR.exists():
     _GOLDEN_CLASSES = sorted([f.stem for f in _GOLDEN_FIXTURES_DIR.glob("*.yaml")])
 
 _CIVIL_EXTRA_CLASSES = [
-    "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
+    "IfcAlignment", "IfcRoad", "IfcBridge", "IfcBridgePart", "IfcBearing", "IfcRailway", "IfcRailwayPart",
     "IfcTrackElement", "IfcEarthworksElement", "IfcEarthworksCut", "IfcEarthworksFill",
-    "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall", "IfcPump", "IfcBoiler",
-    "IfcChiller", "IfcSensor", "IfcFlowMeter", "IfcFan", "IfcTank"
+    "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall", "IfcMarineFacility", "IfcMarinePart",
+    "IfcMooringDevice", "IfcNavigationElement", "IfcElectricAppliance", "IfcLamp", "IfcSwitchingDevice",
+    "IfcPump", "IfcBoiler", "IfcChiller", "IfcSensor", "IfcFlowMeter", "IfcFan", "IfcTank"
 ]
 
 SUPPORTED_CLASSES = sorted(list(set(_GOLDEN_CLASSES + _CIVIL_EXTRA_CLASSES)))

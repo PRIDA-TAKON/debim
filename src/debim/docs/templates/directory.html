@@ -1642,6 +1642,379 @@
                 group.add(collarMesh);
 
                 currentMesh = group;
+            } else if (sample3d.shape === 'light_fixture') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 0.60;
+                const d = sample3d.depth || 0.60;
+                const h = sample3d.height || 0.15;
+
+                const housingMat = new THREE.MeshStandardMaterial({
+                    color: 0x94a3b8,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.7
+                });
+                const illuminatedMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    emissive: new THREE.Color(col),
+                    emissiveIntensity: 0.5,
+                    wireframe: wireframeMode,
+                    roughness: 0.1,
+                    metalness: 0.1
+                });
+                const coneMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    transparent: true,
+                    opacity: 0.28,
+                    roughness: 0.1
+                });
+
+                const housingMesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), housingMat);
+                housingMesh.position.set(0, h / 2.0 - 0.04, 0);
+                group.add(housingMesh);
+
+                const rimMesh = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, 0.02, d + 0.04), housingMat);
+                rimMesh.position.set(0, h / 2.0 - 0.08, 0);
+                group.add(rimMesh);
+
+                const diffuserMesh = new THREE.Mesh(new THREE.BoxGeometry(w - 0.04, 0.01, d - 0.04), illuminatedMat);
+                diffuserMesh.position.set(0, h / 2.0 - 0.09, 0);
+                group.add(diffuserMesh);
+
+                const lightConeGeom = new THREE.CylinderGeometry(w / 4.0, w / 1.1, 0.80, 24);
+                const lightConeMesh = new THREE.Mesh(lightConeGeom, coneMat);
+                lightConeMesh.position.set(0, -0.40, 0);
+                group.add(lightConeMesh);
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'electric_panel') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 0.60;
+                const d = sample3d.depth || 0.20;
+                const h = sample3d.height || 0.80;
+
+                const cabinetMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.6
+                });
+                const innerMat = new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    wireframe: wireframeMode,
+                    roughness: 0.5,
+                    metalness: 0.3
+                });
+                const handleMat = new THREE.MeshStandardMaterial({
+                    color: 0xcbd5e1,
+                    wireframe: wireframeMode,
+                    roughness: 0.2,
+                    metalness: 0.9
+                });
+                const redMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, wireframe: wireframeMode });
+                const blueMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, wireframe: wireframeMode });
+
+                const cabinetMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), cabinetMat);
+                group.add(cabinetMesh);
+
+                const frameTrim = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, h + 0.04, 0.02), cabinetMat);
+                frameTrim.position.set(0, 0, d / 2.0 + 0.01);
+                group.add(frameTrim);
+
+                const innerRecess = new THREE.Mesh(new THREE.BoxGeometry(w - 0.10, h - 0.12, 0.02), innerMat);
+                innerRecess.position.set(0, 0, d / 2.0 + 0.015);
+                group.add(innerRecess);
+
+                [-0.18, 0, 0.18].forEach(yRow => {
+                    for (let i = -3; i <= 3; i++) {
+                        const mMat = (i % 2 === 0) ? redMat : blueMat;
+                        const breaker = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.07, 0.025), mMat);
+                        breaker.position.set(i * 0.05, yRow, d / 2.0 + 0.025);
+                        group.add(breaker);
+                    }
+                });
+
+                const latchHandle = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.14, 0.03), handleMat);
+                latchHandle.position.set(w / 2.0 - 0.06, 0, d / 2.0 + 0.035);
+                group.add(latchHandle);
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'outlet_switch') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 0.12;
+                const d = sample3d.depth || 0.04;
+                const h = sample3d.height || 0.12;
+
+                const plateMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.2,
+                    metalness: 0.1
+                });
+                const boxMat = new THREE.MeshStandardMaterial({
+                    color: 0x64748b,
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.7
+                });
+                const slotMat = new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    wireframe: wireframeMode
+                });
+
+                const faceplate = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.015), plateMat);
+                faceplate.position.set(0, 0, 0.0075);
+                group.add(faceplate);
+
+                const backBox = new THREE.Mesh(new THREE.BoxGeometry(w * 0.85, h * 0.85, d - 0.015), boxMat);
+                backBox.position.set(0, 0, -(d - 0.015) / 2.0);
+                group.add(backBox);
+
+                [-w / 4.0, w / 4.0].forEach(xPos => {
+                    const ringGeom = new THREE.CylinderGeometry(0.022, 0.022, 0.005, 16);
+                    ringGeom.rotateX(Math.PI / 2.0);
+                    const ringMesh = new THREE.Mesh(ringGeom, plateMat);
+                    ringMesh.position.set(xPos, 0, 0.016);
+                    group.add(ringMesh);
+
+                    [-0.008, 0.008].forEach(dx => {
+                        const slot = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.012, 0.008), slotMat);
+                        slot.position.set(xPos + dx, 0, 0.017);
+                        group.add(slot);
+                    });
+                });
+
+                const rockerBtn = new THREE.Mesh(new THREE.BoxGeometry(w * 0.28, h * 0.38, 0.012), plateMat);
+                rockerBtn.position.set(0, 0, 0.018);
+                rockerBtn.rotation.x = 0.08;
+                group.add(rockerBtn);
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'bridge_structure') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 8.0;
+                const d = sample3d.depth || 4.0;
+                const h = sample3d.height || 3.5;
+
+                const concreteMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.6,
+                    metalness: 0.1
+                });
+                const girderMat = new THREE.MeshStandardMaterial({
+                    color: 0x475569,
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.5
+                });
+                const bearingMat = new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+
+                const pierCol = new THREE.Mesh(new THREE.CylinderGeometry(0.50, 0.60, h * 0.45, 16), concreteMat);
+                pierCol.position.set(0, -h / 2.0 + h * 0.225, 0);
+                group.add(pierCol);
+
+                const pierCap = new THREE.Mesh(new THREE.BoxGeometry(1.20, 0.40, d * 0.85), concreteMat);
+                pierCap.position.set(0, -h / 2.0 + h * 0.45 + 0.20, 0);
+                group.add(pierCap);
+
+                [-d / 3.0, -d / 8.0, d / 8.0, d / 3.0].forEach(zBearing => {
+                    const pad = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.25), bearingMat);
+                    pad.position.set(0, -h / 2.0 + h * 0.45 + 0.44, zBearing);
+                    group.add(pad);
+                });
+
+                [-d / 4.0, d / 4.0].forEach(zGirder => {
+                    const girder = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.22, 0.35), girderMat);
+                    girder.position.set(0, -h / 2.0 + h * 0.45 + 0.48 + (h * 0.11), zGirder);
+                    group.add(girder);
+                });
+
+                const deckSlab = new THREE.Mesh(new THREE.BoxGeometry(w, 0.25, d), concreteMat);
+                deckSlab.position.set(0, h / 2.0 - 0.20, 0);
+                group.add(deckSlab);
+
+                [-d / 2.0 + 0.08, d / 2.0 - 0.08].forEach(zBarrier => {
+                    const barrier = new THREE.Mesh(new THREE.BoxGeometry(w, 0.35, 0.16), concreteMat);
+                    barrier.position.set(0, h / 2.0 + 0.08, zBarrier);
+                    group.add(barrier);
+                });
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'railway_infrastructure') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 3.0;
+                const d = sample3d.depth || 10.0;
+                const h = sample3d.height || 0.6;
+
+                const ballastMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.9,
+                    metalness: 0.1
+                });
+                const sleeperMat = new THREE.MeshStandardMaterial({
+                    color: 0x44403c,
+                    wireframe: wireframeMode,
+                    roughness: 0.7,
+                    metalness: 0.2
+                });
+                const railMat = new THREE.MeshStandardMaterial({
+                    color: 0x94a3b8,
+                    wireframe: wireframeMode,
+                    roughness: 0.2,
+                    metalness: 0.8
+                });
+
+                const shape = new THREE.Shape();
+                shape.moveTo(-w / 2.0, -h / 2.0);
+                shape.lineTo(w / 2.0, -h / 2.0);
+                shape.lineTo(w * 0.38, -h / 2.0 + 0.35);
+                shape.lineTo(-w * 0.38, -h / 2.0 + 0.35);
+                shape.closePath();
+
+                const ballastGeom = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false });
+                ballastGeom.center();
+                const ballastMesh = new THREE.Mesh(ballastGeom, ballastMat);
+                group.add(ballastMesh);
+
+                const nSleepers = 16;
+                const sleeperY = -h / 2.0 + 0.35 + 0.06;
+                for (let i = 0; i < nSleepers; i++) {
+                    const zPos = -d / 2.0 + (i + 0.5) * (d / nSleepers);
+                    const sleeper = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.12, 0.22), sleeperMat);
+                    sleeper.position.set(0, sleeperY, zPos);
+                    group.add(sleeper);
+                }
+
+                const railY = sleeperY + 0.06 + 0.07;
+                [-0.715, 0.715].forEach(xRail => {
+                    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, d), railMat);
+                    rail.position.set(xRail, railY, 0);
+                    group.add(rail);
+                });
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'road_infrastructure') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 7.0;
+                const d = sample3d.depth || 10.0;
+                const h = sample3d.height || 0.4;
+
+                const baseMat = new THREE.MeshStandardMaterial({
+                    color: 0x475569,
+                    wireframe: wireframeMode,
+                    roughness: 0.8
+                });
+                const asphaltMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.85,
+                    metalness: 0.1
+                });
+                const curbMat = new THREE.MeshStandardMaterial({
+                    color: 0xe2e8f0,
+                    wireframe: wireframeMode,
+                    roughness: 0.5
+                });
+                const stripeMat = new THREE.MeshStandardMaterial({
+                    color: 0xfef08a,
+                    wireframe: wireframeMode
+                });
+
+                const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.20, d), baseMat);
+                baseMesh.position.set(0, -h / 2.0 + 0.10, 0);
+                group.add(baseMesh);
+
+                [-w / 4.0, w / 4.0].forEach((xLane, idx) => {
+                    const laneMesh = new THREE.Mesh(new THREE.BoxGeometry(w / 2.0 - 0.25, 0.12, d), asphaltMat);
+                    laneMesh.position.set(xLane, -h / 2.0 + 0.26, 0);
+                    laneMesh.rotation.z = (idx === 0) ? 0.02 : -0.02;
+                    group.add(laneMesh);
+                });
+
+                [-w / 2.0 + 0.125, w / 2.0 - 0.125].forEach(xCurb => {
+                    const curb = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, d), curbMat);
+                    curb.position.set(xCurb, -h / 2.0 + 0.225, 0);
+                    group.add(curb);
+                });
+
+                for (let zStripe = -d / 2.0 + 1.0; zStripe < d / 2.0; zStripe += 2.5) {
+                    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.01, 1.40), stripeMat);
+                    stripe.position.set(0, -h / 2.0 + 0.325, zStripe);
+                    group.add(stripe);
+                }
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'marine_facility') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 6.0;
+                const d = sample3d.depth || 8.0;
+                const h = sample3d.height || 2.5;
+
+                const dockMat = new THREE.MeshStandardMaterial({
+                    color: 0x64748b,
+                    wireframe: wireframeMode,
+                    roughness: 0.6,
+                    metalness: 0.2
+                });
+                const waterMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    transparent: true,
+                    opacity: 0.55,
+                    roughness: 0.1
+                });
+                const bollardMat = new THREE.MeshStandardMaterial({
+                    color: 0xeab308,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.7
+                });
+                const fenderMat = new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    wireframe: wireframeMode,
+                    roughness: 0.8
+                });
+
+                const waterMesh = new THREE.Mesh(new THREE.BoxGeometry(w + 1.0, 0.05, d * 0.45), waterMat);
+                waterMesh.position.set(0, -h / 2.0 + 0.50, d / 2.0 - d * 0.225);
+                group.add(waterMesh);
+
+                const dockSlab = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.75, d * 0.55), dockMat);
+                dockSlab.position.set(0, -h / 2.0 + (h * 0.75) / 2.0, -d * 0.205);
+                group.add(dockSlab);
+
+                [-w / 3.0, 0, w / 3.0].forEach(xFender => {
+                    const fenderGeom = new THREE.CylinderGeometry(0.20, 0.20, 0.50, 16);
+                    fenderGeom.rotateZ(Math.PI / 2.0);
+                    const fender = new THREE.Mesh(fenderGeom, fenderMat);
+                    fender.position.set(xFender, -h / 2.0 + h * 0.50, 0.10);
+                    group.add(fender);
+                });
+
+                const bollardBaseY = -h / 2.0 + h * 0.75;
+                const bollardBase = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.30, 0.06, 16), bollardMat);
+                bollardBase.position.set(0, bollardBaseY + 0.03, -0.30);
+                group.add(bollardBase);
+
+                const bollardStem = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.20, 0.50, 16), bollardMat);
+                bollardStem.position.set(0, bollardBaseY + 0.31, -0.30);
+                group.add(bollardStem);
+
+                const tHeadGeom = new THREE.CylinderGeometry(0.12, 0.12, 0.60, 16);
+                tHeadGeom.rotateZ(Math.PI / 2.0);
+                const tHead = new THREE.Mesh(tHeadGeom, bollardMat);
+                tHead.position.set(0, bollardBaseY + 0.56, -0.30);
+                group.add(tHead);
+
+                currentMesh = group;
             } else {
                 let geom;
                 if (sample3d.shape === 'cylinder') {
