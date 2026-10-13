@@ -2015,6 +2015,369 @@
                 group.add(tHead);
 
                 currentMesh = group;
+            } else if (sample3d.shape === 'transport_element') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 1.60;
+                const d = sample3d.depth || 1.80;
+                const h = sample3d.height || 2.60;
+
+                const frameMat = new THREE.MeshStandardMaterial({
+                    color: 0x334155,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+                const panelMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.3
+                });
+                const glassMat = new THREE.MeshStandardMaterial({
+                    color: 0x38bdf8,
+                    wireframe: wireframeMode,
+                    transparent: true,
+                    opacity: 0.40,
+                    roughness: 0.1,
+                    metalness: 0.1
+                });
+                const cableMat = new THREE.MeshStandardMaterial({
+                    color: 0x94a3b8,
+                    wireframe: wireframeMode,
+                    roughness: 0.2,
+                    metalness: 0.9
+                });
+                const indicatorMat = new THREE.MeshStandardMaterial({
+                    color: 0x22c55e,
+                    emissive: 0x22c55e,
+                    emissiveIntensity: 0.6,
+                    wireframe: wireframeMode
+                });
+
+                // Cabin Base Floor & Ceiling
+                const floorMesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.10, d), frameMat);
+                floorMesh.position.set(0, -h / 2.0 + 0.05, 0);
+                group.add(floorMesh);
+
+                const ceilingMesh = new THREE.Mesh(new THREE.BoxGeometry(w, 0.10, d), frameMat);
+                ceilingMesh.position.set(0, h / 2.0 - 0.25, 0);
+                group.add(ceilingMesh);
+
+                // Steel Corner Posts
+                const postGeom = new THREE.BoxGeometry(0.08, h - 0.30, 0.08);
+                [[-w / 2.0 + 0.04, -d / 2.0 + 0.04], [w / 2.0 - 0.04, -d / 2.0 + 0.04],
+                 [-w / 2.0 + 0.04, d / 2.0 - 0.04], [w / 2.0 - 0.04, d / 2.0 - 0.04]].forEach(([px, pz]) => {
+                    const post = new THREE.Mesh(postGeom, frameMat);
+                    post.position.set(px, -0.10, pz);
+                    group.add(post);
+                });
+
+                // Cabin Side Walls
+                const sideWallGeom = new THREE.BoxGeometry(0.04, h - 0.35, d - 0.16);
+                [-w / 2.0 + 0.02, w / 2.0 - 0.02].forEach(wx => {
+                    const sideWall = new THREE.Mesh(sideWallGeom, panelMat);
+                    sideWall.position.set(wx, -0.10, 0);
+                    group.add(sideWall);
+                });
+
+                // Glass Viewing Back Panel
+                const glassPanel = new THREE.Mesh(new THREE.BoxGeometry(w - 0.16, h - 0.35, 0.03), glassMat);
+                glassPanel.position.set(0, -0.10, -d / 2.0 + 0.02);
+                group.add(glassPanel);
+
+                // Overhead Hoist Cables extending upwards
+                const cableGeom = new THREE.CylinderGeometry(0.012, 0.012, 0.50, 12);
+                [-0.30, -0.10, 0.10, 0.30].forEach(cx => {
+                    const cable = new THREE.Mesh(cableGeom, cableMat);
+                    cable.position.set(cx, h / 2.0, 0);
+                    group.add(cable);
+                });
+
+                // Floor Indicator Display Box
+                const indicatorBox = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.10, 0.04), indicatorMat);
+                indicatorBox.position.set(0, h / 2.0 - 0.15, d / 2.0 + 0.02);
+                group.add(indicatorBox);
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'curtain_wall') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 4.00;
+                const d = sample3d.depth || 0.15;
+                const h = sample3d.height || 3.00;
+
+                const frameMat = new THREE.MeshStandardMaterial({
+                    color: 0x475569,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+                const mullionMat = new THREE.MeshStandardMaterial({
+                    color: 0x334155,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.7
+                });
+                const glassMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    transparent: true,
+                    opacity: 0.40,
+                    roughness: 0.1,
+                    metalness: 0.2
+                });
+
+                // Outer Framing
+                const vertOuterGeom = new THREE.BoxGeometry(0.08, h, d);
+                [-w / 2.0 + 0.04, w / 2.0 - 0.04].forEach(x => {
+                    const outerVert = new THREE.Mesh(vertOuterGeom, frameMat);
+                    outerVert.position.set(x, 0, 0);
+                    group.add(outerVert);
+                });
+
+                const horizOuterGeom = new THREE.BoxGeometry(w, 0.08, d);
+                [-h / 2.0 + 0.04, h / 2.0 - 0.04].forEach(y => {
+                    const outerHoriz = new THREE.Mesh(horizOuterGeom, frameMat);
+                    outerHoriz.position.set(0, y, 0);
+                    group.add(outerHoriz);
+                });
+
+                // Grid Mullions and Transoms (3 vertical bays x 3 horizontal rows)
+                const numBays = 3;
+                const numRows = 3;
+
+                for (let i = 1; i < numBays; i++) {
+                    const x = -w / 2.0 + (i / numBays) * w;
+                    const vMullion = new THREE.Mesh(new THREE.BoxGeometry(0.05, h - 0.16, d * 0.9), mullionMat);
+                    vMullion.position.set(x, 0, 0);
+                    group.add(vMullion);
+                }
+
+                for (let j = 1; j < numRows; j++) {
+                    const y = -h / 2.0 + (j / numRows) * h;
+                    const hTransom = new THREE.Mesh(new THREE.BoxGeometry(w - 0.16, 0.05, d * 0.9), mullionMat);
+                    hTransom.position.set(0, y, 0);
+                    group.add(hTransom);
+                }
+
+                // Glass Grid Panels
+                const panelWidth = w / numBays - 0.02;
+                const panelHeight = h / numRows - 0.02;
+                const panelGeom = new THREE.BoxGeometry(panelWidth, panelHeight, 0.015);
+
+                for (let i = 0; i < numBays; i++) {
+                    const px = -w / 2.0 + (i + 0.5) * (w / numBays);
+                    for (let j = 0; j < numRows; j++) {
+                        const py = -h / 2.0 + (j + 0.5) * (h / numRows);
+                        const glassMesh = new THREE.Mesh(panelGeom, glassMat);
+                        glassMesh.position.set(px, py, 0);
+                        group.add(glassMesh);
+                    }
+                }
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'shading_device') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 2.40;
+                const d = sample3d.depth || 0.80;
+                const h = sample3d.height || 1.50;
+
+                const structMat = new THREE.MeshStandardMaterial({
+                    color: 0x334155,
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.7
+                });
+                const louverMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.5
+                });
+
+                // Vertical Mounting Bracket Posts / Arms
+                const bracketGeom = new THREE.BoxGeometry(0.06, h, 0.06);
+                [-w / 2.0 + 0.10, w / 2.0 - 0.10].forEach(bx => {
+                    const bracket = new THREE.Mesh(bracketGeom, structMat);
+                    bracket.position.set(bx, 0, -d / 2.0 + 0.03);
+                    group.add(bracket);
+
+                    // Wall Attachment Arms extending out
+                    const armGeom = new THREE.BoxGeometry(0.05, 0.05, d - 0.06);
+                    [-h / 3.0, h / 3.0].forEach(ay => {
+                        const arm = new THREE.Mesh(armGeom, structMat);
+                        arm.position.set(bx, ay, 0);
+                        group.add(arm);
+                    });
+                });
+
+                // Angled Horizontal Louver Blades
+                const numLouvers = 6;
+                const louverGeom = new THREE.BoxGeometry(w, 0.02, 0.22);
+
+                for (let i = 0; i < numLouvers; i++) {
+                    const ly = -h / 2.0 + 0.15 + (i / (numLouvers - 1)) * (h - 0.30);
+                    const louver = new THREE.Mesh(louverGeom, louverMat);
+                    louver.position.set(0, ly, 0.05);
+                    louver.rotation.x = 0.45; // Angled louvers (~25 degrees)
+                    group.add(louver);
+                }
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'wall_system') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 4.00;
+                const d = sample3d.depth || 0.22;
+                const h = sample3d.height || 3.00;
+
+                const wallMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.7,
+                    metalness: 0.1
+                });
+                const trimMat = new THREE.MeshStandardMaterial({
+                    color: 0x475569,
+                    wireframe: wireframeMode,
+                    roughness: 0.4,
+                    metalness: 0.3
+                });
+
+                // Main Wall Core
+                const coreMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h - 0.16, d - 0.02), wallMat);
+                coreMesh.position.set(0, 0, 0);
+                group.add(coreMesh);
+
+                // Baseboard / Skirting Trim along the bottom on both sides
+                const skirtingGeom = new THREE.BoxGeometry(w, 0.10, 0.015);
+                [-d / 2.0 + 0.0075, d / 2.0 - 0.0075].forEach(sz => {
+                    const skirting = new THREE.Mesh(skirtingGeom, trimMat);
+                    skirting.position.set(0, -h / 2.0 + 0.05, sz);
+                    group.add(skirting);
+                });
+
+                // Top Coping Cap Trim
+                const copingMesh = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, 0.06, d + 0.04), trimMat);
+                copingMesh.position.set(0, h / 2.0 - 0.03, 0);
+                group.add(copingMesh);
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'covering') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 3.60;
+                const d = sample3d.depth || 3.60;
+                const h = sample3d.height || 0.10;
+
+                const baseMat = new THREE.MeshStandardMaterial({
+                    color: 0x94a3b8,
+                    wireframe: wireframeMode,
+                    roughness: 0.6,
+                    metalness: 0.1
+                });
+                const tileMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.1
+                });
+                const gridMat = new THREE.MeshStandardMaterial({
+                    color: 0x334155,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.8
+                });
+
+                // Backing Base Board
+                const baseSlab = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.4, d), baseMat);
+                baseSlab.position.set(0, -h / 2.0 + h * 0.2, 0);
+                group.add(baseSlab);
+
+                // Suspended T-bar Grid Tile Array (6x6 Grid)
+                const gridCount = 6;
+                const tileSizeX = w / gridCount - 0.02;
+                const tileSizeZ = d / gridCount - 0.02;
+                const tileGeom = new THREE.BoxGeometry(tileSizeX, h * 0.5, tileSizeZ);
+
+                for (let i = 0; i < gridCount; i++) {
+                    const tx = -w / 2.0 + (i + 0.5) * (w / gridCount);
+                    for (let j = 0; j < gridCount; j++) {
+                        const tz = -d / 2.0 + (j + 0.5) * (d / gridCount);
+                        const tileMesh = new THREE.Mesh(tileGeom, tileMat);
+                        tileMesh.position.set(tx, h / 2.0 - h * 0.25, tz);
+                        group.add(tileMesh);
+                    }
+                }
+
+                // T-Bar Runner Grid Lines
+                for (let i = 0; i <= gridCount; i++) {
+                    const gx = -w / 2.0 + i * (w / gridCount);
+                    const runnerZ = new THREE.Mesh(new THREE.BoxGeometry(0.015, h * 0.55, d), gridMat);
+                    runnerZ.position.set(gx, h / 2.0 - h * 0.275, 0);
+                    group.add(runnerZ);
+
+                    const gz = -d / 2.0 + i * (d / gridCount);
+                    const runnerX = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.55, 0.015), gridMat);
+                    runnerX.position.set(0, h / 2.0 - h * 0.275, gz);
+                    group.add(runnerX);
+                }
+
+                currentMesh = group;
+            } else if (sample3d.shape === 'chimney') {
+                const group = new THREE.Group();
+                const w = sample3d.width || 0.80;
+                const d = sample3d.depth || 0.80;
+                const h = sample3d.height || 4.50;
+
+                const shaftMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(col),
+                    wireframe: wireframeMode,
+                    roughness: 0.8,
+                    metalness: 0.1
+                });
+                const crownMat = new THREE.MeshStandardMaterial({
+                    color: 0x475569,
+                    wireframe: wireframeMode,
+                    roughness: 0.5,
+                    metalness: 0.3
+                });
+                const flueMat = new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    wireframe: wireframeMode,
+                    roughness: 0.3,
+                    metalness: 0.7
+                });
+
+                // Vertical Chimney Shaft
+                const shaftMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h - 0.40, d), shaftMat);
+                shaftMesh.position.set(0, -0.20, 0);
+                group.add(shaftMesh);
+
+                // Decorative Top Crown Ledge
+                const crownMesh = new THREE.Mesh(new THREE.BoxGeometry(w + 0.16, 0.12, d + 0.16), crownMat);
+                crownMesh.position.set(0, h / 2.0 - 0.34, 0);
+                group.add(crownMesh);
+
+                // Flue Pipe Stack Protrusion
+                const flueGeom = new THREE.CylinderGeometry(w * 0.25, w * 0.25, 0.35, 24);
+                const flueMesh = new THREE.Mesh(flueGeom, flueMat);
+                flueMesh.position.set(0, h / 2.0 - 0.10, 0);
+                group.add(flueMesh);
+
+                // Elevated Rain Cap / Hood
+                const capHoodGeom = new THREE.ConeGeometry(w * 0.40, 0.18, 24);
+                const capHoodMesh = new THREE.Mesh(capHoodGeom, crownMat);
+                capHoodMesh.position.set(0, h / 2.0 + 0.18, 0);
+                group.add(capHoodMesh);
+
+                // Cap Support Stems
+                const stemGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.20, 8);
+                [[-w * 0.18, -d * 0.18], [w * 0.18, -d * 0.18],
+                 [-w * 0.18, d * 0.18], [w * 0.18, d * 0.18]].forEach(([sx, sz]) => {
+                    const stem = new THREE.Mesh(stemGeom, crownMat);
+                    stem.position.set(sx, h / 2.0 + 0.02, sz);
+                    group.add(stem);
+                });
+
+                currentMesh = group;
             } else {
                 let geom;
                 if (sample3d.shape === 'cylinder') {
