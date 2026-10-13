@@ -205,8 +205,14 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "tendon_anchor", "width": 0.40, "depth": 0.40, "height": 2.50, "color": "#f59e0b"}
     elif "fastener" in c or "accessory" in c:
         return {"shape": "structural_fastener", "width": 0.30, "depth": 0.30, "height": 0.40, "color": "#334155"}
-    elif "vibration" in c or "member" in c:
+    elif "vibration" in c:
         return {"shape": "vibration_isolator", "width": 0.50, "depth": 0.50, "height": 0.45, "color": "#0284c7"}
+    elif "member" in c:
+        return {"shape": "structural_member", "width": 0.20, "depth": 0.20, "height": 3.00, "color": "#475569"}
+    elif "reinforcingmesh" in c:
+        return {"shape": "reinforcing_mesh", "width": 2.00, "depth": 3.00, "height": 0.05, "color": "#f59e0b"}
+    elif "reinforcing" in c:
+        return {"shape": "reinforcing_bar", "diameter": 0.02, "length": 2.50, "height": 2.50, "color": "#f59e0b"}
     elif "pipe" in c or "conduit" in c or "cable" in c:
         return {"shape": "pipe", "radius": 0.025, "length": 5.0, "color": "#0284C7"}
     elif "duct" in c:

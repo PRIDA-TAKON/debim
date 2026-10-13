@@ -224,8 +224,11 @@ def test_procedural_3d_shapes_payloads():
     assert by_class["IfcDiscreteAccessory"]["shape"] == "structural_fastener"
 
     assert by_class["IfcVibrationIsolator"]["shape"] == "vibration_isolator"
-    assert by_class["IfcMember"]["shape"] == "vibration_isolator"
-    assert by_class["IfcMemberStandardCase"]["shape"] == "vibration_isolator"
+    assert by_class["IfcMember"]["shape"] == "structural_member"
+    assert by_class["IfcMemberStandardCase"]["shape"] == "structural_member"
+
+    assert by_class["IfcReinforcingBar"]["shape"] == "reinforcing_bar"
+    assert by_class["IfcReinforcingMesh"]["shape"] == "reinforcing_mesh"
 
 
 def test_procedural_3d_geometry_handlers_in_html():
@@ -268,3 +271,6 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "tendon_anchor" in html_str
     assert "structural_fastener" in html_str
     assert "vibration_isolator" in html_str
+    assert "structural_member" in html_str
+    assert "reinforcing_bar" in html_str
+    assert "reinforcing_mesh" in html_str
