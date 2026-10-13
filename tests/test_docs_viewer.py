@@ -196,6 +196,17 @@ def test_procedural_3d_shapes_payloads():
     assert by_class["IfcEvaporativeCooler"]["shape"] == "cooling_tower"
     assert by_class["IfcHeatExchanger"]["shape"] == "cooling_tower"
 
+    assert by_class["IfcCoil"]["shape"] == "coil_heat_exchanger"
+    assert by_class["IfcEvaporator"]["shape"] == "coil_heat_exchanger"
+    assert by_class["IfcCondenser"]["shape"] == "coil_heat_exchanger"
+
+    assert by_class["IfcFilter"]["shape"] == "air_filter"
+
+    assert by_class["IfcSpaceHeater"]["shape"] == "radiator_heater"
+
+    assert by_class["IfcBurner"]["shape"] == "combustion_burner"
+    assert by_class["IfcEngine"]["shape"] == "combustion_burner"
+
     assert by_class["IfcFireSuppressionTerminal"]["shape"] == "fire_suppression"
     assert by_class["IfcStackTerminal"]["shape"] == "fire_suppression"
 
@@ -263,6 +274,10 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "duct_assembly" in html_str
     assert "fan_assembly" in html_str
     assert "cooling_tower" in html_str
+    assert "coil_heat_exchanger" in html_str
+    assert "air_filter" in html_str
+    assert "radiator_heater" in html_str
+    assert "combustion_burner" in html_str
     assert "fire_suppression" in html_str
     assert "power_plant" in html_str
     assert "earthworks_embankment" in html_str
