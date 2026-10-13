@@ -225,8 +225,20 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "equipment_vessel", "width": 1.4, "depth": 0.9, "height": 1.1, "color": "#0ea5e9"}
     elif "airterminal" in c or "damper" in c:
         return {"shape": "air_terminal", "width": 0.6, "depth": 0.6, "height": 0.2, "color": "#f1f5f9"}
-    elif "road" in c or "bridge" in c or "alignment" in c or "railway" in c:
-        return {"shape": "box", "width": 10.0, "depth": 7.0, "height": 0.40, "color": "#334155"}
+    elif "lightfixture" in c or "lamp" in c:
+        return {"shape": "light_fixture", "width": 0.60, "depth": 0.60, "height": 0.15, "color": "#fef08a"}
+    elif "electricdistributionboard" in c or "distributionboard" in c or "electricappliance" in c:
+        return {"shape": "electric_panel", "width": 0.60, "depth": 0.20, "height": 0.80, "color": "#475569"}
+    elif "outlet" in c or "switchingdevice" in c or "sensor" in c:
+        return {"shape": "outlet_switch", "width": 0.12, "depth": 0.04, "height": 0.12, "color": "#f8fafc"}
+    elif "bridge" in c or "bearing" in c:
+        return {"shape": "bridge_structure", "width": 8.0, "depth": 4.0, "height": 3.50, "color": "#64748b"}
+    elif "railway" in c or "trackelement" in c:
+        return {"shape": "railway_infrastructure", "width": 3.0, "depth": 10.0, "height": 0.60, "color": "#78350f"}
+    elif "road" in c or "alignment" in c:
+        return {"shape": "road_infrastructure", "width": 7.0, "depth": 10.0, "height": 0.40, "color": "#334155"}
+    elif "marine" in c or "mooringdevice" in c or "navigationelement" in c:
+        return {"shape": "marine_facility", "width": 6.0, "depth": 8.0, "height": 2.50, "color": "#0284c7"}
 
     if discipline == "Structure":
         return {"shape": "box", "width": 1.0, "depth": 1.0, "height": 1.0, "color": "#64748B"}

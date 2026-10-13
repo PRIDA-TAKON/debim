@@ -150,6 +150,29 @@ def test_procedural_3d_shapes_payloads():
     assert by_class["IfcAirTerminal"]["shape"] == "air_terminal"
     assert by_class["IfcDamper"]["shape"] == "air_terminal"
 
+    assert by_class["IfcLightFixture"]["shape"] == "light_fixture"
+    assert by_class["IfcLamp"]["shape"] == "light_fixture"
+
+    assert by_class["IfcElectricDistributionBoard"]["shape"] == "electric_panel"
+    assert by_class["IfcElectricAppliance"]["shape"] == "electric_panel"
+
+    assert by_class["IfcOutlet"]["shape"] == "outlet_switch"
+    assert by_class["IfcSwitchingDevice"]["shape"] == "outlet_switch"
+    assert by_class["IfcSensor"]["shape"] == "outlet_switch"
+
+    assert by_class["IfcBridge"]["shape"] == "bridge_structure"
+    assert by_class["IfcBridgePart"]["shape"] == "bridge_structure"
+    assert by_class["IfcBearing"]["shape"] == "bridge_structure"
+
+    assert by_class["IfcRoad"]["shape"] == "road_infrastructure"
+
+    assert by_class["IfcRailway"]["shape"] == "railway_infrastructure"
+    assert by_class["IfcTrackElement"]["shape"] == "railway_infrastructure"
+
+    assert by_class["IfcMooringDevice"]["shape"] == "marine_facility"
+    assert by_class["IfcMarineFacility"]["shape"] == "marine_facility"
+    assert by_class["IfcMarinePart"]["shape"] == "marine_facility"
+
 
 def test_procedural_3d_geometry_handlers_in_html():
     """Test that generated HTML contains Three.js composite geometry handlers."""
@@ -166,3 +189,10 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "sanitary_terminal" in html_str
     assert "equipment_vessel" in html_str
     assert "air_terminal" in html_str
+    assert "light_fixture" in html_str
+    assert "electric_panel" in html_str
+    assert "outlet_switch" in html_str
+    assert "bridge_structure" in html_str
+    assert "railway_infrastructure" in html_str
+    assert "road_infrastructure" in html_str
+    assert "marine_facility" in html_str
