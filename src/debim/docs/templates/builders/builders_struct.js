@@ -160,27 +160,32 @@ function buildRebarCage(sample3d) {
             group.add(sm);
         }
     } else if (rebarType === 'stair') {
-        const rBar = 0.008;
-        const rDist = 0.005;
+        const rBar = 0.007;   // main rebars (14mm dia)
+        const rDist = 0.005;  // distribution/stirrup rebars (10mm dia)
+        const steps = sample3d.steps || 10;
+        const rh = h / steps;
+        const td = d / steps;
         const length = Math.hypot(d, h);
         const angle = Math.atan2(h, d);
         const nMain = 6;
         const waistThick = 0.14;
+        const stepCover = 0.025; // 25mm concrete cover inside steps
 
+        // 1. ท้องบันได: แสดงเหล็กเสริมชั้นล่างชั้นเดียว (Single bottom layer)
         const mainBarGeom = new THREE.CylinderGeometry(rBar, rBar, length - 2 * c, 8);
         mainBarGeom.rotateX(Math.PI / 2);
 
-        [-waistThick / 2 + c, waistThick / 2 - c].forEach(yLayer => {
-            for (let i = 0; i < nMain; i++) {
-                const x = -w / 2 + c + (i / (nMain - 1)) * (w - 2 * c);
-                const m = new THREE.Mesh(mainBarGeom, mainMat);
-                m.position.set(x, -waistThick * 0.50, 0);
-                m.rotation.x = -angle;
-                m.translateOnAxis(new THREE.Vector3(0, 1, 0), yLayer);
-                group.add(m);
-            }
-        });
+        const yBottomLayer = -waistThick / 2 + c;
+        for (let i = 0; i < nMain; i++) {
+            const x = -w / 2 + c + (i / (nMain - 1)) * (w - 2 * c);
+            const m = new THREE.Mesh(mainBarGeom, mainMat);
+            m.position.set(x, -waistThick * 0.50, 0);
+            m.rotation.x = -angle;
+            m.translateOnAxis(new THREE.Vector3(0, 1, 0), yBottomLayer);
+            group.add(m);
+        }
 
+        // เหล็กเสริมแนวขวางท้องบันไดชั้นล่าง (Waist distribution bars)
         const nDist = 10;
         const distBarGeom = new THREE.CylinderGeometry(rDist, rDist, w - 2 * c, 8);
         distBarGeom.rotateZ(Math.PI / 2);
@@ -189,11 +194,52 @@ function buildRebarCage(sample3d) {
             const frac = (i + 0.5) / nDist - 0.5;
             const z = frac * (d - 2 * c);
             const y = -waistThick * 0.50 + frac * (h - 2 * c);
-            [-waistThick / 2 + c + 0.012, waistThick / 2 - c - 0.012].forEach(yOff => {
-                const m = new THREE.Mesh(distBarGeom, stirrupMat);
-                m.position.set(0, y + yOff * Math.cos(angle), z + yOff * Math.sin(angle));
-                group.add(m);
-            });
+            const yOff = -waistThick / 2 + c + 0.012;
+            const m = new THREE.Mesh(distBarGeom, stirrupMat);
+            m.position.set(0, y + yOff * Math.cos(angle), z + yOff * Math.sin(angle));
+            group.add(m);
+        }
+
+        // 2. เหล็กเสริมลูกบันได: วิ่งหักมุมฉากตามแนวลูกตั้ง-ลูกนอน + เหล็กจมูกบันได + เหล็กตีนบันได
+        const transBarGeom = new THREE.CylinderGeometry(rDist, rDist, w - 2 * c, 8);
+        transBarGeom.rotateZ(Math.PI / 2);
+
+        const riserBarLen = Math.max(0.04, rh - 2 * stepCover);
+        const treadBarLen = Math.max(0.04, td - 2 * stepCover);
+        const riserBarGeom = new THREE.CylinderGeometry(rBar, rBar, riserBarLen, 8);
+        const treadBarGeom = new THREE.CylinderGeometry(rBar, rBar, treadBarLen, 8);
+        treadBarGeom.rotateX(Math.PI / 2);
+
+        for (let s = 0; s < steps; s++) {
+            const z0 = -d / 2.0 + s * td;
+            const z1 = -d / 2.0 + (s + 1) * td;
+            const y0 = -h / 2.0 + s * rh;
+            const y1 = -h / 2.0 + (s + 1) * rh;
+
+            // 2.1 เหล็กเสริมขวางตรงตีนบันไดทุกขั้น (Toe / Heel rebar along step width)
+            const toeBar = new THREE.Mesh(transBarGeom, stirrupMat);
+            toeBar.position.set(0, y0 + stepCover, z0 + stepCover);
+            group.add(toeBar);
+
+            // 2.2 เหล็กเสริมขวางตรงจมูกบันไดทุกขั้น (Nose rebar along step width)
+            const noseBar = new THREE.Mesh(transBarGeom, stirrupMat);
+            noseBar.position.set(0, y1 - stepCover, z1 - stepCover);
+            group.add(noseBar);
+
+            // 2.3 เหล็กเสริมวิ่งหักมุมฉากตามแนวลูกบันได (Riser + Tread bent bars @ nMain positions)
+            for (let m = 0; m < nMain; m++) {
+                const x = -w / 2 + c + (m / (nMain - 1)) * (w - 2 * c);
+
+                // ท่อนแนวดิ่งตามลูกตั้ง (Riser vertical leg)
+                const vBar = new THREE.Mesh(riserBarGeom, mainMat);
+                vBar.position.set(x, y0 + stepCover + riserBarLen / 2.0, z0 + stepCover);
+                group.add(vBar);
+
+                // ท่อนแนวราบตามลูกนอน (Tread horizontal leg)
+                const hBar = new THREE.Mesh(treadBarGeom, mainMat);
+                hBar.position.set(x, y1 - stepCover, z0 + stepCover + treadBarLen / 2.0);
+                group.add(hBar);
+            }
         }
     }
 
