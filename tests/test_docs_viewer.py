@@ -2,7 +2,6 @@
 Unit tests for debim Class Directory & Encyclopedia Documentation Engine.
 """
 
-import pytest
 import re
 import time
 from pathlib import Path
@@ -411,18 +410,25 @@ def test_spatial_transform_controls_in_html():
 
 def test_spatial_transform_benchmark_execution(tmp_path):
     """Test running spatial transform benchmark script with Playwright against a single class."""
-    pytest.importorskip("playwright")
     import sys
+    import pytest
+    pytest.importorskip("playwright")
+
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from tools.benchmark_spatial_transforms import run_spatial_transform_benchmark
 
     out_dir = tmp_path / "spatial_benchmark_test"
-    res = run_spatial_transform_benchmark(
-        output_dir=out_dir,
-        headless=True,
-        save_snapshots=True,
-        classes_to_test=["IfcColumn"],
-    )
+    try:
+        res = run_spatial_transform_benchmark(
+            output_dir=out_dir,
+            headless=True,
+            save_snapshots=True,
+            classes_to_test=["IfcColumn"],
+        )
+    except Exception as e:
+        if "Executable doesn't exist" in str(e) or "playwright install" in str(e):
+            pytest.skip(f"Browser binary missing: {e}")
+        raise e
 
     assert res["total_tested"] == 1
     assert res["total_passed"] == 1
@@ -435,62 +441,68 @@ def test_spatial_transform_benchmark_execution(tmp_path):
 
 def test_docs_viewer_transform_ground_and_scale(tmp_path):
     """Test Playwright assertions for ground resting, elevation offset, yaw rotation, and scaling on representative classes."""
-    pytest.importorskip("playwright")
+    import pytest
+    playwright = pytest.importorskip("playwright")
     from playwright.sync_api import sync_playwright
 
     html_file = tmp_path / "directory.html"
     export_class_directory(html_file)
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto(f"file://{html_file.resolve()}")
-        page.wait_for_function("typeof classesData !== 'undefined'")
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(f"file://{html_file.resolve()}")
+            page.wait_for_function("typeof classesData !== 'undefined'")
 
-        # Select IfcColumn (index 0)
-        page.evaluate("selectClass(0)")
+            # Select IfcColumn (index 0)
+            page.evaluate("selectClass(0)")
 
-        # 1. Ground Rest Verification (PosY = 0)
-        ground_res = page.evaluate("""() => {
-            const bbox = new THREE.Box3().setFromObject(currentMesh);
-            return { minY: bbox.min.y, posY: currentMesh.position.y };
-        }""")
-        assert abs(ground_res["minY"]) < 0.05
+            # 1. Ground Rest Verification (PosY = 0)
+            ground_res = page.evaluate("""() => {
+                const bbox = new THREE.Box3().setFromObject(currentMesh);
+                return { minY: bbox.min.y, posY: currentMesh.position.y };
+            }""")
+            assert abs(ground_res["minY"]) < 0.05
 
-        # 2. Elevation Shift (+3.0m)
-        page.evaluate("""() => {
-            document.getElementById('pos-y-num').value = '3.0';
-            applyTransform();
-        }""")
-        elev_res = page.evaluate("""() => {
-            const bbox = new THREE.Box3().setFromObject(currentMesh);
-            return { minY: bbox.min.y };
-        }""")
-        assert abs(elev_res["minY"] - 3.0) < 0.05
+            # 2. Elevation Shift (+3.0m)
+            page.evaluate("""() => {
+                document.getElementById('pos-y-num').value = '3.0';
+                applyTransform();
+            }""")
+            elev_res = page.evaluate("""() => {
+                const bbox = new THREE.Box3().setFromObject(currentMesh);
+                return { minY: bbox.min.y };
+            }""")
+            assert abs(elev_res["minY"] - 3.0) < 0.05
 
-        # 3. Yaw Rotation (180 deg)
-        page.evaluate("""() => {
-            document.getElementById('pos-y-num').value = '0.0';
-            document.getElementById('rot-y-num').value = '180';
-            applyTransform();
-        }""")
-        rot_res = page.evaluate("""() => {
-            return { rotY: currentMesh.rotation.y, minY: new THREE.Box3().setFromObject(currentMesh).min.y };
-        }""")
-        assert abs(rot_res["minY"]) < 0.05
-        assert abs(rot_res["rotY"] - 3.14159) < 0.02
+            # 3. Yaw Rotation (180 deg)
+            page.evaluate("""() => {
+                document.getElementById('pos-y-num').value = '0.0';
+                document.getElementById('rot-y-num').value = '180';
+                applyTransform();
+            }""")
+            rot_res = page.evaluate("""() => {
+                return { rotY: currentMesh.rotation.y, minY: new THREE.Box3().setFromObject(currentMesh).min.y };
+            }""")
+            assert abs(rot_res["minY"]) < 0.05
+            assert abs(rot_res["rotY"] - 3.14159) < 0.02
 
-        # 4. Parametric Scaling (Scale H = 1.5x)
-        page.evaluate("""() => {
-            resetTransform();
-            document.getElementById('scale-h-num').value = '1.5';
-            applyTransform();
-        }""")
-        scale_res = page.evaluate("""() => {
-            const bbox = new THREE.Box3().setFromObject(currentMesh);
-            return { minY: bbox.min.y, height: bbox.max.y - bbox.min.y, hasEdges: !!edgesGroup };
-        }""")
-        assert abs(scale_res["minY"]) < 0.05
-        assert scale_res["hasEdges"] is True
+            # 4. Parametric Scaling (Scale H = 1.5x)
+            page.evaluate("""() => {
+                resetTransform();
+                document.getElementById('scale-h-num').value = '1.5';
+                applyTransform();
+            }""")
+            scale_res = page.evaluate("""() => {
+                const bbox = new THREE.Box3().setFromObject(currentMesh);
+                return { minY: bbox.min.y, height: bbox.max.y - bbox.min.y, hasEdges: !!edgesGroup };
+            }""")
+            assert abs(scale_res["minY"]) < 0.05
+            assert scale_res["hasEdges"] is True
 
-        browser.close()
+            browser.close()
+    except Exception as e:
+        if "Executable doesn't exist" in str(e) or "playwright install" in str(e):
+            pytest.skip(f"Browser binary missing: {e}")
+        raise e
