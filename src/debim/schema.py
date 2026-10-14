@@ -6,7 +6,7 @@ import json
 import math
 from pathlib import Path
 import re
-from typing import Annotated, Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Annotated, Any, ClassVar, Dict, List, Literal, Optional, Tuple, Union
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, RootModel, Discriminator, field_validator, model_validator
 
@@ -635,6 +635,15 @@ class ColumnReinforcement(BaseModel):
 
 
 class IfcColumn(BaseModel):
+    """
+    Deterministic Column Element.
+
+    Anchor Point: BOTTOM-CENTER ([width, depth])
+    Dimension Keys: width, depth
+    """
+    ANCHOR_POINT: ClassVar[str] = "BOTTOM-CENTER"
+    DIMENSION_KEYS: ClassVar[List[str]] = ["width", "depth"]
+
     class_: Literal["IfcColumn"] = Field(alias="class")
     tag: str
     material: str
@@ -753,6 +762,15 @@ class BeamReinforcement(BaseModel):
 
 
 class IfcBeam(BaseModel):
+    """
+    Deterministic Beam Element.
+
+    Anchor Point: TOP-CENTERLINE ([width, depth])
+    Dimension Keys: width, depth
+    """
+    ANCHOR_POINT: ClassVar[str] = "TOP-CENTERLINE"
+    DIMENSION_KEYS: ClassVar[List[str]] = ["width", "depth"]
+
     class_: Literal["IfcBeam"] = Field(alias="class")
     tag: str
     material: str
@@ -832,11 +850,20 @@ class WallLayer(BaseModel):
 
 
 class IfcWall(BaseModel):
+    """
+    Deterministic Wall Element.
+
+    Anchor Point: BOTTOM-START-CENTERLINE ([thickness, height])
+    Dimension Keys: thickness, height
+    """
+    ANCHOR_POINT: ClassVar[str] = "BOTTOM-START-CENTERLINE"
+    DIMENSION_KEYS: ClassVar[List[str]] = ["thickness", "height"]
+
     class_: Literal["IfcWall"] = Field(alias="class", default="IfcWall")
     tag: str
     material: Optional[str] = None
-    thickness: Optional[float] = None
-    height: float
+    thickness: Optional[float] = Field(default=None, description="Wall thickness in meters. Anchor: BOTTOM-START-CENTERLINE")
+    height: float = Field(..., description="Wall height in meters. Anchor: BOTTOM-START-CENTERLINE")
     placement: WallPlacement
     children: List[WallChild] = Field(default_factory=list)
     finishes: Optional[WallFinishesConfig] = None
@@ -929,10 +956,19 @@ class SlabFinishesConfig(BaseModel):
 
 
 class IfcSlab(BaseModel):
+    """
+    Deterministic Slab Element.
+
+    Anchor Point: TOP-FINISH ([thickness])
+    Dimension Keys: thickness
+    """
+    ANCHOR_POINT: ClassVar[str] = "TOP-FINISH"
+    DIMENSION_KEYS: ClassVar[List[str]] = ["thickness"]
+
     class_: Literal["IfcSlab"] = Field(alias="class")
     tag: str
     material: str
-    thickness: float  # Slab thickness in meters
+    thickness: float = Field(..., description="Slab thickness in meters. Anchor: TOP-FINISH")
     slab_type: Literal["SOLID", "PRECAST_PLANK", "TOPPING", "GROUND_SLAB"] = "SOLID"
     placement: SlabPlacement
     reinforcement: Optional[SlabReinforcement] = None
@@ -964,12 +1000,21 @@ class SpacePlacement(BaseModel):
 
 
 class IfcSpace(BaseModel):
+    """
+    Deterministic Space Element.
+
+    Anchor Point: BOTTOM-PERIMETER ([height])
+    Dimension Keys: height
+    """
+    ANCHOR_POINT: ClassVar[str] = "BOTTOM-PERIMETER"
+    DIMENSION_KEYS: ClassVar[List[str]] = ["height"]
+
     class_: Literal["IfcSpace"] = Field(alias="class", default="IfcSpace")
     tag: str
     name: Optional[str] = None
     long_name: Optional[str] = None
     room_number: Optional[str] = None
-    height: float = 2.80  # Clear room height in meters
+    height: float = Field(default=2.80, description="Clear room height in meters. Anchor: BOTTOM-PERIMETER")
     placement: SpacePlacement
     properties: Dict[str, Any] = Field(default_factory=dict)
     layer: Optional[str] = "architecture/spaces"
@@ -1356,12 +1401,35 @@ class IfcDistributionPort(BaseModel):
 
 
 class FurniturePlacement(BaseModel):
-    position: Tuple[float, float, float]
+    position: Tuple[float, float, float] = Field(..., description="Position vector [x, y, z] in meters")
     storey: str
-    rotation: Optional[Tuple[float, float, float]] = None
+    rotation: Optional[Union[float, Tuple[float, float, float]]] = Field(
+        default=None,
+        description="Euler rotation angles in radians [rx, ry, rz] or single yaw float in radians."
+    )
+
+    @field_validator("rotation", mode="before")
+    @classmethod
+    def convert_rotation_tuple(cls, v):
+        if isinstance(v, (int, float)):
+            return (0.0, 0.0, float(v))
+        if isinstance(v, (list, tuple)):
+            if len(v) == 1:
+                return (0.0, 0.0, float(v[0]))
+            return tuple(float(x) for x in v)
+        return v
 
 
 class IfcFurniture(BaseModel):
+    """
+    Deterministic Furniture Element.
+
+    Anchor Point: BOTTOM-CENTER ([width, depth, height])
+    Dimension Keys: width, depth, height
+    """
+    ANCHOR_POINT: ClassVar[str] = "BOTTOM-CENTER"
+    DIMENSION_KEYS: ClassVar[List[str]] = ["width", "depth", "height"]
+
     class_: Literal["IfcFurniture"] = Field(alias="class", default="IfcFurniture")
     tag: str
     name: Optional[str] = None
@@ -1377,9 +1445,23 @@ class IfcFurnishingElement(IfcFurniture):
 
 
 class CustomElementPlacement(BaseModel):
-    position: Tuple[float, float, float]
+    position: Tuple[float, float, float] = Field(..., description="Position vector [x, y, z] in meters")
     storey: str
-    rotation: Optional[Tuple[float, float, float]] = None
+    rotation: Optional[Union[float, Tuple[float, float, float]]] = Field(
+        default=None,
+        description="Euler rotation angles in radians [rx, ry, rz] or single yaw float in radians."
+    )
+
+    @field_validator("rotation", mode="before")
+    @classmethod
+    def convert_rotation_tuple(cls, v):
+        if isinstance(v, (int, float)):
+            return (0.0, 0.0, float(v))
+        if isinstance(v, (list, tuple)):
+            if len(v) == 1:
+                return (0.0, 0.0, float(v[0]))
+            return tuple(float(x) for x in v)
+        return v
 
 
 class IfcCustomElement(BaseModel):
@@ -4170,6 +4252,64 @@ def export_json_schema(output_path: Optional[Path | str] = None, indent: int = 2
         "Official JSON Schema for debim (Declarative BIM / Building-as-Code) manifests. "
         "Enables IntelliSense autocompletion, hover documentation, and deterministic static validation."
     )
+
+    anchor_map = {
+        "IfcWall": {
+            "anchor_point": "BOTTOM-START-CENTERLINE",
+            "dimension_keys": ["thickness", "height"],
+            "bounding_rules": "Extruded along wall baseline from start_point to end_point with thickness and height.",
+        },
+        "IfcColumn": {
+            "anchor_point": "BOTTOM-CENTER",
+            "dimension_keys": ["width", "depth"],
+            "bounding_rules": "Base centroid flush at base_storey elevation with cross-section profile dimensions.",
+        },
+        "IfcBeam": {
+            "anchor_point": "TOP-CENTERLINE",
+            "dimension_keys": ["width", "depth"],
+            "bounding_rules": "Top surface flush at storey reference elevation along span centerline.",
+        },
+        "IfcSlab": {
+            "anchor_point": "TOP-FINISH",
+            "dimension_keys": ["thickness"],
+            "bounding_rules": "Top finish surface flush at storey reference elevation with downward thickness extrusion.",
+        },
+        "IfcSpace": {
+            "anchor_point": "BOTTOM-PERIMETER",
+            "dimension_keys": ["height"],
+            "bounding_rules": "Base polygon perimeter aligned with storey floor with clear vertical room height.",
+        },
+        "IfcFurniture": {
+            "anchor_point": "BOTTOM-CENTER",
+            "dimension_keys": ["width", "depth", "height"],
+            "bounding_rules": "Base center rested flush at storey elevation with width, depth, height bounding box.",
+        },
+        "IfcFurnishingElement": {
+            "anchor_point": "BOTTOM-CENTER",
+            "dimension_keys": ["width", "depth", "height"],
+            "bounding_rules": "Base center rested flush at storey elevation with width, depth, height bounding box.",
+        },
+    }
+
+    defs = schema.get("$defs", {})
+    for cls_name, info in anchor_map.items():
+        if cls_name in defs:
+            defs[cls_name]["x-debim-anchor-point"] = info["anchor_point"]
+            defs[cls_name]["x-debim-dimension-keys"] = info["dimension_keys"]
+            defs[cls_name]["x-debim-bounding-rules"] = info["bounding_rules"]
+            defs[cls_name]["x-debim-coordinate-system"] = "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
+
+            existing_desc = defs[cls_name].get("description", "")
+            extra_doc = f"\n\n[debim Schema Rule] Anchor Point: {info['anchor_point']} | Dimension Keys: {', '.join(info['dimension_keys'])}"
+            if info["anchor_point"] not in existing_desc:
+                defs[cls_name]["description"] = (existing_desc + extra_doc).strip()
+
+    # Annotate rotation properties in placement defs
+    for def_key, def_val in defs.items():
+        if "Placement" in def_key and isinstance(def_val, dict) and "properties" in def_val:
+            props = def_val["properties"]
+            if "rotation" in props:
+                props["rotation"]["x-debim-rotation-units"] = "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
 
     if output_path:
         out = Path(output_path)
