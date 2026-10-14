@@ -868,7 +868,7 @@ def import_ifc(
     bake_assets: bool = typer.Option(
         False,
         "--bake-assets/--no-bake-assets",
-        help="Automated GLB asset baker using IfcOpenShell and trimesh to export complex 3D geometry into lightweight .glb assets",
+        help="Automated GLB asset baker using IfcOpenShell to export complex 3D geometry into lightweight .glb assets",
     ),
 ):
     """Import an IFC4/IFC2X3 file and convert to declarative project.yaml for QTO & Cost estimation"""

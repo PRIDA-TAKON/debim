@@ -6,7 +6,6 @@ from pathlib import Path
 import tempfile
 import numpy as np
 import pytest
-import trimesh
 from typer.testing import CliRunner
 
 from debim.cli import app
@@ -19,6 +18,7 @@ runner = CliRunner()
 
 def test_trimesh_glb_export():
     """Verify trimesh exports valid binary .glb data."""
+    trimesh = pytest.importorskip("trimesh")
     verts = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.float64)
     faces = np.array([[0, 1, 2], [0, 2, 3], [0, 3, 1], [1, 3, 2]], dtype=np.int32)
     mesh = trimesh.Trimesh(vertices=verts, faces=faces)
@@ -36,6 +36,7 @@ def test_trimesh_glb_export():
 
 def test_bake_element_to_glb_helper():
     """Test _bake_element_to_glb helper with mock geometry."""
+    pytest.importorskip("trimesh")
     class MockGeometry:
         def __init__(self):
             self.verts = (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
@@ -75,6 +76,7 @@ def test_bake_element_to_glb_helper():
 
 def test_import_cli_bake_assets_flag(tmp_path):
     """Test debim import CLI command with --bake-assets flag."""
+    pytest.importorskip("trimesh")
     fixture_path = Path(__file__).resolve().parent / "fixtures" / "Duplex_A_20110907.ifc"
     out_yaml = tmp_path / "project.yaml"
 

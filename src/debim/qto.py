@@ -881,6 +881,28 @@ def compute_profile_geometry(profile: Any) -> Tuple[float, float, float, float]:
         return area, perimeter, w, d
 
 
+def compute_watertight_mesh_volume(verts: Any, faces: Any) -> float:
+    """
+    Calculate the signed volume of a watertight 3D triangular mesh using the Divergence Theorem.
+    Formula: V = 1/6 * | sum_k v_{k,0} . (v_{k,1} x v_{k,2}) |
+    Vectorized in NumPy / pure Python.
+    """
+    import numpy as np
+
+    v_arr = np.asarray(verts, dtype=np.float64)
+    f_arr = np.asarray(faces, dtype=np.int32)
+
+    if len(v_arr) == 0 or len(f_arr) == 0:
+        return 0.0
+
+    v0 = v_arr[f_arr[:, 0]]
+    v1 = v_arr[f_arr[:, 1]]
+    v2 = v_arr[f_arr[:, 2]]
+
+    vol = float(np.abs(np.sum(np.cross(v0, v1) * v2)) / 6.0)
+    return vol
+
+
 def calculate_element_qto(
     resolved: ResolvedElement,
     manifest: Optional[ProjectManifest] = None,
@@ -1528,14 +1550,17 @@ def calculate_element_qto(
                     pile_type="I-180",
                 )
             else:
-                # Try loading trimesh volume if source exists
+                # Try loading mesh volume if source exists
                 source_path = Path(elem.source) if elem.source else None
                 if source_path and source_path.exists():
                     try:
-                        import trimesh
+                        import importlib
 
-                        mesh = trimesh.load(str(source_path))
-                        if hasattr(mesh, "volume") and mesh.is_watertight:
+                        trimesh_mod = importlib.import_module("trimesh")
+                        mesh = trimesh_mod.load(str(source_path))
+                        if hasattr(mesh, "vertices") and hasattr(mesh, "faces"):
+                            vol = compute_watertight_mesh_volume(mesh.vertices, mesh.faces)
+                        elif hasattr(mesh, "volume"):
                             vol = float(mesh.volume)
                     except Exception:
                         vol = 0.0
