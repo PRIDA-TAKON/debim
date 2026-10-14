@@ -1,5 +1,113 @@
 {
   "$defs": {
+    "AlignmentCantSegment": {
+      "properties": {
+        "segment_type": {
+          "default": "CONSTANTCANT",
+          "enum": [
+            "CONSTANTCANT",
+            "LINEARTRANSITION"
+          ],
+          "title": "Segment Type",
+          "type": "string"
+        },
+        "start_dist_along": {
+          "default": 0.0,
+          "title": "Start Dist Along",
+          "type": "number"
+        },
+        "horizontal_length": {
+          "default": 0.0,
+          "title": "Horizontal Length",
+          "type": "number"
+        },
+        "start_cant": {
+          "default": 0.0,
+          "title": "Start Cant",
+          "type": "number"
+        },
+        "end_cant": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Cant"
+        }
+      },
+      "title": "AlignmentCantSegment",
+      "type": "object"
+    },
+    "AlignmentHorizontalSegment": {
+      "properties": {
+        "segment_type": {
+          "default": "LINE",
+          "enum": [
+            "LINE",
+            "CIRCULARARC",
+            "CLOTHOID"
+          ],
+          "title": "Segment Type",
+          "type": "string"
+        },
+        "start_point": {
+          "default": [
+            0.0,
+            0.0
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Start Point",
+          "type": "array"
+        },
+        "start_direction": {
+          "default": 0.0,
+          "title": "Start Direction",
+          "type": "number"
+        },
+        "start_radius_of_curvature": {
+          "default": 0.0,
+          "title": "Start Radius Of Curvature",
+          "type": "number"
+        },
+        "end_radius_of_curvature": {
+          "default": 0.0,
+          "title": "End Radius Of Curvature",
+          "type": "number"
+        },
+        "segment_length": {
+          "default": 0.0,
+          "title": "Segment Length",
+          "type": "number"
+        },
+        "clothoid_constant": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clothoid Constant"
+        }
+      },
+      "title": "AlignmentHorizontalSegment",
+      "type": "object"
+    },
     "AlignmentPlacement": {
       "properties": {
         "storey": {
@@ -106,6 +214,66 @@
         "y"
       ],
       "title": "AlignmentPoint",
+      "type": "object"
+    },
+    "AlignmentVerticalSegment": {
+      "properties": {
+        "segment_type": {
+          "default": "LINE",
+          "enum": [
+            "LINE",
+            "PARABOLA",
+            "CIRCULARARC"
+          ],
+          "title": "Segment Type",
+          "type": "string"
+        },
+        "start_dist_along": {
+          "default": 0.0,
+          "title": "Start Dist Along",
+          "type": "number"
+        },
+        "horizontal_length": {
+          "default": 0.0,
+          "title": "Horizontal Length",
+          "type": "number"
+        },
+        "start_height": {
+          "default": 0.0,
+          "title": "Start Height",
+          "type": "number"
+        },
+        "start_gradient": {
+          "default": 0.0,
+          "title": "Start Gradient",
+          "type": "number"
+        },
+        "end_gradient": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Gradient"
+        },
+        "radius_of_curvature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Radius Of Curvature"
+        }
+      },
+      "title": "AlignmentVerticalSegment",
       "type": "object"
     },
     "ArbitraryProfile": {
@@ -448,6 +616,115 @@
       "title": "BeamWaypoint",
       "type": "object"
     },
+    "BearingPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
+        }
+      },
+      "title": "BearingPlacement",
+      "type": "object"
+    },
     "BoxProfile": {
       "properties": {
         "shape": {
@@ -470,6 +747,142 @@
         "depth"
       ],
       "title": "BoxProfile",
+      "type": "object"
+    },
+    "BridgePartPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "from_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From Grid"
+        },
+        "to_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To Grid"
+        },
+        "alignment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alignment"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        }
+      },
+      "title": "BridgePartPlacement",
       "type": "object"
     },
     "BridgePlacement": {
@@ -581,6 +994,115 @@
         }
       },
       "title": "BridgePlacement",
+      "type": "object"
+    },
+    "ChimneyPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
+        }
+      },
+      "title": "ChimneyPlacement",
       "type": "object"
     },
     "CircleHollowProfile": {
@@ -890,6 +1412,46 @@
       "title": "ComplianceRule",
       "type": "object"
     },
+    "CorridorCrossSection": {
+      "properties": {
+        "name": {
+          "default": "carriageway",
+          "title": "Name",
+          "type": "string"
+        },
+        "points": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Points",
+          "type": "array"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        }
+      },
+      "title": "CorridorCrossSection",
+      "type": "object"
+    },
     "CoveringPlacement": {
       "properties": {
         "boundary": {
@@ -949,12 +1511,307 @@
           ],
           "default": null,
           "title": "Length"
+        },
+        "boundary_offset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boundary Offset"
+        },
+        "clip_to_slab": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": false,
+          "title": "Clip To Slab"
         }
       },
       "required": [
         "storey"
       ],
       "title": "CoveringPlacement",
+      "type": "object"
+    },
+    "CulvertPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "from_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From Grid"
+        },
+        "to_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To Grid"
+        },
+        "grid_start": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid Start"
+        },
+        "grid_end": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid End"
+        },
+        "start_point": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Point"
+        },
+        "end_point": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Point"
+        },
+        "inlet_elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inlet Elevation"
+        },
+        "outlet_elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outlet Elevation"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
+        }
+      },
+      "title": "CulvertPlacement",
       "type": "object"
     },
     "CurtainWallPlacement": {
@@ -1008,6 +1865,7 @@
     "CustomElementPlacement": {
       "properties": {
         "position": {
+          "description": "Position vector [x, y, z] in meters",
           "maxItems": 3,
           "minItems": 3,
           "prefixItems": [
@@ -1031,6 +1889,9 @@
         "rotation": {
           "anyOf": [
             {
+              "type": "number"
+            },
+            {
               "maxItems": 3,
               "minItems": 3,
               "prefixItems": [
@@ -1051,7 +1912,9 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "description": "Euler rotation angles in radians [rx, ry, rz] or single yaw float in radians.",
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "required": [
@@ -1089,6 +1952,115 @@
         "height"
       ],
       "title": "Dimensions",
+      "type": "object"
+    },
+    "DiscreteAccessoryPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
+        }
+      },
+      "title": "DiscreteAccessoryPlacement",
       "type": "object"
     },
     "EarthworksPlacement": {
@@ -1249,6 +2221,224 @@
         }
       },
       "title": "EllipseProfile",
+      "type": "object"
+    },
+    "EnergyConversionPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
+        }
+      },
+      "title": "EnergyConversionPlacement",
+      "type": "object"
+    },
+    "FlowMovingPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
+        }
+      },
+      "title": "FlowMovingPlacement",
       "type": "object"
     },
     "FootingPiles": {
@@ -1452,6 +2642,68 @@
         }
       },
       "title": "FootingSubstructureConfig",
+      "type": "object"
+    },
+    "FurniturePlacement": {
+      "properties": {
+        "position": {
+          "description": "Position vector [x, y, z] in meters",
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Position",
+          "type": "array"
+        },
+        "storey": {
+          "title": "Storey",
+          "type": "string"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Euler rotation angles in radians [rx, ry, rz] or single yaw float in radians.",
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
+        }
+      },
+      "required": [
+        "position",
+        "storey"
+      ],
+      "title": "FurniturePlacement",
       "type": "object"
     },
     "Grids": {
@@ -1863,6 +3115,54 @@
         "placement": {
           "$ref": "#/$defs/AlignmentPlacement"
         },
+        "horizontal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IfcAlignmentHorizontal"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "vertical": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IfcAlignmentVertical"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "cant": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IfcAlignmentCant"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "cross_sections": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/CorridorCrossSection"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cross Sections"
+        },
         "layer": {
           "anyOf": [
             {
@@ -1883,7 +3183,101 @@
       "title": "IfcAlignment",
       "type": "object"
     },
+    "IfcAlignmentCant": {
+      "properties": {
+        "class": {
+          "const": "IfcAlignmentCant",
+          "default": "IfcAlignmentCant",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/AlignmentCantSegment"
+          },
+          "title": "Segments",
+          "type": "array"
+        }
+      },
+      "title": "IfcAlignmentCant",
+      "type": "object"
+    },
+    "IfcAlignmentHorizontal": {
+      "properties": {
+        "class": {
+          "const": "IfcAlignmentHorizontal",
+          "default": "IfcAlignmentHorizontal",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/AlignmentHorizontalSegment"
+          },
+          "title": "Segments",
+          "type": "array"
+        }
+      },
+      "title": "IfcAlignmentHorizontal",
+      "type": "object"
+    },
+    "IfcAlignmentVertical": {
+      "properties": {
+        "class": {
+          "const": "IfcAlignmentVertical",
+          "default": "IfcAlignmentVertical",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/AlignmentVerticalSegment"
+          },
+          "title": "Segments",
+          "type": "array"
+        }
+      },
+      "title": "IfcAlignmentVertical",
+      "type": "object"
+    },
     "IfcBeam": {
+      "description": "Deterministic Beam Element.\n\nAnchor Point: TOP-CENTERLINE ([width, depth])\nDimension Keys: width, depth",
       "properties": {
         "class": {
           "const": "IfcBeam",
@@ -1997,6 +3391,102 @@
         "placement"
       ],
       "title": "IfcBeam",
+      "type": "object",
+      "x-debim-anchor-point": "TOP-CENTERLINE",
+      "x-debim-dimension-keys": [
+        "width",
+        "depth"
+      ],
+      "x-debim-bounding-rules": "Top surface flush at storey reference elevation along span centerline.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
+    },
+    "IfcBearing": {
+      "properties": {
+        "class": {
+          "const": "IfcBearing",
+          "default": "IfcBearing",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "predefined_type": {
+          "default": "BRIDGEBEARING",
+          "enum": [
+            "BRIDGEBEARING",
+            "ELASTOMERIC",
+            "POT",
+            "SPHERICAL",
+            "DISK",
+            "ROLLER",
+            "ROCKER",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "bridge_part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bridge Part"
+        },
+        "width": {
+          "default": 0.5,
+          "title": "Width",
+          "type": "number"
+        },
+        "depth": {
+          "default": 0.5,
+          "title": "Depth",
+          "type": "number"
+        },
+        "height": {
+          "default": 0.2,
+          "title": "Height",
+          "type": "number"
+        },
+        "placement": {
+          "$ref": "#/$defs/BearingPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcBearing",
       "type": "object"
     },
     "IfcBridge": {
@@ -2121,6 +3611,139 @@
       "title": "IfcBridge",
       "type": "object"
     },
+    "IfcBridgePart": {
+      "properties": {
+        "class": {
+          "const": "IfcBridgePart",
+          "default": "IfcBridgePart",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "predefined_type": {
+          "default": "SUPERSTRUCTURE",
+          "enum": [
+            "SUBSTRUCTURE",
+            "SUPERSTRUCTURE",
+            "DECK",
+            "PIER",
+            "ABUTMENT",
+            "FOUNDATION",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "bridge": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bridge"
+        },
+        "span_length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 20.0,
+          "title": "Span Length"
+        },
+        "part_width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 10.0,
+          "title": "Part Width"
+        },
+        "part_thickness": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.3,
+          "title": "Part Thickness"
+        },
+        "part_height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 2.0,
+          "title": "Part Height"
+        },
+        "placement": {
+          "$ref": "#/$defs/BridgePartPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcBridgePart",
+      "type": "object"
+    },
     "IfcBuildingElementProxy": {
       "properties": {
         "class": {
@@ -2212,6 +3835,20 @@
           },
           "title": "Properties"
         },
+        "ports": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/IfcDistributionPort"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ports"
+        },
         "layer": {
           "anyOf": [
             {
@@ -2230,6 +3867,80 @@
         "placement"
       ],
       "title": "IfcBuildingElementProxy",
+      "type": "object"
+    },
+    "IfcBuiltSystem": {
+      "properties": {
+        "class": {
+          "const": "IfcBuiltSystem",
+          "default": "IfcBuiltSystem",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "system_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "TRACKSYSTEM",
+          "title": "System Type"
+        },
+        "predefined_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "TRACKSYSTEM",
+          "title": "Predefined Type"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Elements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "IfcBuiltSystem",
       "type": "object"
     },
     "IfcCableCarrierSegment": {
@@ -2310,7 +4021,97 @@
       "title": "IfcCableCarrierSegment",
       "type": "object"
     },
+    "IfcChimney": {
+      "properties": {
+        "class": {
+          "const": "IfcChimney",
+          "default": "IfcChimney",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "predefined_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predefined Type"
+        },
+        "dimensions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Dimensions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "placement": {
+          "$ref": "#/$defs/ChimneyPlacement"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Properties"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "architecture/chimneys",
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcChimney",
+      "type": "object"
+    },
     "IfcColumn": {
+      "description": "Deterministic Column Element.\n\nAnchor Point: BOTTOM-CENTER ([width, depth])\nDimension Keys: width, depth",
       "properties": {
         "class": {
           "const": "IfcColumn",
@@ -2424,7 +4225,14 @@
         "placement"
       ],
       "title": "IfcColumn",
-      "type": "object"
+      "type": "object",
+      "x-debim-anchor-point": "BOTTOM-CENTER",
+      "x-debim-dimension-keys": [
+        "width",
+        "depth"
+      ],
+      "x-debim-bounding-rules": "Base centroid flush at base_storey elevation with cross-section profile dimensions.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
     },
     "IfcCovering": {
       "properties": {
@@ -2831,6 +4639,101 @@
       "title": "IfcDamper",
       "type": "object"
     },
+    "IfcDiscreteAccessory": {
+      "properties": {
+        "class": {
+          "const": "IfcDiscreteAccessory",
+          "default": "IfcDiscreteAccessory",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "predefined_type": {
+          "default": "ANCHORBOLT",
+          "enum": [
+            "ANCHORBOLT",
+            "BRACKET",
+            "CORBEL",
+            "EXPANSION_JOINT_DEVICE",
+            "INSULATOR",
+            "LOCK",
+            "PANEL_FASTENER",
+            "RAILBRACE",
+            "RAILPAD",
+            "SHOE",
+            "SLIDINGCHAIR",
+            "SOUNDABSORPTION",
+            "TENSIONINGEQUIPMENT",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "width": {
+          "default": 0.2,
+          "title": "Width",
+          "type": "number"
+        },
+        "depth": {
+          "default": 0.2,
+          "title": "Depth",
+          "type": "number"
+        },
+        "height": {
+          "default": 0.3,
+          "title": "Height",
+          "type": "number"
+        },
+        "placement": {
+          "$ref": "#/$defs/DiscreteAccessoryPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "structure/accessories",
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcDiscreteAccessory",
+      "type": "object"
+    },
     "IfcDistributionBoard": {
       "properties": {
         "class": {
@@ -3002,6 +4905,121 @@
       "title": "IfcDistributionBoard",
       "type": "object"
     },
+    "IfcDistributionFlowElement": {
+      "properties": {
+        "class": {
+          "const": "IfcDistributionFlowElement",
+          "default": "IfcDistributionFlowElement",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "predefined_type": {
+          "default": "CULVERT",
+          "enum": [
+            "CULVERT",
+            "DRAINAGE_CHANNEL",
+            "GULLY",
+            "INLET",
+            "OUTLET",
+            "MANHOLE",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "internal_span": {
+          "default": 2.0,
+          "title": "Internal Span",
+          "type": "number"
+        },
+        "internal_rise": {
+          "default": 2.0,
+          "title": "Internal Rise",
+          "type": "number"
+        },
+        "wall_thickness": {
+          "default": 0.25,
+          "title": "Wall Thickness",
+          "type": "number"
+        },
+        "slab_thickness": {
+          "default": 0.25,
+          "title": "Slab Thickness",
+          "type": "number"
+        },
+        "length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Length"
+        },
+        "slope_pct": {
+          "default": 0.5,
+          "title": "Slope Pct",
+          "type": "number"
+        },
+        "cell_count": {
+          "default": 1,
+          "title": "Cell Count",
+          "type": "integer"
+        },
+        "placement": {
+          "$ref": "#/$defs/CulvertPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcDistributionFlowElement",
+      "type": "object"
+    },
     "IfcDistributionPort": {
       "properties": {
         "port_id": {
@@ -3069,6 +5087,80 @@
         "port_id"
       ],
       "title": "IfcDistributionPort",
+      "type": "object"
+    },
+    "IfcDistributionSystem": {
+      "properties": {
+        "class": {
+          "const": "IfcDistributionSystem",
+          "default": "IfcDistributionSystem",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "system_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Type"
+        },
+        "predefined_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predefined Type"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Elements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "IfcDistributionSystem",
       "type": "object"
     },
     "IfcDoor": {
@@ -3254,11 +5346,19 @@
         "predefined_type": {
           "default": "CUT",
           "enum": [
-            "TRENCH",
-            "DREDGING",
+            "EXCAVATION",
             "CUT",
+            "CUTTING",
+            "TRENCH",
             "BASEMENT_EXCAVATION",
-            "USERDEFINED"
+            "BASE_EXCAVATION",
+            "DREDGING",
+            "OVEREXCAVATION",
+            "PAVEMENTMILLING",
+            "STEPEXCAVATION",
+            "TOPSOILREMOVAL",
+            "USERDEFINED",
+            "NOTDEFINED"
           ],
           "title": "Predefined Type",
           "type": "string"
@@ -3358,6 +5458,196 @@
       "title": "IfcEarthworksCut",
       "type": "object"
     },
+    "IfcEarthworksElement": {
+      "properties": {
+        "class": {
+          "const": "IfcEarthworksElement",
+          "default": "IfcEarthworksElement",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "predefined_type": {
+          "default": "RETAINING_STRUCTURE",
+          "enum": [
+            "RETAINING_STRUCTURE",
+            "PAVEMENT",
+            "GABION",
+            "CRIB_WALL",
+            "REINFORCED_SOIL",
+            "BERM",
+            "TERRACE",
+            "DRAINAGE",
+            "SOIL_NAILING",
+            "ROCK_BOLT",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        },
+        "depth": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depth"
+        },
+        "length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Length"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height"
+        },
+        "base_thickness": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Thickness"
+        },
+        "step_batter": {
+          "default": 0.0,
+          "title": "Step Batter",
+          "type": "number"
+        },
+        "tier_height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tier Height"
+        },
+        "mesh_wire_dia_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mesh Wire Dia Mm"
+        },
+        "volume": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Volume"
+        },
+        "surface_area": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Surface Area"
+        },
+        "slope_stabilization": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SlopeStabilizationConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "placement": {
+          "$ref": "#/$defs/EarthworksPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcEarthworksElement",
+      "type": "object"
+    },
     "IfcEarthworksFill": {
       "properties": {
         "class": {
@@ -3375,9 +5665,15 @@
           "enum": [
             "EMBANKMENT",
             "BACKFILL",
+            "BERM",
             "SLOPE_FILL",
+            "SLOPEFILL",
             "SUBGRADE",
-            "USERDEFINED"
+            "SUBGRADEBED",
+            "COUNTERWEIGHT",
+            "TRANSITIONSECTION",
+            "USERDEFINED",
+            "NOTDEFINED"
           ],
           "title": "Predefined Type",
           "type": "string"
@@ -3677,6 +5973,95 @@
       "title": "IfcElectricDistributionBoard",
       "type": "object"
     },
+    "IfcEnergyConversionDevice": {
+      "properties": {
+        "class": {
+          "const": "IfcEnergyConversionDevice",
+          "default": "IfcEnergyConversionDevice",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "predefined_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predefined Type"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "dimensions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Dimensions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "placement": {
+          "$ref": "#/$defs/EnergyConversionPlacement"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Properties"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "mep/energy_conversion",
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcEnergyConversionDevice",
+      "type": "object"
+    },
     "IfcFlowController": {
       "properties": {
         "class": {
@@ -3835,6 +6220,95 @@
       "title": "IfcFlowController",
       "type": "object"
     },
+    "IfcFlowMovingDevice": {
+      "properties": {
+        "class": {
+          "const": "IfcFlowMovingDevice",
+          "default": "IfcFlowMovingDevice",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "predefined_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predefined Type"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "dimensions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Dimensions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "placement": {
+          "$ref": "#/$defs/FlowMovingPlacement"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Properties"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "mep/flow_moving",
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcFlowMovingDevice",
+      "type": "object"
+    },
     "IfcFooting": {
       "properties": {
         "class": {
@@ -3909,6 +6383,341 @@
         "placement"
       ],
       "title": "IfcFooting",
+      "type": "object"
+    },
+    "IfcFurnishingElement": {
+      "properties": {
+        "class": {
+          "const": "IfcFurnishingElement",
+          "default": "IfcFurnishingElement",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "dimensions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Dimensions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "placement": {
+          "$ref": "#/$defs/FurniturePlacement"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Properties"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcFurnishingElement",
+      "type": "object",
+      "x-debim-anchor-point": "BOTTOM-CENTER",
+      "x-debim-dimension-keys": [
+        "width",
+        "depth",
+        "height"
+      ],
+      "x-debim-bounding-rules": "Base center rested flush at storey elevation with width, depth, height bounding box.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float",
+      "description": "[debim Schema Rule] Anchor Point: BOTTOM-CENTER | Dimension Keys: width, depth, height"
+    },
+    "IfcFurniture": {
+      "description": "Deterministic Furniture Element.\n\nAnchor Point: BOTTOM-CENTER ([width, depth, height])\nDimension Keys: width, depth, height",
+      "properties": {
+        "class": {
+          "const": "IfcFurniture",
+          "default": "IfcFurniture",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "dimensions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Dimensions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "placement": {
+          "$ref": "#/$defs/FurniturePlacement"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Properties"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcFurniture",
+      "type": "object",
+      "x-debim-anchor-point": "BOTTOM-CENTER",
+      "x-debim-dimension-keys": [
+        "width",
+        "depth",
+        "height"
+      ],
+      "x-debim-bounding-rules": "Base center rested flush at storey elevation with width, depth, height bounding box.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
+    },
+    "IfcGeotechnicalStratum": {
+      "properties": {
+        "class": {
+          "const": "IfcGeotechnicalStratum",
+          "default": "IfcGeotechnicalStratum",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "predefined_type": {
+          "default": "SOLID",
+          "enum": [
+            "SOLID",
+            "VOID",
+            "WATER",
+            "SOIL",
+            "ROCK",
+            "CLAY",
+            "SAND",
+            "GRAVEL",
+            "SILT",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "soil_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "clay",
+          "title": "Soil Type"
+        },
+        "top_elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Elevation"
+        },
+        "bottom_elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bottom Elevation"
+        },
+        "thickness": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thickness"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        },
+        "length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Length"
+        },
+        "volume": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Volume"
+        },
+        "area": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Area"
+        },
+        "placement": {
+          "$ref": "#/$defs/EarthworksPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcGeotechnicalStratum",
       "type": "object"
     },
     "IfcLightFixture": {
@@ -4075,6 +6884,682 @@
       "title": "IfcLightFixture",
       "type": "object"
     },
+    "IfcMarineFacility": {
+      "properties": {
+        "class": {
+          "const": "IfcMarineFacility",
+          "default": "IfcMarineFacility",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "predefined_type": {
+          "default": "PORT",
+          "enum": [
+            "PORT",
+            "WATERWAY",
+            "CANAL",
+            "USERDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.0,
+          "title": "Elevation"
+        },
+        "boundary": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boundary"
+        },
+        "placement": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MarineFacilityPlacement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcMarineFacility",
+      "type": "object"
+    },
+    "IfcMarinePart": {
+      "properties": {
+        "class": {
+          "const": "IfcMarinePart",
+          "default": "IfcMarinePart",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "predefined_type": {
+          "default": "BERTH",
+          "enum": [
+            "BERTH",
+            "JETTY",
+            "QUAY",
+            "PIER",
+            "BREAKWATER",
+            "REVETMENT",
+            "SEAWALL",
+            "GROYNE",
+            "LOCK",
+            "CANAL",
+            "DRYDOCK",
+            "SLIPWAY",
+            "USERDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "length": {
+          "default": 30.0,
+          "title": "Length",
+          "type": "number"
+        },
+        "width": {
+          "default": 12.0,
+          "title": "Width",
+          "type": "number"
+        },
+        "deck_thickness": {
+          "default": 0.5,
+          "title": "Deck Thickness",
+          "type": "number"
+        },
+        "deck_elevation": {
+          "default": 0.0,
+          "title": "Deck Elevation",
+          "type": "number"
+        },
+        "depth": {
+          "default": 10.0,
+          "title": "Depth",
+          "type": "number"
+        },
+        "wall_height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wall Height"
+        },
+        "crest_width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Crest Width"
+        },
+        "crest_elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Crest Elevation"
+        },
+        "base_width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Width"
+        },
+        "parapet_height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parapet Height"
+        },
+        "slope_ratio": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Slope Ratio"
+        },
+        "armor_weight_tons": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Armor Weight Tons"
+        },
+        "chamber_length": {
+          "default": 100.0,
+          "title": "Chamber Length",
+          "type": "number"
+        },
+        "chamber_width": {
+          "default": 16.0,
+          "title": "Chamber Width",
+          "type": "number"
+        },
+        "wall_thickness": {
+          "default": 2.5,
+          "title": "Wall Thickness",
+          "type": "number"
+        },
+        "invert_thickness": {
+          "default": 2.0,
+          "title": "Invert Thickness",
+          "type": "number"
+        },
+        "dock_length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dock Length"
+        },
+        "dock_width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dock Width"
+        },
+        "dock_depth": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dock Depth"
+        },
+        "floor_slope": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Floor Slope"
+        },
+        "sill_elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sill Elevation"
+        },
+        "piles": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FootingPiles"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "placement": {
+          "$ref": "#/$defs/MarinePartPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcMarinePart",
+      "type": "object"
+    },
+    "IfcMooringDevice": {
+      "properties": {
+        "class": {
+          "const": "IfcMooringDevice",
+          "default": "IfcMooringDevice",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "predefined_type": {
+          "default": "FENDER",
+          "enum": [
+            "BOLLARD",
+            "CLEAT",
+            "FENDER",
+            "MOORING_RING",
+            "MOORING_HOOK",
+            "CATWAY",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "fender_type": {
+          "default": "ARCH",
+          "enum": [
+            "ARCH",
+            "CONE",
+            "CYLINDRICAL",
+            "CELL"
+          ],
+          "title": "Fender Type",
+          "type": "string"
+        },
+        "bollard_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "TEE",
+                "PILLAR",
+                "STAGHORN",
+                "KIDNEY",
+                "DOUBLE_BITT",
+                "CLEAT",
+                "USERDEFINED"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bollard Type"
+        },
+        "capacity_tons": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Capacity Tons"
+        },
+        "base_plate_width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Plate Width"
+        },
+        "base_plate_length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Plate Length"
+        },
+        "anchor_bolts_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Anchor Bolts Count"
+        },
+        "height_mm": {
+          "default": 800.0,
+          "title": "Height Mm",
+          "type": "number"
+        },
+        "length_mm": {
+          "default": 1500.0,
+          "title": "Length Mm",
+          "type": "number"
+        },
+        "frontal_panel": {
+          "default": true,
+          "title": "Frontal Panel",
+          "type": "boolean"
+        },
+        "quay_wall": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quay Wall"
+        },
+        "marine_part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Marine Part"
+        },
+        "placement": {
+          "$ref": "#/$defs/MooringDevicePlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcMooringDevice",
+      "type": "object"
+    },
+    "IfcNavigationElement": {
+      "properties": {
+        "class": {
+          "const": "IfcNavigationElement",
+          "default": "IfcNavigationElement",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "predefined_type": {
+          "default": "BUOY",
+          "enum": [
+            "BUOY",
+            "BEACON",
+            "LIGHT",
+            "MARKER",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "focal_height": {
+          "default": 5.0,
+          "title": "Focal Height",
+          "type": "number"
+        },
+        "light_color": {
+          "default": "GREEN",
+          "enum": [
+            "RED",
+            "GREEN",
+            "WHITE",
+            "YELLOW"
+          ],
+          "title": "Light Color",
+          "type": "string"
+        },
+        "nominal_range_nm": {
+          "default": 6.0,
+          "title": "Nominal Range Nm",
+          "type": "number"
+        },
+        "anchor_chain_length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 20.0,
+          "title": "Anchor Chain Length"
+        },
+        "placement": {
+          "$ref": "#/$defs/MarinePartPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag"
+      ],
+      "title": "IfcNavigationElement",
+      "type": "object"
+    },
     "IfcOutlet": {
       "properties": {
         "class": {
@@ -4206,12 +7691,16 @@
           "enum": [
             "COLD_WATER",
             "HOT_WATER",
+            "CHILLED_WATER",
+            "HEATING",
             "SOIL",
             "WASTE",
             "VENT",
             "DRAINAGE",
             "REFRIGERANT",
-            "CONDENSATE"
+            "CONDENSATE",
+            "GAS",
+            "FIRE_PROTECTION"
           ],
           "title": "System Type",
           "type": "string"
@@ -4514,6 +8003,126 @@
         "placement"
       ],
       "title": "IfcRailing",
+      "type": "object"
+    },
+    "IfcRailway": {
+      "properties": {
+        "class": {
+          "const": "IfcRailway",
+          "default": "IfcRailway",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "predefined_type": {
+          "default": "RAILWAY",
+          "enum": [
+            "RAILWAY",
+            "USERDEFINED",
+            "NOTDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "track_gauge": {
+          "default": 1.435,
+          "title": "Track Gauge",
+          "type": "number"
+        },
+        "placement": {
+          "$ref": "#/$defs/RailwayPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcRailway",
+      "type": "object"
+    },
+    "IfcRailwayPart": {
+      "properties": {
+        "class": {
+          "const": "IfcRailwayPart",
+          "default": "IfcRailwayPart",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "predefined_type": {
+          "default": "TRACK",
+          "enum": [
+            "TRACK",
+            "SUBGRADE",
+            "LINESIDE",
+            "USERDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "placement": {
+          "$ref": "#/$defs/RailwayPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcRailwayPart",
       "type": "object"
     },
     "IfcRamp": {
@@ -5066,6 +8675,7 @@
       "type": "object"
     },
     "IfcSlab": {
+      "description": "Deterministic Slab Element.\n\nAnchor Point: TOP-FINISH ([thickness])\nDimension Keys: thickness",
       "properties": {
         "class": {
           "const": "IfcSlab",
@@ -5081,6 +8691,7 @@
           "type": "string"
         },
         "thickness": {
+          "description": "Slab thickness in meters. Anchor: TOP-FINISH",
           "title": "Thickness",
           "type": "number"
         },
@@ -5141,7 +8752,262 @@
         "placement"
       ],
       "title": "IfcSlab",
+      "type": "object",
+      "x-debim-anchor-point": "TOP-FINISH",
+      "x-debim-dimension-keys": [
+        "thickness"
+      ],
+      "x-debim-bounding-rules": "Top finish surface flush at storey reference elevation with downward thickness extrusion.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
+    },
+    "IfcSoil": {
+      "properties": {
+        "class": {
+          "const": "IfcSoil",
+          "default": "IfcSoil",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "soil_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "topsoil",
+          "title": "Soil Type"
+        },
+        "density_kg_m3": {
+          "default": 1800.0,
+          "title": "Density Kg M3",
+          "type": "number"
+        },
+        "bearing_capacity_kpa": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bearing Capacity Kpa"
+        },
+        "moisture_content_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Moisture Content Percent"
+        },
+        "thickness": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thickness"
+        },
+        "depth": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depth"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        },
+        "length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Length"
+        },
+        "volume": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Volume"
+        },
+        "area": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Area"
+        },
+        "placement": {
+          "$ref": "#/$defs/EarthworksPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcSoil",
       "type": "object"
+    },
+    "IfcSpace": {
+      "description": "Deterministic Space Element.\n\nAnchor Point: BOTTOM-PERIMETER ([height])\nDimension Keys: height",
+      "properties": {
+        "class": {
+          "const": "IfcSpace",
+          "default": "IfcSpace",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "long_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Long Name"
+        },
+        "room_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Room Number"
+        },
+        "height": {
+          "default": 2.8,
+          "description": "Clear room height in meters. Anchor: BOTTOM-PERIMETER",
+          "title": "Height",
+          "type": "number"
+        },
+        "placement": {
+          "$ref": "#/$defs/SpacePlacement"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true,
+          "title": "Properties"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "architecture/spaces",
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcSpace",
+      "type": "object",
+      "x-debim-anchor-point": "BOTTOM-PERIMETER",
+      "x-debim-dimension-keys": [
+        "height"
+      ],
+      "x-debim-bounding-rules": "Base polygon perimeter aligned with storey floor with clear vertical room height.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
     },
     "IfcStair": {
       "properties": {
@@ -5544,6 +9410,134 @@
       "title": "IfcSwitchingDevice",
       "type": "object"
     },
+    "IfcTrackElement": {
+      "properties": {
+        "class": {
+          "const": "IfcTrackElement",
+          "default": "IfcTrackElement",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "predefined_type": {
+          "default": "RAIL",
+          "enum": [
+            "RAIL",
+            "SLEEPER",
+            "TURNOUT",
+            "SWITCH",
+            "DERAILER",
+            "FASTENING",
+            "BLOCK",
+            "USERDEFINED"
+          ],
+          "title": "Predefined Type",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "rail_profile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "UIC60",
+          "title": "Rail Profile"
+        },
+        "rail_weight_kg_m": {
+          "default": 60.0,
+          "title": "Rail Weight Kg M",
+          "type": "number"
+        },
+        "gauge": {
+          "default": 1.435,
+          "title": "Gauge",
+          "type": "number"
+        },
+        "sleeper_spacing": {
+          "default": 0.6,
+          "title": "Sleeper Spacing",
+          "type": "number"
+        },
+        "sleeper_length": {
+          "default": 2.4,
+          "title": "Sleeper Length",
+          "type": "number"
+        },
+        "sleeper_width": {
+          "default": 0.28,
+          "title": "Sleeper Width",
+          "type": "number"
+        },
+        "sleeper_height": {
+          "default": 0.22,
+          "title": "Sleeper Height",
+          "type": "number"
+        },
+        "turnout_angle": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Turnout Angle"
+        },
+        "placement": {
+          "$ref": "#/$defs/RailwayPlacement"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "placement"
+      ],
+      "title": "IfcTrackElement",
+      "type": "object"
+    },
     "IfcUnitaryEquipment": {
       "properties": {
         "class": {
@@ -5655,6 +9649,7 @@
       "type": "object"
     },
     "IfcWall": {
+      "description": "Deterministic Wall Element.\n\nAnchor Point: BOTTOM-START-CENTERLINE ([thickness, height])\nDimension Keys: thickness, height",
       "properties": {
         "class": {
           "const": "IfcWall",
@@ -5688,9 +9683,11 @@
             }
           ],
           "default": null,
+          "description": "Wall thickness in meters. Anchor: BOTTOM-START-CENTERLINE",
           "title": "Thickness"
         },
         "height": {
+          "description": "Wall height in meters. Anchor: BOTTOM-START-CENTERLINE",
           "title": "Height",
           "type": "number"
         },
@@ -5763,7 +9760,14 @@
         "placement"
       ],
       "title": "IfcWall",
-      "type": "object"
+      "type": "object",
+      "x-debim-anchor-point": "BOTTOM-START-CENTERLINE",
+      "x-debim-dimension-keys": [
+        "thickness",
+        "height"
+      ],
+      "x-debim-bounding-rules": "Extruded along wall baseline from start_point to end_point with thickness and height.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
     },
     "IfcWasteTerminal": {
       "properties": {
@@ -6127,6 +10131,241 @@
       "title": "LandingEdgeBeamConfig",
       "type": "object"
     },
+    "MarineFacilityPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Elevation"
+        },
+        "boundary": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boundary"
+        }
+      },
+      "title": "MarineFacilityPlacement",
+      "type": "object"
+    },
+    "MarinePartPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "from_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From Grid"
+        },
+        "to_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To Grid"
+        },
+        "alignment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alignment"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
+        }
+      },
+      "title": "MarinePartPlacement",
+      "type": "object"
+    },
     "Material": {
       "properties": {
         "id": {
@@ -6144,6 +10383,18 @@
         "unit_cost_ref": {
           "title": "Unit Cost Ref",
           "type": "string"
+        },
+        "spec": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spec"
         }
       },
       "required": [
@@ -6153,6 +10404,155 @@
         "unit_cost_ref"
       ],
       "title": "Material",
+      "type": "object"
+    },
+    "MooringDevicePlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "quay_wall": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quay Wall"
+        },
+        "marine_part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Marine Part"
+        },
+        "face": {
+          "default": "FRONT",
+          "enum": [
+            "FRONT",
+            "BACK",
+            "LEFT",
+            "RIGHT",
+            "NORTH",
+            "SOUTH",
+            "EAST",
+            "WEST",
+            "AUTO"
+          ],
+          "title": "Face",
+          "type": "string"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
+        }
+      },
+      "title": "MooringDevicePlacement",
       "type": "object"
     },
     "PileProfile": {
@@ -6585,7 +10985,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "required": [
@@ -6595,6 +10996,7 @@
       "type": "object"
     },
     "ProjectInfo": {
+      "additionalProperties": true,
       "properties": {
         "id": {
           "title": "Id",
@@ -6603,6 +11005,54 @@
         "name": {
           "title": "Name",
           "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "organization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Organization"
+        },
+        "author": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author"
+        },
+        "approved_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved By"
         },
         "units": {
           "$ref": "#/$defs/Units"
@@ -6929,7 +11379,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         },
         "wall": {
           "anyOf": [
@@ -7160,6 +11611,132 @@
         }
       },
       "title": "RailingPoint",
+      "type": "object"
+    },
+    "RailwayPlacement": {
+      "properties": {
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid"
+        },
+        "from_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From Grid"
+        },
+        "to_grid": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To Grid"
+        },
+        "alignment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alignment"
+        },
+        "offset_x": {
+          "default": 0.0,
+          "title": "Offset X",
+          "type": "number"
+        },
+        "offset_y": {
+          "default": 0.0,
+          "title": "Offset Y",
+          "type": "number"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        },
+        "points": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/AlignmentPoint"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Points"
+        }
+      },
+      "title": "RailwayPlacement",
       "type": "object"
     },
     "RampPlacement": {
@@ -8236,6 +12813,134 @@
       "title": "SlabReinforcement",
       "type": "object"
     },
+    "SlopeStabilizationConfig": {
+      "properties": {
+        "nail_length": {
+          "default": 6.0,
+          "title": "Nail Length",
+          "type": "number"
+        },
+        "spacing_x": {
+          "default": 1.5,
+          "title": "Spacing X",
+          "type": "number"
+        },
+        "spacing_y": {
+          "default": 1.5,
+          "title": "Spacing Y",
+          "type": "number"
+        },
+        "inclination_deg": {
+          "default": 15.0,
+          "title": "Inclination Deg",
+          "type": "number"
+        },
+        "shotcrete_thickness": {
+          "default": 0.1,
+          "title": "Shotcrete Thickness",
+          "type": "number"
+        },
+        "hole_diameter": {
+          "default": 0.1,
+          "title": "Hole Diameter",
+          "type": "number"
+        }
+      },
+      "title": "SlopeStabilizationConfig",
+      "type": "object"
+    },
+    "SpacePlacement": {
+      "properties": {
+        "storey": {
+          "title": "Storey",
+          "type": "string"
+        },
+        "boundary": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boundary"
+        },
+        "boundary_points": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boundary Points"
+        },
+        "inset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inset"
+        },
+        "boundary_offset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boundary Offset"
+        },
+        "offset_z": {
+          "default": 0.0,
+          "title": "Offset Z",
+          "type": "number"
+        }
+      },
+      "required": [
+        "storey"
+      ],
+      "title": "SpacePlacement",
+      "type": "object"
+    },
     "SpatialStructure": {
       "properties": {
         "storeys": {
@@ -8244,11 +12949,23 @@
           },
           "title": "Storeys",
           "type": "array"
+        },
+        "marine_facilities": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/IfcMarineFacility"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Marine Facilities"
         }
       },
-      "required": [
-        "storeys"
-      ],
       "title": "SpatialStructure",
       "type": "object"
     },
@@ -8441,6 +13158,78 @@
     },
     "StairReinforcement": {
       "properties": {
+        "bottom_main": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bottom Main"
+        },
+        "bottom_transverse": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bottom Transverse"
+        },
+        "step_bent_bars": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Bent Bars"
+        },
+        "step_transverse_bars": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Transverse Bars"
+        },
+        "step_nose_bars": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Nose Bars"
+        },
+        "step_toe_bars": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Toe Bars"
+        },
         "main": {
           "anyOf": [
             {
@@ -8847,7 +13636,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         },
         "wall": {
           "anyOf": [
@@ -9204,6 +13994,9 @@
             "$ref": "#/$defs/IfcSlab"
           },
           {
+            "$ref": "#/$defs/IfcSpace"
+          },
+          {
             "$ref": "#/$defs/IfcCovering"
           },
           {
@@ -9270,10 +14063,19 @@
             "$ref": "#/$defs/IfcUnitaryEquipment"
           },
           {
+            "$ref": "#/$defs/IfcEarthworksElement"
+          },
+          {
             "$ref": "#/$defs/IfcEarthworksCut"
           },
           {
             "$ref": "#/$defs/IfcEarthworksFill"
+          },
+          {
+            "$ref": "#/$defs/IfcGeotechnicalStratum"
+          },
+          {
+            "$ref": "#/$defs/IfcSoil"
           },
           {
             "$ref": "#/$defs/IfcRetainingWall"
@@ -9288,6 +14090,54 @@
             "$ref": "#/$defs/IfcBridge"
           },
           {
+            "$ref": "#/$defs/IfcRailway"
+          },
+          {
+            "$ref": "#/$defs/IfcRailwayPart"
+          },
+          {
+            "$ref": "#/$defs/IfcTrackElement"
+          },
+          {
+            "$ref": "#/$defs/IfcBridgePart"
+          },
+          {
+            "$ref": "#/$defs/IfcBearing"
+          },
+          {
+            "$ref": "#/$defs/IfcDiscreteAccessory"
+          },
+          {
+            "$ref": "#/$defs/IfcMarineFacility"
+          },
+          {
+            "$ref": "#/$defs/IfcMarinePart"
+          },
+          {
+            "$ref": "#/$defs/IfcMooringDevice"
+          },
+          {
+            "$ref": "#/$defs/IfcNavigationElement"
+          },
+          {
+            "$ref": "#/$defs/IfcDistributionFlowElement"
+          },
+          {
+            "$ref": "#/$defs/IfcFurniture"
+          },
+          {
+            "$ref": "#/$defs/IfcFurnishingElement"
+          },
+          {
+            "$ref": "#/$defs/IfcChimney"
+          },
+          {
+            "$ref": "#/$defs/IfcEnergyConversionDevice"
+          },
+          {
+            "$ref": "#/$defs/IfcFlowMovingDevice"
+          },
+          {
             "$ref": "#/$defs/IfcCustomElement"
           },
           {
@@ -9298,11 +14148,57 @@
       "title": "Elements",
       "type": "array"
     },
+    "railways": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/IfcRailway"
+          },
+          {
+            "$ref": "#/$defs/IfcRailwayPart"
+          },
+          {
+            "$ref": "#/$defs/IfcTrackElement"
+          }
+        ]
+      },
+      "title": "Railways",
+      "type": "array"
+    },
+    "marine_facilities": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/IfcMarineFacility"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Marine Facilities"
+    },
     "proxies": {
       "items": {
         "$ref": "#/$defs/IfcBuildingElementProxy"
       },
       "title": "Proxies",
+      "type": "array"
+    },
+    "systems": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/IfcDistributionSystem"
+          },
+          {
+            "$ref": "#/$defs/IfcBuiltSystem"
+          }
+        ]
+      },
+      "title": "Systems",
       "type": "array"
     },
     "connections": {

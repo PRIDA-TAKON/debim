@@ -364,3 +364,87 @@ def test_schema_cli_export(tmp_path, monkeypatch):
     assert "yaml.schemas" in settings
     assert "*.debim" in settings.get("files.associations", {})
 
+
+def test_anchor_points_and_dimension_keys_constants():
+    from debim.schema import IfcBeam, IfcColumn, IfcFurniture, IfcSlab, IfcSpace, IfcWall
+
+    assert IfcWall.ANCHOR_POINT == "BOTTOM-START-CENTERLINE"
+    assert IfcWall.DIMENSION_KEYS == ["thickness", "height"]
+
+    assert IfcColumn.ANCHOR_POINT == "BOTTOM-CENTER"
+    assert IfcColumn.DIMENSION_KEYS == ["width", "depth"]
+
+    assert IfcBeam.ANCHOR_POINT == "TOP-CENTERLINE"
+    assert IfcBeam.DIMENSION_KEYS == ["width", "depth"]
+
+    assert IfcSlab.ANCHOR_POINT == "TOP-FINISH"
+    assert IfcSlab.DIMENSION_KEYS == ["thickness"]
+
+    assert IfcSpace.ANCHOR_POINT == "BOTTOM-PERIMETER"
+    assert IfcSpace.DIMENSION_KEYS == ["height"]
+
+    assert IfcFurniture.ANCHOR_POINT == "BOTTOM-CENTER"
+    assert IfcFurniture.DIMENSION_KEYS == ["width", "depth", "height"]
+
+
+def test_rotation_and_euler_conversion():
+    from debim.schema import CustomElementPlacement, FurniturePlacement
+
+    fp1 = FurniturePlacement(position=(1.0, 2.0, 0.0), storey="L1", rotation=1.5708)
+    assert fp1.rotation == (0.0, 0.0, 1.5708)
+
+    fp2 = FurniturePlacement(position=(1.0, 2.0, 0.0), storey="L1", rotation=[1.5708])
+    assert fp2.rotation == (0.0, 0.0, 1.5708)
+
+    fp3 = FurniturePlacement(position=(1.0, 2.0, 0.0), storey="L1", rotation=(0.1, 0.2, 0.3))
+    assert fp3.rotation == (0.1, 0.2, 0.3)
+
+    cp1 = CustomElementPlacement(position=(0.0, 0.0, 0.0), storey="L1", rotation=3.14159)
+    assert cp1.rotation == (0.0, 0.0, 3.14159)
+
+
+def test_export_json_schema_enrichment():
+    schema = export_json_schema()
+    defs = schema.get("$defs", {})
+
+    expected_anchors = {
+        "IfcWall": "BOTTOM-START-CENTERLINE",
+        "IfcColumn": "BOTTOM-CENTER",
+        "IfcBeam": "TOP-CENTERLINE",
+        "IfcSlab": "TOP-FINISH",
+        "IfcSpace": "BOTTOM-PERIMETER",
+        "IfcFurniture": "BOTTOM-CENTER",
+    }
+
+    for cls_name, expected_anchor in expected_anchors.items():
+        assert cls_name in defs
+        cls_def = defs[cls_name]
+        assert cls_def.get("x-debim-anchor-point") == expected_anchor
+        assert isinstance(cls_def.get("x-debim-dimension-keys"), list)
+        assert len(cls_def.get("x-debim-dimension-keys")) > 0
+        assert "x-debim-bounding-rules" in cls_def
+        assert "x-debim-coordinate-system" in cls_def
+
+    furn_placement = defs.get("FurniturePlacement", {})
+    if "properties" in furn_placement and "rotation" in furn_placement["properties"]:
+        assert "x-debim-rotation-units" in furn_placement["properties"]["rotation"]
+
+
+def test_validate_example_models():
+    farnsworth = load_manifest("examples/farnsworth_house/project.yaml")
+    assert "FARNSWORTH" in farnsworth.project.id
+
+    house = load_manifest("house.debim")
+    assert house.project.id == "PRJ-HOUSE-01"
+
+
+def test_tools_export_schema_script():
+    import sys
+    repo_root = Path(__file__).resolve().parent.parent
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    import tools.export_schema as export_tool
+
+    export_tool.main()
+    assert Path("debim.schema.json").exists()
+    assert Path("spec/debim.schema.json").exists()
