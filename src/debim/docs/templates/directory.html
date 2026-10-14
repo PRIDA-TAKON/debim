@@ -647,12 +647,31 @@
 
             if (!currentMesh) return;
 
-            const meshHeight = scaledSample3D.height || scaledSample3D.length || 1.0;
-            currentMesh.position.set(posX, posY + (meshHeight / 2.0), posZ);
+            // Apply parametric scaling across all axes
+            currentMesh.scale.set(scaleW, scaleH, scaleD);
+
+            // Apply rotation around mesh local origin
             currentMesh.rotation.set(
                 (rotX * Math.PI) / 180,
                 (rotY * Math.PI) / 180,
                 (rotZ * Math.PI) / 180
+            );
+
+            // Reset position to 0,0,0 before calculating precise world bounding box
+            currentMesh.position.set(0, 0, 0);
+            currentMesh.updateMatrixWorld(true);
+
+            // Compute exact bounding box of rotated and scaled geometry
+            const bbox = new THREE.Box3().setFromObject(currentMesh);
+            const minY = bbox.min.y;
+            const cX = (bbox.min.x + bbox.max.x) / 2.0;
+            const cZ = (bbox.min.z + bbox.max.z) / 2.0;
+
+            // Align position so ground rest is anchored at posY and centroid (X, Z) is at (posX, posZ)
+            currentMesh.position.set(
+                posX - cX,
+                posY - minY,
+                posZ - cZ
             );
             currentMesh.updateMatrixWorld(true);
 
@@ -884,21 +903,32 @@ currentMesh = buildStructuralFastener(sample3d, options);
                 }
             }
 
-            const meshHeight = sample3d.height || sample3d.length || 1.0;
-            currentMesh.position.y = meshHeight / 2.0;
             scene.add(currentMesh);
 
-            // Generate SketchUp-style crisp edge outlines
-            edgesGroup = attachSketchupEdges(currentMesh);
-            edgesGroup.visible = edgesMode;
-            scene.add(edgesGroup);
-
-            if (bboxMode) {
-                bboxHelper = new THREE.BoxHelper(currentMesh, 0xf59e0b);
-                scene.add(bboxHelper);
-            }
-
             if (!isTransformCall) {
+                currentMesh.position.set(0, 0, 0);
+                currentMesh.rotation.set(0, 0, 0);
+                currentMesh.scale.set(1, 1, 1);
+                currentMesh.updateMatrixWorld(true);
+
+                const bbox = new THREE.Box3().setFromObject(currentMesh);
+                const minY = bbox.min.y;
+                const cX = (bbox.min.x + bbox.max.x) / 2.0;
+                const cZ = (bbox.min.z + bbox.max.z) / 2.0;
+
+                currentMesh.position.set(-cX, -minY, -cZ);
+                currentMesh.updateMatrixWorld(true);
+
+                // Generate SketchUp-style crisp edge outlines
+                edgesGroup = attachSketchupEdges(currentMesh);
+                edgesGroup.visible = edgesMode;
+                scene.add(edgesGroup);
+
+                if (bboxMode) {
+                    bboxHelper = new THREE.BoxHelper(currentMesh, 0xf59e0b);
+                    scene.add(bboxHelper);
+                }
+
                 reset3DCamera();
             }
         }
@@ -968,7 +998,9 @@ currentMesh = buildStructuralFastener(sample3d, options);
         function reset3DCamera() {
             if (!currentMesh) return;
             camera.position.set(3, 2.5, 3);
-            controls.target.set(0, currentMesh.position.y, 0);
+            const bbox = new THREE.Box3().setFromObject(currentMesh);
+            const centerY = (bbox.min.y + bbox.max.y) / 2.0;
+            controls.target.set(0, centerY, 0);
             controls.update();
         }
 
