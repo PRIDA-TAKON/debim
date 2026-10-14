@@ -518,7 +518,7 @@ def _remap_grid_pair(pair: Any, mapping_x: Dict[str, str], mapping_y: Dict[str, 
 
 
 def _remap_placement_grids(placement: Dict[str, Any], mapping_x: Dict[str, str], mapping_y: Dict[str, str]) -> None:
-    for key in ("grid", "top_grid", "from_grid", "to_grid", "grid_anchor"):
+    for key in ("grid", "top_grid", "from_grid", "to_grid", "grid_anchor", "grid_start", "grid_end"):
         if key in placement and placement[key]:
             placement[key] = _remap_grid_pair(placement[key], mapping_x, mapping_y)
 
