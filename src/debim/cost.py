@@ -7,7 +7,7 @@ to calculate material & labor costs and export BOQ breakdown to CSV.
 import csv
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 
 from debim.qto import ProjectQTO, calculate_qto
@@ -647,6 +647,115 @@ def generate_cost_template(
     return output_path
 
 
+# Thai Comptroller General's Department (กรมบัญชีกลาง ว480) Official Building Construction Factor F Table
+# Direct Cost (THB) -> Factor F (Interest 6.0%, Advance 0%, Retention 0%, VAT 7%)
+FACTOR_F_BUILDING_TABLE: List[Tuple[float, float]] = [
+    (500000.0, 1.3073),
+    (1000000.0, 1.3045),
+    (2000000.0, 1.2982),
+    (5000000.0, 1.2858),
+    (10000000.0, 1.2726),
+    (15000000.0, 1.2584),
+    (20000000.0, 1.2483),
+    (25000000.0, 1.2389),
+    (30000000.0, 1.2298),
+    (40000000.0, 1.2185),
+    (50000000.0, 1.2087),
+    (60000000.0, 1.1996),
+    (70000000.0, 1.1908),
+    (80000000.0, 1.1824),
+    (90000000.0, 1.1743),
+    (100000000.0, 1.1666),
+    (150000000.0, 1.1542),
+    (200000000.0, 1.1432),
+    (300000000.0, 1.1325),
+    (400000000.0, 1.1221),
+    (500000000.0, 1.1120),
+]
+
+
+def calculate_factor_f(direct_cost: float) -> float:
+    """
+    Calculate official CGD ว480 Factor F for building construction using linear interpolation.
+    """
+    if direct_cost <= FACTOR_F_BUILDING_TABLE[0][0]:
+        return FACTOR_F_BUILDING_TABLE[0][1]
+    if direct_cost >= FACTOR_F_BUILDING_TABLE[-1][0]:
+        return FACTOR_F_BUILDING_TABLE[-1][1]
+
+    for i in range(len(FACTOR_F_BUILDING_TABLE) - 1):
+        c1, f1 = FACTOR_F_BUILDING_TABLE[i]
+        c2, f2 = FACTOR_F_BUILDING_TABLE[i + 1]
+        if c1 <= direct_cost <= c2:
+            t = (direct_cost - c1) / (c2 - c1)
+            return round(f1 + t * (f2 - f1), 4)
+
+    return 1.2726
+
+
+class PR4Item(BaseModel):
+    item_no: int
+    code: str
+    description: str
+    unit: str
+    quantity: float
+    material_unit_cost: float
+    material_total_cost: float
+    labor_unit_cost: float
+    labor_total_cost: float
+    total_amount: float
+    group_name: str = "กลุ่มงานโครงสร้างอาคาร"
+
+
+class PR4Sheet(BaseModel):
+    title: str = "แบบ ปร.4 - รายการปริมาณงานและราคา"
+    project_name: Optional[str] = "โครงการก่อสร้าง"
+    items: List[PR4Item] = Field(default_factory=list)
+    total_material_cost: float = 0.0
+    total_labor_cost: float = 0.0
+    total_direct_cost: float = 0.0
+
+
+class PR4PItem(BaseModel):
+    item_no: int
+    category: str  # e.g., "เหล็กเส้นเสริมคอนกรีต", "ไม้แบบ"
+    bar_type_or_type: str  # e.g., "RB6", "RB9", "DB12", "DB16", "ไม้แบบทั่วไป"
+    unit: str
+    quantity: float
+    unit_material_cost: float
+    unit_labor_cost: float
+    total_material_cost: float
+    total_labor_cost: float
+    total_amount: float
+
+
+class PR4PSheet(BaseModel):
+    title: str = "แบบ ปร.4(พ) - แบบสรุปพิกัดตารางเหล็กเสริมและไม้แบบ"
+    project_name: Optional[str] = "โครงการก่อสร้าง"
+    items: List[PR4PItem] = Field(default_factory=list)
+    total_rebar_weight_kg: float = 0.0
+    total_formwork_area_m2: float = 0.0
+    total_amount: float = 0.0
+
+
+class PR5GroupSummary(BaseModel):
+    group_no: int
+    group_name: str
+    direct_cost: float
+    factor_f: float
+    total_construction_cost: float
+
+
+class PR5Sheet(BaseModel):
+    title: str = "แบบ ปร.5 - แบบสรุปค่าก่อสร้าง"
+    project_name: Optional[str] = "โครงการก่อสร้าง"
+    direct_cost: float = 0.0
+    factor_f: float = 1.2726
+    total_construction_cost: float = 0.0
+    vat_percentage: float = 7.0
+    groups: List[PR5GroupSummary] = Field(default_factory=list)
+
+
 class CostLineItem(BaseModel):
     code: str
     name: str
@@ -665,6 +774,125 @@ class CostEstimate(BaseModel):
     total_material_cost: float = 0.0
     total_labor_cost: float = 0.0
     grand_total: float = 0.0
+
+    def generate_pr4(self, project_name: str = "โครงการก่อสร้าง") -> PR4Sheet:
+        """Generate Thai standard BOQ Sheet ปร.4 (รายการปริมาณงานและราคา)."""
+        pr4_items = []
+        for idx, item in enumerate(self.line_items, 1):
+            pr4_items.append(
+                PR4Item(
+                    item_no=idx,
+                    code=item.code,
+                    description=item.name,
+                    unit=item.unit,
+                    quantity=item.quantity,
+                    material_unit_cost=item.unit_material_cost,
+                    material_total_cost=item.total_material_cost,
+                    labor_unit_cost=item.unit_labor_cost,
+                    labor_total_cost=item.total_labor_cost,
+                    total_amount=item.total_amount,
+                )
+            )
+
+        return PR4Sheet(
+            project_name=project_name,
+            items=pr4_items,
+            total_material_cost=self.total_material_cost,
+            total_labor_cost=self.total_labor_cost,
+            total_direct_cost=self.grand_total,
+        )
+
+    def generate_pr4_p(self, qto: ProjectQTO, catalog: PriceCatalog, project_name: str = "โครงการก่อสร้าง") -> PR4PSheet:
+        """Generate Thai standard BOQ Sheet ปร.4(พ) (ตารางเหล็กเสริมและไม้แบบ)."""
+        items: List[PR4PItem] = []
+        item_no = 1
+        tot_amount = 0.0
+
+        # 1. Rebar items
+        for bar_type, wt in qto.total_rebar_by_type.items():
+            if wt <= 0:
+                continue
+            code = f"MAT-REBAR-{bar_type}"
+            price_item = catalog.items.get(code) or catalog.items.get("MAT-REBAR")
+            mat_cost = price_item.material_cost if price_item else 0.0
+            lab_cost = price_item.labor_cost if price_item else 0.0
+
+            tot_mat = wt * mat_cost
+            tot_lab = wt * lab_cost
+            tot_item = tot_mat + tot_lab
+            tot_amount += tot_item
+
+            items.append(
+                PR4PItem(
+                    item_no=item_no,
+                    category="เหล็กเส้นเสริมคอนกรีต",
+                    bar_type_or_type=bar_type,
+                    unit="kg",
+                    quantity=wt,
+                    unit_material_cost=mat_cost,
+                    unit_labor_cost=lab_cost,
+                    total_material_cost=tot_mat,
+                    total_labor_cost=tot_lab,
+                    total_amount=tot_item,
+                )
+            )
+            item_no += 1
+
+        # 2. Formwork item
+        if qto.total_formwork_area > 0:
+            code = "MAT-FORMWORK"
+            price_item = catalog.items.get(code)
+            mat_cost = price_item.material_cost if price_item else 0.0
+            lab_cost = price_item.labor_cost if price_item else 0.0
+
+            tot_mat = qto.total_formwork_area * mat_cost
+            tot_lab = qto.total_formwork_area * lab_cost
+            tot_item = tot_mat + tot_lab
+            tot_amount += tot_item
+
+            items.append(
+                PR4PItem(
+                    item_no=item_no,
+                    category="ไม้แบบและไม้ค้ำยัน",
+                    bar_type_or_type="ไม้แบบหล่อคอนกรีต",
+                    unit="m2",
+                    quantity=qto.total_formwork_area,
+                    unit_material_cost=mat_cost,
+                    unit_labor_cost=lab_cost,
+                    total_material_cost=tot_mat,
+                    total_labor_cost=tot_lab,
+                    total_amount=tot_item,
+                )
+            )
+
+        return PR4PSheet(
+            project_name=project_name,
+            items=items,
+            total_rebar_weight_kg=qto.total_rebar_weight,
+            total_formwork_area_m2=qto.total_formwork_area,
+            total_amount=tot_amount,
+        )
+
+    def generate_pr5(self, project_name: str = "โครงการก่อสร้าง") -> PR5Sheet:
+        """Generate Thai standard BOQ Sheet ปร.5 (แบบสรุปค่าก่อสร้าง + Factor F)."""
+        factor_f = calculate_factor_f(self.grand_total)
+        total_construction = self.grand_total * factor_f
+
+        group_summary = PR5GroupSummary(
+            group_no=1,
+            group_name="กลุ่มงานอาคาร (Building Works)",
+            direct_cost=self.grand_total,
+            factor_f=factor_f,
+            total_construction_cost=total_construction,
+        )
+
+        return PR5Sheet(
+            project_name=project_name,
+            direct_cost=self.grand_total,
+            factor_f=factor_f,
+            total_construction_cost=total_construction,
+            groups=[group_summary],
+        )
 
     def export_csv(self, filepath: Union[str, Path]) -> Path:
         """Export cost estimate breakdown to CSV file."""
