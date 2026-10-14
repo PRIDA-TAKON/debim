@@ -13116,6 +13116,22 @@
           ],
           "default": null,
           "title": "Openings"
+        },
+        "boundary_offset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boundary Offset"
         }
       },
       "required": [
