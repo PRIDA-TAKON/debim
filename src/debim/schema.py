@@ -1012,8 +1012,39 @@ class StairRailingConfig(BaseModel):
 
 
 class StairReinforcement(BaseModel):
+    # --- ท้องบันได (Waist Slab Rebars - ชุดล่าง) ---
+    bottom_main: Optional[str] = None         # e.g. "DB12 @ 0.15m" (เหล็กยืนรับแรงดัดท้องบันได)
+    bottom_transverse: Optional[str] = None   # e.g. "RB9 @ 0.20m" (เหล็กกระจายแนวขวางท้องบันได)
+
+    # --- ลูกบันได (Step Rebars - ชุดบน) ---
+    step_bent_bars: Optional[str] = None      # e.g. "RB9 @ 0.20m" (เหล็กชุดบนวิ่งเส้นเดียวยาวหักมุมฉากตามลูกตั้งลูกนอน)
+    step_transverse_bars: Optional[str] = None # e.g. "RB9" (เหล็กขวางตรงมุมฉากบันไดและจมูกบันได)
+    step_nose_bars: Optional[str] = None      # Alias สำหรับเหล็กจมูกบันได
+    step_toe_bars: Optional[str] = None       # Alias สำหรับเหล็กตีนบันได
+
+    # Backward-compatible fields
     main: Optional[str] = None  # e.g. "DB12 @ 0.15m"
     temperature: Optional[str] = None  # e.g. "RB9 @ 0.20m"
+
+    @model_validator(mode="before")
+    @classmethod
+    def sync_stair_rebar_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "bottom_main" in data and "main" not in data:
+                data["main"] = data["bottom_main"]
+            elif "main" in data and "bottom_main" not in data:
+                data["bottom_main"] = data["main"]
+
+            if "bottom_transverse" in data and "temperature" not in data:
+                data["temperature"] = data["bottom_transverse"]
+            elif "temperature" in data and "bottom_transverse" not in data:
+                data["bottom_transverse"] = data["temperature"]
+
+            if "step_nose_bars" in data and "step_transverse_bars" not in data:
+                data["step_transverse_bars"] = data["step_nose_bars"]
+            elif "step_transverse_bars" in data and "step_nose_bars" not in data:
+                data["step_nose_bars"] = data["step_transverse_bars"]
+        return data
 
 
 class IfcStair(BaseModel):

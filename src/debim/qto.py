@@ -1324,19 +1324,43 @@ def calculate_element_qto(
         total_rebar = 0.0
 
         if elem.reinforcement:
-            # Estimate main rebar along stair slope
-            tot_slope = sum(f.slope_length for f in resolved.flights)
-            if elem.reinforcement.main:
-                m_dict, m_wt = parse_stirrups(elem.reinforcement.main, tot_slope, elem.width, 1.0)
+            # 1. ท้องบันได: เหล็กยืนชั้นล่างตามแนวลาดเอียง (Waist bottom main rebar along slope)
+            tot_slope = sum(f.slope_length for f in resolved.flights) if resolved.flights else 3.0
+            bot_main = elem.reinforcement.bottom_main or elem.reinforcement.main
+            if bot_main:
+                m_dict, m_wt = parse_stirrups(bot_main, tot_slope, elem.width, 1.0)
                 for btype, wt in m_dict.items():
                     rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
                 total_rebar += m_wt
 
-            if elem.reinforcement.temperature:
-                t_dict, t_wt = parse_stirrups(elem.reinforcement.temperature, elem.width, tot_slope, 1.0)
+            # 2. ท้องบันได: เหล็กขวางชั้นล่างตามความกว้าง (Waist bottom transverse distribution rebar)
+            bot_trans = elem.reinforcement.bottom_transverse or elem.reinforcement.temperature
+            if bot_trans:
+                t_dict, t_wt = parse_stirrups(bot_trans, elem.width, tot_slope, 1.0)
                 for btype, wt in t_dict.items():
                     rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
                 total_rebar += t_wt
+
+            # 3. ลูกบันได: เหล็กชุดบนวิ่งเส้นเดียวยาวหักมุมฉากตามลูกตั้งลูกนอน (Step continuous bent rebar)
+            if elem.reinforcement.step_bent_bars:
+                tot_profile_len = sum(f.n_risers * (f.riser + f.tread) for f in resolved.flights) if resolved.flights else (tot_slope * 1.35)
+                sb_dict, sb_wt = parse_stirrups(elem.reinforcement.step_bent_bars, tot_profile_len, elem.width, 1.0)
+                for btype, wt in sb_dict.items():
+                    rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
+                total_rebar += sb_wt
+
+            # 4. ลูกบันได: เหล็กแนวขวาง (2 เส้นต่อขั้น: ตรงมุมฉากและตรงจมูกบันได)
+            step_trans = elem.reinforcement.step_transverse_bars or elem.reinforcement.step_nose_bars or elem.reinforcement.step_toe_bars
+            if step_trans:
+                n_total_steps = sum(f.n_risers for f in resolved.flights) if resolved.flights else len(resolved.steps)
+                tot_trans_len = 2.0 * n_total_steps * max(0.1, elem.width - 0.05)
+                m_match = re.search(r"([A-Za-z0-9]+)", step_trans)
+                if m_match:
+                    bar_type = m_match.group(1).upper()
+                    u_wt = get_bar_unit_weight(bar_type)
+                    st_wt = tot_trans_len * u_wt
+                    rebar_dict[bar_type] = rebar_dict.get(bar_type, 0.0) + st_wt
+                    total_rebar += st_wt
 
         steel_paint_area = 0.0
         if resolved.total_steel_weight > 0:
