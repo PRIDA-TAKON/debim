@@ -2,6 +2,7 @@
 Unit tests for debim Class Directory & Encyclopedia Documentation Engine.
 """
 
+import pytest
 import re
 import time
 from pathlib import Path
@@ -410,6 +411,7 @@ def test_spatial_transform_controls_in_html():
 
 def test_spatial_transform_benchmark_execution(tmp_path):
     """Test running spatial transform benchmark script with Playwright against a single class."""
+    pytest.importorskip("playwright")
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from tools.benchmark_spatial_transforms import run_spatial_transform_benchmark
@@ -433,6 +435,7 @@ def test_spatial_transform_benchmark_execution(tmp_path):
 
 def test_docs_viewer_transform_ground_and_scale(tmp_path):
     """Test Playwright assertions for ground resting, elevation offset, yaw rotation, and scaling on representative classes."""
+    pytest.importorskip("playwright")
     from playwright.sync_api import sync_playwright
 
     html_file = tmp_path / "directory.html"
