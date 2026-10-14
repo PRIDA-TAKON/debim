@@ -15,6 +15,7 @@ from debim.resolver import (
     ResolvedElement,
     ResolvedFooting,
     ResolvedManifest,
+    ResolvedMember,
     ResolvedRoof,
     ResolvedSlab,
     ResolvedStair,
@@ -59,22 +60,28 @@ def _segment_distance(
 
 def get_element_aabb(elem: ResolvedElement) -> Tuple[float, float, float, float, float, float]:
     """Return 3D Axis-Aligned Bounding Box (min_x, min_y, min_z, max_x, max_y, max_z) for a resolved element."""
-    if isinstance(elem, ResolvedColumn):
+    if hasattr(elem, "bounding_box") and isinstance(elem.bounding_box, dict) and "min_x" in elem.bounding_box:
+        b = elem.bounding_box
+        return (b["min_x"], b["min_y"], b["min_z"], b["max_x"], b["max_y"], b["max_z"])
+
+    elif isinstance(elem, ResolvedColumn):
         x, y = elem.start_point[0], elem.start_point[1]
-        w, d = elem.element.profile.width, elem.element.profile.depth
+        w = getattr(elem, "width", getattr(elem.element.profile, "width", 0.3))
+        d = getattr(elem, "depth", getattr(elem.element.profile, "depth", 0.3))
         z1, z2 = elem.start_point[2], elem.end_point[2]
         return (x - w / 2, y - d / 2, min(z1, z2), x + w / 2, y + d / 2, max(z1, z2))
 
-    elif isinstance(elem, ResolvedBeam):
-        x1, y1, z = elem.start_point
-        x2, y2, _ = elem.end_point
-        w, d = elem.element.profile.width, elem.element.profile.depth
+    elif isinstance(elem, (ResolvedBeam, ResolvedMember)):
+        x1, y1, z1 = elem.start_point
+        x2, y2, z2 = elem.end_point
+        w = getattr(elem, "width", getattr(elem.element.profile, "width", 0.2))
+        d = getattr(elem, "depth", getattr(elem.element.profile, "depth", 0.4))
         min_x = min(x1, x2) - w / 2
         max_x = max(x1, x2) + w / 2
         min_y = min(y1, y2) - w / 2
         max_y = max(y1, y2) + w / 2
-        min_z = z - d
-        max_z = z
+        min_z = min(z1, z2) - d
+        max_z = max(z1, z2)
         return (min_x, min_y, min_z, max_x, max_y, max_z)
 
     elif isinstance(elem, ResolvedWall):
@@ -92,6 +99,9 @@ def get_element_aabb(elem: ResolvedElement) -> Tuple[float, float, float, float,
 
     elif isinstance(elem, ResolvedCustomElement):
         x, y, z = elem.position
+        if elem.dimensions:
+            w, d, h = elem.dimensions.width, elem.dimensions.depth or elem.dimensions.width, elem.dimensions.height
+            return (x - w / 2, y - d / 2, z, x + w / 2, y + d / 2, z + h)
         return (x - 0.5, y - 0.5, z, x + 0.5, y + 0.5, z + 2.0)
 
     elif isinstance(elem, (ResolvedDoor, ResolvedWindow)):
@@ -115,6 +125,26 @@ def get_element_aabb(elem: ResolvedElement) -> Tuple[float, float, float, float,
         d = elem.depth
         t = elem.thickness
         return (x - w / 2, y - d / 2, z - t, x + w / 2, y + d / 2, z)
+
+    elif isinstance(elem, (ResolvedDuctSegment, ResolvedPipeSegment, ResolvedCableCarrierSegment)):
+        wpts = elem.waypoints if elem.waypoints else [elem.start_point, elem.end_point]
+        xs = [p[0] for p in wpts]
+        ys = [p[1] for p in wpts]
+        zs = [p[2] for p in wpts]
+        r = max(getattr(elem, "width", 0.0), getattr(elem, "height", 0.0), getattr(elem, "nominal_diameter", 0.1)) / 2.0
+        r = max(r, 0.05)
+        return (min(xs) - r, min(ys) - r, min(zs) - r, max(xs) + r, max(ys) + r, max(zs) + r)
+
+    elif hasattr(elem, "dimensions") and hasattr(elem, "position"):
+        x, y, z = elem.position
+        dims = elem.dimensions
+        if isinstance(dims, (tuple, list)) and len(dims) >= 3:
+            w, d, h = dims[0], dims[1], dims[2]
+        else:
+            w = getattr(dims, "width", 0.5)
+            d = getattr(dims, "depth", w)
+            h = getattr(dims, "height", 0.5)
+        return (x - w / 2, y - d / 2, z, x + w / 2, y + d / 2, z + h)
 
     elif isinstance(elem, ResolvedStair):
         xs, ys, zs = [], [], []
@@ -152,6 +182,15 @@ def get_element_aabb(elem: ResolvedElement) -> Tuple[float, float, float, float,
         min_z = min(elem.eaves_elevation, elem.ridge_elevation)
         max_z = max(elem.eaves_elevation, elem.ridge_elevation)
         return (min(xs), min(ys), min_z, max(xs), max(ys), max_z)
+
+    elif hasattr(elem, "position"):
+        x, y, z = elem.position
+        return (x - 0.5, y - 0.5, z - 0.5, x + 0.5, y + 0.5, z + 0.5)
+
+    elif hasattr(elem, "start_point") and hasattr(elem, "end_point"):
+        x1, y1, z1 = elem.start_point
+        x2, y2, z2 = elem.end_point
+        return (min(x1, x2) - 0.2, min(y1, y2) - 0.2, min(z1, z2) - 0.2, max(x1, x2) + 0.2, max(y1, y2) + 0.2, max(z1, z2) + 0.2)
 
     raise TypeError(f"Unsupported resolved element type: {type(elem)}")
 
@@ -597,3 +636,225 @@ def detect_clashes(
     """Detect critical spatial 3D clashes between structural elements."""
     checker = ComplianceChecker(target)
     return checker.detect_clashes()
+
+
+def check_topological_continuity(
+    target: Union[ProjectManifest, ResolvedManifest, Path, str]
+) -> List[Dict[str, Any]]:
+    """
+    Perform topological structural continuity check.
+    Identifies floating columns (unsupported bases), unsupported beams, or dangling cantilevers.
+    """
+    if isinstance(target, (str, Path)):
+        manifest = load_manifest(target)
+        resolved = resolve_manifest(manifest)
+    elif isinstance(target, ProjectManifest):
+        resolved = resolve_manifest(target)
+    elif isinstance(target, ResolvedManifest):
+        resolved = target
+    else:
+        raise TypeError(f"Unsupported target type for check_topological_continuity: {type(target)}")
+
+    warnings: List[Dict[str, Any]] = []
+
+    # 1. Check Columns
+    for col in resolved.columns:
+        cx, cy, cz = col.start_point
+        # Check if grounded at or below elevation 0.0 or connected to footing
+        is_grounded = cz <= 0.05
+        has_support = False
+
+        if is_grounded:
+            has_support = True
+        else:
+            # Check footings
+            for footing in resolved.footings:
+                fx, fy, fz = footing.position
+                if math.hypot(cx - fx, cy - fy) <= (footing.width / 2.0 + 0.2) and abs(cz - fz) <= 0.2:
+                    has_support = True
+                    break
+
+            # Check beams supporting column base
+            if not has_support:
+                for beam in resolved.beams:
+                    bx1, by1, bz = beam.start_point
+                    bx2, by2, _ = beam.end_point
+                    dist = point_to_segment_distance(cx, cy, bx1, by1, bx2, by2)
+                    b_w = getattr(beam, "width", 0.2)
+                    if dist <= (b_w / 2.0 + 0.2) and abs(cz - bz) <= 0.3:
+                        has_support = True
+                        break
+
+            # Check walls supporting column base
+            if not has_support:
+                for wall in resolved.walls:
+                    wx1, wy1, wz = wall.start_point
+                    wx2, wy2, _ = wall.end_point
+                    wall_top_z = wz + wall.height
+                    dist = point_to_segment_distance(cx, cy, wx1, wy1, wx2, wy2)
+                    if dist <= (wall.thickness / 2.0 + 0.2) and abs(cz - wall_top_z) <= 0.3:
+                        has_support = True
+                        break
+
+            # Check slabs supporting column base
+            if not has_support:
+                for slab in resolved.slabs:
+                    sz = slab.center[2]
+                    if abs(cz - sz) <= 0.3:
+                        # Check 2D point in slab polygon
+                        pts_2d = [(p[0], p[1]) for p in slab.polygon]
+                        from debim.geometry2d import point_in_polygon
+                        if point_in_polygon((cx, cy), pts_2d):
+                            has_support = True
+                            break
+
+            # Check other columns below
+            if not has_support:
+                for other_col in resolved.columns:
+                    if other_col.tag == col.tag:
+                        continue
+                    ocx, ocy, ocz_top = other_col.end_point
+                    if math.hypot(cx - ocx, cy - ocy) <= 0.2 and abs(cz - ocz_top) <= 0.2:
+                        has_support = True
+                        break
+
+        if not has_support:
+            warnings.append({
+                "type": "FLOATING_COLUMN",
+                "tag": col.tag,
+                "class": "IfcColumn",
+                "position": col.start_point,
+                "message": f"Floating Column '{col.tag}' at position ({cx:.2f}, {cy:.2f}, {cz:.2f}) has no supporting footing, beam, wall, or slab underneath.",
+            })
+
+    # 2. Check Beams
+    for beam in resolved.beams:
+        sp1 = beam.start_point
+        sp2 = beam.end_point
+
+        def is_point_supported(pt: Tuple[float, float, float]) -> bool:
+            px, py, pz = pt
+            # Check column support
+            for col in resolved.columns:
+                cx, cy = col.start_point[0], col.start_point[1]
+                c_w = getattr(col, "width", 0.3)
+                col_bot_z = min(col.start_point[2], col.end_point[2])
+                col_top_z = max(col.start_point[2], col.end_point[2])
+                if math.hypot(px - cx, py - cy) <= (c_w / 2.0 + 0.3) and (col_bot_z - 0.2 <= pz <= col_top_z + 0.2):
+                    return True
+
+            # Check wall support
+            for wall in resolved.walls:
+                wx1, wy1, wz = wall.start_point
+                wx2, wy2, _ = wall.end_point
+                dist = point_to_segment_distance(px, py, wx1, wy1, wx2, wy2)
+                if dist <= (wall.thickness / 2.0 + 0.3) and (wz - 0.2 <= pz <= wz + wall.height + 0.2):
+                    return True
+
+            # Check supporting other beam
+            for other_beam in resolved.beams:
+                if other_beam.tag == beam.tag:
+                    continue
+                obx1, oby1, obz = other_beam.start_point
+                obx2, oby2, _ = other_beam.end_point
+                dist = point_to_segment_distance(px, py, obx1, oby1, obx2, oby2)
+                ob_w = getattr(other_beam, "width", 0.2)
+                if dist <= (ob_w / 2.0 + 0.3) and abs(pz - obz) <= 0.3:
+                    return True
+
+            # Check column/footing/slab directly
+            for slab in resolved.slabs:
+                if abs(pz - slab.center[2]) <= 0.3:
+                    pts_2d = [(p[0], p[1]) for p in slab.polygon]
+                    from debim.geometry2d import point_in_polygon
+                    if point_in_polygon((px, py), pts_2d):
+                        return True
+
+            return False
+
+        s1_ok = is_point_supported(sp1)
+        s2_ok = is_point_supported(sp2)
+
+        if not s1_ok and not s2_ok:
+            warnings.append({
+                "type": "UNSUPPORTED_BEAM",
+                "tag": beam.tag,
+                "class": "IfcBeam",
+                "position": sp1,
+                "message": f"Unsupported Beam '{beam.tag}' span from ({sp1[0]:.2f}, {sp1[1]:.2f}, {sp1[2]:.2f}) to ({sp2[0]:.2f}, {sp2[1]:.2f}, {sp2[2]:.2f}) has no support at either endpoint.",
+            })
+        elif not s1_ok or not s2_ok:
+            unsupported_pt = sp1 if not s1_ok else sp2
+            warnings.append({
+                "type": "DANGLING_CANTILEVER",
+                "tag": beam.tag,
+                "class": "IfcBeam",
+                "position": unsupported_pt,
+                "message": f"Beam '{beam.tag}' has dangling/unsupported endpoint at ({unsupported_pt[0]:.2f}, {unsupported_pt[1]:.2f}, {unsupported_pt[2]:.2f}).",
+            })
+
+    return warnings
+
+
+def detect_mep_structural_clashes(
+    target: Union[ProjectManifest, ResolvedManifest, Path, str]
+) -> List[Dict[str, Any]]:
+    """
+    Detect bounding-box AABB clashes between MEP elements (ducts, pipes, conduits, equipment)
+    and structural elements (beams, columns).
+    """
+    if isinstance(target, (str, Path)):
+        manifest = load_manifest(target)
+        resolved = resolve_manifest(manifest)
+    elif isinstance(target, ProjectManifest):
+        resolved = resolve_manifest(target)
+    elif isinstance(target, ResolvedManifest):
+        resolved = target
+    else:
+        raise TypeError(f"Unsupported target type for detect_mep_structural_clashes: {type(target)}")
+
+    struct_elems: List[ResolvedElement] = []
+    struct_elems.extend(resolved.beams)
+    struct_elems.extend(resolved.columns)
+
+    mep_elems: List[ResolvedElement] = []
+    mep_elems.extend(resolved.ducts)
+    mep_elems.extend(resolved.pipes)
+    mep_elems.extend(resolved.conduits)
+    mep_elems.extend(resolved.air_terminals)
+    mep_elems.extend(resolved.dampers)
+    mep_elems.extend(resolved.flow_controllers)
+    mep_elems.extend(resolved.unitary_equipments)
+    mep_elems.extend(resolved.distribution_flow_elements)
+    mep_elems.extend(resolved.flow_moving_devices)
+    mep_elems.extend(resolved.energy_conversion_devices)
+
+    clashes: List[Dict[str, Any]] = []
+
+    for mep in mep_elems:
+        try:
+            mep_aabb = get_element_aabb(mep)
+        except Exception:
+            continue
+
+        mep_cls = getattr(mep, "ifc_class", mep.__class__.__name__.replace("Resolved", "Ifc"))
+
+        for struct in struct_elems:
+            try:
+                struct_aabb = get_element_aabb(struct)
+            except Exception:
+                continue
+
+            if aabb_overlap(mep_aabb, struct_aabb, tol=1e-3):
+                struct_cls = getattr(struct, "ifc_class", struct.__class__.__name__.replace("Resolved", "Ifc"))
+                clashes.append({
+                    "mep_tag": mep.tag,
+                    "mep_class": mep_cls,
+                    "struct_tag": struct.tag,
+                    "struct_class": struct_cls,
+                    "mep_aabb": mep_aabb,
+                    "struct_aabb": struct_aabb,
+                    "message": f"AABB Clash: MEP {mep_cls} '{mep.tag}' intersects Structural {struct_cls} '{struct.tag}'",
+                })
+
+    return clashes
