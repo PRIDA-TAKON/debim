@@ -27,6 +27,7 @@ from debim.cost import estimate_cost, generate_cost_template, load_price_catalog
 from debim.qto import calculate_qto
 from debim.resolver import resolve_manifest
 from debim.schema import ProjectManifest, load_manifest, export_json_schema
+from debim.loader import resolve_default_manifest_path
 from debim.viewer import generate_viewer_html, serve_viewer
 from debim.modular import bundle_manifest, split_manifest
 from debim.spec.registry import SpecRegistryClient
@@ -227,7 +228,7 @@ def cmd_init(args):
 
 
 def cmd_validate(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
         sys.exit(1)
@@ -330,7 +331,7 @@ def cmd_schema(args):
 
 
 def cmd_split(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
         sys.exit(1)
@@ -381,7 +382,7 @@ def cmd_split(args):
 
 
 def cmd_bundle(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
         sys.exit(1)
@@ -453,7 +454,7 @@ def cmd_test(args):
 
 
 def cmd_summary(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     prices = Path(args.prices)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
@@ -539,7 +540,7 @@ def cmd_summary(args):
 
 
 def cmd_qto(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
         sys.exit(1)
@@ -659,7 +660,7 @@ def cmd_qto(args):
 
 
 def cmd_cost(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     prices = Path(args.prices)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
@@ -731,7 +732,7 @@ def cmd_cost(args):
 
 
 def cmd_cost_template(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     output = Path(args.output) if args.output else None
 
     if not manifest.exists():
@@ -770,7 +771,7 @@ def cmd_cost_template(args):
 
 
 def cmd_compile(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     output = Path(args.output)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
@@ -796,15 +797,8 @@ def cmd_compile(args):
 
 
 def cmd_view(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     export_path = Path(args.export) if args.export else None
-
-    # Auto-detect default manifest file ONLY if manifest was not explicitly specified
-    if manifest == Path("project.yaml") and not manifest.exists():
-        for candidate in [Path("house.debim"), Path("project.debim"), Path("main.debim")]:
-            if candidate.exists():
-                manifest = candidate
-                break
 
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
@@ -887,9 +881,9 @@ def cmd_import(args):
 
 
 def _resolve_target_manifest(target_str: str) -> ProjectManifest:
-    path = Path(target_str)
-    if path.exists() and path.is_file():
-        return load_manifest(path)
+    resolved = resolve_default_manifest_path(target_str)
+    if resolved.exists() and resolved.is_file():
+        return load_manifest(resolved)
 
     import subprocess
     if ":" in target_str:
@@ -1100,7 +1094,7 @@ def cmd_scaffold_element(args):
 
 
 def cmd_draw_view(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     output = Path(args.output)
     sheets = Path(args.sheets) if args.sheets else None
 
@@ -1136,7 +1130,7 @@ def cmd_draw_view(args):
 
 
 def cmd_draw_export_dxf(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     output = Path(args.output)
 
     if not manifest.exists():
@@ -1258,7 +1252,7 @@ def cmd_draw_benchmark_vqa(args):
 
 
 def cmd_spec_build(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     specs = Path(args.specs) if args.specs else None
     output = Path(args.output)
 
@@ -1353,7 +1347,7 @@ def cmd_spec_to_word(args):
 
 
 def cmd_spec_audit(args):
-    manifest = Path(args.manifest)
+    manifest = resolve_default_manifest_path(args.manifest)
     specs = Path(args.specs) if args.specs else None
 
     if not manifest.exists():

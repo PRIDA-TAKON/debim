@@ -47,18 +47,23 @@ def verify_github_signature(
 
 def is_manifest_or_sheet_file(filepath: str) -> bool:
     """
-    Check if a file path corresponds to project.yaml or sheets/*.yaml.
+    Check if a file path corresponds to project.yaml, .debim manifest, or sheets/*.yaml.
     """
     normalized = filepath.replace("\\", "/").strip()
+    if normalized.endswith(".debim"):
+        return True
+
     # Direct project manifest match
     if normalized == "project.yaml" or normalized.endswith("/project.yaml"):
         return True
 
     # Sheet YAML files match
-    if normalized.startswith("sheets/") and (normalized.endswith(".yaml") or normalized.endswith(".yml")):
+    if normalized.startswith("sheets/") and (normalized.endswith(".yaml") or normalized.endswith(".yml") or normalized.endswith(".debim")):
         return True
 
     # Wildcard fnmatch fallbacks
+    if fnmatch.fnmatch(normalized, "*.debim") or fnmatch.fnmatch(normalized, "*/*.debim"):
+        return True
     if fnmatch.fnmatch(normalized, "project.yaml") or fnmatch.fnmatch(normalized, "*/project.yaml"):
         return True
     if fnmatch.fnmatch(normalized, "sheets/*.yaml") or fnmatch.fnmatch(normalized, "sheets/**/*.yaml"):

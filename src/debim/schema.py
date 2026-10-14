@@ -9,6 +9,7 @@ import re
 from typing import Annotated, Any, ClassVar, Dict, List, Literal, Optional, Tuple, Union
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, RootModel, Discriminator, field_validator, model_validator
+from debim.loader import load_debim_file, resolve_default_manifest_path
 
 
 class Units(BaseModel):
@@ -4179,62 +4180,13 @@ def derive_default_layer(elem) -> str:
     return "general/other"
 
 
-def load_manifest(path: Path | str) -> ProjectManifest:
-    """Load and validate project.yaml manifest file, resolving included modular files."""
-    manifest_path = Path(path)
-    if not manifest_path.exists():
-        raise FileNotFoundError(f"Manifest file not found: {manifest_path}")
+def load_manifest(path: Optional[Union[Path, str]] = None) -> ProjectManifest:
+    """Load and validate .debim / project.yaml manifest file, resolving included modular files."""
+    resolved_path = resolve_default_manifest_path(path)
+    if not resolved_path.exists():
+        raise FileNotFoundError(f"Manifest file not found: {resolved_path}")
 
-    canonical_path = manifest_path.resolve()
-    with open(canonical_path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-
-    if not isinstance(data, dict):
-        raise ValueError(f"Manifest file {manifest_path} must be a dictionary")
-
-    visited = {canonical_path}
-    base_dir = canonical_path.parent
-
-    includes = data.get("includes", []) or []
-
-    spatial_structure = data.get("spatial_structure", {}) or {}
-    merged_storeys = list(spatial_structure.get("storeys", []) or [])
-    storey_ids = {s["id"] for s in merged_storeys if isinstance(s, dict) and "id" in s}
-
-    grids_data = data.get("grids", {}) or {}
-    merged_axes_x = {str(k): float(v) for k, v in (grids_data.get("axes_x", {}) or {}).items()}
-    merged_axes_y = {str(k): float(v) for k, v in (grids_data.get("axes_y", {}) or {}).items()}
-
-    merged_materials = list(data.get("materials", []) or [])
-    mat_ids = {m["id"] for m in merged_materials if isinstance(m, dict) and "id" in m}
-
-    merged_elements = list(data.get("elements", []) or [])
-    railways_list = list(data.get("railways", []) or [])
-    if railways_list:
-        merged_elements.extend(railways_list)
-    merged_proxies = list(data.get("proxies", []) or [])
-
-    if includes:
-        inc_materials, inc_elements, inc_storeys, inc_proxies = _process_includes(
-            includes,
-            base_dir,
-            visited,
-            mat_ids,
-            storey_ids,
-            merged_axes_x,
-            merged_axes_y,
-        )
-        merged_materials.extend(inc_materials)
-        merged_elements.extend(inc_elements)
-        merged_storeys.extend(inc_storeys)
-        merged_proxies.extend(inc_proxies)
-
-    data["materials"] = merged_materials
-    data["elements"] = merged_elements
-    data["proxies"] = merged_proxies
-    data["spatial_structure"] = {"storeys": merged_storeys}
-    data["grids"] = {"axes_x": merged_axes_x, "axes_y": merged_axes_y}
-
+    data = load_debim_file(resolved_path)
     return ProjectManifest.model_validate(data)
 
 
