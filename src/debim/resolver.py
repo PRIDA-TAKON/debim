@@ -4,6 +4,7 @@ Converts relative grid and storey references into absolute 3D world coordinates
 and geometric dimensions.
 """
 
+import re
 import math
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 from pydantic import BaseModel, ConfigDict, Field
@@ -60,6 +61,7 @@ from debim.schema import (
     IfcRoof,
     IfcSanitaryTerminal,
     IfcSlab,
+    IfcSpace,
     IfcStair,
     IfcStairFlight,
     IfcSwitchingDevice,
@@ -489,6 +491,23 @@ class ResolvedSlab(BaseModel):
     center: Tuple[float, float, float]  # Centroid (cx, cy, cz)
     layer: str = "structure/slabs"
     voids: List[List[Tuple[float, float, float]]] = Field(default_factory=list)
+
+
+class ResolvedSpace(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: Any  # IfcSpace
+    name: Optional[str] = None
+    long_name: Optional[str] = None
+    room_number: Optional[str] = None
+    polygon: List[Tuple[float, float, float]]  # Vertices in 3D (x, y, z) at floor elevation
+    height: float  # Clear height (m)
+    net_floor_area: float  # Usable area (m2)
+    perimeter: float  # Perimeter length (m)
+    air_volume: float  # HVAC air volume (m3)
+    center: Tuple[float, float, float]  # Centroid in 3D (cx, cy, cz)
+    layer: str = "architecture/spaces"
 
 
 class ResolvedCovering(BaseModel):
@@ -1615,6 +1634,7 @@ ResolvedElement = Union[
     ResolvedNavigationElement,
     ResolvedDistributionFlowElement,
     ResolvedFurniture,
+    ResolvedSpace,
     ResolvedChimney,
     ResolvedEnergyConversionDevice,
     ResolvedFlowMovingDevice,
@@ -1680,6 +1700,7 @@ class ResolvedManifest(BaseModel):
     navigation_elements: List[ResolvedNavigationElement] = []
     distribution_flow_elements: List[ResolvedDistributionFlowElement] = []
     furniture: List[ResolvedFurniture] = []
+    spaces: List[ResolvedSpace] = []
     chimneys: List[ResolvedChimney] = []
     energy_conversion_devices: List[ResolvedEnergyConversionDevice] = []
     flow_moving_devices: List[ResolvedFlowMovingDevice] = []
@@ -1708,13 +1729,39 @@ class SpatialResolver:
         self.axes_y: Dict[str, float] = manifest.grids.axes_y
         self.walls_by_tag: Dict[str, ResolvedWall] = {}
 
+    def parse_coordinate_expression(self, expr: str, is_x: bool) -> float:
+        """Parses a coordinate string like 'GX_1', '1', 'GX_1 + 0.10', 'GY_2 - 0.25', or raw float."""
+        s = str(expr).strip()
+        axes = self.axes_x if is_x else self.axes_y
+        axis_label = "X" if is_x else "Y"
+
+        # 1. Exact grid name match first (e.g. '1', 'A', 'GX_1')
+        if s in axes:
+            return float(axes[s])
+
+        # 2. Regex match for Grid + Offset (e.g. 'GX_1 + 0.10' or '1 - 0.5')
+        match = re.match(r"^([A-Za-z0-9_]+)(?:\s*([+-])\s*([0-9.]+))?$", s)
+        if match:
+            grid_name, sign, offset_str = match.groups()
+            if grid_name in axes:
+                offset = float(offset_str) if offset_str else 0.0
+                if sign == "-":
+                    offset = -offset
+                return float(axes[grid_name]) + offset
+
+        # 3. Direct float fallback (e.g. '2.50')
+        try:
+            return float(s)
+        except ValueError:
+            pass
+
+        raise ValueError(f"Grid {axis_label} axis '{s}' not found in manifest grids.")
+
     def get_grid_xy(self, grid_ref: Tuple[str, str]) -> Tuple[float, float]:
-        gx, gy = grid_ref
-        if gx not in self.axes_x:
-            raise ValueError(f"Grid X axis '{gx}' not found in manifest grids.")
-        if gy not in self.axes_y:
-            raise ValueError(f"Grid Y axis '{gy}' not found in manifest grids.")
-        return (float(self.axes_x[gx]), float(self.axes_y[gy]))
+        gx_expr, gy_expr = grid_ref
+        x = self.parse_coordinate_expression(gx_expr, is_x=True)
+        y = self.parse_coordinate_expression(gy_expr, is_x=False)
+        return (x, y)
 
     def get_storey(self, storey_id: str) -> Storey:
         if storey_id not in self.storeys:
@@ -2480,6 +2527,93 @@ class SpatialResolver:
             center=(cx, cy, z),
             layer=derive_default_layer(slab),
             voids=resolved_voids_3d,
+        )
+
+    def resolve_space(self, space: Any) -> ResolvedSpace:
+        storey = self.get_storey(space.placement.storey)
+        z = storey.elevation + getattr(space.placement, "offset_z", 0.0)
+
+        poly_3d: List[Tuple[float, float, float]] = []
+        pts_2d: List[Tuple[float, float]] = []
+
+        if getattr(space.placement, "boundary_points", None):
+            for pt in space.placement.boundary_points:
+                pts_2d.append((float(pt[0]), float(pt[1])))
+                poly_3d.append((float(pt[0]), float(pt[1]), z))
+        elif getattr(space.placement, "boundary", None):
+            for grid_pt in space.placement.boundary:
+                x, y = self.get_grid_xy(grid_pt)
+                pts_2d.append((x, y))
+                poly_3d.append((x, y, z))
+
+        # Check for inset / boundary_offset
+        inset_val = getattr(space.placement, "inset", None) or getattr(space.placement, "boundary_offset", None)
+        if inset_val and len(pts_2d) >= 3:
+            # Simple inward polygon offset along vertex normal bisectors
+            n = len(pts_2d)
+            offset_dist = abs(float(inset_val))
+            new_pts = []
+            for i in range(n):
+                p_prev = pts_2d[(i - 1) % n]
+                p_curr = pts_2d[i]
+                p_next = pts_2d[(i + 1) % n]
+                # Edge vectors
+                v1 = (p_curr[0] - p_prev[0], p_curr[1] - p_prev[1])
+                v2 = (p_next[0] - p_curr[0], p_next[1] - p_curr[1])
+                l1 = math.hypot(v1[0], v1[1])
+                l2 = math.hypot(v2[0], v2[1])
+                if l1 > 1e-6 and l2 > 1e-6:
+                    n1 = (-v1[1] / l1, v1[0] / l1)
+                    n2 = (-v2[1] / l2, v2[0] / l2)
+                    bisector = (n1[0] + n2[0], n1[1] + n2[1])
+                    blen = math.hypot(bisector[0], bisector[1])
+                    if blen > 1e-6:
+                        # Offset inward
+                        scale = offset_dist / blen
+                        new_pts.append((p_curr[0] - bisector[0] * scale, p_curr[1] - bisector[1] * scale))
+                    else:
+                        new_pts.append(p_curr)
+                else:
+                    new_pts.append(p_curr)
+            pts_2d = new_pts
+            poly_3d = [(p[0], p[1], z) for p in pts_2d]
+
+        # Calculate polygon area (Shoelace) and perimeter
+        n = len(pts_2d)
+        area = 0.0
+        perimeter = 0.0
+        if n >= 3:
+            for i in range(n):
+                j = (i + 1) % n
+                area += pts_2d[i][0] * pts_2d[j][1]
+                area -= pts_2d[j][0] * pts_2d[i][1]
+                dx = pts_2d[j][0] - pts_2d[i][0]
+                dy = pts_2d[j][1] - pts_2d[i][1]
+                perimeter += math.hypot(dx, dy)
+            area = abs(area) / 2.0
+
+        if n > 0:
+            cx = sum(p[0] for p in pts_2d) / n
+            cy = sum(p[1] for p in pts_2d) / n
+        else:
+            cx, cy = 0.0, 0.0
+
+        height = float(space.height) if getattr(space, "height", None) else float(storey.height)
+        air_volume = area * height
+
+        return ResolvedSpace(
+            tag=space.tag,
+            element=space,
+            name=getattr(space, "name", None) or space.tag,
+            long_name=getattr(space, "long_name", None),
+            room_number=getattr(space, "room_number", None),
+            polygon=poly_3d,
+            height=height,
+            net_floor_area=area,
+            perimeter=perimeter,
+            air_volume=air_volume,
+            center=(cx, cy, z),
+            layer=getattr(space, "layer", None) or "architecture/spaces",
         )
 
     def resolve_covering(self, covering: IfcCovering) -> ResolvedCovering:
@@ -6596,6 +6730,10 @@ class SpatialResolver:
                 r_slab = self.resolve_slab(elem)
                 resolved_manifest.slabs.append(r_slab)
                 resolved_manifest.elements.append(r_slab)
+            elif isinstance(elem, IfcSpace) or (hasattr(elem, "class_") and elem.class_ == "IfcSpace"):
+                r_space = self.resolve_space(elem)
+                resolved_manifest.spaces.append(r_space)
+                resolved_manifest.elements.append(r_space)
             elif isinstance(elem, IfcCovering):
                 r_cov = self.resolve_covering(elem)
                 resolved_manifest.coverings.append(r_cov)

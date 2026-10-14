@@ -3053,6 +3053,44 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
             ifcopenshell.api.run("geometry.assign_representation", model, product=slab_obj, representation=rep)
 
+    # 3.0 Spaces (IfcSpace)
+    for space in getattr(resolved, "spaces", []):
+        space_obj = ifcopenshell.api.run(
+            "root.create_entity", model, ifc_class="IfcSpace", name=space.tag
+        )
+        if space.long_name:
+            space_obj.LongName = space.long_name
+        st_id = space.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(space_obj)
+
+        if space.polygon and len(space.polygon) >= 3:
+            h = float(space.height)
+            cz = float(space.center[2])
+            mat = np.eye(4)
+            mat[2, 3] = cz
+            ifcopenshell.api.run(
+                "geometry.edit_object_placement",
+                model,
+                product=space_obj,
+                matrix=mat,
+            )
+
+            pts_objs = [model.createIfcCartesianPoint((float(p[0]), float(p[1]))) for p in space.polygon]
+            pts_objs.append(pts_objs[0])
+            poly_curve = model.createIfcPolyline(pts_objs)
+            prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly_curve)
+            pos3d = model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                prof, pos3d, model.createIfcDirection((0.0, 0.0, 1.0)), h
+            )
+            rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+            ifcopenshell.api.run("geometry.assign_representation", model, product=space_obj, representation=rep)
+
     # 3.1 Coverings
     for cov in resolved.coverings:
         ptype = cov.covering_type.upper() if cov.covering_type else "CEILING"
@@ -5012,7 +5050,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             spatial_prods = []
             aggregate_prods = []
             for p in products:
-                if p.is_a("IfcFacility") or p.is_a("IfcFacilityPart"):
+                if p.is_a("IfcFacility") or p.is_a("IfcFacilityPart") or p.is_a("IfcSpace"):
                     aggregate_prods.append(p)
                 else:
                     spatial_prods.append(p)

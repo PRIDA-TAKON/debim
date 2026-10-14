@@ -55,6 +55,7 @@ from debim.resolver import (
     ResolvedRoof,
     ResolvedSanitaryTerminal,
     ResolvedSlab,
+    ResolvedSpace,
     ResolvedStair,
     ResolvedStairFlight,
     ResolvedSweptDisk,
@@ -576,6 +577,15 @@ class MepQTO(BaseModel):
     predefined_type: Optional[str] = None
 
 
+class SpaceQTO(BaseModel):
+    net_floor_area: float = 0.0      # Usable floor area (m2)
+    perimeter: float = 0.0           # Perimeter length (m)
+    clear_height: float = 2.80       # Room clear height (m)
+    air_volume: float = 0.0          # HVAC room air volume (m3)
+    room_number: Optional[str] = None
+    name: Optional[str] = None
+
+
 class ElementQTO(BaseModel):
     tag: str
     element_class: str
@@ -609,6 +619,7 @@ class ElementQTO(BaseModel):
     distribution_flow: Optional[DistributionFlowElementQTO] = None
     railway: Optional[RailwayQTO] = None
     mep: Optional[MepQTO] = None
+    space: Optional[SpaceQTO] = None
 
 
 class ProjectQTO(BaseModel):
@@ -733,6 +744,10 @@ class ProjectQTO(BaseModel):
     total_culvert_concrete_volume: float = 0.0
     total_culvert_formwork_area: float = 0.0
     total_culvert_hydraulic_area: float = 0.0
+    # Space & Room Totals
+    total_spaces_count: int = 0
+    total_usable_floor_area: float = 0.0
+    total_hvac_air_volume: float = 0.0
 
 
     def get_element(self, tag: str) -> Optional[ElementQTO]:
@@ -2427,6 +2442,26 @@ def calculate_element_qto(
             ),
         )
 
+    elif isinstance(resolved, ResolvedSpace):
+        elem = resolved.element
+        return ElementQTO(
+            tag=tag,
+            element_class="IfcSpace",
+            material=None,
+            concrete_volume=0.0,
+            formwork_area=0.0,
+            rebar_weights={},
+            total_rebar_weight=0.0,
+            space=SpaceQTO(
+                net_floor_area=resolved.net_floor_area,
+                perimeter=resolved.perimeter,
+                clear_height=resolved.height,
+                air_volume=resolved.air_volume,
+                room_number=resolved.room_number,
+                name=resolved.name,
+            ),
+        )
+
     raise TypeError(f"Unsupported resolved element type: {type(resolved)}")
 
 
@@ -2583,6 +2618,9 @@ def calculate_qto(
     total_culvert_conc_vol = 0.0
     total_culvert_formwork = 0.0
     total_culvert_flow_area = 0.0
+    total_spaces_cnt = 0
+    total_usable_floor_area = 0.0
+    total_hvac_air_volume = 0.0
 
     # Build material category lookup
     material_categories = {
@@ -2816,6 +2854,11 @@ def calculate_qto(
             elif eqto.element_class == "IfcUnitaryEquipment":
                 total_unitary_eqs += eqto.mep.count
 
+        if eqto.space:
+            total_spaces_cnt += 1
+            total_usable_floor_area += eqto.space.net_floor_area
+            total_hvac_air_volume += eqto.space.air_volume
+
     return ProjectQTO(
         elements=qto_elements,
         total_concrete_volume=total_conc_vol,
@@ -2928,4 +2971,7 @@ def calculate_qto(
         total_culvert_concrete_volume=total_culvert_conc_vol,
         total_culvert_formwork_area=total_culvert_formwork,
         total_culvert_hydraulic_area=total_culvert_flow_area,
+        total_spaces_count=total_spaces_cnt,
+        total_usable_floor_area=total_usable_floor_area,
+        total_hvac_air_volume=total_hvac_air_volume,
     )

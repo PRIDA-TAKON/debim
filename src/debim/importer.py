@@ -35,12 +35,14 @@ from debim.schema import (
     IfcFurniture,
     IfcRoof,
     IfcSlab,
+    IfcSpace,
     IfcWall,
     IfcWindow,
     RoofCoveringConfig,
     RoofPlacement,
     WallPlacement,
     SlabPlacement,
+    SpacePlacement,
     TerminalPlacement,
     TerminalDimensions,
     Material,
@@ -1503,6 +1505,64 @@ def import_ifc_to_manifest(
                     ),
                     "covering": RoofCoveringConfig(pitch=pitch),
                     "children": roof_children,
+                }
+            )
+        )
+
+    # 5.6.1 Extract Spaces (IfcSpace)
+    for space in ifc_file.by_type("IfcSpace"):
+        extracted_custom_ids.add(space.GlobalId)
+        tag = space.Name or f"SPACE-{space.GlobalId[:8]}"
+        st_id = get_elem_storey(space)
+        st_elev = storey_elevation_by_id.get(st_id, 0.0)
+
+        space_h = 2.80
+        poly_pts = None
+        if geom_settings is not None:
+            try:
+                import ifcopenshell.geom
+                shape = ifcopenshell.geom.create_shape(geom_settings, space)
+                verts = np.array(shape.geometry.verts, dtype=np.float64).reshape(-1, 3)
+                if len(verts) > 0:
+                    min_z = float(verts[:, 2].min())
+                    max_z = float(verts[:, 2].max())
+                    if max_z > min_z + 0.1:
+                        space_h = round(max_z - min_z, 2)
+                    min_x, max_x = float(verts[:, 0].min()), float(verts[:, 0].max())
+                    min_y, max_y = float(verts[:, 1].min()), float(verts[:, 1].max())
+                    gx1 = get_or_create_grid_x(min_x)
+                    gy1 = get_or_create_grid_y(min_y)
+                    gx2 = get_or_create_grid_x(max_x)
+                    gy2 = get_or_create_grid_y(max_y)
+                    boundary = [(gx1, gy1), (gx2, gy1), (gx2, gy2), (gx1, gy2)]
+            except Exception:
+                boundary = None
+        else:
+            boundary = None
+
+        if not boundary:
+            gx_keys = list(grid_x_vals.keys()) or ["GX_1", "GX_2"]
+            gy_keys = list(grid_y_vals.keys()) or ["GY_1", "GY_2"]
+            boundary = [
+                (gx_keys[0], gy_keys[0]),
+                (gx_keys[-1], gy_keys[0]),
+                (gx_keys[-1], gy_keys[-1]),
+                (gx_keys[0], gy_keys[-1]),
+            ]
+
+        elements.append(
+            IfcSpace(
+                **{
+                    "class": "IfcSpace",
+                    "tag": tag,
+                    "name": space.Name or tag,
+                    "long_name": getattr(space, "LongName", None),
+                    "height": space_h,
+                    "placement": SpacePlacement(
+                        boundary=boundary,
+                        storey=st_id,
+                    ),
+                    "properties": {},
                 }
             )
         )

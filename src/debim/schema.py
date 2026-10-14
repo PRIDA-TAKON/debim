@@ -940,6 +940,41 @@ class IfcSlab(BaseModel):
     layer: Optional[str] = None
 
 
+class SpacePlacement(BaseModel):
+    storey: str
+    boundary: Optional[List[Tuple[str, str]]] = None  # Grid intersection or grid-offset expression
+    boundary_points: Optional[List[Tuple[float, float]]] = None  # Local or global 2D points (x, y)
+    inset: Optional[float] = None  # Inset distance in meters (e.g. 0.10)
+    boundary_offset: Optional[float] = None  # Boundary offset in meters
+    offset_z: float = 0.00
+
+    @field_validator("boundary", mode="before")
+    @classmethod
+    def convert_space_boundary(cls, v):
+        if isinstance(v, list):
+            return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+    @field_validator("boundary_points", mode="before")
+    @classmethod
+    def convert_space_points(cls, v):
+        if isinstance(v, list):
+            return [tuple(float(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+
+class IfcSpace(BaseModel):
+    class_: Literal["IfcSpace"] = Field(alias="class", default="IfcSpace")
+    tag: str
+    name: Optional[str] = None
+    long_name: Optional[str] = None
+    room_number: Optional[str] = None
+    height: float = 2.80  # Clear room height in meters
+    placement: SpacePlacement
+    properties: Dict[str, Any] = Field(default_factory=dict)
+    layer: Optional[str] = "architecture/spaces"
+
+
 StairType = Literal["STRAIGHT", "DOG_LEG", "L_SHAPE", "SPIRAL", "LADDER"]
 
 
@@ -3280,7 +3315,7 @@ from pydantic import Tag
 
 
 EXPLICIT_TYPED_ELEMENT_CLASSES = {
-    "IfcColumn", "IfcBeam", "IfcWall", "IfcDoor", "IfcWindow", "IfcFooting", "IfcSlab",
+    "IfcColumn", "IfcBeam", "IfcWall", "IfcDoor", "IfcWindow", "IfcFooting", "IfcSlab", "IfcSpace",
     "IfcCovering", "IfcStair", "IfcStairFlight", "IfcRamp", "IfcRailing", "IfcRoof",
     "IfcCurtainWall", "IfcPlate", "IfcPipeSegment", "IfcCableCarrierSegment", "IfcDuctSegment",
     "IfcSanitaryTerminal", "IfcWasteTerminal", "IfcDistributionBoard", "IfcElectricDistributionBoard",
@@ -3317,6 +3352,7 @@ Element = Annotated[
         Annotated[IfcWall, Tag("IfcWall")],
         Annotated[IfcFooting, Tag("IfcFooting")],
         Annotated[IfcSlab, Tag("IfcSlab")],
+        Annotated[IfcSpace, Tag("IfcSpace")],
         Annotated[IfcCovering, Tag("IfcCovering")],
         Annotated[IfcStair, Tag("IfcStair")],
         Annotated[IfcStairFlight, Tag("IfcStairFlight")],
@@ -3652,10 +3688,25 @@ class ProjectManifest(BaseModel):
                         raise ValueError(
                             f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'"
                         )
-                if elem.framing and elem.framing.material and elem.framing.material not in material_ids:
+            elif isinstance(elem, IfcSpace):
+                if elem.placement.storey not in storey_ids:
                     raise ValueError(
-                        f"Element '{elem.tag}' framing references unknown material '{elem.framing.material}'"
+                        f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
                     )
+                if elem.placement.boundary:
+                    for pt in elem.placement.boundary:
+                        gx_str, gy_str = pt
+                        # Extract base grid name before any '+' or '-'
+                        gx_name = gx_str.split('+')[0].split('-')[0].strip()
+                        gy_name = gy_str.split('+')[0].split('-')[0].strip()
+                        if gx_name not in grid_x_ids:
+                            raise ValueError(
+                                f"Element '{elem.tag}' boundary references unknown X grid '{gx_name}'"
+                            )
+                        if gy_name not in grid_y_ids:
+                            raise ValueError(
+                                f"Element '{elem.tag}' boundary references unknown Y grid '{gy_name}'"
+                            )
 
             elif isinstance(elem, IfcCurtainWall):
                 if elem.placement.storey not in storey_ids:
