@@ -624,6 +624,7 @@ class ResolvedStairFlight(BaseModel):
     steps: List[ResolvedStairStep] = []
     element: Optional[IfcStairFlight] = None
     layer: str = "architecture/stairs/flights"
+    direction_vector_3d: Tuple[float, float, float] = (1.0, 0.0, 0.0)
 
 
 class ResolvedRamp(BaseModel):
@@ -2840,6 +2841,11 @@ class SpatialResolver:
             p_start = (base_x, base_y, z_bottom)
             p_end = (base_x + run_length, base_y, z_top)
 
+        dx = p_end[0] - p_start[0]
+        dy = p_end[1] - p_start[1]
+        dz = p_end[2] - p_start[2]
+        dir_3d = (dx / slope_length, dy / slope_length, dz / slope_length) if slope_length > 0 else (1.0, 0.0, 0.0)
+
         f_steps: List[ResolvedStairStep] = []
         for i in range(n_risers):
             if orient == "+Y":
@@ -2881,6 +2887,7 @@ class SpatialResolver:
             steps=f_steps,
             element=flight,
             layer=derive_default_layer(flight),
+            direction_vector_3d=dir_3d,
         )
 
     def resolve_ramp(self, ramp: IfcRamp) -> ResolvedRamp:
@@ -3021,7 +3028,8 @@ class SpatialResolver:
         to_st = self.get_storey(stair.placement.to_storey)
 
         z_bottom = from_st.elevation + stair.placement.offset_z
-        z_top = to_st.elevation
+        to_off_z = getattr(stair.placement, "to_offset_z", 0.0) or 0.0
+        z_top = to_st.elevation + to_off_z
         total_height = z_top - z_bottom
 
         gx, gy = self.get_grid_xy(stair.placement.grid_anchor)
@@ -3029,11 +3037,11 @@ class SpatialResolver:
         base_y = gy + stair.placement.offset_y
 
         w = stair.width
-        waist_t = stair.waist_thickness
+        waist_t = stair.waist_thickness or 0.15
 
         # Steps config
-        riser = stair.steps.riser if stair.steps else 0.1875
-        tread = stair.steps.tread if stair.steps else 0.25
+        riser = stair.riser_height or (stair.steps.riser if stair.steps else 0.1875)
+        tread = stair.tread_depth or (stair.steps.tread if stair.steps else 0.25)
 
         flights: List[ResolvedStairFlight] = []
         all_steps: List[ResolvedStairStep] = []
@@ -3045,32 +3053,39 @@ class SpatialResolver:
 
         if stair.stair_type == "DOG_LEG":
             # Dog-leg U-shape stair with mid-landing
-            landing_elev = (
-                stair.landing.elevation
-                if stair.landing
-                else total_height / 2.0
-            )
-            landing_depth = stair.landing.depth if stair.landing else 1.00
-            landing_t = stair.landing.thickness if stair.landing else 0.12
+            n_total_risers = max(2, int(round(total_height / riser)))
+            if stair.landing and stair.landing.elevation is not None:
+                landing_elev = stair.landing.elevation
+                rise_1 = landing_elev
+                rise_2 = total_height - landing_elev
+                n_risers_1 = max(1, int(round(rise_1 / riser)))
+                n_risers_2 = max(1, int(round(rise_2 / riser)))
+                actual_riser_1 = rise_1 / n_risers_1
+                actual_riser_2 = rise_2 / n_risers_2
+            else:
+                n_risers_1 = math.ceil(n_total_risers / 2.0)
+                n_risers_2 = n_total_risers - n_risers_1
+                actual_riser = total_height / n_total_risers
+                rise_1 = actual_riser * n_risers_1
+                rise_2 = total_height - rise_1
+                actual_riser_1 = actual_riser
+                actual_riser_2 = actual_riser
+                landing_elev = rise_1
+
+            landing_depth = stair.landing_depth or (stair.landing.depth if stair.landing else 1.00)
+            landing_t = stair.landing.thickness if (stair.landing and stair.landing.thickness) else waist_t
 
             z_mid = z_bottom + landing_elev
-            rise_1 = landing_elev
-            rise_2 = total_height - landing_elev
 
-            n_risers_1 = max(1, int(round(rise_1 / riser)))
-            n_risers_2 = max(1, int(round(rise_2 / riser)))
-            run_1 = (n_risers_1 - 1) * tread
-            run_2 = (n_risers_2 - 1) * tread
-
-            actual_riser_1 = rise_1 / n_risers_1
-            actual_riser_2 = rise_2 / n_risers_2
+            run_1 = (n_risers_1 - 1) * tread if n_risers_1 > 1 else tread
+            run_2 = (n_risers_2 - 1) * tread if n_risers_2 > 1 else tread
 
             slope_1 = math.hypot(run_1, rise_1)
             slope_2 = math.hypot(run_2, rise_2)
 
+            orient = stair.placement.orientation
             # Flight 1: Bottom to Landing
-            # Orientation determines flight vector (+Y: runs in +Y direction)
-            if stair.placement.orientation == "+Y":
+            if orient == "+Y":
                 p1_start = (base_x, base_y, z_bottom)
                 p1_end = (base_x, base_y + run_1, z_mid)
                 p2_start = (base_x + w, base_y + run_1, z_mid)
@@ -3116,34 +3131,135 @@ class SpatialResolver:
                     f2_steps.append(step)
                     all_steps.append(step)
 
-                # Railing path (Inner side: along inner edge between flights)
+                # Railing path
                 rh = stair.railing.height if stair.railing else 0.90
-                # F1 inner handrail: (base_x + w, y, z + rh)
                 railing_segments.append((
                     (base_x + w, base_y, z_bottom + rh),
                     (base_x + w, base_y + run_1, z_mid + rh),
                 ))
-                # Landing handrail across inner void: (base_x + w, base_y + run_1, z_mid + rh)
-                railing_segments.append((
-                    (base_x + w, base_y + run_1, z_mid + rh),
-                    (base_x + w, base_y + run_1, z_mid + rh),
-                ))
-                # F2 inner handrail:
                 railing_segments.append((
                     (base_x + w, base_y + run_1, z_mid + rh),
                     (base_x + w, base_y + run_1 - run_2, z_top + rh),
                 ))
 
-            else:
+            elif orient == "-Y":
+                p1_start = (base_x, base_y, z_bottom)
+                p1_end = (base_x, base_y - run_1, z_mid)
+                p2_start = (base_x + w, base_y - run_1, z_mid)
+                p2_end = (base_x + w, base_y - run_1 + run_2, z_top)
+                landing_poly = [
+                    (base_x, base_y - run_1, z_mid),
+                    (base_x + 2 * w, base_y - run_1, z_mid),
+                    (base_x + 2 * w, base_y - run_1 - landing_depth, z_mid),
+                    (base_x, base_y - run_1 - landing_depth, z_mid),
+                ]
+
+                f1_steps = []
+                for i in range(n_risers_1):
+                    scx = base_x + w / 2.0
+                    scy = base_y - (i * tread + tread / 2.0)
+                    scz = z_bottom + i * actual_riser_1 + actual_riser_1 / 2.0
+                    step = ResolvedStairStep(
+                        step_index=i + 1,
+                        flight_tag=f"{stair.tag}-F1",
+                        position=(scx, scy, scz),
+                        width=w,
+                        tread=tread,
+                        riser=actual_riser_1,
+                    )
+                    f1_steps.append(step)
+                    all_steps.append(step)
+
+                f2_steps = []
+                for j in range(n_risers_2):
+                    scx = (base_x + w) + w / 2.0
+                    scy = (base_y - run_1) + j * tread + tread / 2.0
+                    scz = z_mid + j * actual_riser_2 + actual_riser_2 / 2.0
+                    step = ResolvedStairStep(
+                        step_index=n_risers_1 + j + 1,
+                        flight_tag=f"{stair.tag}-F2",
+                        position=(scx, scy, scz),
+                        width=w,
+                        tread=tread,
+                        riser=actual_riser_2,
+                    )
+                    f2_steps.append(step)
+                    all_steps.append(step)
+
+                rh = stair.railing.height if stair.railing else 0.90
+                railing_segments.append((
+                    (base_x + w, base_y, z_bottom + rh),
+                    (base_x + w, base_y - run_1, z_mid + rh),
+                ))
+                railing_segments.append((
+                    (base_x + w, base_y - run_1, z_mid + rh),
+                    (base_x + w, base_y - run_1 + run_2, z_top + rh),
+                ))
+
+            elif orient == "-X":
+                p1_start = (base_x, base_y, z_bottom)
+                p1_end = (base_x - run_1, base_y, z_mid)
+                p2_start = (base_x - run_1, base_y + w, z_mid)
+                p2_end = (base_x - run_1 + run_2, base_y + w, z_top)
+                landing_poly = [
+                    (base_x - run_1, base_y, z_mid),
+                    (base_x - run_1 - landing_depth, base_y, z_mid),
+                    (base_x - run_1 - landing_depth, base_y + 2 * w, z_mid),
+                    (base_x - run_1, base_y + 2 * w, z_mid),
+                ]
+
+                f1_steps = []
+                for i in range(n_risers_1):
+                    scx = base_x - (i * tread + tread / 2.0)
+                    scy = base_y + w / 2.0
+                    scz = z_bottom + i * actual_riser_1 + actual_riser_1 / 2.0
+                    step = ResolvedStairStep(
+                        step_index=i + 1,
+                        flight_tag=f"{stair.tag}-F1",
+                        position=(scx, scy, scz),
+                        width=w,
+                        tread=tread,
+                        riser=actual_riser_1,
+                    )
+                    f1_steps.append(step)
+                    all_steps.append(step)
+
+                f2_steps = []
+                for j in range(n_risers_2):
+                    scx = (base_x - run_1) + j * tread + tread / 2.0
+                    scy = (base_y + w) + w / 2.0
+                    scz = z_mid + j * actual_riser_2 + actual_riser_2 / 2.0
+                    step = ResolvedStairStep(
+                        step_index=n_risers_1 + j + 1,
+                        flight_tag=f"{stair.tag}-F2",
+                        position=(scx, scy, scz),
+                        width=w,
+                        tread=tread,
+                        riser=actual_riser_2,
+                    )
+                    f2_steps.append(step)
+                    all_steps.append(step)
+
+                rh = stair.railing.height if stair.railing else 0.90
+                railing_segments.append((
+                    (base_x, base_y + w, z_bottom + rh),
+                    (base_x - run_1, base_y + w, z_mid + rh),
+                ))
+                railing_segments.append((
+                    (base_x - run_1, base_y + w, z_mid + rh),
+                    (base_x - run_1 + run_2, base_y + w, z_top + rh),
+                ))
+
+            else:  # "+X" default
                 p1_start = (base_x, base_y, z_bottom)
                 p1_end = (base_x + run_1, base_y, z_mid)
                 p2_start = (base_x + run_1, base_y + w, z_mid)
                 p2_end = (base_x + run_1 - run_2, base_y + w, z_top)
                 landing_poly = [
                     (base_x + run_1, base_y, z_mid),
-                    (base_x + run_1, base_y + 2 * w, z_mid),
-                    (base_x + run_1 + landing_depth, base_y + 2 * w, z_mid),
                     (base_x + run_1 + landing_depth, base_y, z_mid),
+                    (base_x + run_1 + landing_depth, base_y + 2 * w, z_mid),
+                    (base_x + run_1, base_y + 2 * w, z_mid),
                 ]
 
                 f1_steps = []

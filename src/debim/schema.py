@@ -1042,7 +1042,7 @@ class IfcSpace(BaseModel):
     layer: Optional[str] = "architecture/spaces"
 
 
-StairType = Literal["STRAIGHT", "DOG_LEG", "L_SHAPE", "SPIRAL", "LADDER"]
+StairType = Literal["DOG_LEG", "STRAIGHT", "L_SHAPE", "SPIRAL", "LADDER"]
 
 
 # Stair placement & element
@@ -1071,7 +1071,7 @@ class LandingEdgeBeamConfig(BaseModel):
 
 
 class StairLanding(BaseModel):
-    elevation: float  # Absolute height above from_storey elevation (m)
+    elevation: Optional[float] = None  # Absolute height above from_storey elevation (m)
     depth: float = 1.00  # Landing depth (m)
     thickness: float = 0.12  # Landing slab thickness (m)
     material: Optional[str] = None
@@ -1156,6 +1156,9 @@ class IfcStair(BaseModel):
     stair_type: StairType = "DOG_LEG"
     width: float = 1.00  # Clear flight width (m)
     waist_thickness: float = 0.12  # Structural waist slab thickness (m)
+    landing_depth: float = 1.00  # Landing depth (m)
+    riser_height: Optional[float] = 0.1875  # Target riser height (m)
+    tread_depth: float = 0.25  # Tread depth (m)
     placement: StairPlacement
     landing: Optional[StairLanding] = None
     steps: Optional[StairStepConfig] = None
@@ -1169,6 +1172,35 @@ class IfcStair(BaseModel):
     central_column: Optional[bool] = False  # มีเสากลางหรือไม่
     central_column_radius: Optional[float] = None  # รัศมีเสากลาง (m)
     layer: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def sync_stair_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "landing_depth" in data or "waist_thickness" in data:
+                if "landing" not in data or data["landing"] is None:
+                    data["landing"] = {}
+            if "landing" in data and isinstance(data["landing"], dict):
+                if "depth" in data["landing"] and "landing_depth" not in data:
+                    data["landing_depth"] = data["landing"]["depth"]
+                elif "landing_depth" in data and "depth" not in data["landing"]:
+                    data["landing"]["depth"] = data["landing_depth"]
+                if "waist_thickness" in data and "thickness" not in data["landing"]:
+                    data["landing"]["thickness"] = data["waist_thickness"]
+
+            if "riser_height" in data or "tread_depth" in data:
+                if "steps" not in data or data["steps"] is None:
+                    data["steps"] = {}
+            if "steps" in data and isinstance(data["steps"], dict):
+                if "riser" in data["steps"] and "riser_height" not in data:
+                    data["riser_height"] = data["steps"]["riser"]
+                elif "riser_height" in data and "riser" not in data["steps"]:
+                    data["steps"]["riser"] = data["riser_height"]
+                if "tread" in data["steps"] and "tread_depth" not in data:
+                    data["tread_depth"] = data["steps"]["tread"]
+                elif "tread_depth" in data and "tread" not in data["steps"]:
+                    data["steps"]["tread"] = data["tread_depth"]
+        return data
 
 
 class IfcStairFlight(BaseModel):

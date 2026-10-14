@@ -9170,8 +9170,8 @@
         "stair_type": {
           "default": "DOG_LEG",
           "enum": [
-            "STRAIGHT",
             "DOG_LEG",
+            "STRAIGHT",
             "L_SHAPE",
             "SPIRAL",
             "LADDER"
@@ -9187,6 +9187,28 @@
         "waist_thickness": {
           "default": 0.12,
           "title": "Waist Thickness",
+          "type": "number"
+        },
+        "landing_depth": {
+          "default": 1.0,
+          "title": "Landing Depth",
+          "type": "number"
+        },
+        "riser_height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.1875,
+          "title": "Riser Height"
+        },
+        "tread_depth": {
+          "default": 0.25,
+          "title": "Tread Depth",
           "type": "number"
         },
         "placement": {
@@ -13560,8 +13582,16 @@
     "StairLanding": {
       "properties": {
         "elevation": {
-          "title": "Elevation",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Elevation"
         },
         "depth": {
           "default": 1.0,
@@ -13597,9 +13627,6 @@
           "default": null
         }
       },
-      "required": [
-        "elevation"
-      ],
       "title": "StairLanding",
       "type": "object"
     },
