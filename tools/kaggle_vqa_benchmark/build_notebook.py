@@ -120,7 +120,12 @@ print(f"Generated Kaggle VQA Dataset: {len(all_kaggle_questions)} questions save
 cells.append(nbf.v4.new_code_cell("""# 4. Evaluate Cognitive Benchmark via Gemini 3.8 Live Extended Thinking
 import os
 from kaggle_secrets import UserSecretsClient
-from tools.benchmark_vqa_gemini import run_vqa_benchmark
+from tools.benchmark_vqa_gemini import run_vqa_benchmark, generate_vqa_dataset
+
+if not all_kaggle_questions:
+    print("No valid IFC questions extracted. Generating procedural fallback dataset for benchmark evaluation...")
+    ds_dict = generate_vqa_dataset(target_count=100, output_dataset_path=kaggle_dataset_path, output_image_dir=out_img_dir)
+    print(f"Fallback dataset generated with {ds_dict['question_count']} questions.")
 
 api_key = None
 try:
@@ -155,13 +160,26 @@ print(f"Benchmark finished! Overall Accuracy: {report.overall_accuracy * 100:.2f
 cells.append(nbf.v4.new_code_cell("""# 5. Visual Accuracy Breakdown & Category Analysis
 from IPython.display import display, Markdown
 
-with open(out_dir / "kaggle_vqa_report.md", "r", encoding="utf-8") as f:
-    md_content = f.read()
-
-display(Markdown(md_content))
+report_md_file = out_dir / "kaggle_vqa_report.md"
+if report_md_file.exists():
+    md_content = report_md_file.read_text(encoding="utf-8")
+    display(Markdown(md_content))
+else:
+    print("Report file not generated.")
 """))
 
 nb.cells = cells
+nb.metadata = {
+    "kernelspec": {
+        "display_name": "Python 3",
+        "language": "python",
+        "name": "python3"
+    },
+    "language_info": {
+        "name": "python",
+        "version": "3.11.9"
+    }
+}
 with open("tools/kaggle_vqa_benchmark/debim_2d_blueprint_vqa_benchmark.ipynb", "w", encoding="utf-8") as f:
     nbf.write(nb, f)
 

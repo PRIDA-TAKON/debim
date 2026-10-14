@@ -4,7 +4,7 @@
   "code_file": "debim_2d_blueprint_vqa_benchmark.ipynb",
   "language": "python",
   "kernel_type": "notebook",
-  "is_private": "false",
+  "is_private": false,
   "enable_gpu": "false",
   "enable_tpu": "false",
   "enable_internet": "true",
