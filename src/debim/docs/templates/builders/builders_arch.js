@@ -612,6 +612,109 @@ function buildCovering(sample3d, options) {
     return group;
 }
 
+function buildParametricComponentProxy(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.80;
+    const d = sample3d.depth || 0.80;
+    const h = sample3d.height || 1.00;
+
+    const proxyMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.5
+    });
+    const pedestalMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        wireframe: wireframeMode,
+        roughness: 0.5,
+        metalness: 0.6
+    });
+
+    // Chamfered mounting pedestal base
+    const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(w * 1.10, h * 0.15, d * 1.10), pedestalMat);
+    baseMesh.position.set(0, -h / 2.0 + h * 0.075, 0);
+    group.add(baseMesh);
+
+    // Main engineering component box body
+    const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.70, d), proxyMat);
+    bodyMesh.position.set(0, -h / 2.0 + h * 0.15 + (h * 0.35), 0);
+    group.add(bodyMesh);
+
+    // Alignment Datums on four corners
+    const datumMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, wireframe: wireframeMode });
+    [-w * 0.42, w * 0.42].forEach(dx => {
+        [-d * 0.42, d * 0.42].forEach(dz => {
+            const datum = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.04, 12), datumMat);
+            datum.position.set(dx, -h / 2.0 + h * 0.15, dz);
+            group.add(datum);
+        });
+    });
+
+    // Center-of-gravity trihedron marker (R=X, G=Y, B=Z axes)
+    const cogY = h * 0.10;
+    const axisMatX = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const axisMatY = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+    const axisMatZ = new THREE.MeshBasicMaterial({ color: 0x3b82f6 });
+
+    const axisX = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, w * 0.40, 12), axisMatX);
+    axisX.rotation.z = -Math.PI / 2.0;
+    axisX.position.set(w * 0.20, cogY, 0);
+    group.add(axisX);
+
+    const axisY = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, h * 0.40, 12), axisMatY);
+    axisY.position.set(0, cogY + h * 0.20, 0);
+    group.add(axisY);
+
+    const axisZ = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, d * 0.40, 12), axisMatZ);
+    axisZ.rotation.x = Math.PI / 2.0;
+    axisZ.position.set(0, cogY, d * 0.20);
+    group.add(axisZ);
+
+    const cogSphere = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 16), datumMat);
+    cogSphere.position.set(0, cogY, 0);
+    group.add(cogSphere);
+
+    return group;
+}
+
+function buildVirtualBoundaryZone(sample3d, options) {
+    const { col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 2.00;
+    const d = sample3d.depth || 2.00;
+    const h = sample3d.height || 2.50;
+
+    const zoneMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        transparent: true,
+        opacity: 0.20,
+        roughness: 0.1,
+        metalness: 0.1,
+        depthWrite: false
+    });
+
+    const frameMat = new THREE.LineDashedMaterial({
+        color: 0x0284c7,
+        dashSize: 0.10,
+        gapSize: 0.05,
+        linewidth: 2
+    });
+
+    // Semi-transparent spatial clearance bounding volume
+    const zoneMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), zoneMat);
+    group.add(zoneMesh);
+
+    // Dashed perimeter edge wireframe frames
+    const bboxEdges = new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d));
+    const lineSegments = new THREE.LineSegments(bboxEdges, frameMat);
+    lineSegments.computeLineDistances();
+    group.add(lineSegments);
+
+    return group;
+}
+
 function buildChimney(sample3d, options) {
     const { wireframeMode, col } = options;
     const group = new THREE.Group();

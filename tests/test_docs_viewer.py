@@ -274,6 +274,19 @@ def test_procedural_3d_shapes_payloads():
         assert by_class["IfcDistributionControlElement"]["shape"] == "thermostat_controller"
     assert by_class["IfcElectricTimeControl"]["shape"] == "timer_relay"
 
+    # Abstract, fitting, terminal, connection, proxy & assembly additions
+    assert by_class["IfcFlowFitting"]["shape"] == "pipe_fitting_tee"
+    assert by_class["IfcFlowSegment"]["shape"] == "insulated_flow_segment"
+    assert by_class["IfcFlowTerminal"]["shape"] == "floor_drain_terminal"
+    assert by_class["IfcMotorConnection"]["shape"] == "flexible_shaft_coupling"
+    assert by_class["IfcElementAssembly"]["shape"] == "truss_assembly"
+    assert by_class["IfcCivilElement"]["shape"] == "civil_culvert"
+    assert by_class["IfcBuildingElementProxy"]["shape"] == "parametric_component_proxy"
+    assert by_class["IfcBuildingElementPart"]["shape"] == "parametric_component_proxy"
+    assert by_class["IfcDistributionElement"]["shape"] == "parametric_component_proxy"
+    assert by_class["IfcDistributionFlowElement"]["shape"] == "parametric_component_proxy"
+    assert by_class["IfcVirtualElement"]["shape"] == "virtual_boundary_zone"
+
 
 def test_procedural_3d_geometry_handlers_in_html():
     """Test that generated HTML contains Three.js composite geometry handlers."""
@@ -341,3 +354,11 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "network_router_rack" in html_str
     assert "thermostat_controller" in html_str
     assert "timer_relay" in html_str
+    assert "pipe_fitting_tee" in html_str
+    assert "insulated_flow_segment" in html_str
+    assert "floor_drain_terminal" in html_str
+    assert "flexible_shaft_coupling" in html_str
+    assert "truss_assembly" in html_str
+    assert "civil_culvert" in html_str
+    assert "parametric_component_proxy" in html_str
+    assert "virtual_boundary_zone" in html_str

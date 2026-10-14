@@ -232,6 +232,82 @@ function buildMarineFacility(sample3d, options) {
     return group;
 }
 
+function buildCivilCulvert(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 2.00;
+    const d = sample3d.depth || 3.00;
+    const h = sample3d.height || 1.50;
+
+    const concreteMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.7,
+        metalness: 0.1
+    });
+    const jointMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        wireframe: wireframeMode,
+        roughness: 0.8,
+        metalness: 0.2
+    });
+
+    const wallThick = 0.22;
+
+    // Extruded Hollow Box Culvert Conduit profile (U-shaped outer / inner void)
+    const shape = new THREE.Shape();
+    shape.moveTo(-w / 2.0, -h / 2.0);
+    shape.lineTo(w / 2.0, -h / 2.0);
+    shape.lineTo(w / 2.0, h / 2.0);
+    shape.lineTo(-w / 2.0, h / 2.0);
+    shape.closePath();
+
+    const holePath = new THREE.Path();
+    holePath.moveTo(-w / 2.0 + wallThick, -h / 2.0 + wallThick);
+    holePath.lineTo(w / 2.0 - wallThick, -h / 2.0 + wallThick);
+    holePath.lineTo(w / 2.0 - wallThick, h / 2.0 - wallThick);
+    holePath.lineTo(-w / 2.0 + wallThick, h / 2.0 - wallThick);
+    holePath.closePath();
+    shape.holes.push(holePath);
+
+    const conduitGeom = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false });
+    conduitGeom.center();
+    const conduitMesh = new THREE.Mesh(conduitGeom, concreteMat);
+    group.add(conduitMesh);
+
+    // Bell-and-spigot joint collar gasket ring at segment midpoint
+    const jointShape = new THREE.Shape();
+    const jMargin = 0.05;
+    jointShape.moveTo(-w / 2.0 - jMargin, -h / 2.0 - jMargin);
+    jointShape.lineTo(w / 2.0 + jMargin, -h / 2.0 - jMargin);
+    jointShape.lineTo(w / 2.0 + jMargin, h / 2.0 + jMargin);
+    jointShape.lineTo(-w / 2.0 - jMargin, h / 2.0 + jMargin);
+    jointShape.closePath();
+
+    const jointHole = new THREE.Path();
+    jointHole.moveTo(-w / 2.0 + 0.01, -h / 2.0 + 0.01);
+    jointHole.lineTo(w / 2.0 - 0.01, -h / 2.0 + 0.01);
+    jointHole.lineTo(w / 2.0 - 0.01, h / 2.0 - 0.01);
+    jointHole.lineTo(-w / 2.0 + 0.01, h / 2.0 - 0.01);
+    jointHole.closePath();
+    jointShape.holes.push(jointHole);
+
+    const jointGeom = new THREE.ExtrudeGeometry(jointShape, { depth: 0.15, bevelEnabled: false });
+    jointGeom.center();
+    const jointMesh = new THREE.Mesh(jointGeom, jointMat);
+    jointMesh.position.set(0, 0, 0);
+    group.add(jointMesh);
+
+    // Flared wingwall headwall retains soil at intake inlet
+    const wingwallW = w * 1.5;
+    const wingwallGeom = new THREE.BoxGeometry(wingwallW, h * 1.2, wallThick);
+    const wingwallMesh = new THREE.Mesh(wingwallGeom, concreteMat);
+    wingwallMesh.position.set(0, 0, -d / 2.0 - wallThick / 2.0);
+    group.add(wingwallMesh);
+
+    return group;
+}
+
 function buildEarthworksEmbankment(sample3d, options) {
     const { wireframeMode, col } = options;
     const group = new THREE.Group();

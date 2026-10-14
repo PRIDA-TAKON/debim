@@ -191,7 +191,9 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
     """Generate sample_3d payload with realistic geometric dimensions and color scheme."""
     c = class_name.lower()
 
-    if "column" in c:
+    if "cooledbeam" in c:
+        return {"shape": "coil_heat_exchanger", "width": 1.50, "depth": 0.60, "height": 0.30, "color": "#0284c7"}
+    elif "column" in c:
         return {"shape": "box", "width": 0.30, "depth": 0.30, "height": 3.50, "color": "#64748B", "is_reinforced_concrete": True, "rebar_type": "column"}
     elif "beam" in c:
         return {"shape": "box", "width": 4.00, "depth": 0.20, "height": 0.40, "color": "#475569", "is_reinforced_concrete": True, "rebar_type": "beam"}
@@ -317,6 +319,26 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "humidifier_unit", "width": 0.80, "depth": 0.50, "height": 0.60, "color": "#0284c7"}
     elif "electricflowstoragedevice" in c or "flowstoragedevice" in c:
         return {"shape": "battery_storage", "width": 1.00, "depth": 0.80, "height": 2.00, "color": "#1e293b"}
+    elif "flowfitting" in c:
+        return {"shape": "pipe_fitting_tee", "radius": 0.08, "length": 0.35, "height": 0.25, "color": "#d97706"}
+    elif "flowsegment" in c:
+        return {"shape": "insulated_flow_segment", "radius": 0.08, "length": 2.0, "height": 0.20, "color": "#0284c7"}
+    elif "flowterminal" in c:
+        return {"shape": "floor_drain_terminal", "width": 0.30, "depth": 0.30, "height": 0.25, "color": "#d97706"}
+    elif "motorconnection" in c:
+        return {"shape": "flexible_shaft_coupling", "width": 0.25, "depth": 0.25, "height": 0.30, "color": "#334155"}
+    elif "elementassembly" in c:
+        return {"shape": "truss_assembly", "width": 4.0, "depth": 0.20, "height": 1.20, "color": "#475569"}
+    elif "civilelement" in c:
+        return {"shape": "civil_culvert", "width": 2.0, "depth": 3.0, "height": 1.50, "color": "#64748b"}
+    elif "virtualelement" in c:
+        return {"shape": "virtual_boundary_zone", "width": 2.0, "depth": 2.0, "height": 2.50, "color": "#38bdf8"}
+    elif "proxy" in c or "elementpart" in c or "distributionelement" in c or "distributionflowelement" in c or "chamberelement" in c or "treatmentdevice" in c or "medicaldevice" in c:
+        return {"shape": "parametric_component_proxy", "width": 0.80, "depth": 0.80, "height": 1.00, "color": "#64748b"}
+    elif "tubebundle" in c:
+        return {"shape": "coil_heat_exchanger", "width": 1.20, "depth": 0.40, "height": 0.80, "color": "#0284c7"}
+    elif "unitaryequipment" in c:
+        return {"shape": "fan_assembly", "width": 1.2, "depth": 1.0, "height": 1.1, "color": "#0284c7"}
     elif "bridge" in c or "bearing" in c:
         return {"shape": "bridge_structure", "width": 8.0, "depth": 4.0, "height": 3.50, "color": "#64748b"}
     elif "railway" in c or "trackelement" in c:
