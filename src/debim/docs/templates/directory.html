@@ -645,6 +645,16 @@ currentMesh = buildStructuralFastener(sample3d, options);
                 currentMesh = buildGreaseOilInterceptor(sample3d, options);
             } else if (sample3d.shape === 'humidifier_unit') {
                 currentMesh = buildHumidifierUnit(sample3d, options);
+            } else if (sample3d.shape === 'distribution_chamber') {
+                currentMesh = buildDistributionChamber(sample3d, options);
+            } else if (sample3d.shape === 'tube_bundle') {
+                currentMesh = buildTubeBundle(sample3d, options);
+            } else if (sample3d.shape === 'water_treatment_device') {
+                currentMesh = buildWaterTreatmentDevice(sample3d, options);
+            } else if (sample3d.shape === 'rooftop_packaged_unit') {
+                currentMesh = buildRooftopPackagedUnit(sample3d, options);
+            } else if (sample3d.shape === 'medical_bed_console') {
+                currentMesh = buildMedicalBedConsole(sample3d, options);
             } else if (sample3d.shape === 'audiovisual_display') {
                 currentMesh = buildAudiovisualDisplay(sample3d, options);
             } else if (sample3d.shape === 'network_router_rack') {

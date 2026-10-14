@@ -2325,3 +2325,435 @@ function buildHumidifierUnit(sample3d, options) {
 
     return group;
 }
+
+function buildDistributionChamber(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 1.20;
+    const d = sample3d.depth || 1.20;
+    const h = sample3d.height || 1.50;
+
+    const chamberMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.7,
+        metalness: 0.1
+    });
+    const ironCoverMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        wireframe: wireframeMode,
+        roughness: 0.5,
+        metalness: 0.8
+    });
+    const ironRungMat = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const knockoutMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        wireframe: wireframeMode,
+        roughness: 0.6,
+        metalness: 0.3
+    });
+
+    // Precast concrete chamber outer walls
+    const chamberMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), chamberMat);
+    group.add(chamberMesh);
+
+    // Top slab collar / rim
+    const rimMesh = new THREE.Mesh(new THREE.BoxGeometry(w * 1.05, 0.08, d * 1.05), chamberMat);
+    rimMesh.position.set(0, h / 2.0 + 0.04, 0);
+    group.add(rimMesh);
+
+    // Circular heavy-duty cast iron manhole cover plate on top
+    const coverRadius = Math.min(w, d) * 0.32;
+    const coverMesh = new THREE.Mesh(new THREE.CylinderGeometry(coverRadius, coverRadius, 0.03, 24), ironCoverMat);
+    coverMesh.position.set(0, h / 2.0 + 0.095, 0);
+    group.add(coverMesh);
+
+    // Concentric ring detail on manhole cover
+    const ringMesh = new THREE.Mesh(new THREE.TorusGeometry(coverRadius * 0.70, 0.01, 8, 24), ironRungMat);
+    ringMesh.rotation.x = Math.PI / 2.0;
+    ringMesh.position.set(0, h / 2.0 + 0.11, 0);
+    group.add(ringMesh);
+
+    // Internal stepping irons (ladder rungs) along rear inner wall
+    const nRungs = 4;
+    for (let i = 0; i < nRungs; i++) {
+        const ry = -h * 0.35 + i * (h * 0.22);
+        const rung = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.012, 8, 16, Math.PI), ironRungMat);
+        rung.rotation.x = Math.PI / 2.0;
+        rung.position.set(0, ry, d / 2.0 - 0.06);
+        group.add(rung);
+    }
+
+    // Circular conduit knockouts on chamber side walls
+    const knockoutOffsets = [
+        { pos: [-w / 2.0 - 0.005, -h * 0.15, 0], rot: [0, 0, Math.PI / 2.0] },
+        { pos: [w / 2.0 + 0.005, -h * 0.15, 0], rot: [0, 0, Math.PI / 2.0] },
+        { pos: [0, -h * 0.15, -d / 2.0 - 0.005], rot: [Math.PI / 2.0, 0, 0] },
+        { pos: [0, -h * 0.15, d / 2.0 + 0.005], rot: [Math.PI / 2.0, 0, 0] }
+    ];
+    knockoutOffsets.forEach(ko => {
+        const koMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.02, 20), knockoutMat);
+        koMesh.position.set(...ko.pos);
+        koMesh.rotation.set(...ko.rot);
+        group.add(koMesh);
+    });
+
+    return group;
+}
+
+function buildTubeBundle(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 1.50;
+    const d = sample3d.depth || 0.60;
+    const h = sample3d.height || 0.60;
+    const radius = Math.min(d, h) * 0.45;
+
+    const sheetMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.7
+    });
+    const baffleMat = new THREE.MeshStandardMaterial({
+        color: 0x475569,
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.6
+    });
+    const tubeMat = new THREE.MeshStandardMaterial({
+        color: 0xb45309,
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.85
+    });
+
+    // Thick circular tube sheet plate at front end
+    const tubeSheetGeom = new THREE.CylinderGeometry(radius, radius, 0.06, 32);
+    tubeSheetGeom.rotateZ(Math.PI / 2.0);
+    const tubeSheet = new THREE.Mesh(tubeSheetGeom, sheetMat);
+    tubeSheet.position.set(-w / 2.0 + 0.03, 0, 0);
+    group.add(tubeSheet);
+
+    // Outer bolt flange on tube sheet
+    const flange = new THREE.Mesh(new THREE.TorusGeometry(radius * 1.05, 0.015, 8, 32), sheetMat);
+    flange.rotation.y = Math.PI / 2.0;
+    flange.position.set(-w / 2.0 + 0.03, 0, 0);
+    group.add(flange);
+
+    // Baffle discs along length of tube bundle
+    const nBaffles = 5;
+    for (let i = 0; i < nBaffles; i++) {
+        const bx = -w / 2.0 + 0.25 + i * ((w - 0.50) / (nBaffles - 1));
+        const baffleGeom = new THREE.CylinderGeometry(radius * 0.95, radius * 0.95, 0.012, 24);
+        baffleGeom.rotateZ(Math.PI / 2.0);
+        const baffle = new THREE.Mesh(baffleGeom, baffleMat);
+        baffle.position.set(bx, i % 2 === 0 ? 0.02 : -0.02, 0);
+        group.add(baffle);
+    }
+
+    // Parallel U-tube array
+    const tubeGrid = [
+        { y: -radius * 0.50, z: -radius * 0.30 },
+        { y: -radius * 0.50, z: radius * 0.30 },
+        { y: -radius * 0.20, z: -radius * 0.55 },
+        { y: -radius * 0.20, z: radius * 0.55 },
+        { y: radius * 0.20, z: -radius * 0.55 },
+        { y: radius * 0.20, z: radius * 0.55 },
+        { y: radius * 0.50, z: -radius * 0.30 },
+        { y: radius * 0.50, z: radius * 0.30 }
+    ];
+
+    tubeGrid.forEach(tg => {
+        const tubeGeom = new THREE.CylinderGeometry(0.015, 0.015, w - 0.12, 12);
+        tubeGeom.rotateZ(Math.PI / 2.0);
+        const tube = new THREE.Mesh(tubeGeom, tubeMat);
+        tube.position.set(0.02, tg.y, tg.z);
+        group.add(tube);
+    });
+
+    // U-bends connecting top and bottom tube pairs at far end
+    [
+        { y1: -radius * 0.50, y2: radius * 0.50, z: -radius * 0.30 },
+        { y1: -radius * 0.50, y2: radius * 0.50, z: radius * 0.30 },
+        { y1: -radius * 0.20, y2: radius * 0.20, z: -radius * 0.55 },
+        { y1: -radius * 0.20, y2: radius * 0.20, z: radius * 0.55 }
+    ].forEach(ub => {
+        const span = Math.abs(ub.y2 - ub.y1);
+        const ubend = new THREE.Mesh(new THREE.TorusGeometry(span / 2.0, 0.015, 8, 16, Math.PI), tubeMat);
+        ubend.position.set(w / 2.0 - 0.04, (ub.y1 + ub.y2) / 2.0, ub.z);
+        ubend.rotation.y = Math.PI / 2.0;
+        group.add(ubend);
+    });
+
+    return group;
+}
+
+function buildWaterTreatmentDevice(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.80;
+    const d = sample3d.depth || 0.80;
+    const h = sample3d.height || 1.60;
+    const radius = Math.min(w, d) * 0.42;
+
+    const tankMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.4
+    });
+    const valveMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.6
+    });
+    const brassMat = new THREE.MeshStandardMaterial({
+        color: 0xd97706,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const glassMat = new THREE.MeshStandardMaterial({
+        color: 0xf8fafc,
+        wireframe: wireframeMode,
+        roughness: 0.1
+    });
+    const skirtMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        wireframe: wireframeMode,
+        roughness: 0.5,
+        metalness: 0.5
+    });
+
+    // Base mounting skirt
+    const skirtMesh = new THREE.Mesh(new THREE.CylinderGeometry(radius * 1.02, radius * 1.08, h * 0.12, 24), skirtMat);
+    skirtMesh.position.set(0, -h / 2.0 + h * 0.06, 0);
+    group.add(skirtMesh);
+
+    // Main cylindrical fiberglass pressure vessel
+    const cylinderHeight = h * 0.62;
+    const tankBody = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, cylinderHeight, 28), tankMat);
+    tankBody.position.set(0, -h / 2.0 + h * 0.12 + cylinderHeight / 2.0, 0);
+    group.add(tankBody);
+
+    // Top and bottom domed end caps
+    const topDome = new THREE.Mesh(new THREE.SphereGeometry(radius, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2), tankMat);
+    topDome.position.set(0, -h / 2.0 + h * 0.12 + cylinderHeight, 0);
+    group.add(topDome);
+
+    // Top multiport control valve head housing
+    const valveBase = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.35, radius * 0.40, h * 0.12, 20), valveMat);
+    valveBase.position.set(0, h / 2.0 - h * 0.10, 0);
+    group.add(valveBase);
+
+    // Multiport valve selector handle lever
+    const handleLever = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.50, 0.02, 0.04), valveMat);
+    handleLever.position.set(radius * 0.18, h / 2.0 - h * 0.03, 0);
+    group.add(handleLever);
+
+    // Top pressure gauge dial
+    const gaugeStem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.06, 12), brassMat);
+    gaugeStem.position.set(-radius * 0.20, h / 2.0 - h * 0.06, 0);
+    group.add(gaugeStem);
+
+    const gaugeDialGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.015, 20);
+    gaugeDialGeom.rotateX(Math.PI / 2.0);
+    const gaugeDial = new THREE.Mesh(gaugeDialGeom, glassMat);
+    gaugeDial.position.set(-radius * 0.20, h / 2.0 - h * 0.02, 0.02);
+    group.add(gaugeDial);
+
+    // Lower vessel drain port / valve assembly
+    const drainPort = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.10, 16), brassMat);
+    drainPort.rotation.z = Math.PI / 2.0;
+    drainPort.position.set(radius + 0.04, -h / 2.0 + h * 0.15, 0);
+    group.add(drainPort);
+
+    const drainFlange = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.015, 16), brassMat);
+    drainFlange.rotation.z = Math.PI / 2.0;
+    drainFlange.position.set(radius + 0.08, -h / 2.0 + h * 0.15, 0);
+    group.add(drainFlange);
+
+    return group;
+}
+
+function buildRooftopPackagedUnit(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 2.40;
+    const d = sample3d.depth || 1.60;
+    const h = sample3d.height || 1.20;
+
+    const casingMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.6
+    });
+    const baseRailMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const darkMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        wireframe: wireframeMode,
+        roughness: 0.5,
+        metalness: 0.5
+    });
+    const louverMat = new THREE.MeshStandardMaterial({
+        color: 0x475569,
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.7
+    });
+
+    // Structural curb base rails
+    const baseRail = new THREE.Mesh(new THREE.BoxGeometry(w * 1.02, 0.08, d * 1.02), baseRailMat);
+    baseRail.position.set(0, -h / 2.0 + 0.04, 0);
+    group.add(baseRail);
+
+    // Main insulated RTU cabinet casing
+    const cabinetMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.90, d), casingMat);
+    cabinetMesh.position.set(0, 0.04, 0);
+    group.add(cabinetMesh);
+
+    // Compressor compartment access doors on front panel
+    [-w * 0.25, 0, w * 0.25].forEach(xPos => {
+        const door = new THREE.Mesh(new THREE.BoxGeometry(w * 0.22, h * 0.65, 0.015), casingMat);
+        door.position.set(xPos, -h * 0.05, d / 2.0 + 0.008);
+        group.add(door);
+
+        // Latch door handle
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.08, 0.025), darkMat);
+        handle.position.set(xPos + w * 0.08, -h * 0.05, d / 2.0 + 0.02);
+        group.add(handle);
+    });
+
+    // Condenser fan section on top deck (2 dual outdoor fans)
+    [-w * 0.22, w * 0.22].forEach(fx => {
+        const fanCowling = new THREE.Mesh(new THREE.CylinderGeometry(d * 0.25, d * 0.28, h * 0.15, 24), casingMat);
+        fanCowling.position.set(fx, h / 2.0 + h * 0.075, 0);
+        group.add(fanCowling);
+
+        const fanHub = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 16), darkMat);
+        fanHub.position.set(fx, h / 2.0 + h * 0.15, 0);
+        group.add(fanHub);
+
+        const guardRing = new THREE.Mesh(new THREE.TorusGeometry(d * 0.24, 0.01, 8, 24), louverMat);
+        guardRing.rotation.x = Math.PI / 2.0;
+        guardRing.position.set(fx, h / 2.0 + h * 0.15, 0);
+        group.add(guardRing);
+    });
+
+    // Weatherproof hooded outdoor fresh air intake hood on rear/end
+    const hoodGeom = new THREE.BoxGeometry(w * 0.28, h * 0.45, d * 0.35);
+    const hoodMesh = new THREE.Mesh(hoodGeom, louverMat);
+    hoodMesh.position.set(-w / 2.0 - w * 0.14, 0, 0);
+    group.add(hoodMesh);
+
+    // Intake louvers
+    for (let l = -2; l <= 2; l++) {
+        const louver = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, d * 0.30), darkMat);
+        louver.position.set(-w / 2.0 - w * 0.26, l * (h * 0.08), 0);
+        group.add(louver);
+    }
+
+    return group;
+}
+
+function buildMedicalBedConsole(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 1.60;
+    const d = sample3d.depth || 0.20;
+    const h = sample3d.height || 0.40;
+
+    const casingMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.2
+    });
+    const aluminumMat = new THREE.MeshStandardMaterial({
+        color: 0xcbd5e1,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const o2Mat = new THREE.MeshStandardMaterial({
+        color: 0x16a34a,
+        wireframe: wireframeMode
+    });
+    const vacMat = new THREE.MeshStandardMaterial({
+        color: 0xeab308,
+        wireframe: wireframeMode
+    });
+    const airMat = new THREE.MeshStandardMaterial({
+        color: 0x0284c7,
+        wireframe: wireframeMode
+    });
+    const callMat = new THREE.MeshStandardMaterial({
+        color: 0xdc2626,
+        wireframe: wireframeMode
+    });
+    const lightMat = new THREE.MeshStandardMaterial({
+        color: 0xfef08a,
+        emissive: 0xfef08a,
+        emissiveIntensity: 0.5,
+        wireframe: wireframeMode
+    });
+
+    // Main wall-mounted horizontal bed head console trunking unit
+    const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), casingMat);
+    group.add(bodyMesh);
+
+    // Aluminum trim fascia bands along top and bottom
+    [-h / 2.0 + 0.015, h / 2.0 - 0.015].forEach(yPos => {
+        const trim = new THREE.Mesh(new THREE.BoxGeometry(w * 1.01, 0.03, d * 1.02), aluminumMat);
+        trim.position.set(0, yPos, 0);
+        group.add(trim);
+    });
+
+    // Integrated medical gas outlets (O2 [Green], Vacuum [Yellow], Air [Blue])
+    const gasOutlets = [
+        { x: -w * 0.28, mat: o2Mat },
+        { x: -w * 0.18, mat: vacMat },
+        { x: -w * 0.08, mat: airMat }
+    ];
+    gasOutlets.forEach(go => {
+        const outletPlate = new THREE.Mesh(new THREE.BoxGeometry(0.08, h * 0.45, 0.01), aluminumMat);
+        outletPlate.position.set(go.x, -h * 0.05, d / 2.0 + 0.005);
+        group.add(outletPlate);
+
+        const socketGeom = new THREE.CylinderGeometry(0.022, 0.022, 0.02, 16);
+        socketGeom.rotateX(Math.PI / 2.0);
+        const socket = new THREE.Mesh(socketGeom, go.mat);
+        socket.position.set(go.x, -h * 0.05, d / 2.0 + 0.015);
+        group.add(socket);
+    });
+
+    // Nurse call button station panel
+    const callPlate = new THREE.Mesh(new THREE.BoxGeometry(0.12, h * 0.45, 0.01), casingMat);
+    callPlate.position.set(w * 0.12, -h * 0.05, d / 2.0 + 0.005);
+    group.add(callPlate);
+
+    const callBtn = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.012, 16), callMat);
+    callBtn.rotation.x = Math.PI / 2.0;
+    callBtn.position.set(w * 0.12, -h * 0.05, d / 2.0 + 0.012);
+    group.add(callBtn);
+
+    // Examination luminaire light fixture diffuser on top face
+    const luminaire = new THREE.Mesh(new THREE.BoxGeometry(w * 0.70, 0.015, d * 0.60), lightMat);
+    luminaire.position.set(0, h / 2.0 + 0.008, 0);
+    group.add(luminaire);
+
+    return group;
+}
