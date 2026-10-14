@@ -1,0 +1,50 @@
+[
+  {
+    "match_keywords": ["modules", "module", "replicate", "array replication"],
+    "next_issue": {
+      "title": "feat(loader): implement AST preprocessor for module macro expansion and grid replication",
+      "body": "### Overview\nFollowing the merge of the schema models for `modules:` and `instances: replicate:`, implement the AST preprocessor in `src/debim/loader.py` that expands module instances into concrete elements prior to resolution and compilation.\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/loader.py`:**\n   - In `load_manifest()`, check if `manifest.modules` and `manifest.instances` are present.\n   - Expand each `replicate` block:\n     - Generate element clones for `count` instances.\n     - Remap local grid coordinates to global grid coordinates according to `grid_mapping` or linear step along `grid_x` / `grid_y`.\n     - Prefix element tags with `prefix_pattern` (e.g., `U{index}_{original_tag}`).\n     - If `party_wall_deduplication: true`, merge coincident party walls at the boundary of adjacent bays into single walls.\n   - Append expanded elements into `manifest.elements`.\n2. **Tests:**\n   - Create `tests/test_loader_modular.py` verifying that a 4-bay shophouse module expands to the expected number of columns, beams, slabs, and walls.\n\n---\n\n### Acceptance Criteria\n1. Module expansion produces valid `ProjectManifest` instances.\n2. Element count matches expected mathematical expansion.\n3. `pytest tests/test_loader_modular.py tests/test_schema.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["loader", "preprocessor", "macro", "expansion", "modular"],
+    "next_issue": {
+      "title": "feat(geometry): support native polygon voids and openings in IfcSlab and IfcWall",
+      "body": "### Overview\nSupport inner boundary void cutouts (double-volume atriums, vertical shafts, stair openings) in `IfcSlab` and wall openings in `IfcWall`.\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/schema.py`:**\n   - Ensure `SlabPlacement` supports `voids: List[List[Tuple[str, str]]]` and `boundary_offset: Dict[str, Any]`.\n2. **In `src/debim/resolver.py`:**\n   - Resolve void 2D coordinates and calculate net slab area: `net_area = outer_area - sum(void_areas)`.\n3. **In `src/debim/compiler.py`:**\n   - When voids are present, compile `IfcSlab` with `IfcArbitraryProfileDefWithVoids` in IFC4.\n4. **In `src/debim/viewer.py`:**\n   - Add void boundary paths to Three.js `THREE.Shape.holes` to render clean cutouts.\n5. **Tests:**\n   - Add `tests/test_slab_voids.py` verifying QTO net area and IFC export.\n\n---\n\n### Acceptance Criteria\n1. Slabs with inner voids compute correct net area in QTO.\n2. Three.js viewer renders cutouts without requiring CSG mesh subtraction.\n3. `pytest tests/test_slab_voids.py tests/test_compiler.py` passes.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["voids", "void", "cutout", "openings", "slab"],
+    "next_issue": {
+      "title": "feat(roof): implement parametric IfcRoof generator (GABLE_HIP) and pitch_deg member orientation",
+      "body": "### Overview\nEliminate manual 3D Euler trigonometry for pitched and hip roofs by implementing a parametric `IfcRoof` generator with vernacular Thai-Isan gable-hip (Manila) support, and support `pitch_deg` on discrete structural members.\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/schema.py`:**\n   - Add `RoofType = Literal[\"GABLE\", \"HIP\", \"GABLE_HIP\", \"SHED\", \"MANSARD\"]`.\n   - Add `RoofFramingConfig` (rafter_spacing, purlin_spacing, profiles) and `pitch_deg: float` to `IfcRoof`.\n   - Support optional `pitch_deg` on `IfcBeam` and `IfcMember`.\n2. **In `src/debim/resolver.py` & `src/debim/compiler.py`:**\n   - Calculate 3D hip lines, valley lines, ridge beam, and purlin planes from boundary polygon and `pitch_deg`.\n   - Auto-generate rafters and purlins if `framing` is specified.\n3. **Tests:**\n   - Create `tests/test_roof_parametric.py` verifying rafter and purlin counts and 3D bounding box.\n\n---\n\n### Acceptance Criteria\n1. An `IfcRoof` with `type: GABLE_HIP` and `pitch_deg: 32.5` compiles without manual Euler angle calculation.\n2. `pytest tests/test_roof_parametric.py` passes.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["roof", "gable_hip", "pitch_deg", "rafter", "purlin"],
+    "next_issue": {
+      "title": "feat(stair): implement parametric monolithic RC Dog-Leg stairs with landing",
+      "body": "### Overview\nImplement parametric reinforced concrete dog-leg (U-turn with landing) stairs for typical commercial and residential buildings.\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/schema.py`:**\n   - Support `stair_type: Literal[\"DOG_LEG\", \"STRAIGHT\", \"L_SHAPE\", \"SPIRAL\"]`.\n   - Add `waist_thickness: float`, `landing_depth: float`, `riser_height: Optional[float]`, `tread_depth: float` to `IfcStair`.\n2. **In `src/debim/resolver.py` & `src/debim/compiler.py`:**\n   - Compute number of risers: `round(storey_delta_h / target_riser)`.\n   - Generate lower flight, landing slab at intermediate elevation, and upper flight.\n   - Compute accurate solid concrete volume and contact formwork area.\n3. **In `src/debim/viewer.py`:**\n   - Render monolithic stepped flights and intermediate landing.\n4. **Tests:**\n   - Add `tests/test_stair_dogleg.py`.\n\n---\n\n### Acceptance Criteria\n1. Dog-leg stair connects `from_storey` to `to_storey` with landing at mid-height.\n2. QTO computes concrete volume including waist slab and treads.\n3. `pytest tests/test_stair_dogleg.py` passes.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["stair", "dog_leg", "dogleg", "landing", "waist"],
+    "next_issue": {
+      "title": "feat(qto): integrate Thai government CGD ว480 reinforcement density and formwork deduction rules",
+      "body": "### Overview\nImplement official Thai Comptroller General's Department (กรมบัญชีกลาง ว480) and Engineering Institute of Thailand (EIT / วสท.) rules for reinforcement steel estimation and formwork surface deductions.\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/qto.py`:**\n   - Add default reinforcement density lookup table (kg/m³ concrete):\n     - Footings: 110 kg/m³ (DB12-16: 95kg, RB9: 15kg)\n     - Columns: 160 kg/m³ (DB16-20: 135kg, RB6/9: 25kg)\n     - Beams: 130 kg/m³ (DB12-20: 110kg, RB6/9: 20kg)\n     - Slabs: 90 kg/m³ (or wiremesh 3.5 kg/m² for ground slabs)\n     - Stairs: 110 kg/m³\n   - Implement formwork contact deductions: subtract column-beam intersection face area and footing top contact.\n2. **In `src/debim/cost.py`:**\n   - Generate Thai standard BOQ sheets: ปร.4, ปร.4(พ), and ปร.5.\n   - Calculate Factor F according to official CGD table.\n3. **Tests:**\n   - Add `tests/test_qto_v480.py` verifying steel weight and formwork net area.\n\n---\n\n### Acceptance Criteria\n1. QTO calculates steel bar tonnage deterministically from concrete member dimensions.\n2. Formwork deductions correctly subtract intersecting faces.\n3. `pytest tests/test_qto_v480.py` passes.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["v480", "cg-v480", "reinforcement", "formwork", "boq"],
+    "next_issue": {
+      "title": "feat(cli): add debim validate and debim boq --rules cg-v480 commands",
+      "body": "### Overview\nAdd production-grade CLI commands `debim validate` (structural continuity and clash detection) and `debim boq --rules cg-v480`.\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/cli.py`:**\n   - Subcommand `debim validate`:\n     - Check Pydantic schema validation.\n     - Topological continuity check: identify floating columns, unsupported beams, or dangling cantilevers.\n     - Bounding-box AABB clash detection: flag intersections between MEP ducts/pipes and structural beams.\n   - Subcommand `debim boq`:\n     - Flag `--rules cg-v480` to apply Thai public works pricing.\n     - Flag `--province <name>` to select provincial price index.\n     - Flag `--export-excel <filename.xlsx>` or print ANSI formatted summary.\n2. **Tests:**\n   - Add `tests/test_cli_v060.py` testing both subcommands.\n\n---\n\n### Acceptance Criteria\n1. `debim validate <model.debim>` reports valid models or returns non-zero with diagnostic warnings.\n2. `debim boq --rules cg-v480 <model.debim>` outputs complete cost summary.\n3. `pytest tests/test_cli_v060.py` passes.",
+      "label": "jules"
+    }
+  }
+]
