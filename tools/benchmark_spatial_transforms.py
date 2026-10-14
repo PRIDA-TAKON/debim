@@ -21,8 +21,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 from debim.docs import export_class_directory
 
@@ -260,7 +263,7 @@ def run_spatial_transform_benchmark(
                 "snapshot": snapshot_path_rel or "",
             })
 
-            status_icon = "🟢" if overall_class_pass else "🔴"
+            status_icon = "[PASS]" if overall_class_pass else "[FAIL]"
             print(f"  [{idx+1:03d}/{total_classes:03d}] {status_icon} {cls_name:30} | Ground: {ground_min_y:+.3f}m | Elev: {elev_pass} | Yaw: {yaw_pass} | Scale: {scale_pass}")
 
         browser.close()
