@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 from typing import Annotated, Any, ClassVar, Dict, List, Literal, Optional, Tuple, Union
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, RootModel, Discriminator, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, Discriminator, PrivateAttr, field_validator, model_validator
 from debim.loader import expand_module_instances, load_debim_file, load_manifest, resolve_default_manifest_path
 
 
@@ -3635,8 +3635,20 @@ class ProjectManifest(BaseModel):
     site: Optional[SiteBoundary] = None
     compliances: List[ComplianceRule] = Field(default_factory=list)
 
+    _modules_expanded: bool = PrivateAttr(default=False)
+
+    @model_validator(mode="before")
+    @classmethod
+    def pre_expand_modules(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if data.get("modules") and data.get("instances") and not data.get("_modules_expanded"):
+                data = expand_module_instances(data)
+        return data
+
     @model_validator(mode="after")
     def validate_references(self) -> "ProjectManifest":
+        if self.modules and self.instances:
+            self._modules_expanded = True
         storey_ids = {s.id for s in self.spatial_structure.storeys}
         grid_x_ids = set(self.grids.axes_x.keys())
         grid_y_ids = set(self.grids.axes_y.keys())

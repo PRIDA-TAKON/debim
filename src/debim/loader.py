@@ -562,8 +562,12 @@ def expand_module_instances(manifest_or_data: Any) -> Any:
     is_manifest_obj = False
     if hasattr(manifest_or_data, "modules") and hasattr(manifest_or_data, "instances"):
         is_manifest_obj = True
+        if getattr(manifest_or_data, "_modules_expanded", False):
+            return manifest_or_data
         data = manifest_or_data.model_dump(by_alias=True, exclude_none=True)
     elif isinstance(manifest_or_data, dict):
+        if manifest_or_data.get("_modules_expanded"):
+            return manifest_or_data
         data = manifest_or_data
     else:
         return manifest_or_data
@@ -753,10 +757,13 @@ def expand_module_instances(manifest_or_data: Any) -> Any:
                 expanded_elements.append(elem_copy)
 
     data["elements"] = existing_elements + expanded_elements
+    data["_modules_expanded"] = True
 
     if is_manifest_obj:
         from debim.schema import ProjectManifest
-        return ProjectManifest.model_validate(data)
+        res = ProjectManifest.model_validate(data)
+        object.__setattr__(res, "_modules_expanded", True) if hasattr(res, "__dict__") else setattr(res, "_modules_expanded", True)
+        return res
     return data
 
 
