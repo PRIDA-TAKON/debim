@@ -408,6 +408,77 @@ function buildStructuralFastener(sample3d, options) {
     return group;
 }
 
+function buildTrussAssembly(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 4.00;
+    const d = sample3d.depth || 0.20;
+    const h = sample3d.height || 1.20;
+
+    const steelMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.85
+    });
+    const gussetMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.7
+    });
+
+    const chordThickness = 0.08;
+
+    // Bottom horizontal chord member
+    const botChord = new THREE.Mesh(new THREE.BoxGeometry(w, chordThickness, d), steelMat);
+    botChord.position.set(0, -h / 2.0 + chordThickness / 2.0, 0);
+    group.add(botChord);
+
+    // Top sloped chord members (pitched gable truss roof)
+    const topChordLen = Math.hypot(w / 2.0, h - chordThickness);
+    const topAngle = Math.atan2(h - chordThickness, w / 2.0);
+
+    const topChordL = new THREE.Mesh(new THREE.BoxGeometry(topChordLen, chordThickness, d), steelMat);
+    topChordL.position.set(-w / 4.0, 0, 0);
+    topChordL.rotation.z = topAngle;
+    group.add(topChordL);
+
+    const topChordR = new THREE.Mesh(new THREE.BoxGeometry(topChordLen, chordThickness, d), steelMat);
+    topChordR.position.set(w / 4.0, 0, 0);
+    topChordR.rotation.z = -topAngle;
+    group.add(topChordR);
+
+    // Web Diagonal & Vertical strut members
+    const nPanels = 4;
+    const dx = w / nPanels;
+    for (let i = 0; i <= nPanels; i++) {
+        const x = -w / 2.0 + i * dx;
+        const distFromCenter = Math.abs(x);
+        const yTop = -h / 2.0 + chordThickness + (1.0 - distFromCenter / (w / 2.0)) * (h - 2 * chordThickness);
+
+        // Vertical strut
+        if (i > 0 && i < nPanels) {
+            const vHeight = yTop - (-h / 2.0 + chordThickness);
+            const vStrut = new THREE.Mesh(new THREE.BoxGeometry(0.06, vHeight, d * 0.8), steelMat);
+            vStrut.position.set(x, -h / 2.0 + chordThickness + vHeight / 2.0, 0);
+            group.add(vStrut);
+        }
+
+        // Gusset connection plate
+        const gusset = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, d + 0.02), gussetMat);
+        gusset.position.set(x, -h / 2.0 + chordThickness / 2.0 + 0.05, 0);
+        group.add(gusset);
+    }
+
+    // Apex gusset plate
+    const apexGusset = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, d + 0.02), gussetMat);
+    apexGusset.position.set(0, h / 2.0 - chordThickness, 0);
+    group.add(apexGusset);
+
+    return group;
+}
+
 function buildStructuralMember(sample3d, options) {
     const { wireframeMode, col } = options;
     const group = new THREE.Group();

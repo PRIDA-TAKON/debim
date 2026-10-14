@@ -653,6 +653,22 @@ currentMesh = buildStructuralFastener(sample3d, options);
                 currentMesh = buildThermostatController(sample3d, options);
             } else if (sample3d.shape === 'timer_relay') {
                 currentMesh = buildTimerRelay(sample3d, options);
+            } else if (sample3d.shape === 'pipe_fitting_tee') {
+                currentMesh = buildPipeFittingTee(sample3d, options);
+            } else if (sample3d.shape === 'insulated_flow_segment') {
+                currentMesh = buildInsulatedFlowSegment(sample3d, options);
+            } else if (sample3d.shape === 'floor_drain_terminal') {
+                currentMesh = buildFloorDrainTerminal(sample3d, options);
+            } else if (sample3d.shape === 'flexible_shaft_coupling') {
+                currentMesh = buildFlexibleShaftCoupling(sample3d, options);
+            } else if (sample3d.shape === 'truss_assembly') {
+                currentMesh = buildTrussAssembly(sample3d, options);
+            } else if (sample3d.shape === 'civil_culvert') {
+                currentMesh = buildCivilCulvert(sample3d, options);
+            } else if (sample3d.shape === 'parametric_component_proxy') {
+                currentMesh = buildParametricComponentProxy(sample3d, options);
+            } else if (sample3d.shape === 'virtual_boundary_zone') {
+                currentMesh = buildVirtualBoundaryZone(sample3d, options);
             } else {
                 let geom;
                 if (sample3d.shape === 'cylinder') {
