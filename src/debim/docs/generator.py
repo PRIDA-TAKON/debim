@@ -295,6 +295,16 @@ def _generate_3d_payload(class_name: str, discipline: str) -> Dict[str, Any]:
         return {"shape": "circuit_breaker", "width": 0.18, "depth": 0.12, "height": 0.10, "color": "#f8fafc"}
     elif "alarm" in c:
         return {"shape": "alarm_device", "width": 0.15, "depth": 0.15, "height": 0.10, "color": "#dc2626"}
+    elif "distributionchamber" in c or "chamber" in c:
+        return {"shape": "distribution_chamber", "width": 1.20, "depth": 1.20, "height": 1.50, "color": "#475569"}
+    elif "tubebundle" in c or "bundle" in c:
+        return {"shape": "tube_bundle", "width": 1.50, "depth": 0.60, "height": 0.60, "color": "#cbd5e1"}
+    elif "flowtreatmentdevice" in c or "treatmentdevice" in c:
+        return {"shape": "water_treatment_device", "width": 0.80, "depth": 0.80, "height": 1.60, "color": "#0284c7"}
+    elif "unitaryequipment" in c:
+        return {"shape": "rooftop_packaged_unit", "width": 2.40, "depth": 1.60, "height": 1.20, "color": "#64748b"}
+    elif "medicaldevice" in c:
+        return {"shape": "medical_bed_console", "width": 1.60, "depth": 0.20, "height": 0.40, "color": "#f8fafc"}
     elif "flowmeter" in c or "flow_meter" in c:
         return {"shape": "flow_meter", "width": 0.35, "depth": 0.20, "height": 0.25, "color": "#d97706"}
     elif "flowinstrument" in c or "flow_instrument" in c:

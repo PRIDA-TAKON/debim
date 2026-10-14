@@ -257,6 +257,13 @@ def test_procedural_3d_shapes_payloads():
     assert by_class["IfcInterceptor"]["shape"] == "grease_oil_interceptor"
     assert by_class["IfcHumidifier"]["shape"] == "humidifier_unit"
 
+    # Distribution chambers, tube bundles, treatment & packaged units
+    assert by_class["IfcDistributionChamberElement"]["shape"] == "distribution_chamber"
+    assert by_class["IfcTubeBundle"]["shape"] == "tube_bundle"
+    assert by_class["IfcFlowTreatmentDevice"]["shape"] == "water_treatment_device"
+    assert by_class["IfcUnitaryEquipment"]["shape"] == "rooftop_packaged_unit"
+    assert by_class["IfcMedicalDevice"]["shape"] == "medical_bed_console"
+
     # Audio-Visual, Communications & Controller additions
     assert by_class["IfcAudioVisualAppliance"]["shape"] == "audiovisual_display"
     assert by_class["IfcCommunicationsAppliance"]["shape"] == "network_router_rack"
@@ -325,6 +332,11 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "valve_actuator" in html_str
     assert "grease_oil_interceptor" in html_str
     assert "humidifier_unit" in html_str
+    assert "distribution_chamber" in html_str
+    assert "tube_bundle" in html_str
+    assert "water_treatment_device" in html_str
+    assert "rooftop_packaged_unit" in html_str
+    assert "medical_bed_console" in html_str
     assert "audiovisual_display" in html_str
     assert "network_router_rack" in html_str
     assert "thermostat_controller" in html_str
