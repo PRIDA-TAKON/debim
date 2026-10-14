@@ -28,6 +28,7 @@ from debim.qto import calculate_qto
 from debim.resolver import resolve_manifest
 from debim.schema import ProjectManifest, load_manifest, export_json_schema
 from debim.loader import resolve_default_manifest_path
+from debim.compliance import check_topological_continuity, detect_mep_structural_clashes
 from debim.viewer import generate_viewer_html, serve_viewer
 from debim.modular import bundle_manifest, split_manifest
 from debim.spec.registry import SpecRegistryClient
@@ -228,15 +229,74 @@ def cmd_init(args):
 
 
 def cmd_validate(args):
-    manifest = resolve_default_manifest_path(args.manifest)
+    manifest_target = args.manifest or getattr(args, "positional_manifest", None)
+    manifest = resolve_default_manifest_path(manifest_target)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
         sys.exit(1)
     console.print(f"[bold green]Validating:[/bold green] {manifest}")
+    has_diagnostic_warnings = False
     try:
         manifest_obj = load_manifest(manifest)
-        console.print("[bold green]Schema & Topology Validation passed successfully.[/bold green]")
+        console.print("[bold green]Pydantic Schema Validation passed.[/bold green]")
 
+        # 1. Topological continuity check
+        resolved_manifest = resolve_manifest(manifest_obj)
+        topo_warnings = check_topological_continuity(resolved_manifest)
+        if topo_warnings:
+            has_diagnostic_warnings = True
+            topo_table = Table(
+                title="Topological Continuity Diagnostic Warnings",
+                show_header=True,
+                header_style="bold yellow",
+            )
+            topo_table.add_column("Type", style="bold red")
+            topo_table.add_column("Tag", style="bold yellow")
+            topo_table.add_column("Class", style="white")
+            topo_table.add_column("Position", style="cyan")
+            topo_table.add_column("Message", style="dim")
+
+            for tw in topo_warnings:
+                pos_str = f"({tw['position'][0]:.2f}, {tw['position'][1]:.2f}, {tw['position'][2]:.2f})"
+                topo_table.add_row(
+                    tw["type"],
+                    tw["tag"],
+                    tw["class"],
+                    pos_str,
+                    tw["message"],
+                )
+            console.print(topo_table)
+        else:
+            console.print("[bold green]Topological Continuity Validation passed (no floating columns or unsupported beams).[/bold green]")
+
+        # 2. MEP vs Structural AABB Clash Detection
+        mep_clashes = detect_mep_structural_clashes(resolved_manifest)
+        if mep_clashes:
+            has_diagnostic_warnings = True
+            clash_table = Table(
+                title="MEP vs Structural AABB Clash Detection Summary",
+                show_header=True,
+                header_style="bold yellow",
+            )
+            clash_table.add_column("MEP Tag", style="bold yellow")
+            clash_table.add_column("MEP Class", style="cyan")
+            clash_table.add_column("Structural Tag", style="bold magenta")
+            clash_table.add_column("Structural Class", style="white")
+            clash_table.add_column("Diagnostic Message", style="dim")
+
+            for c in mep_clashes:
+                clash_table.add_row(
+                    c["mep_tag"],
+                    c["mep_class"],
+                    c["struct_tag"],
+                    c["struct_class"],
+                    c["message"],
+                )
+            console.print(clash_table)
+        else:
+            console.print("[bold green]AABB Clash Detection passed (no MEP-structure intersections).[/bold green]")
+
+        # 3. bSDD Property Sets validation
         if getattr(args, "bsdd", True):
             pset_results = validate_manifest_psets(manifest_obj)
             if pset_results:
@@ -252,10 +312,10 @@ def cmd_validate(args):
                 table.add_column("Status", justify="center")
                 table.add_column("Details", style="dim")
 
-                has_errors = False
+                has_pset_errors = False
                 for r in pset_results:
                     if r.status in (PropertyValidationStatus.TYPE_MISMATCH, PropertyValidationStatus.VALUE_CONSTRAINT_VIOLATION):
-                        has_errors = True
+                        has_pset_errors = True
                         status_str = f"[bold red]{r.status.value}[/bold red]"
                     elif r.status in (PropertyValidationStatus.NON_STANDARD_PROPERTY, PropertyValidationStatus.NON_STANDARD_PSET):
                         status_str = f"[yellow]{r.status.value}[/yellow]"
@@ -273,9 +333,15 @@ def cmd_validate(args):
 
                 console.print(table)
 
-                if getattr(args, "strict_psets", False) and (has_errors or any(r.status != PropertyValidationStatus.VALID for r in pset_results)):
+                if getattr(args, "strict_psets", False) and (has_pset_errors or any(r.status != PropertyValidationStatus.VALID for r in pset_results)):
                     console.print("[bold red]Strict Pset Validation Failed! Non-compliant Property Sets detected.[/bold red]")
                     sys.exit(1)
+
+        if has_diagnostic_warnings:
+            console.print("[bold yellow]Validation completed with diagnostic warnings.[/bold yellow]")
+            sys.exit(1)
+        else:
+            console.print("[bold green]Validation completed successfully with 0 warnings or errors.[/bold green]")
 
     except (ValidationError, ValueError) as e:
         console.print(f"[bold red]Validation Error:[/bold red]\n{e}")
@@ -728,6 +794,228 @@ def cmd_cost(args):
 
     except Exception as e:
         console.print(f"[bold red]Cost Estimation Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
+# Thai Provincial Price Index Multiplier Lookup Table (Baseline: Bangkok / Central = 1.00)
+PROVINCIAL_PRICE_INDEX: Dict[str, float] = {
+    "BANGKOK": 1.00,
+    "กรุงเทพมหานคร": 1.00,
+    "NONTHABURI": 1.00,
+    "PATHUM THANI": 1.00,
+    "CHIANG MAI": 1.05,
+    "เชียงใหม่": 1.05,
+    "PHUKET": 1.15,
+    "ภูเก็ต": 1.15,
+    "CHON BURI": 1.02,
+    "ชลบุรี": 1.02,
+    "KHON KAEN": 1.06,
+    "ขอนแก่น": 1.06,
+    "SONGKHLA": 1.08,
+    "สงขลา": 1.08,
+}
+
+
+def cmd_boq(args):
+    manifest_target = args.manifest or args.positional_manifest
+    manifest = resolve_default_manifest_path(manifest_target)
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        sys.exit(1)
+
+    rules_mode = (args.rules or "cg-v480").lower()
+    province_name = args.province.strip() if args.province else None
+    province_mult = 1.00
+    if province_name:
+        prov_key = province_name.upper()
+        province_mult = PROVINCIAL_PRICE_INDEX.get(prov_key, PROVINCIAL_PRICE_INDEX.get(province_name, 1.05))
+
+    console.print(
+        f"[bold blue]Generating Bill of Quantities (BOQ) for:[/bold blue] {manifest} "
+        f"[dim](Rules: {rules_mode.upper()}, Province: {province_name or 'Bangkok Standard'}{f' [x{province_mult:.2f}]' if province_name else ''})[/dim]"
+    )
+
+    try:
+        manifest_obj = load_manifest(manifest)
+        project_qto = calculate_qto(manifest_obj)
+
+        # Generate price catalog fallback if prices file not specified or missing
+        prices_path = Path(args.prices) if args.prices else None
+        if prices_path and prices_path.exists():
+            price_catalog = load_price_catalog(prices_path)
+        else:
+            import tempfile
+            with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as tmp:
+                tmp_path = Path(tmp.name)
+            tmpl_path = generate_cost_template(manifest_obj, output_path=tmp_path)
+            price_catalog = load_price_catalog(tmpl_path)
+            try:
+                tmp_path.unlink()
+            except Exception:
+                pass
+            # Default realistic benchmark prices if template was newly generated
+            for item in price_catalog.items.values():
+                if item.unit.lower() == "m3":
+                    item.material_cost = item.material_cost or 2400.0
+                    item.labor_cost = item.labor_cost or 450.0
+                elif item.unit.lower() == "m2":
+                    item.material_cost = item.material_cost or 350.0
+                    item.labor_cost = item.labor_cost or 120.0
+                elif item.unit.lower() == "kg":
+                    item.material_cost = item.material_cost or 32.0
+                    item.labor_cost = item.labor_cost or 5.0
+                elif item.unit.lower() == "m":
+                    item.material_cost = item.material_cost or 180.0
+                    item.labor_cost = item.labor_cost or 60.0
+                else:
+                    item.material_cost = item.material_cost or 1500.0
+                    item.labor_cost = item.labor_cost or 500.0
+
+        # Apply Provincial Price Index Multiplier
+        if province_mult != 1.00:
+            for item in price_catalog.items.values():
+                item.material_cost = round(item.material_cost * province_mult, 2)
+                item.labor_cost = round(item.labor_cost * province_mult, 2)
+
+        estimate = estimate_cost(project_qto, price_catalog, manifest_obj)
+        proj_name = manifest_obj.project.name or "โครงการก่อสร้าง"
+
+        # Generate Thai Standard BOQ Sheets (ปร.4, ปร.4(พ), ปร.5)
+        pr4 = estimate.generate_pr4(project_name=proj_name)
+        pr4_p = estimate.generate_pr4_p(project_qto, price_catalog, project_name=proj_name)
+        pr5 = estimate.generate_pr5(project_name=proj_name)
+
+        # 1. Print ANSI formatted summary table for แบบ ปร.4
+        pr4_table = Table(
+            title=f"แบบ ปร.4 - รายการปริมาณงานและราคา ({pr4.project_name})",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        pr4_table.add_column("ลำดับ", justify="center", style="dim")
+        pr4_table.add_column("รายการ (Description)", style="white")
+        pr4_table.add_column("หน่วย", justify="center", style="cyan")
+        pr4_table.add_column("จำนวน", justify="right", style="yellow")
+        pr4_table.add_column("ค่าวัสดุรวม", justify="right")
+        pr4_table.add_column("ค่าแรงงานรวม", justify="right")
+        pr4_table.add_column("รวมเป็นเงิน (THB)", justify="right", style="bold green")
+
+        for item in pr4.items:
+            pr4_table.add_row(
+                str(item.item_no),
+                item.description,
+                item.unit,
+                f"{item.quantity:,.2f}",
+                f"{item.material_total_cost:,.2f}",
+                f"{item.labor_total_cost:,.2f}",
+                f"{item.total_amount:,.2f}",
+            )
+        console.print(pr4_table)
+
+        # 2. Print Summary for แบบ ปร.4(พ)
+        if pr4_p.items:
+            pr4p_table = Table(
+                title=f"แบบ ปร.4(พ) - สรุปตารางเหล็กเสริมและไม้แบบ ({pr4_p.project_name})",
+                show_header=True,
+                header_style="bold magenta",
+            )
+            pr4p_table.add_column("หมวดงาน", style="cyan")
+            pr4p_table.add_column("ประเภท / ขนาด", style="white")
+            pr4p_table.add_column("ปริมาณ", justify="right", style="yellow")
+            pr4p_table.add_column("หน่วย", justify="center")
+            pr4p_table.add_column("รวมเป็นเงิน (THB)", justify="right", style="bold green")
+
+            for item in pr4_p.items:
+                pr4p_table.add_row(
+                    item.category,
+                    item.bar_type_or_type,
+                    f"{item.quantity:,.2f}",
+                    item.unit,
+                    f"{item.total_amount:,.2f}",
+                )
+            console.print(pr4p_table)
+
+        # 3. Print แบบ ปร.5 Summary Panel (Direct Cost + Factor F)
+        summary_panel_text = (
+            f"[bold cyan]โครงการ:[/bold cyan] {pr5.project_name}\n"
+            f"[bold cyan]ราคาทุนทางตรง (Direct Cost):[/bold cyan] {pr5.direct_cost:,.2f} THB\n"
+            f"[bold yellow]ตัวคูณ Factor F (กรมบัญชีกลาง ว480):[/bold yellow] [bold green]{pr5.factor_f:.4f}[/bold green]\n"
+            f"[bold green]ราคากลางรวมค่าก่อสร้าง (Grand Total Construction Cost):[/bold green] [bold green]{pr5.total_construction_cost:,.2f} THB[/bold green]\n"
+            f"[dim](รวมภาษีมูลค่าเพิ่ม VAT 7% และ Factor F ตามประกาศกรมบัญชีกลาง ว480)[/dim]"
+        )
+        if province_name:
+            summary_panel_text += f"\n[bold magenta]ดัชนีราคาจังหวัด ({province_name}):[/bold magenta] x{province_mult:.2f}"
+
+        console.print(Panel(summary_panel_text, title="[bold green]แบบ ปร.5 - สรุปราคากลางค่าก่อสร้าง[/bold green]", style="green"))
+
+        # 4. Handle --export-excel
+        if args.export_excel:
+            out_excel = Path(args.export_excel)
+            out_excel.parent.mkdir(parents=True, exist_ok=True)
+
+            try:
+                import openpyxl
+                from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+                wb = openpyxl.Workbook()
+
+                # Sheet 1: ปร.5 Summary
+                ws_pr5 = wb.active
+                ws_pr5.title = "ปร.5 สรุปราคากลาง"
+                ws_pr5.append(["แบบ ปร.5 - แบบสรุปค่าก่อสร้าง"])
+                ws_pr5.append([f"โครงการ: {pr5.project_name}"])
+                ws_pr5.append([])
+                ws_pr5.append(["กลุ่มงาน / รายการ", "ค่างานต้นทุน (บาท)", "Factor F", "รวมค่าก่อสร้าง (บาท)"])
+                ws_pr5.append(["1. กลุ่มงานอาคาร (Building Works)", pr5.direct_cost, pr5.factor_f, pr5.total_construction_cost])
+                ws_pr5.append(["รวมราคากลางค่าก่อสร้างทั้งหมด", pr5.direct_cost, pr5.factor_f, pr5.total_construction_cost])
+
+                # Sheet 2: ปร.4 Detail
+                ws_pr4 = wb.create_sheet(title="ปร.4 รายการปริมาณงาน")
+                ws_pr4.append(["แบบ ปร.4 - รายการปริมาณงานและราคา"])
+                ws_pr4.append(["ลำดับ", "รายการ", "หน่วย", "จำนวน", "ค่าวัสดุต่อหน่วย", "ค่าวัสดุรวม", "ค่าแรงงานต่อหน่วย", "ค่าแรงงานรวม", "รวมเป็นเงิน"])
+                for item in pr4.items:
+                    ws_pr4.append([
+                        item.item_no,
+                        item.description,
+                        item.unit,
+                        item.quantity,
+                        item.material_unit_cost,
+                        item.material_total_cost,
+                        item.labor_unit_cost,
+                        item.labor_total_cost,
+                        item.total_amount,
+                    ])
+                ws_pr4.append(["รวม", "รวมค่างานต้นทุนทางตรง", "", "", "", pr4.total_material_cost, "", pr4.total_labor_cost, pr4.total_direct_cost])
+
+                # Sheet 3: ปร.4(พ) Rebar & Formwork
+                ws_pr4p = wb.create_sheet(title="ปร.4(พ) เหล็กเสริม-ไม้แบบ")
+                ws_pr4p.append(["แบบ ปร.4(พ) - แบบสรุปพิกัดตารางเหล็กเสริมและไม้แบบ"])
+                ws_pr4p.append(["ลำดับ", "หมวดงาน", "ประเภท/ขนาด", "หน่วย", "ปริมาณ", "ค่าวัสดุต่อหน่วย", "ค่าแรงงานต่อหน่วย", "รวมเป็นเงิน"])
+                for item in pr4_p.items:
+                    ws_pr4p.append([
+                        item.item_no,
+                        item.category,
+                        item.bar_type_or_type,
+                        item.unit,
+                        item.quantity,
+                        item.unit_material_cost,
+                        item.unit_labor_cost,
+                        item.total_amount,
+                    ])
+                ws_pr4p.append(["รวม", "รวมตารางเหล็กเสริมและไม้แบบ", "", "", "", "", "", pr4_p.total_amount])
+
+                wb.save(out_excel)
+                console.print(f"[bold green]Exported BOQ Excel spreadsheet to:[/bold green] [cyan]{out_excel}[/cyan]")
+
+            except ImportError:
+                # Fallback to CSV export if openpyxl is not installed
+                csv_out = out_excel.with_suffix(".csv")
+                estimate.export_csv(csv_out)
+                console.print(
+                    f"[bold yellow]openpyxl not installed. Exported BOQ breakdown to CSV:[/bold yellow] [cyan]{csv_out}[/cyan]"
+                )
+
+    except Exception as e:
+        console.print(f"[bold red]BOQ Generation Error:[/bold red]\n{e}")
         sys.exit(1)
 
 
@@ -1726,7 +2014,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     # validate
     p_validate = subparsers.add_parser("validate", help="Validate project.yaml schema, topology, and bSDD Psets")
-    p_validate.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_validate.add_argument("positional_manifest", nargs="?", help="Positional path to project manifest")
+    p_validate.add_argument("-m", "--manifest", help="Path to project manifest")
     bsdd_group = p_validate.add_mutually_exclusive_group()
     bsdd_group.add_argument("--bsdd", dest="bsdd", action="store_true", default=True, help="Perform buildingSMART bSDD Property Set validation")
     bsdd_group.add_argument("--no-bsdd", dest="bsdd", action="store_false", help="Disable bSDD validation")
@@ -1795,6 +2084,16 @@ def build_parser() -> argparse.ArgumentParser:
     mod_group.add_argument("--no-modular", dest="modular", action="store_false", default=False)
     p_cost_template.set_defaults(func=cmd_cost_template)
     p_cost.set_defaults(func=cmd_cost)
+
+    # boq
+    p_boq = subparsers.add_parser("boq", help="Generate Bill of Quantities (BOQ) with Thai Public Works pricing rules")
+    p_boq.add_argument("positional_manifest", nargs="?", help="Positional path to project manifest")
+    p_boq.add_argument("-m", "--manifest", help="Path to project manifest")
+    p_boq.add_argument("--rules", default="cg-v480", help="Pricing rules standard (e.g. 'cg-v480' for Thai CGD v480)")
+    p_boq.add_argument("-p", "--prices", help="Path to price catalog file")
+    p_boq.add_argument("--province", help="Select provincial price index multiplier")
+    p_boq.add_argument("--export-excel", help="Target Excel (.xlsx) file path to export BOQ sheets")
+    p_boq.set_defaults(func=cmd_boq)
 
     # compile
     p_compile = subparsers.add_parser("compile", help="Compile project.yaml to IFC4 format")
