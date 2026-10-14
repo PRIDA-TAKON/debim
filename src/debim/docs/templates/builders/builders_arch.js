@@ -27,17 +27,69 @@ function buildStairConcrete(sample3d, options) {
         depthWrite: !isTransparent
     });
 
+    // Right-triangular prism geometry for steps to sit flush on waist slab without protruding
+    function createRightTriangularPrism(width, riser, tread) {
+        const geom = new THREE.BufferGeometry();
+        const halfW = width / 2.0;
+
+        const positions = [
+            // Riser face (z = 0, normal -Z)
+            -halfW, 0, 0,
+            -halfW, riser, 0,
+            halfW, riser, 0,
+
+            -halfW, 0, 0,
+            halfW, riser, 0,
+            halfW, 0, 0,
+
+            // Tread face (y = riser, normal +Y)
+            -halfW, riser, 0,
+            -halfW, riser, tread,
+            halfW, riser, tread,
+
+            -halfW, riser, 0,
+            halfW, riser, tread,
+            halfW, riser, 0,
+
+            // Hypotenuse face (sloped underside, normal -Y, +Z)
+            -halfW, 0, 0,
+            halfW, 0, 0,
+            halfW, riser, tread,
+
+            -halfW, 0, 0,
+            halfW, riser, tread,
+            -halfW, riser, tread,
+
+            // Left triangle face (x = -halfW, normal -X)
+            -halfW, 0, 0,
+            -halfW, riser, tread,
+            -halfW, riser, 0,
+
+            // Right triangle face (x = +halfW, normal +X)
+            halfW, 0, 0,
+            halfW, riser, 0,
+            halfW, riser, tread
+        ];
+
+        geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geom.computeVertexNormals();
+        return geom;
+    }
+
+    // Waist slab translated so top surface lies on hypotenuse plane
     const slabGeom = new THREE.BoxGeometry(w, waistThick, slopeLen);
+    slabGeom.translate(0, -waistThick / 2.0, 0);
     const slabMesh = new THREE.Mesh(slabGeom, concreteMat);
-    slabMesh.position.set(0, -waistThick * 0.50, 0);
+    slabMesh.position.set(0, 0, 0);
     slabMesh.rotation.x = -slopeAngle;
     concreteGroup.add(slabMesh);
 
-    const stepGeom = new THREE.BoxGeometry(w, rh, td);
+    // Right-triangular steps
+    const stepGeom = createRightTriangularPrism(w, rh, td);
     for (let i = 0; i < steps; i++) {
         const stepMesh = new THREE.Mesh(stepGeom, concreteMat);
-        const yPos = -h / 2.0 + i * rh + rh / 2.0;
-        const zPos = -d / 2.0 + i * td + td / 2.0;
+        const yPos = -h / 2.0 + i * rh;
+        const zPos = -d / 2.0 + i * td;
         stepMesh.position.set(0, yPos, zPos);
         concreteGroup.add(stepMesh);
     }
