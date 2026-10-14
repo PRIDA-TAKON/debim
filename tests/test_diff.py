@@ -5,7 +5,7 @@ Unit tests for new CLI commands: export, summary, info, and diff
 import subprocess
 import yaml
 from pathlib import Path
-from typer.testing import CliRunner
+from cli_runner import CliRunner
 from debim.cli import app
 
 runner = CliRunner()

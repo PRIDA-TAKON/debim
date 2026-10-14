@@ -5,7 +5,7 @@ Unit tests for debim split and debim bundle commands and modular manifest engine
 from pathlib import Path
 import pytest
 import yaml
-from typer.testing import CliRunner
+from cli_runner import CliRunner
 
 from debim.cli import app
 from debim.modular import bundle_manifest, split_manifest

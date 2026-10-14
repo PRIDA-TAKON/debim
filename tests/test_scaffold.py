@@ -4,7 +4,7 @@ Unit tests for Element Scaffolding tool and CLI command (debim.scaffold / debim 
 
 import ast
 from pathlib import Path
-from typer.testing import CliRunner
+from cli_runner import CliRunner
 from debim.cli import app
 from debim.scaffold import scaffold_element, generate_scaffold_artifacts, snake_case
 

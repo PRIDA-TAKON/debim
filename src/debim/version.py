@@ -9,9 +9,7 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
-from typing import Optional
-import typer
-from rich.console import Console
+from typing import Optional, Any
 
 __version__ = "0.4.0"
 
@@ -126,7 +124,7 @@ def check_for_updates(
 
 
 def should_suppress_update_check(
-    ctx: Optional[typer.Context] = None,
+    ctx: Optional[Any] = None,
     quiet: bool = False,
     force_tty: Optional[bool] = None,
 ) -> bool:
@@ -147,7 +145,7 @@ def should_suppress_update_check(
         return True
 
     # 4. MCP mode or machine-readable subcommands
-    if ctx is not None and ctx.invoked_subcommand in ("mcp",):
+    if ctx is not None and getattr(ctx, "subcommand", None) in ("mcp",):
         return True
     if any(cmd in sys.argv for cmd in ("mcp",)):
         return True
@@ -156,9 +154,9 @@ def should_suppress_update_check(
 
 
 def check_and_notify_updates(
-    console: Optional[Console] = None,
+    console: Optional[Any] = None,
     quiet: bool = False,
-    ctx: Optional[typer.Context] = None,
+    ctx: Optional[Any] = None,
     cache_path: Optional[Path] = None,
     force_tty: Optional[bool] = None,
 ) -> None:
@@ -172,14 +170,13 @@ def check_and_notify_updates(
 
         latest_version = check_for_updates(cache_path=cache_path)
         if latest_version and parse_version(latest_version) > parse_version(__version__):
-            if console is None:
-                console = Console()
             notice_str = (
-                r"[bold #f59e0b]\[notice][/bold #f59e0b] "
-                f"[bold #94a3b8]A new release of debim is available:[/bold #94a3b8] "
-                f"[bold #ef4444]{__version__}[/bold #ef4444] -> [bold #10b981]{latest_version}[/bold #10b981]\n"
-                r"[bold #94a3b8]Run:[/bold #94a3b8] [bold #22d3ee]pip install -U debim[/bold #22d3ee]"
+                f"[notice] A new release of debim is available: {__version__} -> {latest_version}\n"
+                f"Run: pip install -U debim"
             )
-            console.print(f"\n{notice_str}\n")
+            if console is not None and hasattr(console, "print"):
+                console.print(f"\n{notice_str}\n")
+            else:
+                print(f"\n{notice_str}\n")
     except Exception:
         pass

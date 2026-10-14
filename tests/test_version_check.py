@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 import pytest
-from typer.testing import CliRunner
+from cli_runner import CliRunner
 
 from debim.cli import app
 from debim.version import (

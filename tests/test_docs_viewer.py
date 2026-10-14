@@ -5,7 +5,7 @@ Unit tests for debim Class Directory & Encyclopedia Documentation Engine.
 import re
 import time
 from pathlib import Path
-from typer.testing import CliRunner
+from cli_runner import CliRunner
 
 from debim.cli import app
 from debim.docs import (

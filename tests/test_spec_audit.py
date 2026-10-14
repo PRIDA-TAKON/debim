@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import pytest
 import yaml
-from typer.testing import CliRunner
+from cli_runner import CliRunner
 
 from debim.cli import app
 from debim.schema import (

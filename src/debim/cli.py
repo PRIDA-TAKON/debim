@@ -1,16 +1,14 @@
 """
-CLI interface for debim
+CLI interface for debim using standard library argparse and pure-Python formatting
 """
 
+import argparse
+import re
 import sys
 from pathlib import Path
-from typing import Optional
-import typer
+from typing import Optional, List, Dict, Any
 import yaml
 from pydantic import ValidationError
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
 
 if sys.platform == "win32":
     try:
@@ -39,12 +37,164 @@ from debim.docs.exemplar import (
 )
 from debim.docs.thai_specs import get_thai_spec_clause, THAI_SPEC_LIBRARY
 
-app = typer.Typer(
-    name="debim",
-    help="Minimal Declarative BIM (Building-as-Code) engine",
-    add_completion=False,
-)
-console = Console(legacy_windows=False)
+# --- Pure-Python Rich-like formatting helpers ---
+
+_STYLE_MAP = {
+    "bold": "\033[1m",
+    "dim": "\033[2m",
+    "red": "\033[31m",
+    "green": "\033[32m",
+    "yellow": "\033[33m",
+    "blue": "\033[34m",
+    "magenta": "\033[35m",
+    "cyan": "\033[36m",
+    "white": "\033[37m",
+    "reset": "\033[0m",
+}
+
+def _color_tag_replacer(match: re.Match) -> str:
+    tag = match.group(1).strip()
+    if tag.startswith("/"):
+        return _STYLE_MAP["reset"]
+
+    parts = tag.split()
+    codes = []
+    for part in parts:
+        if part in _STYLE_MAP:
+            codes.append(_STYLE_MAP[part])
+        elif part.startswith("#"):
+            # Hex color or approximation, fallback to cyan/bold if hex
+            codes.append("\033[36m")
+    return "".join(codes) if codes else ""
+
+def format_markup(text: str) -> str:
+    """Convert Rich markup like [bold green]text[/bold green] to ANSI escape codes or clean text."""
+    if not sys.stdout.isatty():
+        # Strip markup if not tty
+        return re.sub(r"\[/?[^\]]+\]", "", text)
+    formatted = re.sub(r"\[([a-zA-Z0-9_#/ -]+)\]", _color_tag_replacer, text)
+    return formatted
+
+def strip_markup(text: str) -> str:
+    """Remove markup tags and ANSI codes for calculating string lengths."""
+    clean = re.sub(r"\[/?[^\]]+\]", "", text)
+    clean = re.sub(r"\033\[[0-9;]*[a-zA-Z]", "", clean)
+    return clean
+
+class PureConsole:
+    def print(self, *args, end: str = "\n", file=None):
+        out_file = file or sys.stdout
+        msg = " ".join(str(a) for a in args)
+        out_file.write(format_markup(msg) + end)
+        out_file.flush()
+
+console = PureConsole()
+
+class PurePanel:
+    def __init__(self, renderable: str, title: Optional[str] = None, style: Optional[str] = None):
+        self.renderable = renderable
+        self.title = title
+        self.style = style
+
+    def __str__(self):
+        lines = str(self.renderable).splitlines()
+        max_len = max((len(strip_markup(l)) for l in lines), default=0)
+        if self.title:
+            max_len = max(max_len, len(strip_markup(self.title)))
+        box_width = max_len + 4
+
+        border_style = f"[{self.style}]" if self.style else ""
+        border_end = f"[/{self.style}]" if self.style else ""
+
+        top_title = f" {self.title} " if self.title else ""
+        top_bar = "─" * (box_width - 2 - len(strip_markup(top_title)))
+        res = [f"{border_style}┌{top_title}{top_bar}┐{border_end}"]
+
+        for line in lines:
+            padding = box_width - 4 - len(strip_markup(line))
+            res.append(f"{border_style}│{border_end} {line}{' ' * padding} {border_style}│{border_end}")
+
+        res.append(f"{border_style}└{'─' * (box_width - 2)}┘{border_end}")
+        return "\n".join(res)
+
+Panel = PurePanel
+
+class PureTable:
+    def __init__(
+        self,
+        title: Optional[str] = None,
+        show_header: bool = True,
+        header_style: Optional[str] = None,
+        show_lines: bool = False,
+    ):
+        self.title = title
+        self.show_header = show_header
+        self.header_style = header_style or "bold cyan"
+        self.columns: List[Dict[str, Any]] = []
+        self.rows: List[List[str]] = []
+
+    def add_column(self, name: str, style: Optional[str] = None, justify: str = "left", width: Optional[int] = None):
+        self.columns.append({"name": name, "style": style or "", "justify": justify, "width": width})
+
+    def add_row(self, *args):
+        self.rows.append([str(a) for a in args])
+
+    def __str__(self):
+        col_widths = []
+        for i, col in enumerate(self.columns):
+            w = len(strip_markup(col["name"])) if self.show_header else 0
+            for row in self.rows:
+                if i < len(row):
+                    w = max(w, len(strip_markup(row[i])))
+            col_widths.append(w)
+
+        lines = []
+        if self.title:
+            lines.append(f"[{self.header_style}]{self.title}[/{self.header_style}]")
+
+        if self.show_header:
+            header_cells = []
+            for i, col in enumerate(self.columns):
+                w = col_widths[i]
+                c_text = col["name"]
+                pad = w - len(strip_markup(c_text))
+                if col["justify"] == "right":
+                    cell = " " * pad + c_text
+                elif col["justify"] == "center":
+                    left = pad // 2
+                    right = pad - left
+                    cell = " " * left + c_text + " " * right
+                else:
+                    cell = c_text + " " * pad
+                header_cells.append(cell)
+            header_str = "  ".join(header_cells)
+            lines.append(f"[{self.header_style}]{header_str}[/{self.header_style}]")
+            lines.append("─" * len(strip_markup(header_str)))
+
+        for row in self.rows:
+            row_cells = []
+            for i, col in enumerate(self.columns):
+                w = col_widths[i]
+                val = row[i] if i < len(row) else ""
+                pad = w - len(strip_markup(val))
+                if col["justify"] == "right":
+                    cell = " " * pad + val
+                elif col["justify"] == "center":
+                    left = pad // 2
+                    right = pad - left
+                    cell = " " * left + val + " " * right
+                else:
+                    cell = val + " " * pad
+
+                if col["style"] and not re.search(r"\[/?[a-zA-Z0-9_# -]+\]", cell):
+                    cell = f"[{col['style']}]{cell}[/{col['style']}]"
+                row_cells.append(cell)
+            lines.append("  ".join(row_cells))
+
+        return "\n".join(lines)
+
+Table = PureTable
+
 
 DEBIM_BANNER = (
     "\n"
@@ -60,73 +210,33 @@ DEBIM_BANNER = (
 )
 
 
-@app.callback(invoke_without_command=True)
-def main(
-    ctx: typer.Context,
-    version: bool = typer.Option(False, "--version", "-v", help="Show debim version"),
-    quiet: bool = typer.Option(
-        False, "--quiet", "-q", help="Suppress update check and non-essential output"
-    ),
-):
-    """Minimal Declarative BIM (Building-as-Code) engine"""
-    if version:
-        console.print(DEBIM_BANNER)
-        console.print(
-            f"[bold cyan]debim[/bold cyan] version [bold green]{__version__}[/bold green] "
-            f"| Developer: [bold #38bdf8]Prida Takon[/bold #38bdf8] ([dim]@PRIDA-TAKON[/dim])"
-        )
-        check_and_notify_updates(console=console, quiet=quiet, ctx=ctx)
-        raise typer.Exit()
-    if ctx.invoked_subcommand is None and not ctx.resilient_parsing:
-        console.print(DEBIM_BANNER)
-        console.print(ctx.get_help())
-        check_and_notify_updates(console=console, quiet=quiet, ctx=ctx)
-        raise typer.Exit()
+# --- Command Handlers ---
 
-    check_and_notify_updates(console=console, quiet=quiet, ctx=ctx)
-
-
-
-@app.command()
-def init(
-    name: str = typer.Argument(..., help="Name of the new project directory"),
-):
-    """Create a new project scaffold with template project.yaml and prices.json"""
-    project_dir = Path(name)
+def cmd_init(args):
+    project_dir = Path(args.name)
     if project_dir.exists():
-        console.print(f"[bold red]Error:[/bold red] Directory '{name}' already exists.")
-        raise typer.Exit(code=1)
+        console.print(f"[bold red]Error:[/bold red] Directory '{args.name}' already exists.")
+        sys.exit(1)
 
     project_dir.mkdir(parents=True, exist_ok=True)
     (project_dir / "assets").mkdir(exist_ok=True)
     (project_dir / "tests").mkdir(exist_ok=True)
     console.print(
-        f"[bold green]Success:[/bold green] Initialized new debim project in [cyan]{name}[/cyan]"
+        f"[bold green]Success:[/bold green] Initialized new debim project in [cyan]{args.name}[/cyan]"
     )
 
 
-@app.command()
-def validate(
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
-    ),
-    bsdd: bool = typer.Option(
-        True, "--bsdd/--no-bsdd", help="Perform buildingSMART bSDD Property Set (Pset_*) validation"
-    ),
-    strict_psets: bool = typer.Option(
-        False, "--strict-psets", help="Fail validation if non-compliant Pset types or values are found"
-    ),
-):
-    """Validate project.yaml schema, grid alignment, element placement links, and bSDD Psets"""
+def cmd_validate(args):
+    manifest = Path(args.manifest)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
     console.print(f"[bold green]Validating:[/bold green] {manifest}")
     try:
         manifest_obj = load_manifest(manifest)
         console.print("[bold green]Schema & Topology Validation passed successfully.[/bold green]")
 
-        if bsdd:
+        if getattr(args, "bsdd", True):
             pset_results = validate_manifest_psets(manifest_obj)
             if pset_results:
                 table = Table(
@@ -162,40 +272,26 @@ def validate(
 
                 console.print(table)
 
-                if strict_psets and (has_errors or any(r.status != PropertyValidationStatus.VALID for r in pset_results)):
+                if getattr(args, "strict_psets", False) and (has_errors or any(r.status != PropertyValidationStatus.VALID for r in pset_results)):
                     console.print("[bold red]Strict Pset Validation Failed! Non-compliant Property Sets detected.[/bold red]")
-                    raise typer.Exit(code=1)
+                    sys.exit(1)
 
     except (ValidationError, ValueError) as e:
         console.print(f"[bold red]Validation Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
-    except typer.Exit:
+        sys.exit(1)
+    except SystemExit:
         raise
     except Exception as e:
         console.print(f"[bold red]Validation Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@app.command(name="schema")
-def schema_cmd(
-    output: Optional[Path] = typer.Option(
-        None,
-        "--output",
-        "-o",
-        help="Target file path to write JSON schema (e.g. debim.schema.json). If omitted, prints to stdout.",
-    ),
-    indent: int = typer.Option(2, "--indent", help="JSON indentation level"),
-    vscode: bool = typer.Option(
-        False,
-        "--vscode",
-        help="Configure .vscode/settings.json with schema mapping for instant YAML autocompletion",
-    ),
-):
-    """Export debim language specification as standalone JSON Schema for IDEs, LSP, and tooling"""
+def cmd_schema(args):
     import json
 
-    schema_file = output or (Path("debim.schema.json") if vscode else None)
-    schema = export_json_schema(output_path=schema_file, indent=indent)
+    output_path = Path(args.output) if args.output else None
+    schema_file = output_path or (Path("debim.schema.json") if args.vscode else None)
+    schema = export_json_schema(output_path=schema_file, indent=args.indent)
 
     if schema_file:
         defs_count = len(schema.get("$defs", {}))
@@ -203,9 +299,9 @@ def schema_cmd(
             f"[bold green]Success:[/bold green] Exported debim JSON Schema ({defs_count} definitions) to [cyan]{schema_file}[/cyan]"
         )
     else:
-        sys.stdout.write(json.dumps(schema, indent=indent, ensure_ascii=False) + "\n")
+        sys.stdout.write(json.dumps(schema, indent=args.indent, ensure_ascii=False) + "\n")
 
-    if vscode:
+    if args.vscode:
         vscode_dir = Path(".vscode")
         vscode_dir.mkdir(parents=True, exist_ok=True)
         settings_file = vscode_dir / "settings.json"
@@ -233,42 +329,26 @@ def schema_cmd(
         )
 
 
-@app.command()
-def split(
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest to split"
-    ),
-    output_dir: Optional[Path] = typer.Option(
-        None, "--output-dir", "-o", help="Target output directory (defaults to manifest directory)"
-    ),
-    by: str = typer.Option(
-        "system", "--by", "-b", help="Decomposition strategy: 'system' (subsystem/category) or 'storey' (by level)"
-    ),
-    backup: bool = typer.Option(
-        True, "--backup/--no-backup", help="Create backup of original manifest if overwriting (project.yaml.bak)"
-    ),
-    dry_run: bool = typer.Option(
-        False, "--dry-run", help="Preview decomposition without writing files to disk"
-    ),
-):
-    """Split a monolithic project.yaml manifest into modular files under models/"""
+def cmd_split(args):
+    manifest = Path(args.manifest)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
+    output_dir = Path(args.output_dir) if args.output_dir else None
     try:
         summary_info = split_manifest(
             manifest_path=manifest,
             output_dir=output_dir,
-            by=by,
-            backup=backup,
-            dry_run=dry_run,
+            by=args.by,
+            backup=args.backup,
+            dry_run=args.dry_run,
         )
     except Exception as e:
         console.print(f"[bold red]Error during split:[/bold red] {e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
-    title = "[bold cyan]debim Split (Preview / Dry Run)[/bold cyan]" if dry_run else "[bold green]debim Split Complete[/bold green]"
+    title = "[bold cyan]debim Split (Preview / Dry Run)[/bold cyan]" if args.dry_run else "[bold green]debim Split Complete[/bold green]"
     table = Table(title=title, show_header=True, header_style="bold cyan")
     table.add_column("Module File", style="yellow")
     table.add_column("Elements", justify="right", style="green")
@@ -280,11 +360,11 @@ def split(
     total_elements = summary_info["total_elements"]
     num_modules = len(summary_info["modules"])
 
-    if dry_run:
+    if args.dry_run:
         console.print(
             Panel(
                 f"[bold yellow]Dry-run preview:[/bold yellow] {total_elements} elements across {num_modules} modules.\n"
-                f"Strategy: [cyan]{by}[/cyan]\n"
+                f"Strategy: [cyan]{args.by}[/cyan]\n"
                 "Run without [cyan]--dry-run[/cyan] to write modular manifest files to disk.",
                 style="yellow",
             )
@@ -293,32 +373,25 @@ def split(
         console.print(
             Panel(
                 f"[bold green]Successfully decomposed[/bold green] [cyan]{manifest}[/cyan] into [yellow]{num_modules}[/yellow] modular files!\n"
-                f"Total Elements: [green]{total_elements}[/green] | Strategy: [cyan]{by}[/cyan]\n"
+                f"Total Elements: [green]{total_elements}[/green] | Strategy: [cyan]{args.by}[/cyan]\n"
                 f"Root Manifest Updated: [cyan]{summary_info['root_file']}[/cyan] (with includes: [\"models/**/*.yaml\"])",
                 style="green",
             )
         )
 
 
-@app.command()
-def bundle(
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to modular project manifest to bundle"
-    ),
-    output: Optional[Path] = typer.Option(
-        None, "--output", "-o", help="Output path for bundled single-file manifest (default: stdout)"
-    ),
-):
-    """Bundle a modular project manifest (with includes:) into a single self-contained project.yaml"""
+def cmd_bundle(args):
+    manifest = Path(args.manifest)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
+    output = Path(args.output) if args.output else None
     try:
         bundled = bundle_manifest(manifest_path=manifest, output_path=output)
     except Exception as e:
         console.print(f"[bold red]Error during bundle:[/bold red] {e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     elem_count = len(bundled.get("elements", []))
     storey_count = len(bundled.get("spatial_structure", {}).get("storeys", []))
@@ -338,19 +411,10 @@ def bundle(
         print(yaml_str, end="")
 
 
-@app.command()
-def test(
-    test_dir: Path = typer.Option(
-        Path("tests"), "--tests", "-t", help="Directory containing compliance tests"
-    ),
-    verbose: bool = typer.Option(
-        False, "--verbose", "-v", help="Display verbose pytest output"
-    ),
-):
-    """Run building law & compliance test suite via pytest and report clean, descriptive rule checks"""
+def cmd_test(args):
     import subprocess
-    import sys
 
+    test_dir = Path(args.test_dir)
     console.print(
         Panel(
             f"[bold cyan]Automated Building Compliance Engine & Pytest Checker[/bold cyan]\n"
@@ -360,7 +424,7 @@ def test(
     )
 
     cmd = [sys.executable, "-m", "pytest", str(test_dir), "-rA"]
-    if verbose:
+    if args.verbose:
         cmd.append("-v")
 
     res = subprocess.run(cmd, capture_output=True, text=True)
@@ -385,23 +449,15 @@ def test(
             )
         )
 
-    raise typer.Exit(code=res.returncode)
+    sys.exit(res.returncode)
 
 
-@app.command(name="summary")
-@app.command(name="info", hidden=True)
-def summary(
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
-    ),
-    prices: Path = typer.Option(
-        Path("prices.json"), "--prices", "-p", help="Path to price catalog"
-    ),
-):
-    """Print high-level project summary table (Site bounds/area, footprint, storey elevations, element counts, cost)"""
+def cmd_summary(args):
+    manifest = Path(args.manifest)
+    prices = Path(args.prices)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     try:
         manifest_obj = load_manifest(manifest)
@@ -418,7 +474,6 @@ def summary(
             )
         )
 
-        # Site & Grids
         axes_x = list(manifest_obj.grids.axes_x.values())
         axes_y = list(manifest_obj.grids.axes_y.values())
         min_x, max_x = (min(axes_x), max(axes_x)) if axes_x else (0.0, 0.0)
@@ -440,13 +495,11 @@ def summary(
 
         console.print(site_table)
 
-        # Element Statistics Table
         class_counts = {}
         for elem in manifest_obj.elements:
             cls = elem.class_
             class_counts[cls] = class_counts.get(cls, 0) + 1
 
-        # Also count doors & windows if present in walls
         door_count = len(resolved.doors)
         window_count = len(resolved.windows)
         if door_count > 0:
@@ -463,7 +516,6 @@ def summary(
 
         console.print(elem_table)
 
-        # QTO & Cost Snapshot
         cost_str = "N/A (prices.json not found)"
         if prices.exists():
             try:
@@ -483,19 +535,14 @@ def summary(
 
     except Exception as e:
         console.print(f"[bold red]Summary Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@app.command()
-def qto(
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
-    ),
-):
-    """Calculate Quantitative Take-Off (concrete volume, formwork, rebar schedule)"""
+def cmd_qto(args):
+    manifest = Path(args.manifest)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     console.print(f"[bold blue]Calculating QTO for:[/bold blue] {manifest}")
     try:
@@ -608,42 +655,20 @@ def qto(
 
     except Exception as e:
         console.print(f"[bold red]QTO Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-cost_app = typer.Typer(
-    help="Calculate cost estimate or generate price catalog templates",
-    add_completion=False,
-    invoke_without_command=True,
-)
-app.add_typer(cost_app, name="cost")
-
-
-@cost_app.callback(invoke_without_command=True)
-def cost_main(
-    ctx: typer.Context,
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
-    ),
-    prices: Path = typer.Option(
-        Path("prices.json"), "--prices", "-p", help="Path or '-' to read price catalog"
-    ),
-    output: Optional[Path] = typer.Option(
-        None, "--output", "-o", help="Path to export BOQ CSV (e.g. dist/boq.csv)"
-    ),
-):
-    """Calculate cost estimate by matching QTO with price catalog"""
-    if ctx.invoked_subcommand is not None:
-        return
-
+def cmd_cost(args):
+    manifest = Path(args.manifest)
+    prices = Path(args.prices)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     prices_str = str(prices)
     if prices_str != "-" and not prices.exists():
         console.print(f"[bold red]Error:[/bold red] Price catalog '{prices}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     console.print(
         f"[bold blue]Calculating project cost for:[/bold blue] {manifest} [blue]using[/blue] {prices}"
@@ -694,42 +719,30 @@ def cost_main(
             Panel(summary_text, title="[bold green]Project Budget Summary[/bold green]")
         )
 
-        if output:
-            csv_path = estimate.export_csv(output)
+        if args.output:
+            csv_path = estimate.export_csv(Path(args.output))
             console.print(
                 f"[bold green]Exported BOQ CSV to:[/bold green] [cyan]{csv_path}[/cyan]"
             )
 
     except Exception as e:
         console.print(f"[bold red]Cost Estimation Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@cost_app.command(name="template")
-def cost_template(
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
-    ),
-    output: Optional[Path] = typer.Option(
-        None, "--output", "-o", help="Path for generated template file"
-    ),
-    format: str = typer.Option(
-        "yaml", "--format", help="Output format (yaml or json)"
-    ),
-    modular: bool = typer.Option(
-        False, "--modular/--no-modular", help="Generate modular folder structure"
-    ),
-):
-    """Automatically scan project manifest and generate minimal project-scoped price catalog template"""
+def cmd_cost_template(args):
+    manifest = Path(args.manifest)
+    output = Path(args.output) if args.output else None
+
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     if output is None:
-        if modular:
+        if args.modular:
             output = Path("prices/catalog.yaml")
         else:
-            ext = "json" if format.lower() == "json" else "yaml"
+            ext = "json" if args.format.lower() == "json" else "yaml"
             output = Path(f"prices.template.{ext}")
 
     console.print(
@@ -739,36 +752,29 @@ def cost_template(
         out_path = generate_cost_template(
             manifest=manifest,
             output_path=output,
-            format=format,
-            modular=modular,
+            format=args.format,
+            modular=args.modular,
         )
         console.print(
             Panel(
                 f"[bold green]Cost Catalog Template Generated Successfully![/bold green]\n"
                 f"[bold cyan]Output File:[/bold cyan] {out_path}\n"
-                f"[bold cyan]Modular Mode:[/bold cyan] {modular}\n"
+                f"[bold cyan]Modular Mode:[/bold cyan] {args.modular}\n"
                 f"[dim]Populate material_cost and labor_cost fields to complete the pricing catalog.[/dim]",
                 title="[bold green]debim Cost Template Generator[/bold green]",
             )
         )
     except Exception as e:
         console.print(f"[bold red]Cost Template Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@app.command()
-def compile(
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
-    ),
-    output: Path = typer.Option(
-        Path("dist/model.ifc"), "--output", "-o", help="Output IFC file path"
-    ),
-):
-    """Compile project.yaml to standardized IFC4 format via IfcOpenShell or STEP serializer"""
+def cmd_compile(args):
+    manifest = Path(args.manifest)
+    output = Path(args.output)
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     console.print(
         f"[bold green]Compiling[/bold green] {manifest} -> [cyan]{output}[/cyan]"
@@ -786,26 +792,13 @@ def compile(
         )
     except Exception as e:
         console.print(f"[bold red]Compilation Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@app.command()
-def view(
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest (.debim / .yaml)"
-    ),
-    port: int = typer.Option(8000, "--port", "-p", help="Port to serve 3D viewer"),
-    no_browser: bool = typer.Option(
-        False, "--no-browser", help="Do not open web browser automatically"
-    ),
-    watch: bool = typer.Option(
-        True, "--watch/--no-watch", "-w", help="Enable automatic live hot-reload on file save"
-    ),
-    export: Optional[Path] = typer.Option(
-        None, "--export", "-e", help="Export standalone 3D/2D HTML viewer file without running HTTP server"
-    ),
-):
-    """Launch lightweight local 3D preview server in browser with live hot-reload or export HTML"""
+def cmd_view(args):
+    manifest = Path(args.manifest)
+    export_path = Path(args.export) if args.export else None
+
     # Auto-detect default manifest file ONLY if manifest was not explicitly specified
     if manifest == Path("project.yaml") and not manifest.exists():
         for candidate in [Path("house.debim"), Path("project.debim"), Path("main.debim")]:
@@ -815,25 +808,26 @@ def view(
 
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     try:
-        html_content = generate_viewer_html(manifest, live_reload=watch and not export)
-        if export:
-            export.parent.mkdir(parents=True, exist_ok=True)
-            export.write_text(html_content, encoding="utf-8")
-            file_size = export.stat().st_size
+        watch = getattr(args, "watch", True)
+        html_content = generate_viewer_html(manifest, live_reload=watch and not export_path)
+        if export_path:
+            export_path.parent.mkdir(parents=True, exist_ok=True)
+            export_path.write_text(html_content, encoding="utf-8")
+            file_size = export_path.stat().st_size
             console.print(
                 Panel(
                     f"[bold green]Viewer HTML Exported Successfully![/bold green]\n"
-                    f"[bold cyan]Export Path:[/bold cyan] {export}\n"
+                    f"[bold cyan]Export Path:[/bold cyan] {export_path}\n"
                     f"[bold cyan]File Size:[/bold cyan] {file_size} bytes",
                     title="[bold blue]debim 3D Viewer Export[/bold blue]",
                 )
             )
             return
 
-        url = f"http://localhost:{port}"
+        url = f"http://localhost:{args.port}"
         watch_status = (
             "[bold green]Live Hot-Reload Active[/bold green] (edits in VS Code update in real-time)"
             if watch
@@ -849,38 +843,28 @@ def view(
         )
         serve_viewer(
             html_content,
-            port=port,
-            open_browser=not no_browser,
+            port=args.port,
+            open_browser=not args.no_browser,
             manifest_path=manifest,
             watch=watch,
         )
     except Exception as e:
         console.print(f"[bold red]Viewer Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@app.command(name="import")
-def import_ifc(
-    ifc_path: Path = typer.Argument(..., help="Path to input IFC file (.ifc)"),
-    output: Path = typer.Option(
-        Path("project.yaml"), "--output", "-o", help="Output project manifest path"
-    ),
-    bake_assets: bool = typer.Option(
-        False,
-        "--bake-assets/--no-bake-assets",
-        help="Automated GLB asset baker using IfcOpenShell to export complex 3D geometry into lightweight .glb assets",
-    ),
-):
-    """Import an IFC4/IFC2X3 file and convert to declarative project.yaml for QTO & Cost estimation"""
+def cmd_import(args):
+    ifc_path = Path(args.ifc_path)
+    output = Path(args.output)
     if not ifc_path.exists():
         console.print(f"[bold red]Error:[/bold red] IFC file '{ifc_path}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     console.print(f"[bold green]Importing IFC:[/bold green] {ifc_path} -> [cyan]{output}[/cyan]")
     try:
         from debim.importer import import_ifc_to_manifest
         assets_dir = output.parent / "assets" if output.parent != Path(".") else Path("assets")
-        manifest = import_ifc_to_manifest(ifc_path, bake_assets=bake_assets, assets_dir=assets_dir)
+        manifest = import_ifc_to_manifest(ifc_path, bake_assets=args.bake_assets, assets_dir=assets_dir)
 
         import json
         data = json.loads(manifest.model_dump_json(by_alias=True, exclude_none=True))
@@ -892,14 +876,14 @@ def import_ifc(
                 f"[bold green]IFC Successfully Imported to Declarative BIM![/bold green]\n"
                 f"[cyan]Output YAML:[/cyan] {output}\n"
                 f"[yellow]Elements Extracted:[/yellow] {len(manifest.elements)} elements\n"
-                f"[magenta]Asset Baking Enabled:[/magenta] {bake_assets}\n"
+                f"[magenta]Asset Baking Enabled:[/magenta] {args.bake_assets}\n"
                 f"[dim]Run 'debim qto -m {output}' to calculate quantities & cost.[/dim]",
                 title="[bold green]debim IFC Importer[/bold green]",
             )
         )
     except Exception as e:
         console.print(f"[bold red]Import Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
 def _resolve_target_manifest(target_str: str) -> ProjectManifest:
@@ -927,34 +911,25 @@ def _resolve_target_manifest(target_str: str) -> ProjectManifest:
         raise ValueError(f"Could not load manifest from '{target_str}': {e}")
 
 
-@app.command()
-def diff(
-    target_a: str = typer.Argument(..., help="First target (file path or git rev e.g. HEAD~1)"),
-    target_b: str = typer.Argument(..., help="Second target (file path or git rev e.g. HEAD)"),
-    prices: Path = typer.Option(
-        Path("prices.json"), "--prices", "-p", help="Path to price catalog"
-    ),
-):
-    """Git-aware manifest comparison engine reporting element deltas, QTO deltas, and Cost variance"""
+def cmd_diff(args):
+    prices = Path(args.prices)
     try:
-        manifest_a = _resolve_target_manifest(target_a)
+        manifest_a = _resolve_target_manifest(args.target_a)
     except Exception as e:
-        console.print(f"[bold red]Error loading target A ({target_a}):[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        console.print(f"[bold red]Error loading target A ({args.target_a}):[/bold red]\n{e}")
+        sys.exit(1)
 
     try:
-        manifest_b = _resolve_target_manifest(target_b)
+        manifest_b = _resolve_target_manifest(args.target_b)
     except Exception as e:
-        console.print(f"[bold red]Error loading target B ({target_b}):[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        console.print(f"[bold red]Error loading target B ({args.target_b}):[/bold red]\n{e}")
+        sys.exit(1)
 
-    console.print(f"[bold cyan]Comparing BIM Revisions:[/bold cyan] [yellow]{target_a}[/yellow] ➔ [green]{target_b}[/green]\n")
+    console.print(f"[bold cyan]Comparing BIM Revisions:[/bold cyan] [yellow]{args.target_a}[/yellow] ➔ [green]{args.target_b}[/green]\n")
 
-    # QTO calculations
     qto_a = calculate_qto(manifest_a)
     qto_b = calculate_qto(manifest_b)
 
-    # Cost calculations
     cost_a = None
     cost_b = None
     if prices.exists():
@@ -965,7 +940,6 @@ def diff(
         except Exception:
             pass
 
-    # Element comparison
     elems_a = {e.tag: e for e in manifest_a.elements}
     elems_b = {e.tag: e for e in manifest_b.elements}
 
@@ -1003,7 +977,6 @@ def diff(
 
     console.print(elem_table)
 
-    # Helper for delta formatting
     def fmt_delta(val: float, unit: str = "", currency: str = "") -> str:
         prefix = f"{currency} " if currency else ""
         suffix = f" {unit}" if unit else ""
@@ -1022,7 +995,6 @@ def diff(
         else:
             return f"[dim]0.00 {currency}[/dim]"
 
-    # QTO Deltas
     d_conc = qto_b.total_concrete_volume - qto_a.total_concrete_volume
     d_form = qto_b.total_formwork_area - qto_a.total_formwork_area
     d_rebar = qto_b.total_rebar_weight - qto_a.total_rebar_weight
@@ -1039,7 +1011,6 @@ def diff(
 
     console.print(qto_delta_table)
 
-    # Cost Variance Breakdown
     if cost_a and cost_b:
         d_mat = cost_b.total_material_cost - cost_a.total_material_cost
         d_lab = cost_b.total_labor_cost - cost_a.total_labor_cost
@@ -1069,39 +1040,20 @@ def diff(
     console.print(Panel(summary_msg, title="[bold green]Diff Summary[/bold green]"))
 
 
-scaffold_app = typer.Typer(
-    help="Developer scaffolding commands to generate BIM boilerplate & test skeletons",
-    add_completion=False,
-)
-app.add_typer(scaffold_app, name="scaffold")
-
-
-@scaffold_app.command(name="element")
-def scaffold_element_cmd(
-    class_name: str = typer.Argument(..., help="BIM Element class name (e.g. IfcRailing, IfcCurtainWall)"),
-    placement_type: str = typer.Option(
-        "grid", "--placement-type", "-p", help="Placement geometry type (grid, span, boundary, path, point)"
-    ),
-    layer: Optional[str] = typer.Option(
-        None, "--layer", "-l", help="Default hierarchical layer path (e.g., architecture/openings/doors)"
-    ),
-    dry_run: bool = typer.Option(
-        True, "--dry-run/--no-dry-run", help="Print generated code to stdout without writing files (default: true for safety)"
-    ),
-    output_dir: Optional[Path] = typer.Option(
-        None, "--output-dir", "-o", help="Optional directory path to emit generated code modules or test templates"
-    ),
-):
-    """Generate Pydantic v2 data model, resolver logic, QTO formula, and pytest test skeletons for a new element class."""
+def cmd_scaffold_element(args):
+    class_name = args.class_name
     if not class_name.startswith("Ifc"):
         class_name = f"Ifc{class_name[0].upper()}{class_name[1:]}"
+
+    dry_run = getattr(args, "dry_run", True)
+    output_dir = Path(args.output_dir) if args.output_dir else None
 
     console.print(
         Panel(
             f"[bold cyan]debim Element Scaffolder[/bold cyan]\n"
             f"[bold yellow]Element Class:[/bold yellow] {class_name}\n"
-            f"[bold yellow]Placement Type:[/bold yellow] {placement_type}\n"
-            f"[bold yellow]Default Layer:[/bold yellow] {layer or 'derived'}\n"
+            f"[bold yellow]Placement Type:[/bold yellow] {args.placement_type}\n"
+            f"[bold yellow]Default Layer:[/bold yellow] {args.layer or 'derived'}\n"
             f"[bold yellow]Dry Run Mode:[/bold yellow] {dry_run}",
             title="[bold green]scaffold element[/bold green]",
         )
@@ -1109,8 +1061,8 @@ def scaffold_element_cmd(
 
     artifacts = scaffold_element(
         class_name=class_name,
-        placement_type=placement_type,
-        layer=layer,
+        placement_type=args.placement_type,
+        layer=args.layer,
         dry_run=dry_run,
         output_dir=output_dir,
     )
@@ -1144,32 +1096,17 @@ def scaffold_element_cmd(
             )
         else:
             console.print("[bold red]Error:[/bold red] --no-dry-run requires --output-dir (-o) specified.")
-            raise typer.Exit(code=1)
+            sys.exit(1)
 
 
-draw_app = typer.Typer(
-    help="2D Architectural Blueprint & CAD export commands",
-    add_completion=False,
-)
-app.add_typer(draw_app, name="draw")
+def cmd_draw_view(args):
+    manifest = Path(args.manifest)
+    output = Path(args.output)
+    sheets = Path(args.sheets) if args.sheets else None
 
-
-@draw_app.command(name="view")
-def draw_view_cmd(
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
-    ),
-    sheets: Optional[Path] = typer.Option(
-        None, "--sheets", help="Directory containing sheet configs (*.yaml) or single sheet file"
-    ),
-    output: Path = typer.Option(
-        Path("dist/viewer_2d.html"), "--output", "-o", help="Output 2D HTML viewer file path"
-    ),
-):
-    """Generate standalone interactive 2D HTML blueprint viewer (viewer_2d.html) with sheet navigator drawer, pan-zoom, measuring ruler, and layer toggles"""
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     console.print(
         f"[bold green]Generating 2D Blueprint HTML Viewer:[/bold green] {manifest} -> [cyan]{output}[/cyan]"
@@ -1195,31 +1132,16 @@ def draw_view_cmd(
         )
     except Exception as e:
         console.print(f"[bold red]2D Viewer Export Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@draw_app.command(name="export-dxf")
-def draw_export_dxf(
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest"
-    ),
-    output: Path = typer.Option(
-        Path("dist/plan.dxf"), "--output", "-o", help="Output DXF file path"
-    ),
-    storey: Optional[str] = typer.Option(
-        None, "--storey", "-s", help="Target storey ID to slice (defaults to first storey)"
-    ),
-    units: str = typer.Option(
-        "mm", "--units", "-u", help="Output DXF length units: 'mm' (millimeters, INSUNITS=4) or 'm' (meters, INSUNITS=6)"
-    ),
-    cut_offset_z: float = typer.Option(
-        1.20, "--cut-offset-z", help="Horizontal cut-plane elevation offset above storey elevation (meters)"
-    ),
-):
-    """Export 2D section floor plan into industry-standard AutoCAD DXF layers (A-WALL, S-COLS, A-DOOR, A-WIND, A-GRID, A-DIMS)"""
+def cmd_draw_export_dxf(args):
+    manifest = Path(args.manifest)
+    output = Path(args.output)
+
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     console.print(
         f"[bold green]Exporting 2D CAD DXF:[/bold green] {manifest} -> [cyan]{output}[/cyan]"
@@ -1231,9 +1153,9 @@ def draw_export_dxf(
         out_path = export_2d_dxf(
             manifest_or_resolved=manifest_obj,
             output_path=output,
-            storey_id=storey,
-            cut_offset_z=cut_offset_z,
-            units=units,
+            storey_id=args.storey,
+            cut_offset_z=args.cut_offset_z,
+            units=args.units,
         )
 
         import ezdxf
@@ -1246,30 +1168,21 @@ def draw_export_dxf(
                 f"[bold green]2D AutoCAD DXF Export Successful![/bold green]\n"
                 f"[bold cyan]Output File:[/bold cyan] {out_path}\n"
                 f"[bold cyan]Entities Exported:[/bold cyan] {entity_count}\n"
-                f"[bold cyan]CAD Units:[/bold cyan] {units.upper()} ($INSUNITS={dxf_doc.header.get('$INSUNITS', 4)})\n"
+                f"[bold cyan]CAD Units:[/bold cyan] {args.units.upper()} ($INSUNITS={dxf_doc.header.get('$INSUNITS', 4)})\n"
                 f"[bold cyan]Exported Layers:[/bold cyan] {', '.join(layer_names)}",
                 title="[bold green]debim 2D DXF Exporter Engine[/bold green]",
             )
         )
     except Exception as e:
         console.print(f"[bold red]DXF Export Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@draw_app.command(name="generate-vqa")
-def draw_generate_vqa(
-    manifest: Optional[Path] = typer.Option(
-        None, "--manifest", "-m", help="Path to project manifest (.yaml)"
-    ),
-    output: Path = typer.Option(
-        Path("dist/vqa_dataset.json"), "--output", "-o", help="Output VQA dataset JSON path"
-    ),
-    image_dir: Path = typer.Option(
-        Path("dist/vqa_images"), "--image-dir", help="Directory to export rendered 2D SVG blueprint images"
-    ),
-    seed: int = typer.Option(42, "--seed", help="Random seed for distractor choice generation"),
-):
-    """Generate 2D Construction Blueprint VQA Multiple-Choice Dataset (Dimensions, Topology, Tags, Levels) and SVG sheet"""
+def cmd_draw_generate_vqa(args):
+    manifest = Path(args.manifest) if args.manifest else None
+    output = Path(args.output)
+    image_dir = Path(args.image_dir)
+
     console.print(f"[bold green]Generating VQA MCQ Dataset:[/bold green] -> [cyan]{output}[/cyan]")
     try:
         if str(Path.cwd()) not in sys.path:
@@ -1280,7 +1193,7 @@ def draw_generate_vqa(
             manifest_path=manifest,
             output_dataset_path=output,
             output_image_dir=image_dir,
-            seed=seed,
+            seed=args.seed,
         )
 
         q_count = ds_data.get("question_count", 0)
@@ -1299,36 +1212,14 @@ def draw_generate_vqa(
         )
     except Exception as e:
         console.print(f"[bold red]VQA Dataset Generation Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@draw_app.command(name="benchmark-vqa")
-def draw_benchmark_vqa(
-    dataset: Path = typer.Option(
-        Path("dist/vqa_dataset.json"), "--dataset", "-d", help="Path to VQA dataset JSON"
-    ),
-    api_key: Optional[str] = typer.Option(
-        None, "--api-key", "-k", help="Gemini API key (or set GEMINI_API_KEY environment variable)"
-    ),
-    model: str = typer.Option(
-        "models/gemini-3.8-live-extended-thinking", "--model", "-m", help="Gemini multimodal model (default: models/gemini-3.8-live-extended-thinking)"
-    ),
-    thinking_budget: int = typer.Option(
-        2048, "--thinking-budget", help="Thinking budget for Gemini extended thinking models"
-    ),
-    mock_eval: bool = typer.Option(
-        False, "--mock-eval", help="Perform mock dry-run evaluation without calling Gemini API"
-    ),
-    output: Path = typer.Option(
-        Path("dist/benchmark_vqa_report.json"), "--output", "-o", help="Path to write output JSON report"
-    ),
-    markdown_output: Path = typer.Option(
-        Path("dist/benchmark_vqa_report.md"), "--markdown-output", help="Path to write output Markdown report"
-    ),
-    rpm: int = typer.Option(60, "--rpm", help="Requests per minute rate limit"),
-    tpm: int = typer.Option(65000, "--tpm", help="Tokens per minute budget limit"),
-):
-    """Run 2D Construction Blueprint VQA Cognitive Benchmark using Gemini Multimodal Vision API or --mock-eval"""
+def cmd_draw_benchmark_vqa(args):
+    dataset = Path(args.dataset)
+    output = Path(args.output)
+    markdown_output = Path(args.markdown_output)
+
     console.print(f"[bold green]Running VQA Cognitive Benchmark:[/bold green] [yellow]{dataset}[/yellow]")
     try:
         if str(Path.cwd()) not in sys.path:
@@ -1337,12 +1228,12 @@ def draw_benchmark_vqa(
 
         report = run_vqa_benchmark(
             dataset_path=dataset,
-            api_key=api_key,
-            model_name=model,
-            mock_eval=mock_eval,
-            rpm=rpm,
-            tpm=tpm,
-            thinking_budget=thinking_budget,
+            api_key=args.api_key,
+            model_name=args.model,
+            mock_eval=args.mock_eval,
+            rpm=args.rpm,
+            tpm=args.tpm,
+            thinking_budget=args.thinking_budget,
             output_report_path=output,
             output_markdown_path=markdown_output,
         )
@@ -1363,38 +1254,17 @@ def draw_benchmark_vqa(
         )
     except Exception as e:
         console.print(f"[bold red]VQA Benchmark Execution Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-spec_app = typer.Typer(
-    help="Declarative material specification management & discrepancy auditing commands",
-    add_completion=False,
-)
-app.add_typer(spec_app, name="spec")
+def cmd_spec_build(args):
+    manifest = Path(args.manifest)
+    specs = Path(args.specs) if args.specs else None
+    output = Path(args.output)
 
-
-@spec_app.command(name="build")
-def spec_build_cmd(
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest (project.yaml)"
-    ),
-    specs: Optional[Path] = typer.Option(
-        None, "--specs", "-s", help="Path to material specifications manifest file or directory"
-    ),
-    output: Path = typer.Option(
-        Path("dist/specifications.md"), "--output", "-o", help="Output destination file path (.md, .html, or .docx)"
-    ),
-    format: Optional[str] = typer.Option(
-        None, "--format", "-f", help="Output format override ('markdown', 'html', or 'docx')"
-    ),
-    title: str = typer.Option(
-        "ARCHITECTURAL MATERIAL SPECIFICATIONS BOOK", "--title", "-t", help="Title of the Specification Book"
-    ),
-):
-    """Scan active project materials, resolve installed specifications, and compile a Specification Book."""
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     console.print(f"[bold blue]Compiling Specification Book for:[/bold blue] {manifest}")
     if specs:
@@ -1406,10 +1276,10 @@ def spec_build_cmd(
         book = build_specification_book(
             project_manifest=manifest,
             spec_manifest=specs,
-            title=title,
+            title=args.title,
         )
 
-        saved_path = book.save(output_path=output, format=format)
+        saved_path = book.save(output_path=output, format=args.format)
         file_size = saved_path.stat().st_size
 
         table = Table(
@@ -1444,42 +1314,27 @@ def spec_build_cmd(
             )
         )
 
-    except typer.Exit:
+    except SystemExit:
         raise
     except Exception as e:
         console.print(f"[bold red]Specification Book Build Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@spec_app.command(name="to-word")
-@spec_app.command(name="to-docx")
-def spec_to_word_cmd(
-    input_file: Path = typer.Argument(
-        ..., help="Path to input Markdown specification file (.md)"
-    ),
-    output: Optional[Path] = typer.Option(
-        None, "--output", "-o", help="Output destination Word file path (.docx)"
-    ),
-    font: str = typer.Option(
-        "TH Sarabun PSK", "--font", help="Primary Thai-compatible font family (e.g. 'TH Sarabun PSK', 'Cordia New', 'Aptos')"
-    ),
-    title: Optional[str] = typer.Option(
-        None, "--title", "-t", help="Document title for the specification book"
-    ),
-):
-    """Convert a Markdown specification book (.md) into a formatted Microsoft Word document (.docx)."""
+def cmd_spec_to_word(args):
+    input_file = Path(args.input_file)
     if not input_file.exists():
         console.print(f"[bold red]Error:[/bold red] Input file '{input_file}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
-    out_p = output if output else input_file.with_suffix(".docx")
+    out_p = Path(args.output) if args.output else input_file.with_suffix(".docx")
     console.print(f"[bold blue]Converting specification book to MS Word:[/bold blue] {input_file} -> {out_p}")
 
     try:
         from debim.spec.docx_exporter import markdown_to_docx
 
         md_content = input_file.read_text(encoding="utf-8")
-        saved_path = markdown_to_docx(md_content, out_p, title=title, font_name=font)
+        saved_path = markdown_to_docx(md_content, out_p, title=args.title, font_name=args.font)
         file_size = saved_path.stat().st_size
 
         console.print(
@@ -1487,32 +1342,23 @@ def spec_to_word_cmd(
                 f"[bold green]MS Word Document Exported Successfully![/bold green]\n"
                 f"[bold cyan]Input File:[/bold cyan] {input_file}\n"
                 f"[bold cyan]Output File:[/bold cyan] [cyan]{saved_path}[/cyan] ({file_size:,} bytes)\n"
-                f"[bold cyan]Font Family:[/bold cyan] {font}",
+                f"[bold cyan]Font Family:[/bold cyan] {args.font}",
                 title="[bold green]debim Spec Word Export[/bold green]",
                 style="green",
             )
         )
     except Exception as e:
         console.print(f"[bold red]Word Conversion Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@spec_app.command(name="audit")
-def spec_audit_cmd(
-    manifest: Path = typer.Option(
-        Path("project.yaml"), "--manifest", "-m", help="Path to project manifest (project.yaml)"
-    ),
-    specs: Optional[Path] = typer.Option(
-        None, "--specs", "-s", help="Path to material specifications manifest file or directory"
-    ),
-    strict: bool = typer.Option(
-        False, "--strict/--no-strict", help="Exit with code 1 if discrepancies exist"
-    ),
-):
-    """Cross-reference project manifest elements with material specification packages to audit discrepancies."""
+def cmd_spec_audit(args):
+    manifest = Path(args.manifest)
+    specs = Path(args.specs) if args.specs else None
+
     if not manifest.exists():
         console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
     console.print(f"[bold blue]Auditing Specifications for:[/bold blue] {manifest}")
     if specs:
@@ -1533,7 +1379,6 @@ def spec_audit_cmd(
         table.add_column("Status", justify="center")
         table.add_column("Referenced Element Tags", style="dim")
 
-        # Process missing specs
         for mat_id in res.missing_specs:
             tags = ", ".join(res.element_material_map.get(mat_id, [])) or "(manifest declared)"
             table.add_row(
@@ -1542,7 +1387,6 @@ def spec_audit_cmd(
                 tags,
             )
 
-        # Process unused specs
         for spec_id in res.unused_specs:
             table.add_row(
                 spec_id,
@@ -1550,7 +1394,6 @@ def spec_audit_cmd(
                 "(none)",
             )
 
-        # Process compliant specs
         compliant_specs = set(res.referenced_materials).intersection(set(res.spec_ids))
         for mat_id in sorted(compliant_specs):
             tags = ", ".join(res.element_material_map.get(mat_id, [])) or "(manifest declared)"
@@ -1579,50 +1422,30 @@ def spec_audit_cmd(
             )
         )
 
-        if strict and not res.is_compliant:
-            raise typer.Exit(code=1)
+        if args.strict and not res.is_compliant:
+            sys.exit(1)
 
-    except typer.Exit:
+    except SystemExit:
         raise
     except Exception as e:
         console.print(f"[bold red]Specification Audit Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@app.command()
-def mcp():
-    """Start the Model Context Protocol (MCP) server for AI coding agents."""
+def cmd_mcp(args):
     from debim.mcp import run_mcp_server
     run_mcp_server()
 
 
-@spec_app.command(name="add")
-def spec_add(
-    pkg_name: str = typer.Argument(
-        ..., help="Package identifier (e.g. @toa/supershield-exterior or org/repo)"
-    ),
-    specs_dir: Path = typer.Option(
-        Path("specs"),
-        "--specs-dir",
-        "-s",
-        help="Target project directory to install specification packages into",
-    ),
-    force: bool = typer.Option(
-        False,
-        "--force",
-        "-f",
-        help="Bypass local registry cache and force re-download from remote",
-    ),
-    cache_dir: Optional[Path] = typer.Option(
-        None, "--cache-dir", help="Custom registry cache directory"
-    ),
-):
-    """Install specification package into project local specs/ directory"""
-    console.print(f"[bold cyan]Fetching specification package:[/bold cyan] [yellow]{pkg_name}[/yellow]...")
+def cmd_spec_add(args):
+    specs_dir = Path(args.specs_dir)
+    cache_dir = Path(args.cache_dir) if args.cache_dir else None
+
+    console.print(f"[bold cyan]Fetching specification package:[/bold cyan] [yellow]{args.pkg_name}[/yellow]...")
     try:
         client = SpecRegistryClient(cache_dir=cache_dir)
-        installed_path = client.install_package(pkg_name, specs_dir=specs_dir, force=force)
-        pkg = client.fetch_package(pkg_name, force=False)
+        installed_path = client.install_package(args.pkg_name, specs_dir=specs_dir, force=args.force)
+        pkg = client.fetch_package(args.pkg_name, force=False)
 
         console.print(
             Panel(
@@ -1635,20 +1458,12 @@ def spec_add(
             )
         )
     except Exception as e:
-        console.print(f"[bold red]Error installing specification package '{pkg_name}':[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        console.print(f"[bold red]Error installing specification package '{args.pkg_name}':[/bold red]\n{e}")
+        sys.exit(1)
 
 
-@spec_app.command(name="list")
-def spec_list(
-    specs_dir: Path = typer.Option(
-        Path("specs"),
-        "--specs-dir",
-        "-s",
-        help="Directory containing installed specification packages",
-    ),
-):
-    """List installed specification packages and versions in local specs/ directory"""
+def cmd_spec_list(args):
+    specs_dir = Path(args.specs_dir)
     client = SpecRegistryClient()
     installed = client.list_installed_packages(specs_dir=specs_dir)
 
@@ -1682,21 +1497,8 @@ def spec_list(
     console.print(table)
 
 
-docs_app = typer.Typer(
-    help="Build, serve, and generate materials for the debim Interactive Class Directory",
-    add_completion=False,
-)
-app.add_typer(docs_app, name="docs")
-
-
-@docs_app.command(name="directory")
-@docs_app.command(name="view")
-def docs_directory_cmd(
-    output: Path = typer.Option(
-        Path("dist/class_directory.html"), "--output", "-o", help="Output Class Directory HTML webpage path"
-    ),
-):
-    """Export and view interactive BIM Class Directory and Encyclopedia web application."""
+def cmd_docs_directory(args):
+    output = Path(args.output)
     console.print(f"[bold green]Generating BIM Class Directory Webpage:[/bold green] -> [cyan]{output}[/cyan]")
     try:
         from debim.docs import export_class_directory
@@ -1714,7 +1516,7 @@ def docs_directory_cmd(
         )
     except Exception as e:
         console.print(f"[bold red]Docs Directory Export Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
 def _generate_docs_bundle(output_dir: Path, schema_version: str = "IFC4") -> Path:
@@ -1749,13 +1551,11 @@ def _generate_docs_bundle(output_dir: Path, schema_version: str = "IFC4") -> Pat
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(entities_dict, f, indent=2, ensure_ascii=False)
 
-    # Generate full 6-Dimension Interactive Class Directory & Encyclopedia
     from debim.docs.generator import export_class_directory
 
     index_path = output_dir / "index.html"
     export_class_directory(index_path)
 
-    # Ensure Farnsworth House viewer is available both at root and relative examples path
     farnsworth_src = Path("examples/farnsworth_house/viewer.html")
     if farnsworth_src.exists():
         import shutil
@@ -1767,7 +1567,6 @@ def _generate_docs_bundle(output_dir: Path, schema_version: str = "IFC4") -> Pat
         except Exception:
             pass
 
-    # Ensure schema_version & title metadata are present for verification
     content = index_path.read_text(encoding="utf-8")
     if "debim Interactive Class Directory" not in content:
         content = content.replace("<title>debim BIM Class Directory & Encyclopedia</title>", f"<title>debim Interactive Class Directory ({schema_version})</title>")
@@ -1778,19 +1577,11 @@ def _generate_docs_bundle(output_dir: Path, schema_version: str = "IFC4") -> Pat
     return output_dir
 
 
-@docs_app.command(name="build")
-def docs_build_cmd(
-    output_dir: Path = typer.Option(
-        Path("dist/docs"), "--output-dir", "-o", help="Output directory for generated documentation site"
-    ),
-    schema_version: str = typer.Option(
-        "IFC4", "--schema-version", "-s", help="Target buildingSMART IFC Schema version (IFC4 or IFC4X3)"
-    ),
-):
-    """Generates the complete interactive debim Class Directory static site bundle into dist/docs/"""
-    console.print(f"[bold cyan]Building debim Class Directory ({schema_version}):[/bold cyan] -> [yellow]{output_dir}[/yellow]")
+def cmd_docs_build(args):
+    output_dir = Path(args.output_dir)
+    console.print(f"[bold cyan]Building debim Class Directory ({args.schema_version}):[/bold cyan] -> [yellow]{output_dir}[/yellow]")
     try:
-        out_p = _generate_docs_bundle(output_dir=output_dir, schema_version=schema_version)
+        out_p = _generate_docs_bundle(output_dir=output_dir, schema_version=args.schema_version)
         files = list(out_p.glob("*"))
         index_size = (out_p / "index.html").stat().st_size
         json_size = (out_p / "entities.json").stat().st_size
@@ -1808,31 +1599,20 @@ def docs_build_cmd(
         )
     except Exception as e:
         console.print(f"[bold red]Docs Build Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@docs_app.command(name="serve")
-def docs_serve_cmd(
-    docs_dir: Path = typer.Option(
-        Path("dist/docs"), "--docs-dir", "-d", help="Directory containing built docs site"
-    ),
-    port: int = typer.Option(
-        8000, "--port", "-p", help="Port to serve documentation HTTP preview"
-    ),
-    no_browser: bool = typer.Option(
-        False, "--no-browser", help="Do not open web browser automatically"
-    ),
-):
-    """Spins up a local HTTP server to preview the class encyclopedia in the browser"""
+def cmd_docs_serve(args):
     import http.server
     import socketserver
     import webbrowser
 
+    docs_dir = Path(args.docs_dir)
     if not docs_dir.exists() or not (docs_dir / "index.html").exists():
         console.print(f"[bold yellow]Documentation bundle not found in '{docs_dir}'. Building now...[/bold yellow]")
         _generate_docs_bundle(output_dir=docs_dir)
 
-    url = f"http://localhost:{port}"
+    url = f"http://localhost:{args.port}"
     console.print(
         Panel(
             f"[bold green]Serving debim Class Directory at:[/bold green] [cyan bold]{url}[/cyan bold]\n"
@@ -1843,63 +1623,43 @@ def docs_serve_cmd(
     )
 
     class Handler(http.server.SimpleHTTPRequestHandler):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, directory=str(docs_dir.resolve()), **kwargs)
+        def __init__(self, *a, **kw):
+            super().__init__(*a, directory=str(docs_dir.resolve()), **kw)
 
-        def log_message(self, format, *args):
+        def log_message(self, format, *a):
             pass
 
-    if not no_browser:
+    if not args.no_browser:
         webbrowser.open(url)
 
     try:
-        with socketserver.TCPServer(("0.0.0.0", port), Handler) as httpd:
+        with socketserver.TCPServer(("0.0.0.0", args.port), Handler) as httpd:
             httpd.serve_forever()
     except KeyboardInterrupt:
         console.print("\n[dim]Stopped docs preview server.[/dim]")
 
 
-@docs_app.command(name="exemplar")
-def docs_exemplar_cmd(
-    class_name: Optional[str] = typer.Option(
-        None,
-        "--class-name",
-        "-c",
-        help="Target IFC class name (e.g. IfcColumn, IfcWall) or 'ALL' for all classes",
-    ),
-    output: Optional[Path] = typer.Option(
-        None,
-        "--output",
-        "-o",
-        help="Path to write generated exemplar YAML manifest. If omitted, prints to stdout.",
-    ),
-    format: str = typer.Option(
-        "yaml",
-        "--format",
-        "-f",
-        help="Output format ('yaml' or 'json')",
-    ),
-):
-    """Generate minimal, syntactically valid exemplar .debim manifest for given IFC class or all supported classes."""
+def cmd_docs_exemplar(args):
     try:
-        manifest_obj = generate_exemplar_manifest(class_name=class_name)
+        output_path = Path(args.output) if args.output else None
+        manifest_obj = generate_exemplar_manifest(class_name=args.class_name)
         dict_data = manifest_obj.model_dump(by_alias=True, exclude_none=True)
 
-        if format.lower() == "json":
+        if args.format.lower() == "json":
             import json
             out_str = json.dumps(dict_data, indent=2, ensure_ascii=False) + "\n"
         else:
             out_str = yaml.safe_dump(dict_data, allow_unicode=True, sort_keys=False)
 
-        if output:
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(out_str, encoding="utf-8")
+        if output_path:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(out_str, encoding="utf-8")
             console.print(
                 Panel(
                     f"[bold green]Exemplar Manifest Generated Successfully![/bold green]\n"
-                    f"[bold cyan]Target Class:[/bold cyan] {class_name or 'ALL'}\n"
+                    f"[bold cyan]Target Class:[/bold cyan] {args.class_name or 'ALL'}\n"
                     f"[bold cyan]Elements Generated:[/bold cyan] {len(manifest_obj.elements)}\n"
-                    f"[bold cyan]Saved Path:[/bold cyan] {output}",
+                    f"[bold cyan]Saved Path:[/bold cyan] {output_path}",
                     title="[bold green]debim Exemplar Generator[/bold green]",
                 )
             )
@@ -1908,23 +1668,14 @@ def docs_exemplar_cmd(
 
     except Exception as e:
         console.print(f"[bold red]Exemplar Generation Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
 
 
-@docs_app.command(name="export-data")
-def docs_export_data_cmd(
-    output_dir: Path = typer.Option(
-        Path("dist/docs"),
-        "--output-dir",
-        "-o",
-        help="Target output directory to export exemplar manifests and Thai spec clauses",
-    ),
-):
-    """Export complete exemplar manifests and Thai workmanship specification library data to disk."""
+def cmd_docs_export_data(args):
+    output_dir = Path(args.output_dir)
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        # 1. Export complete exemplar manifest (all classes)
         full_manifest = generate_exemplar_manifest(class_name="ALL")
         full_yaml_path = output_dir / "exemplar_all.debim.yaml"
         full_yaml_path.write_text(
@@ -1932,7 +1683,6 @@ def docs_export_data_cmd(
             encoding="utf-8",
         )
 
-        # 2. Export per-class exemplar snippets
         exemplars_dir = output_dir / "exemplars"
         exemplars_dir.mkdir(exist_ok=True)
         supported = get_supported_exemplar_classes()
@@ -1941,7 +1691,6 @@ def docs_export_data_cmd(
             cls_file = exemplars_dir / f"{cls_name.lower()}.yaml"
             cls_file.write_text(yaml.safe_dump(elem_data, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
-        # 3. Export Thai specs library
         specs_dir = output_dir / "specs_thai"
         specs_dir.mkdir(exist_ok=True)
         for code, clause in THAI_SPEC_LIBRARY.items():
@@ -1961,8 +1710,329 @@ def docs_export_data_cmd(
 
     except Exception as e:
         console.print(f"[bold red]Docs Export Error:[/bold red]\n{e}")
-        raise typer.Exit(code=1)
+        sys.exit(1)
+
+
+# --- Argparse Parser Construction ---
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="debim",
+        description="Minimal Declarative BIM (Building-as-Code) engine",
+    )
+    parser.add_argument("-v", "--version", action="store_true", help="Show debim version")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Suppress update check and non-essential output")
+
+    subparsers = parser.add_subparsers(dest="subcommand", help="Available subcommands")
+
+    # init
+    p_init = subparsers.add_parser("init", help="Create a new project scaffold")
+    p_init.add_argument("name", help="Name of the new project directory")
+    p_init.set_defaults(func=cmd_init)
+
+    # validate
+    p_validate = subparsers.add_parser("validate", help="Validate project.yaml schema, topology, and bSDD Psets")
+    p_validate.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    bsdd_group = p_validate.add_mutually_exclusive_group()
+    bsdd_group.add_argument("--bsdd", dest="bsdd", action="store_true", default=True, help="Perform buildingSMART bSDD Property Set validation")
+    bsdd_group.add_argument("--no-bsdd", dest="bsdd", action="store_false", help="Disable bSDD validation")
+    p_validate.add_argument("--strict-psets", action="store_true", default=False, help="Fail validation if non-compliant Pset types or values are found")
+    p_validate.set_defaults(func=cmd_validate)
+
+    # schema
+    p_schema = subparsers.add_parser("schema", help="Export debim language specification as JSON Schema")
+    p_schema.add_argument("-o", "--output", help="Target file path to write JSON schema")
+    p_schema.add_argument("--indent", type=int, default=2, help="JSON indentation level")
+    p_schema.add_argument("--vscode", action="store_true", help="Configure .vscode/settings.json with schema mapping")
+    p_schema.set_defaults(func=cmd_schema)
+
+    # split
+    p_split = subparsers.add_parser("split", help="Split monolithic project.yaml into modular files")
+    p_split.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_split.add_argument("-o", "--output-dir", help="Target output directory")
+    p_split.add_argument("-b", "--by", default="system", help="Decomposition strategy: 'system' or 'storey'")
+    backup_group = p_split.add_mutually_exclusive_group()
+    backup_group.add_argument("--backup", dest="backup", action="store_true", default=True, help="Create backup of original manifest")
+    backup_group.add_argument("--no-backup", dest="backup", action="store_false", help="Do not create backup")
+    p_split.add_argument("--dry-run", action="store_true", help="Preview decomposition without writing files")
+    p_split.set_defaults(func=cmd_split)
+
+    # bundle
+    p_bundle = subparsers.add_parser("bundle", help="Bundle modular project manifest into single file")
+    p_bundle.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_bundle.add_argument("-o", "--output", help="Output path for bundled single-file manifest")
+    p_bundle.set_defaults(func=cmd_bundle)
+
+    # test
+    p_test = subparsers.add_parser("test", help="Run building law & compliance test suite")
+    p_test.add_argument("-t", "--tests", dest="test_dir", default="tests", help="Directory containing compliance tests")
+    p_test.add_argument("-v", "--verbose", action="store_true", help="Display verbose pytest output")
+    p_test.set_defaults(func=cmd_test)
+
+    # summary / info
+    p_summary = subparsers.add_parser("summary", help="Print high-level project summary table")
+    p_summary.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_summary.add_argument("-p", "--prices", default="prices.json", help="Path to price catalog")
+    p_summary.set_defaults(func=cmd_summary)
+
+    p_info = subparsers.add_parser("info", help=argparse.SUPPRESS)
+    p_info.add_argument("-m", "--manifest", default="project.yaml")
+    p_info.add_argument("-p", "--prices", default="prices.json")
+    p_info.set_defaults(func=cmd_summary)
+
+    # qto
+    p_qto = subparsers.add_parser("qto", help="Calculate Quantitative Take-Off (QTO)")
+    p_qto.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_qto.set_defaults(func=cmd_qto)
+
+    # cost
+    p_cost = subparsers.add_parser("cost", help="Calculate cost estimate or generate price catalog template")
+    p_cost.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_cost.add_argument("-p", "--prices", default="prices.json", help="Path or '-' to read price catalog")
+    p_cost.add_argument("-o", "--output", help="Path to export BOQ CSV")
+
+    cost_subparsers = p_cost.add_subparsers(dest="cost_subcommand")
+    p_cost_template = cost_subparsers.add_parser("template", help="Generate price catalog template")
+    p_cost_template.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_cost_template.add_argument("-o", "--output", help="Path for generated template file")
+    p_cost_template.add_argument("--format", default="yaml", help="Output format (yaml or json)")
+    mod_group = p_cost_template.add_mutually_exclusive_group()
+    mod_group.add_argument("--modular", dest="modular", action="store_true", help="Generate modular folder structure")
+    mod_group.add_argument("--no-modular", dest="modular", action="store_false", default=False)
+    p_cost_template.set_defaults(func=cmd_cost_template)
+    p_cost.set_defaults(func=cmd_cost)
+
+    # compile
+    p_compile = subparsers.add_parser("compile", help="Compile project.yaml to IFC4 format")
+    p_compile.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_compile.add_argument("-o", "--output", default="dist/model.ifc", help="Output IFC file path")
+    p_compile.set_defaults(func=cmd_compile)
+
+    # view
+    p_view = subparsers.add_parser("view", help="Launch local 3D preview server or export HTML")
+    p_view.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_view.add_argument("-p", "--port", type=int, default=8000, help="Port to serve 3D viewer")
+    p_view.add_argument("--no-browser", action="store_true", help="Do not open web browser automatically")
+    watch_group = p_view.add_mutually_exclusive_group()
+    watch_group.add_argument("-w", "--watch", dest="watch", action="store_true", default=True, help="Enable automatic live hot-reload")
+    watch_group.add_argument("--no-watch", dest="watch", action="store_false", help="Disable live hot-reload")
+    p_view.add_argument("-e", "--export", help="Export standalone 3D/2D HTML viewer file")
+    p_view.set_defaults(func=cmd_view)
+
+    # import
+    p_import = subparsers.add_parser("import", help="Import an IFC file and convert to project.yaml")
+    p_import.add_argument("ifc_path", help="Path to input IFC file (.ifc)")
+    p_import.add_argument("-o", "--output", default="project.yaml", help="Output project manifest path")
+    bake_group = p_import.add_mutually_exclusive_group()
+    bake_group.add_argument("--bake-assets", dest="bake_assets", action="store_true", help="Automated GLB asset baker")
+    bake_group.add_argument("--no-bake-assets", dest="bake_assets", action="store_false", default=False)
+    p_import.set_defaults(func=cmd_import)
+
+    # diff
+    p_diff = subparsers.add_parser("diff", help="Git-aware manifest comparison engine")
+    p_diff.add_argument("target_a", help="First target (file path or git rev)")
+    p_diff.add_argument("target_b", help="Second target (file path or git rev)")
+    p_diff.add_argument("-p", "--prices", default="prices.json", help="Path to price catalog")
+    p_diff.set_defaults(func=cmd_diff)
+
+    # scaffold
+    p_scaffold = subparsers.add_parser("scaffold", help="Developer scaffolding commands")
+    scaffold_subparsers = p_scaffold.add_subparsers(dest="scaffold_subcommand")
+    p_scaffold_elem = scaffold_subparsers.add_parser("element", help="Generate code skeleton for a new element class")
+    p_scaffold_elem.add_argument("class_name", help="BIM Element class name")
+    p_scaffold_elem.add_argument("-p", "--placement-type", default="grid", help="Placement geometry type")
+    p_scaffold_elem.add_argument("-l", "--layer", help="Default hierarchical layer path")
+    dry_group = p_scaffold_elem.add_mutually_exclusive_group()
+    dry_group.add_argument("--dry-run", dest="dry_run", action="store_true", default=True, help="Print generated code to stdout")
+    dry_group.add_argument("--no-dry-run", dest="dry_run", action="store_false", help="Write generated code to disk")
+    p_scaffold_elem.add_argument("-o", "--output-dir", help="Directory path to emit generated code")
+    p_scaffold_elem.set_defaults(func=cmd_scaffold_element)
+
+    # draw
+    p_draw = subparsers.add_parser("draw", help="2D Architectural Blueprint & CAD export commands")
+    draw_subparsers = p_draw.add_subparsers(dest="draw_subcommand")
+
+    p_draw_view = draw_subparsers.add_parser("view", help="Generate standalone interactive 2D HTML blueprint viewer")
+    p_draw_view.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_draw_view.add_argument("--sheets", help="Directory containing sheet configs or single sheet file")
+    p_draw_view.add_argument("-o", "--output", default="dist/viewer_2d.html", help="Output 2D HTML viewer file path")
+    p_draw_view.set_defaults(func=cmd_draw_view)
+
+    p_draw_dxf = draw_subparsers.add_parser("export-dxf", help="Export 2D floor plan to AutoCAD DXF")
+    p_draw_dxf.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_draw_dxf.add_argument("-o", "--output", default="dist/plan.dxf", help="Output DXF file path")
+    p_draw_dxf.add_argument("-s", "--storey", help="Target storey ID to slice")
+    p_draw_dxf.add_argument("-u", "--units", default="mm", help="Output DXF length units ('mm' or 'm')")
+    p_draw_dxf.add_argument("--cut-offset-z", type=float, default=1.20, help="Cut-plane elevation offset above storey")
+    p_draw_dxf.set_defaults(func=cmd_draw_export_dxf)
+
+    p_draw_vqa = draw_subparsers.add_parser("generate-vqa", help="Generate 2D Construction Blueprint VQA MCQ Dataset")
+    p_draw_vqa.add_argument("-m", "--manifest", help="Path to project manifest")
+    p_draw_vqa.add_argument("-o", "--output", default="dist/vqa_dataset.json", help="Output VQA dataset JSON path")
+    p_draw_vqa.add_argument("--image-dir", default="dist/vqa_images", help="Directory to export rendered 2D SVG images")
+    p_draw_vqa.add_argument("--seed", type=int, default=42, help="Random seed")
+    p_draw_vqa.set_defaults(func=cmd_draw_generate_vqa)
+
+    p_draw_bench = draw_subparsers.add_parser("benchmark-vqa", help="Run 2D Construction Blueprint VQA Cognitive Benchmark")
+    p_draw_bench.add_argument("-d", "--dataset", default="dist/vqa_dataset.json", help="Path to VQA dataset JSON")
+    p_draw_bench.add_argument("-k", "--api-key", help="Gemini API key")
+    p_draw_bench.add_argument("-m", "--model", default="models/gemini-3.8-live-extended-thinking", help="Gemini multimodal model")
+    p_draw_bench.add_argument("--thinking-budget", type=int, default=2048, help="Thinking budget")
+    p_draw_bench.add_argument("--mock-eval", action="store_true", help="Perform mock evaluation")
+    p_draw_bench.add_argument("-o", "--output", default="dist/benchmark_vqa_report.json", help="Output JSON report path")
+    p_draw_bench.add_argument("--markdown-output", default="dist/benchmark_vqa_report.md", help="Output Markdown report path")
+    p_draw_bench.add_argument("--rpm", type=int, default=60, help="Requests per minute rate limit")
+    p_draw_bench.add_argument("--tpm", type=int, default=65000, help="Tokens per minute budget limit")
+    p_draw_bench.set_defaults(func=cmd_draw_benchmark_vqa)
+
+    # spec
+    p_spec = subparsers.add_parser("spec", help="Material specification management & auditing")
+    spec_subparsers = p_spec.add_subparsers(dest="spec_subcommand")
+
+    p_spec_build = spec_subparsers.add_parser("build", help="Compile a Specification Book")
+    p_spec_build.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_spec_build.add_argument("-s", "--specs", help="Path to material specifications manifest or directory")
+    p_spec_build.add_argument("-o", "--output", default="dist/specifications.md", help="Output file path")
+    p_spec_build.add_argument("-f", "--format", help="Output format override")
+    p_spec_build.add_argument("-t", "--title", default="ARCHITECTURAL MATERIAL SPECIFICATIONS BOOK", help="Title of Specification Book")
+    p_spec_build.set_defaults(func=cmd_spec_build)
+
+    p_spec_word = spec_subparsers.add_parser("to-word", help="Convert Markdown specification book to MS Word")
+    p_spec_word.add_argument("input_file", help="Path to input Markdown specification file")
+    p_spec_word.add_argument("-o", "--output", help="Output destination Word file path")
+    p_spec_word.add_argument("--font", default="TH Sarabun PSK", help="Primary font family")
+    p_spec_word.add_argument("-t", "--title", help="Document title")
+    p_spec_word.set_defaults(func=cmd_spec_to_word)
+
+    p_spec_docx = spec_subparsers.add_parser("to-docx", help=argparse.SUPPRESS)
+    p_spec_docx.add_argument("input_file")
+    p_spec_docx.add_argument("-o", "--output")
+    p_spec_docx.add_argument("--font", default="TH Sarabun PSK")
+    p_spec_docx.add_argument("-t", "--title")
+    p_spec_docx.set_defaults(func=cmd_spec_to_word)
+
+    p_spec_audit = spec_subparsers.add_parser("audit", help="Cross-reference project manifest elements with specs")
+    p_spec_audit.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
+    p_spec_audit.add_argument("-s", "--specs", help="Path to material specifications manifest or directory")
+    strict_group = p_spec_audit.add_mutually_exclusive_group()
+    strict_group.add_argument("--strict", dest="strict", action="store_true", help="Exit code 1 if discrepancies exist")
+    strict_group.add_argument("--no-strict", dest="strict", action="store_false", default=False)
+    p_spec_audit.set_defaults(func=cmd_spec_audit)
+
+    p_spec_add = spec_subparsers.add_parser("add", help="Install specification package into project local specs/")
+    p_spec_add.add_argument("pkg_name", help="Package identifier")
+    p_spec_add.add_argument("-s", "--specs-dir", default="specs", help="Target project directory")
+    p_spec_add.add_argument("-f", "--force", action="store_true", help="Bypass local cache")
+    p_spec_add.add_argument("--cache-dir", help="Custom registry cache directory")
+    p_spec_add.set_defaults(func=cmd_spec_add)
+
+    p_spec_list = spec_subparsers.add_parser("list", help="List installed specification packages")
+    p_spec_list.add_argument("-s", "--specs-dir", default="specs", help="Directory containing installed packages")
+    p_spec_list.set_defaults(func=cmd_spec_list)
+
+    # mcp
+    p_mcp = subparsers.add_parser("mcp", help="Start Model Context Protocol (MCP) server")
+    p_mcp.set_defaults(func=cmd_mcp)
+
+    # docs
+    p_docs = subparsers.add_parser("docs", help="Interactive Class Directory documentation engine")
+    docs_subparsers = p_docs.add_subparsers(dest="docs_subcommand")
+
+    p_docs_dir = docs_subparsers.add_parser("directory", help="Export interactive BIM Class Directory web app")
+    p_docs_dir.add_argument("-o", "--output", default="dist/class_directory.html", help="Output HTML path")
+    p_docs_dir.set_defaults(func=cmd_docs_directory)
+
+    p_docs_view = docs_subparsers.add_parser("view", help=argparse.SUPPRESS)
+    p_docs_view.add_argument("-o", "--output", default="dist/class_directory.html")
+    p_docs_view.set_defaults(func=cmd_docs_directory)
+
+    p_docs_build = docs_subparsers.add_parser("build", help="Generates complete interactive debim Class Directory static site")
+    p_docs_build.add_argument("-o", "--output-dir", default="dist/docs", help="Output directory")
+    p_docs_build.add_argument("-s", "--schema-version", default="IFC4", help="Target IFC Schema version")
+    p_docs_build.set_defaults(func=cmd_docs_build)
+
+    p_docs_serve = docs_subparsers.add_parser("serve", help="Local HTTP server to preview class encyclopedia", description="Spins up a local HTTP server to preview the class encyclopedia in the browser")
+    p_docs_serve.add_argument("-d", "--docs-dir", default="dist/docs", help="Directory containing built docs site")
+    p_docs_serve.add_argument("-p", "--port", type=int, default=8000, help="Port to serve preview")
+    p_docs_serve.add_argument("--no-browser", action="store_true", help="Do not open web browser automatically")
+    p_docs_serve.set_defaults(func=cmd_docs_serve)
+
+    p_docs_ex = docs_subparsers.add_parser("exemplar", help="Generate exemplar .debim manifest")
+    p_docs_ex.add_argument("-c", "--class-name", help="Target IFC class name or 'ALL'")
+    p_docs_ex.add_argument("-o", "--output", help="Path to write generated exemplar YAML")
+    p_docs_ex.add_argument("-f", "--format", default="yaml", help="Output format ('yaml' or 'json')")
+    p_docs_ex.set_defaults(func=cmd_docs_exemplar)
+
+    p_docs_exp = docs_subparsers.add_parser("export-data", help="Export complete exemplar manifests and Thai spec clauses")
+    p_docs_exp.add_argument("-o", "--output-dir", default="dist/docs", help="Target output directory")
+    p_docs_exp.set_defaults(func=cmd_docs_export_data)
+
+    return parser
+
+
+# --- App Wrapper for Typer Compatibility in tests & entrypoints ---
+
+class AppWrapper:
+    """Wrapper that emulates typer.Typer interface for backwards-compatibility in existing code/tests."""
+    def __call__(self, args: Optional[List[str]] = None):
+        return main(args)
+
+    def invoke(self, args: Optional[List[str]] = None):
+        return main(args)
+
+app = AppWrapper()
+
+
+def main(args: Optional[List[str]] = None):
+    parser = build_parser()
+
+    if args is None:
+        raw_args = sys.argv[1:]
+    else:
+        raw_args = list(args)
+
+    parsed_args = parser.parse_args(raw_args)
+
+    if parsed_args.version:
+        console.print(DEBIM_BANNER)
+        console.print(
+            f"[bold cyan]debim[/bold cyan] version [bold green]{__version__}[/bold green] "
+            f"| Developer: [bold #38bdf8]Prida Takon[/bold #38bdf8] ([dim]@PRIDA-TAKON[/dim])"
+        )
+        check_and_notify_updates(console=console, quiet=parsed_args.quiet, ctx=parsed_args)
+        sys.exit(0)
+
+    if not parsed_args.subcommand:
+        console.print(DEBIM_BANNER)
+        parser.print_help()
+        check_and_notify_updates(console=console, quiet=parsed_args.quiet, ctx=parsed_args)
+        sys.exit(0)
+
+    # Check for sub-subcommands if not handled
+    if parsed_args.subcommand == "cost" and hasattr(parsed_args, "cost_subcommand") and not parsed_args.cost_subcommand:
+        # Ran `debim cost` directly
+        pass
+    elif parsed_args.subcommand == "scaffold" and not getattr(parsed_args, "scaffold_subcommand", None):
+        parser.parse_args([parsed_args.subcommand, "--help"])
+        sys.exit(0)
+    elif parsed_args.subcommand == "draw" and not getattr(parsed_args, "draw_subcommand", None):
+        parser.parse_args([parsed_args.subcommand, "--help"])
+        sys.exit(0)
+    elif parsed_args.subcommand == "spec" and not getattr(parsed_args, "spec_subcommand", None):
+        parser.parse_args([parsed_args.subcommand, "--help"])
+        sys.exit(0)
+    elif parsed_args.subcommand == "docs" and not getattr(parsed_args, "docs_subcommand", None):
+        parser.parse_args([parsed_args.subcommand, "--help"])
+        sys.exit(0)
+
+    check_and_notify_updates(console=console, quiet=parsed_args.quiet, ctx=parsed_args)
+
+    if hasattr(parsed_args, "func"):
+        parsed_args.func(parsed_args)
+    else:
+        parser.print_help()
+        sys.exit(0)
 
 
 if __name__ == "__main__":
-    app()
+    main()

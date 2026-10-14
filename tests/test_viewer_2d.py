@@ -7,7 +7,7 @@ and CLI command integration ('debim draw view').
 import json
 from pathlib import Path
 import pytest
-from typer.testing import CliRunner
+from cli_runner import CliRunner
 
 from debim.cli import app
 from debim.draw.renderer import SheetConfig

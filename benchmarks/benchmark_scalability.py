@@ -13,16 +13,19 @@ import tracemalloc
 from typing import Any, Dict, List, Optional
 import yaml
 
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.table import Table
+    console = Console()
+except ImportError:
+    from debim.cli import console, Panel, Table
 
 from debim.compiler import compile_to_ifc
 from debim.qto import calculate_qto
 from debim.resolver import resolve_manifest
 from debim.schema import load_manifest
 
-console = Console()
 
 DEFAULT_SCALES = [100, 1000, 5000, 10000]
 
