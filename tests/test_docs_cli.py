@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typer.testing import CliRunner
+from tests.cli_runner import CliRunner
 from debim.cli import app, _generate_docs_bundle
 
 runner = CliRunner()

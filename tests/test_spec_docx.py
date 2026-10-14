@@ -4,7 +4,7 @@ Tests for Specification Book MS Word (.docx) export and CLI command.
 
 import pytest
 from pathlib import Path
-from typer.testing import CliRunner
+from tests.cli_runner import CliRunner
 
 pytest.importorskip("docx", reason="python-docx is an optional dependency for Word export")
 

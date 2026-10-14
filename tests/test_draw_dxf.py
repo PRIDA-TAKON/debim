@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 import yaml
 import ezdxf
-from typer.testing import CliRunner
+from tests.cli_runner import CliRunner
 
 from debim.cli import app
 from debim.draw import export_2d_dxf

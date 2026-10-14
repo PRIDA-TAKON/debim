@@ -342,7 +342,7 @@ def test_export_json_schema_to_file(tmp_path):
 
 def test_schema_cli_export(tmp_path, monkeypatch):
     import json
-    from typer.testing import CliRunner
+    from tests.cli_runner import CliRunner
     from debim.cli import app
 
     runner = CliRunner()

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import pytest
 import yaml
-from typer.testing import CliRunner
+from tests.cli_runner import CliRunner
 
 from debim.cli import app
 from debim.docs.exemplar import (

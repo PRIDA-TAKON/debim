@@ -3,7 +3,7 @@ Unit tests for buildingSMART bSDD (Building Data Dictionary) Pset validation eng
 """
 
 import pytest
-from typer.testing import CliRunner
+from tests.cli_runner import CliRunner
 import yaml
 
 from debim.bsdd import (

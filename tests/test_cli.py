@@ -2,7 +2,7 @@
 Basic smoke tests for CLI entrypoint
 """
 
-from typer.testing import CliRunner
+from tests.cli_runner import CliRunner
 from debim.cli import app
 
 runner = CliRunner()

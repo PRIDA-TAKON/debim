@@ -10,11 +10,13 @@ import sys
 from typing import Any, Dict, Optional, Tuple
 
 import ifcopenshell
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
-
-console = Console()
+try:
+    from rich.console import Console
+    from rich.table import Table
+    from rich.panel import Panel
+    console = Console()
+except ImportError:
+    from debim.cli import console, Panel, Table
 
 
 def count_ifc_elements(ifc_path: Path) -> Tuple[int, Counter]:
