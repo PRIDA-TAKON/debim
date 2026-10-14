@@ -238,7 +238,7 @@ def _bake_element_to_glb(
     geom_settings: Any,
 ) -> Optional[str]:
     """
-    Bake complex 3D element geometry from IFC into a compact binary .glb asset using trimesh.
+    Bake complex 3D element geometry from IFC into a compact binary .glb asset.
     Centers the mesh origin at its local coordinate base (X/Y center, min Z).
     Re-uses existing .glb file if present.
     """
@@ -254,7 +254,6 @@ def _bake_element_to_glb(
 
     try:
         import ifcopenshell.geom
-        import trimesh
         import numpy as np
 
         shape = ifcopenshell.geom.create_shape(geom_settings, elem)
@@ -267,20 +266,26 @@ def _bake_element_to_glb(
         verts = np.array(verts_flat, dtype=np.float64).reshape(-1, 3)
         faces = np.array(faces_flat, dtype=np.int32).reshape(-1, 3)
 
-        mesh = trimesh.Trimesh(vertices=verts, faces=faces, process=False)
-        if len(mesh.vertices) == 0:
+        if len(verts) == 0:
             return None
 
-        min_bounds, max_bounds = mesh.bounds
+        min_bounds = verts.min(axis=0)
+        max_bounds = verts.max(axis=0)
         center_x = (min_bounds[0] + max_bounds[0]) / 2.0
         center_y = (min_bounds[1] + max_bounds[1]) / 2.0
         min_z = min_bounds[2]
 
-        mesh.vertices -= [center_x, center_y, min_z]
+        verts_centered = verts - [center_x, center_y, min_z]
 
         glb_dir.mkdir(parents=True, exist_ok=True)
-        glb_data = trimesh.exchange.gltf.export_glb(mesh)
-        glb_path.write_bytes(glb_data)
+        try:
+            import importlib
+            trimesh_mod = importlib.import_module("trimesh")
+            mesh = trimesh_mod.Trimesh(vertices=verts_centered, faces=faces, process=False)
+            glb_data = trimesh_mod.exchange.gltf.export_glb(mesh)
+            glb_path.write_bytes(glb_data)
+        except Exception:
+            return None
 
         return rel_path
     except Exception:

@@ -372,7 +372,6 @@ dependencies = [
     { name = "pyyaml" },
     { name = "rich" },
     { name = "shapely" },
-    { name = "trimesh" },
     { name = "typer" },
 ]
 
@@ -381,6 +380,7 @@ all = [
     { name = "ifcopenshell" },
     { name = "mcp" },
     { name = "python-docx" },
+    { name = "trimesh" },
 ]
 dev = [
     { name = "playwright" },
@@ -416,7 +416,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "rich", specifier = ">=13.0.0" },
     { name = "shapely", specifier = ">=2.0.0" },
-    { name = "trimesh", specifier = ">=4.0.0" },
+    { name = "trimesh", marker = "extra == 'all'", specifier = ">=4.0.0" },
     { name = "typer", specifier = ">=0.12.0" },
 ]
 provides-extras = ["mcp", "ifc", "docx", "dev", "all"]

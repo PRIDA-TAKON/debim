@@ -5,12 +5,43 @@ Unit tests for QTO Engine (debim.qto).
 import pytest
 from debim.qto import (
     calculate_qto,
+    compute_watertight_mesh_volume,
     get_bar_unit_weight,
     parse_footing_mesh,
     parse_main_bars,
     parse_stirrups,
 )
 from debim.schema import load_manifest
+
+
+def test_compute_watertight_mesh_volume():
+    """Verify compute_watertight_mesh_volume returns exact volume via Divergence Theorem."""
+    import numpy as np
+
+    # Test unit cube centered at origin [-0.5, 0.5]^3 (Volume = 1.0)
+    verts = np.array([
+        [-0.5, -0.5, -0.5],
+        [ 0.5, -0.5, -0.5],
+        [ 0.5,  0.5, -0.5],
+        [-0.5,  0.5, -0.5],
+        [-0.5, -0.5,  0.5],
+        [ 0.5, -0.5,  0.5],
+        [ 0.5,  0.5,  0.5],
+        [-0.5,  0.5,  0.5],
+    ], dtype=np.float64)
+
+    # 12 triangular faces of cube
+    faces = np.array([
+        [0, 2, 1], [0, 3, 2],  # Bottom (-Z)
+        [4, 5, 6], [4, 6, 7],  # Top (+Z)
+        [0, 1, 5], [0, 5, 4],  # Front (-Y)
+        [2, 3, 7], [2, 7, 6],  # Back (+Y)
+        [0, 4, 7], [0, 7, 3],  # Left (-X)
+        [1, 2, 6], [1, 6, 5],  # Right (+X)
+    ], dtype=np.int32)
+
+    vol = compute_watertight_mesh_volume(verts, faces)
+    assert vol == pytest.approx(1.0, rel=1e-5)
 
 
 def test_bar_unit_weight_lookup_and_fallback():
