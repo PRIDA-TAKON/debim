@@ -110,11 +110,11 @@ def test_townhouse_qto_calculations(sample_project_path):
     assert col_qto.formwork_area == pytest.approx(2.800, rel=1e-2)
     assert col_qto.total_rebar_weight == pytest.approx(26.354, rel=1e-2)
 
-    # Beam B-A1_B1
+    # Beam B-A1_B1 (Gross formwork = 4.00 m², Net after column C-A1 deduction = 3.92 m²)
     beam_qto = qto.get_element("B-A1_B1")
     assert beam_qto is not None
     assert beam_qto.concrete_volume == pytest.approx(0.320, rel=1e-2)
-    assert beam_qto.formwork_area == pytest.approx(4.000, rel=1e-2)
+    assert beam_qto.formwork_area == pytest.approx(3.920, rel=1e-2)
     assert beam_qto.total_rebar_weight == pytest.approx(58.384, rel=1e-2)
 
     # Wall W-A1_A2

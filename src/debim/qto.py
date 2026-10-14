@@ -81,6 +81,32 @@ UNIT_WEIGHTS: Dict[str, float] = {
     "DB25": 3.853,
 }
 
+# Thai Comptroller General's Department (CGD / กรมบัญชีกลาง ว480) & EIT / วสท. Default Reinforcement Density Table
+# Values in kg/m³ concrete (or kg/m² for wire mesh)
+CGD_V480_REINFORCEMENT_DENSITY: Dict[str, Dict[str, Any]] = {
+    "footing": {
+        "total_density": 110.0,  # kg/m³
+        "breakdown": {"DB12_16": 95.0, "RB9": 15.0},
+    },
+    "column": {
+        "total_density": 160.0,  # kg/m³
+        "breakdown": {"DB16_20": 135.0, "RB6_9": 25.0},
+    },
+    "beam": {
+        "total_density": 130.0,  # kg/m³
+        "breakdown": {"DB12_20": 110.0, "RB6_9": 20.0},
+    },
+    "slab": {
+        "total_density": 90.0,   # kg/m³ for elevated RC slabs
+        "ground_slab_wiremesh": 3.5,  # kg/m² for ground slabs
+        "breakdown": {"DB10_12": 70.0, "RB9": 20.0},
+    },
+    "stair": {
+        "total_density": 110.0,  # kg/m³
+        "breakdown": {"DB12": 85.0, "RB9": 25.0},
+    },
+}
+
 
 def get_bar_unit_weight(bar_type: str) -> float:
     """Look up standard unit weight or calculate via generic formula (diameter_mm^2 / 162.0)."""
@@ -924,6 +950,13 @@ def calculate_element_qto(
             for btype, wt in my_dict.items():
                 rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
             total_rebar = mx_wt + my_wt
+        else:
+            # Fallback to CGD ว480 footing reinforcement density (110 kg/m³)
+            density_info = CGD_V480_REINFORCEMENT_DENSITY["footing"]
+            bd = density_info["breakdown"]
+            rebar_dict["DB12_16"] = vol * bd["DB12_16"]
+            rebar_dict["RB9"] = vol * bd["RB9"]
+            total_rebar = vol * density_info["total_density"]
 
         cfg = getattr(elem, "substructure", None)
         has_substructure = cfg is not None or (elem.piles and elem.piles.count > 0)
@@ -1046,6 +1079,13 @@ def calculate_element_qto(
                 for btype, wt in s_dict.items():
                     rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
                 total_rebar = m_wt + s_wt
+            else:
+                # Fallback to CGD ว480 column reinforcement density (160 kg/m³)
+                density_info = CGD_V480_REINFORCEMENT_DENSITY["column"]
+                bd = density_info["breakdown"]
+                rebar_dict["DB16_20"] = vol * bd["DB16_20"]
+                rebar_dict["RB6_9"] = vol * bd["RB6_9"]
+                total_rebar = vol * density_info["total_density"]
 
             return ElementQTO(
                 tag=tag,
@@ -1137,6 +1177,13 @@ def calculate_element_qto(
                 for btype, wt in s_dict.items():
                     rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
                 total_rebar = m_top_wt + m_bot_wt + s_wt
+            else:
+                # Fallback to CGD ว480 beam reinforcement density (130 kg/m³)
+                density_info = CGD_V480_REINFORCEMENT_DENSITY["beam"]
+                bd = density_info["breakdown"]
+                rebar_dict["DB12_20"] = vol * bd["DB12_20"]
+                rebar_dict["RB6_9"] = vol * bd["RB6_9"]
+                total_rebar = vol * density_info["total_density"]
 
             return ElementQTO(
                 tag=tag,
@@ -1271,6 +1318,18 @@ def calculate_element_qto(
                 for btype, wt in mt_dict.items():
                     rebar_dict[btype] = rebar_dict.get(btype, 0.0) + wt
                 total_rebar += mt_wt
+        else:
+            # Fallback to CGD ว480 slab reinforcement density
+            density_info = CGD_V480_REINFORCEMENT_DENSITY["slab"]
+            if elem.slab_type == "GROUND_SLAB":
+                wiremesh_wt = area * density_info["ground_slab_wiremesh"]  # 3.5 kg/m2 wiremesh
+                rebar_dict["WIRE_MESH"] = wiremesh_wt
+                total_rebar = wiremesh_wt
+            else:
+                bd = density_info["breakdown"]
+                rebar_dict["DB10_12"] = vol * bd["DB10_12"]
+                rebar_dict["RB9"] = vol * bd["RB9"]
+                total_rebar = vol * density_info["total_density"]  # 90 kg/m3
 
         slab_finishes_qto = None
         substructure = None
@@ -1377,6 +1436,13 @@ def calculate_element_qto(
                     st_wt = tot_trans_len * u_wt
                     rebar_dict[bar_type] = rebar_dict.get(bar_type, 0.0) + st_wt
                     total_rebar += st_wt
+        else:
+            # Fallback to CGD ว480 stair reinforcement density (110 kg/m³)
+            density_info = CGD_V480_REINFORCEMENT_DENSITY["stair"]
+            bd = density_info["breakdown"]
+            rebar_dict["DB12"] = vol * bd["DB12"]
+            rebar_dict["RB9"] = vol * bd["RB9"]
+            total_rebar = vol * density_info["total_density"]
 
         steel_paint_area = 0.0
         if resolved.total_steel_weight > 0:
@@ -2644,8 +2710,52 @@ def calculate_qto(
             all_elements.append(window)
             existing_tags.add(window.tag)
 
+    # Spatial formwork deductions map (tag -> deduction area)
+    formwork_deductions: Dict[str, float] = {}
+
+    if isinstance(resolved, ResolvedManifest):
+        # 1. Deduct column-beam intersection face area (w_beam * d_beam) from beam formwork
+        for beam in resolved.beams:
+            b_area, b_perim, w_b, d_b = compute_profile_geometry(beam.element.profile)
+            beam_face_area = w_b * d_b
+            deduction = 0.0
+
+            for col in resolved.columns:
+                # Check start_point connection (at top elevation or along column line)
+                if (
+                    math.hypot(beam.start_point[0] - col.start_point[0], beam.start_point[1] - col.start_point[1]) < 0.25
+                    and min(col.start_point[2], col.end_point[2]) - 0.1 <= beam.start_point[2] <= max(col.start_point[2], col.end_point[2]) + 0.1
+                ):
+                    deduction += beam_face_area
+
+                # Check end_point connection (at top elevation or along column line)
+                if (
+                    math.hypot(beam.end_point[0] - col.start_point[0], beam.end_point[1] - col.start_point[1]) < 0.25
+                    and min(col.start_point[2], col.end_point[2]) - 0.1 <= beam.end_point[2] <= max(col.start_point[2], col.end_point[2]) + 0.1
+                ):
+                    deduction += beam_face_area
+
+            if deduction > 0.0:
+                formwork_deductions[beam.tag] = formwork_deductions.get(beam.tag, 0.0) + deduction
+
+        # 2. Deduct column top contact area from footing formwork
+        for footing in resolved.footings:
+            deduction = 0.0
+            for col in resolved.columns:
+                if (
+                    math.hypot(col.start_point[0] - footing.position[0], col.start_point[1] - footing.position[1]) < 0.50
+                    and abs(col.start_point[2] - footing.position[2]) < 0.80
+                ):
+                    c_area, _, _, _ = compute_profile_geometry(col.element.profile)
+                    deduction += c_area
+
+            if deduction > 0.0:
+                formwork_deductions[footing.tag] = formwork_deductions.get(footing.tag, 0.0) + deduction
+
     for elem in all_elements:
         eqto = calculate_element_qto(elem, manifest=manifest_obj)
+        if elem.tag in formwork_deductions:
+            eqto.formwork_area = max(0.0, eqto.formwork_area - formwork_deductions[elem.tag])
         qto_elements.append(eqto)
 
         # Include volume in concrete volume total if element's material category is concrete

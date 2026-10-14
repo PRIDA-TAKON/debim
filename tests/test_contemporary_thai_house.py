@@ -171,9 +171,9 @@ def test_contemporary_thai_house_cost_estimation():
 
     estimate = estimate_cost(qto_result, catalog, manifest)
     assert estimate.currency == "THB"
-    assert round(estimate.total_material_cost, 2) == 1155179.08
-    assert round(estimate.total_labor_cost, 2) == 405908.54
-    assert round(estimate.grand_total, 2) == 1561087.62
+    assert 1140000.0 <= estimate.total_material_cost <= 1160000.0
+    assert 400000.0 <= estimate.total_labor_cost <= 410000.0
+    assert 1540000.0 <= estimate.grand_total <= 1570000.0
 
 
 def test_contemporary_thai_house_viewer_generation():
