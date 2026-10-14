@@ -321,3 +321,56 @@ def test_expand_module_instances_dict_and_model_input():
     assert isinstance(manifest_out, ProjectManifest)
     assert len(manifest_out.elements) == 1
     assert manifest_out.elements[0].tag == "U1_COL-X"
+
+
+def test_replicate_along_grid_y(tmp_path):
+    """Test replication along grid_y direction with lettered grid axes remapping."""
+    yaml_content = """
+schema: IFC4-Minimal
+project: {id: PRJ-GRID-Y, name: "Replicate Along Y Test"}
+spatial_structure:
+  storeys: [{id: L1, name: "Ground Floor", elevation: 0.0, height: 3.0}]
+grids:
+  axes_x: {"1": 0.0, "2": 5.0}
+  axes_y: {"A": 0.0, "B": 4.0, "C": 8.0, "D": 12.0}
+materials:
+  - {id: MAT_CONC, name: Concrete, category: concrete, unit_cost_ref: REF}
+modules:
+  - id: BAY_Y
+    local_grids: {axes_x: {"1": 0.0, "2": 5.0}, axes_y: {"A": 0.0, "B": 4.0}}
+    elements:
+      - class: IfcColumn
+        tag: COL-CORNER
+        material: MAT_CONC
+        profile: {shape: BOX, width: 0.3, depth: 0.3}
+        placement: {grid: ["1", "B"], base_storey: L1, top_storey: L1}
+instances:
+  - replicate:
+      module: BAY_Y
+      count: 3
+      along: grid_y
+      prefix_pattern: "ROW_{index}_"
+"""
+    p_file = tmp_path / "project.yaml"
+    p_file.write_text(yaml_content, encoding="utf-8")
+
+    manifest = load_manifest(p_file)
+    columns = [e for e in manifest.elements if getattr(e, "class_", "") == "IfcColumn"]
+
+    assert len(columns) == 3
+    col_tags = {c.tag for c in columns}
+    assert "ROW_1_COL-CORNER" in col_tags
+    assert "ROW_2_COL-CORNER" in col_tags
+    assert "ROW_3_COL-CORNER" in col_tags
+
+    # ROW_1: local B maps to global B
+    row1 = next(c for c in columns if c.tag == "ROW_1_COL-CORNER")
+    assert row1.placement.grid == ("1", "B")
+
+    # ROW_2: local B (offset 1 bay = +1) maps to global C
+    row2 = next(c for c in columns if c.tag == "ROW_2_COL-CORNER")
+    assert row2.placement.grid == ("1", "C")
+
+    # ROW_3: local B (offset 2 bays = +2) maps to global D
+    row3 = next(c for c in columns if c.tag == "ROW_3_COL-CORNER")
+    assert row3.placement.grid == ("1", "D")
