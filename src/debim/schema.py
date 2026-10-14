@@ -919,6 +919,7 @@ class SlabPlacement(BaseModel):
     offset_z: float = 0.00
     voids: Optional[List[List[Tuple[str, str]]]] = None
     openings: Optional[List[SlabOpening]] = None
+    boundary_offset: Optional[Union[float, Dict[str, Any]]] = None
 
     @field_validator("boundary", mode="before")
     @classmethod

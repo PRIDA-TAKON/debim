@@ -1539,6 +1539,52 @@ class StepSerializer:
         # 3. Slabs
         for slab in resolved.slabs:
             st_id = slab.element.placement.storey
+            st_pl_ref = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+
+            cx, cy, cz = slab.center
+            h = float(slab.thickness)
+            rel_z = float(cz - st_elev)
+
+            prod_shape_ref = None
+            if slab.polygon and len(slab.polygon) >= 3:
+                pts_2d = [(float(p[0]), float(p[1])) for p in slab.polygon]
+                poly_ref = self.create_polyline_2d(pts_2d)
+
+                if slab.voids and len(slab.voids) > 0:
+                    inner_polys = []
+                    for vloop in slab.voids:
+                        if vloop and len(vloop) >= 3:
+                            v_pts_2d = [(float(vp[0]), float(vp[1])) for vp in vloop]
+                            inner_polys.append(self.create_polyline_2d(v_pts_2d))
+                    if inner_polys:
+                        outer_prof = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, poly_ref)
+                        prof_ref = self.create_entity("IfcArbitraryProfileDefWithVoids", ".AREA.", None, outer_prof, inner_polys)
+                    else:
+                        prof_ref = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, poly_ref)
+                else:
+                    prof_ref = self.create_entity("IfcArbitraryClosedProfileDef", ".AREA.", None, poly_ref)
+
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", prof_ref, axis3d, ext_dir, h)
+
+                shape_rep = self.create_entity(
+                    "IfcShapeRepresentation",
+                    body_context_ref,
+                    "Body",
+                    "SweptSolid",
+                    [solid],
+                )
+                prod_shape_ref = self.create_entity(
+                    "IfcProductDefinitionShape", None, None, [shape_rep]
+                )
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (0.0, 0.0, rel_z - h))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
             elem_ref = self.create_entity(
                 "IfcSlab",
                 generate_ifc_guid(),
@@ -1546,8 +1592,8 @@ class StepSerializer:
                 slab.tag,
                 None,
                 None,
-                None,
-                None,
+                elem_pl,
+                prod_shape_ref,
                 None,
             )
             element_tag_refs[slab.tag] = elem_ref
@@ -3041,7 +3087,22 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             pts_objs = [model.createIfcCartesianPoint((float(p[0]), float(p[1]))) for p in slab.polygon]
             pts_objs.append(pts_objs[0])
             poly_curve = model.createIfcPolyline(pts_objs)
-            prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly_curve)
+
+            if slab.voids and len(slab.voids) > 0:
+                inner_curves = []
+                for vloop in slab.voids:
+                    if vloop and len(vloop) >= 3:
+                        v_pts_objs = [model.createIfcCartesianPoint((float(vp[0]), float(vp[1]))) for vp in vloop]
+                        v_pts_objs.append(v_pts_objs[0])
+                        inner_curves.append(model.createIfcPolyline(v_pts_objs))
+                if inner_curves:
+                    outer_prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly_curve)
+                    prof = model.createIfcArbitraryProfileDefWithVoids("AREA", None, outer_prof, inner_curves)
+                else:
+                    prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly_curve)
+            else:
+                prof = model.createIfcArbitraryClosedProfileDef("AREA", None, poly_curve)
+
             pos3d = model.createIfcAxis2Placement3D(
                 model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
                 model.createIfcDirection((0.0, 0.0, 1.0)),

@@ -2450,7 +2450,17 @@ class SpatialResolver:
         for grid_pt in slab.placement.boundary:
             x, y = self.get_grid_xy(grid_pt)
             pts_2d.append((x, y))
-            poly_3d.append((x, y, z))
+
+        offset_val = getattr(slab.placement, "boundary_offset", None)
+        if offset_val is not None and len(pts_2d) >= 3:
+            if isinstance(offset_val, (int, float)):
+                pts_2d = polygon_inset(pts_2d, -float(offset_val))
+            elif isinstance(offset_val, dict):
+                dist = float(offset_val.get("offset", offset_val.get("distance", 0.0)))
+                if abs(dist) > 1e-5:
+                    pts_2d = polygon_inset(pts_2d, -dist)
+
+        poly_3d = [(pt[0], pt[1], z) for pt in pts_2d]
 
         # Calculate polygon area using Shoelace formula
         n = len(pts_2d)
