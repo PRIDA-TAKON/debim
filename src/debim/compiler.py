@@ -1451,7 +1451,7 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
-        # 2. Beams
+        # 2. Beams & Members
         for beam in resolved.beams:
             st_id = beam.element.placement.storey
 
@@ -1533,6 +1533,87 @@ class StepSerializer:
                 None,
             )
             element_tag_refs[beam.tag] = elem_ref
+            if st_id in storey_elements:
+                storey_elements[st_id].append(elem_ref)
+
+        for member in getattr(resolved, "members", []) or []:
+            st_id = member.element.placement.storey
+
+            prof = member.element.profile
+            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+            ifc_prof = self.create_ifc_profile_def(prof, member.tag, axis2d)
+
+            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+            solid = self.create_entity("IfcExtrudedAreaSolid", ifc_prof, axis3d, ext_dir, float(member.span_length))
+
+            shape_rep = self.create_entity(
+                "IfcShapeRepresentation",
+                body_context_ref,
+                "Body",
+                "SweptSolid",
+                [solid],
+            )
+            prod_shape_ref = self.create_entity(
+                "IfcProductDefinitionShape", None, None, [shape_rep]
+            )
+
+            st_pl_ref = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0)
+
+            px, py, pz = member.start_point
+            dx, dy, dz = member.direction_vector_3d
+
+            z_len = math.sqrt(dx * dx + dy * dy + dz * dz)
+            if z_len > 1e-6:
+                zx, zy, zz = dx / z_len, dy / z_len, dz / z_len
+            else:
+                zx, zy, zz = 1.0, 0.0, 0.0
+
+            dot_up = zz
+            if abs(dot_up) < 0.99:
+                yrx, yry, yrz = -zx * zz, -zy * zz, 1.0 - zz * zz
+            else:
+                yrx, yry, yrz = -zx * zy, 1.0 - zy * zy, -zz * zy
+            y_len = math.sqrt(yrx * yrx + yry * yry + yrz * yrz)
+            if y_len > 1e-6:
+                yx, yy, yz = yrx / y_len, yry / y_len, yrz / y_len
+            else:
+                yx, yy, yz = 0.0, 1.0, 0.0
+
+            xx = yy * zz - yz * zy
+            xy = yz * zx - yx * zz
+            xz = yx * zy - yy * zx
+            x_len = math.sqrt(xx * xx + xy * xy + xz * xz)
+            if x_len > 1e-6:
+                xx, xy, xz = xx / x_len, xy / x_len, xz / x_len
+
+            m_depth = getattr(prof, "depth", getattr(prof, "overall_depth", 0.1))
+            ox = px - yx * (m_depth / 2.0)
+            oy = py - yy * (m_depth / 2.0)
+            oz = pz - yz * (m_depth / 2.0)
+            rel_z = float(oz - st_elev)
+
+            elem_pt = self.create_entity("IfcCartesianPoint", (float(ox), float(oy), rel_z))
+            axis_dir = self.create_entity("IfcDirection", (round(zx, 6), round(zy, 6), round(zz, 6)))
+            ref_dir = self.create_entity("IfcDirection", (round(xx, 6), round(xy, 6), round(xz, 6)))
+            elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, axis_dir, ref_dir)
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
+
+            elem_ref = self.create_entity(
+                "IfcMember",
+                generate_ifc_guid(),
+                None,
+                member.tag,
+                None,
+                None,
+                elem_pl,
+                prod_shape_ref,
+                None,
+            )
+            element_tag_refs[member.tag] = elem_ref
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
@@ -2179,8 +2260,17 @@ class StepSerializer:
                 storey_elements[st_id].append(elem_ref)
 
         # 6. Roofs & Roof Openings / Skylights
+        roof_type_step_map = {
+            "GABLE": ".GABLE_ROOF.",
+            "HIP": ".HIP_ROOF.",
+            "GABLE_HIP": ".HIPPED_GABLE_ROOF.",
+            "SHED": ".SHED_ROOF.",
+            "FLAT": ".FLAT_ROOF.",
+            "MANSARD": ".MANSARD_ROOF.",
+        }
         for roof in resolved.roofs:
             st_id = roof.element.placement.storey
+            pred_type = roof_type_step_map.get(roof.element.roof_type, ".NOTDEFINED.")
             roof_ref = self.create_entity(
                 "IfcRoof",
                 generate_ifc_guid(),
@@ -2190,7 +2280,7 @@ class StepSerializer:
                 None,
                 None,
                 None,
-                None,
+                pred_type,
             )
             element_tag_refs[roof.tag] = roof_ref
             if st_id in storey_elements:
@@ -2997,7 +3087,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
         ifcopenshell.api.run("geometry.assign_representation", model, product=col_obj, representation=rep)
 
-    # 2. Beams
+    # 2. Beams & Members
     for beam in resolved.beams:
         beam_obj = ifcopenshell.api.run(
             "root.create_entity", model, ifc_class="IfcBeam", name=beam.tag
@@ -3062,6 +3152,71 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         )
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
         ifcopenshell.api.run("geometry.assign_representation", model, product=beam_obj, representation=rep)
+
+    for member in getattr(resolved, "members", []) or []:
+        member_obj = ifcopenshell.api.run(
+            "root.create_entity", model, ifc_class="IfcMember", name=member.tag
+        )
+        st_id = member.element.placement.storey
+        if st_id in storey_products:
+            storey_products[st_id].append(member_obj)
+
+        px, py, pz = member.start_point
+        dx, dy, dz = member.direction_vector_3d
+        z_axis = np.array([dx, dy, dz], dtype=float)
+        z_norm = np.linalg.norm(z_axis)
+        if z_norm > 1e-6:
+            z_axis /= z_norm
+        else:
+            z_axis = np.array([1, 0, 0], dtype=float)
+
+        up = np.array([0.0, 0.0, 1.0], dtype=float)
+        if abs(np.dot(z_axis, up)) < 0.99:
+            y_raw = up - np.dot(up, z_axis) * z_axis
+            y_axis = y_raw / np.linalg.norm(y_raw)
+        else:
+            y_raw = np.array([0.0, 1.0, 0.0], dtype=float) - np.dot(np.array([0.0, 1.0, 0.0]), z_axis) * z_axis
+            y_axis = y_raw / np.linalg.norm(y_raw)
+
+        x_axis = np.cross(y_axis, z_axis)
+        x_norm = np.linalg.norm(x_axis)
+        if x_norm > 1e-6:
+            x_axis /= x_norm
+
+        prof = member.element.profile
+        m_depth = float(getattr(prof, "depth", getattr(prof, "overall_depth", 0.1)))
+        origin = np.array([px, py, pz], dtype=float) - y_axis * (m_depth / 2.0)
+
+        mat = np.eye(4)
+        mat[:3, 0] = x_axis
+        mat[:3, 1] = y_axis
+        mat[:3, 2] = z_axis
+        mat[0, 3] = float(origin[0])
+        mat[1, 3] = float(origin[1])
+        mat[2, 3] = float(origin[2])
+
+        ifcopenshell.api.run(
+            "geometry.edit_object_placement",
+            model,
+            product=member_obj,
+            matrix=mat,
+        )
+
+        pos2d = model.createIfcAxis2Placement2D(model.createIfcCartesianPoint((0.0, 0.0)))
+        ifc_prof = _create_ifcopenshell_profile(model, prof, member.tag, pos2d)
+
+        solid = model.createIfcExtrudedAreaSolid(
+            ifc_prof,
+            model.createIfcAxis2Placement3D(
+                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                model.createIfcDirection((0.0, 0.0, 1.0)),
+                model.createIfcDirection((1.0, 0.0, 0.0)),
+            ),
+            model.createIfcDirection((0.0, 0.0, 1.0)),
+            float(member.span_length),
+        )
+        rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
+        ifcopenshell.api.run("geometry.assign_representation", model, product=member_obj, representation=rep)
 
     # 3. Slabs
     for slab in resolved.slabs:
@@ -4653,8 +4808,16 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             storey_products[st_id].append(te_obj)
 
     # 6. Roofs & Roof Openings / Skylights
+    roof_type_ifc_map = {
+        "GABLE": "GABLE_ROOF",
+        "HIP": "HIP_ROOF",
+        "GABLE_HIP": "HIPPED_GABLE_ROOF",
+        "SHED": "SHED_ROOF",
+        "FLAT": "FLAT_ROOF",
+        "MANSARD": "MANSARD_ROOF",
+    }
     for roof in resolved.roofs:
-        pred_type = roof.element.roof_type if roof.element.roof_type in ("GABLE_ROOF", "HIP_ROOF", "SHED_ROOF", "FLAT_ROOF") else "NOTDEFINED"
+        pred_type = roof_type_ifc_map.get(roof.element.roof_type, "NOTDEFINED")
         roof_obj = ifcopenshell.api.run(
             "root.create_entity",
             model,

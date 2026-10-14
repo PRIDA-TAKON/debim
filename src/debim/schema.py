@@ -772,12 +772,32 @@ class IfcBeam(BaseModel):
     ANCHOR_POINT: ClassVar[str] = "TOP-CENTERLINE"
     DIMENSION_KEYS: ClassVar[List[str]] = ["width", "depth"]
 
-    class_: Literal["IfcBeam"] = Field(alias="class")
+    class_: Literal["IfcBeam"] = Field(alias="class", default="IfcBeam")
     tag: str
     material: str
     profile: Profile
     placement: BeamPlacement
     reinforcement: Optional[BeamReinforcement] = None
+    pitch_deg: Optional[float] = None
+    layer: Optional[str] = None
+
+
+class IfcMember(BaseModel):
+    """
+    Deterministic Member Element (Structural Bracing, Truss Member, Rafter, Purlin).
+
+    Anchor Point: CENTERLINE
+    Dimension Keys: width, depth
+    """
+    ANCHOR_POINT: ClassVar[str] = "CENTERLINE"
+    DIMENSION_KEYS: ClassVar[List[str]] = ["width", "depth"]
+
+    class_: Literal["IfcMember"] = Field(alias="class", default="IfcMember")
+    tag: str
+    material: str
+    profile: Profile
+    placement: BeamPlacement
+    pitch_deg: Optional[float] = None
     layer: Optional[str] = None
 
 
@@ -1666,7 +1686,7 @@ class IfcChimney(BaseModel):
 
 
 # Roof element definitions
-RoofType = Literal["GABLE", "HIP", "SHED", "FLAT", "MANSARD"]
+RoofType = Literal["GABLE", "HIP", "GABLE_HIP", "SHED", "FLAT", "MANSARD"]
 RidgeOrientation = Literal["X", "Y", "ALONG_LENGTH", "ALONG_WIDTH"]
 
 
@@ -1698,8 +1718,18 @@ class RoofFramingConfig(BaseModel):
     truss_type: Literal["STEEL_TRUSS", "TIMBER_TRUSS", "STEEL_RAFTER"] = "STEEL_TRUSS"
     material: Optional[str] = None  # Reference to material id, e.g. "STEEL_SS400"
     spacing: float = 1.00  # Truss / rafter spacing (m)
+    rafter_spacing: Optional[float] = None
     purlin_spacing: float = 0.32  # Purlin spacing (m) (ระยะแป e.g. 0.32m for concrete tile)
     steel_weight_per_sqm: float = 18.0  # kg/m2 of projected roof area for structural steel framing
+    profiles: Optional[Dict[str, Any]] = None
+
+    @model_validator(mode="after")
+    def resolve_rafter_spacing(self) -> "RoofFramingConfig":
+        if self.rafter_spacing is not None:
+            self.spacing = self.rafter_spacing
+        elif self.spacing is not None and self.rafter_spacing is None:
+            self.rafter_spacing = self.spacing
+        return self
 
 
 class IfcRoof(BaseModel):
@@ -1707,11 +1737,22 @@ class IfcRoof(BaseModel):
     tag: str
     material: str
     roof_type: RoofType = "HIP"
+    pitch_deg: Optional[float] = None
     placement: RoofPlacement
     covering: Optional[RoofCoveringConfig] = Field(default_factory=RoofCoveringConfig)
     framing: Optional[RoofFramingConfig] = Field(default_factory=RoofFramingConfig)
     children: List[WallChild] = Field(default_factory=list)
     layer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def sync_pitch(self) -> "IfcRoof":
+        if self.pitch_deg is not None:
+            if self.covering is None:
+                self.covering = RoofCoveringConfig()
+            self.covering.pitch = self.pitch_deg
+        elif self.covering is not None and self.covering.pitch is not None:
+            self.pitch_deg = self.covering.pitch
+        return self
 
 
 
@@ -3334,6 +3375,7 @@ IFC4_DISTRIBUTION_CLASSES = {
 KNOWN_ELEMENT_CLASSES = {
     "IfcColumn",
     "IfcBeam",
+    "IfcMember",
     "IfcWall",
     "IfcDoor",
     "IfcWindow",
@@ -3399,7 +3441,7 @@ from pydantic import Tag
 
 
 EXPLICIT_TYPED_ELEMENT_CLASSES = {
-    "IfcColumn", "IfcBeam", "IfcWall", "IfcDoor", "IfcWindow", "IfcFooting", "IfcSlab", "IfcSpace",
+    "IfcColumn", "IfcBeam", "IfcMember", "IfcWall", "IfcDoor", "IfcWindow", "IfcFooting", "IfcSlab", "IfcSpace",
     "IfcCovering", "IfcStair", "IfcStairFlight", "IfcRamp", "IfcRailing", "IfcRoof",
     "IfcCurtainWall", "IfcPlate", "IfcPipeSegment", "IfcCableCarrierSegment", "IfcDuctSegment",
     "IfcSanitaryTerminal", "IfcWasteTerminal", "IfcDistributionBoard", "IfcElectricDistributionBoard",
@@ -3433,6 +3475,7 @@ Element = Annotated[
     Union[
         Annotated[IfcColumn, Tag("IfcColumn")],
         Annotated[IfcBeam, Tag("IfcBeam")],
+        Annotated[IfcMember, Tag("IfcMember")],
         Annotated[IfcWall, Tag("IfcWall")],
         Annotated[IfcFooting, Tag("IfcFooting")],
         Annotated[IfcSlab, Tag("IfcSlab")],
@@ -4085,6 +4128,8 @@ def derive_default_layer(elem) -> str:
         return "structure/substructure/footings"
     elif cls == "IfcBeam":
         return "structure/framing/beams"
+    elif cls == "IfcMember":
+        return "structure/framing/members"
     elif cls == "IfcWall":
         return "architecture/walls"
     elif cls == "IfcDoor":

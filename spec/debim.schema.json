@@ -3281,6 +3281,7 @@
       "properties": {
         "class": {
           "const": "IfcBeam",
+          "default": "IfcBeam",
           "title": "Class",
           "type": "string"
         },
@@ -3370,6 +3371,18 @@
           ],
           "default": null
         },
+        "pitch_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pitch Deg"
+        },
         "layer": {
           "anyOf": [
             {
@@ -3384,7 +3397,6 @@
         }
       },
       "required": [
-        "class",
         "tag",
         "material",
         "profile",
@@ -7264,6 +7276,124 @@
       "title": "IfcMarinePart",
       "type": "object"
     },
+    "IfcMember": {
+      "description": "Deterministic Member Element (Structural Bracing, Truss Member, Rafter, Purlin).\n\nAnchor Point: CENTERLINE\nDimension Keys: width, depth",
+      "properties": {
+        "class": {
+          "const": "IfcMember",
+          "default": "IfcMember",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "material": {
+          "title": "Material",
+          "type": "string"
+        },
+        "profile": {
+          "discriminator": {
+            "mapping": {
+              "ARBITRARY": "#/$defs/ArbitraryProfile",
+              "ARBITRARY_CLOSED": "#/$defs/ArbitraryProfile",
+              "ARBITRARY_WITH_VOIDS": "#/$defs/ArbitraryProfile",
+              "BOX": "#/$defs/BoxProfile",
+              "BOX_HOLLOW": "#/$defs/RectangleHollowProfile",
+              "C": "#/$defs/UShapeProfile",
+              "CHS": "#/$defs/CircleHollowProfile",
+              "CIRCLE_HOLLOW": "#/$defs/CircleHollowProfile",
+              "CIRCULAR": "#/$defs/CircularProfile",
+              "CSHAPE": "#/$defs/UShapeProfile",
+              "ELLIPSE": "#/$defs/EllipseProfile",
+              "H": "#/$defs/IShapeProfile",
+              "I": "#/$defs/IShapeProfile",
+              "ISHAPE": "#/$defs/IShapeProfile",
+              "L": "#/$defs/LShapeProfile",
+              "LSHAPE": "#/$defs/LShapeProfile",
+              "PIPE_HOLLOW": "#/$defs/CircleHollowProfile",
+              "POLYGON": "#/$defs/ArbitraryProfile",
+              "RECTANGLE_HOLLOW": "#/$defs/RectangleHollowProfile",
+              "RHS": "#/$defs/RectangleHollowProfile",
+              "T": "#/$defs/TShapeProfile",
+              "TSHAPE": "#/$defs/TShapeProfile",
+              "U": "#/$defs/UShapeProfile",
+              "USHAPE": "#/$defs/UShapeProfile"
+            },
+            "propertyName": "shape"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/BoxProfile"
+            },
+            {
+              "$ref": "#/$defs/CircularProfile"
+            },
+            {
+              "$ref": "#/$defs/EllipseProfile"
+            },
+            {
+              "$ref": "#/$defs/IShapeProfile"
+            },
+            {
+              "$ref": "#/$defs/LShapeProfile"
+            },
+            {
+              "$ref": "#/$defs/UShapeProfile"
+            },
+            {
+              "$ref": "#/$defs/TShapeProfile"
+            },
+            {
+              "$ref": "#/$defs/RectangleHollowProfile"
+            },
+            {
+              "$ref": "#/$defs/CircleHollowProfile"
+            },
+            {
+              "$ref": "#/$defs/ArbitraryProfile"
+            }
+          ],
+          "title": "Profile"
+        },
+        "placement": {
+          "$ref": "#/$defs/BeamPlacement"
+        },
+        "pitch_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pitch Deg"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "material",
+        "profile",
+        "placement"
+      ],
+      "title": "IfcMember",
+      "type": "object"
+    },
     "IfcMooringDevice": {
       "properties": {
         "class": {
@@ -8419,12 +8549,25 @@
           "enum": [
             "GABLE",
             "HIP",
+            "GABLE_HIP",
             "SHED",
             "FLAT",
             "MANSARD"
           ],
           "title": "Roof Type",
           "type": "string"
+        },
+        "pitch_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pitch Deg"
         },
         "placement": {
           "$ref": "#/$defs/RoofPlacement"
@@ -10501,6 +10644,9 @@
                   },
                   {
                     "$ref": "#/$defs/IfcBeam"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcMember"
                   },
                   {
                     "$ref": "#/$defs/IfcWall"
@@ -12730,6 +12876,18 @@
           "title": "Spacing",
           "type": "number"
         },
+        "rafter_spacing": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rafter Spacing"
+        },
         "purlin_spacing": {
           "default": 0.32,
           "title": "Purlin Spacing",
@@ -12739,6 +12897,19 @@
           "default": 18.0,
           "title": "Steel Weight Per Sqm",
           "type": "number"
+        },
+        "profiles": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profiles"
         }
       },
       "title": "RoofFramingConfig",
@@ -14353,6 +14524,9 @@
           },
           {
             "$ref": "#/$defs/IfcBeam"
+          },
+          {
+            "$ref": "#/$defs/IfcMember"
           },
           {
             "$ref": "#/$defs/IfcWall"
