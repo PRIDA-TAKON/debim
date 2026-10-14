@@ -9,7 +9,7 @@ import re
 from typing import Annotated, Any, ClassVar, Dict, List, Literal, Optional, Tuple, Union
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, RootModel, Discriminator, field_validator, model_validator
-from debim.loader import load_debim_file, resolve_default_manifest_path
+from debim.loader import expand_module_instances, load_debim_file, load_manifest, resolve_default_manifest_path
 
 
 class Units(BaseModel):
@@ -4209,14 +4209,6 @@ def derive_default_layer(elem) -> str:
     return "general/other"
 
 
-def load_manifest(path: Optional[Union[Path, str]] = None) -> ProjectManifest:
-    """Load and validate .debim / project.yaml manifest file, resolving included modular files."""
-    resolved_path = resolve_default_manifest_path(path)
-    if not resolved_path.exists():
-        raise FileNotFoundError(f"Manifest file not found: {resolved_path}")
-
-    data = load_debim_file(resolved_path)
-    return ProjectManifest.model_validate(data)
 
 
 def export_json_schema(output_path: Optional[Path | str] = None, indent: int = 2) -> dict:

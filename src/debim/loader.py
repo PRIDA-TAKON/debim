@@ -3,6 +3,7 @@ Native .debim file extension loader with zero-dependency standalone YAML parser 
 Enables pure-Python VM/sandbox environments to load and parse declarative BIM models directly.
 """
 
+import copy
 import glob
 import json
 import os
@@ -505,3 +506,272 @@ def load_debim_file(
     data["grids"] = {"axes_x": merged_axes_x, "axes_y": merged_axes_y}
 
     return data
+
+
+def _remap_grid_pair(pair: Any, mapping_x: Dict[str, str], mapping_y: Dict[str, str]) -> Any:
+    if not pair or not isinstance(pair, (list, tuple)) or len(pair) < 2:
+        return pair
+    gx, gy = str(pair[0]), str(pair[1])
+    new_gx = mapping_x.get(gx, gx)
+    new_gy = mapping_y.get(gy, gy)
+    return [new_gx, new_gy] if isinstance(pair, list) else (new_gx, new_gy)
+
+
+def _remap_placement_grids(placement: Dict[str, Any], mapping_x: Dict[str, str], mapping_y: Dict[str, str]) -> None:
+    for key in ("grid", "top_grid", "from_grid", "to_grid", "grid_anchor"):
+        if key in placement and placement[key]:
+            placement[key] = _remap_grid_pair(placement[key], mapping_x, mapping_y)
+
+    if "boundary" in placement and isinstance(placement["boundary"], list):
+        new_b = []
+        for pt in placement["boundary"]:
+            new_b.append(_remap_grid_pair(pt, mapping_x, mapping_y))
+        placement["boundary"] = new_b
+
+    if "voids" in placement and isinstance(placement["voids"], list):
+        new_v = []
+        for loop in placement["voids"]:
+            if isinstance(loop, list):
+                new_loop = [_remap_grid_pair(pt, mapping_x, mapping_y) for pt in loop]
+                new_v.append(new_loop)
+            else:
+                new_v.append(loop)
+        placement["voids"] = new_v
+
+    for key in ("waypoints", "path"):
+        if key in placement and isinstance(placement[key], list):
+            for item in placement[key]:
+                if isinstance(item, dict) and "grid" in item and item["grid"]:
+                    item["grid"] = _remap_grid_pair(item["grid"], mapping_x, mapping_y)
+
+    if "openings" in placement and isinstance(placement["openings"], list):
+        for op in placement["openings"]:
+            if isinstance(op, dict):
+                if "grid" in op and op["grid"]:
+                    op["grid"] = _remap_grid_pair(op["grid"], mapping_x, mapping_y)
+                if "boundary" in op and isinstance(op["boundary"], list):
+                    op["boundary"] = [_remap_grid_pair(pt, mapping_x, mapping_y) for pt in op["boundary"]]
+
+
+def expand_module_instances(manifest_or_data: Any) -> Any:
+    """
+    AST preprocessor for module macro expansion and grid replication.
+    Expands `modules:` and `instances:` blocks into concrete elements.
+    Accepts either a dict or a ProjectManifest object.
+    """
+    is_manifest_obj = False
+    if hasattr(manifest_or_data, "modules") and hasattr(manifest_or_data, "instances"):
+        is_manifest_obj = True
+        data = manifest_or_data.model_dump(by_alias=True, exclude_none=True)
+    elif isinstance(manifest_or_data, dict):
+        data = manifest_or_data
+    else:
+        return manifest_or_data
+
+    modules_raw = data.get("modules", []) or []
+    instances_raw = data.get("instances", []) or []
+
+    if not modules_raw or not instances_raw:
+        if is_manifest_obj:
+            return manifest_or_data
+        return data
+
+    modules_by_id = {}
+    for mod in modules_raw:
+        m_id = mod.get("id") if isinstance(mod, dict) else getattr(mod, "id", None)
+        if m_id:
+            modules_by_id[m_id] = mod
+
+    grids_data = data.get("grids", {}) or {}
+    global_axes_x_dict = grids_data.get("axes_x", {}) or {}
+    global_axes_y_dict = grids_data.get("axes_y", {}) or {}
+
+    global_x_axes = sorted(global_axes_x_dict.keys(), key=lambda k: global_axes_x_dict[k]) if global_axes_x_dict else []
+    global_y_axes = sorted(global_axes_y_dict.keys(), key=lambda k: global_axes_y_dict[k]) if global_axes_y_dict else []
+
+    existing_elements = list(data.get("elements", []) or [])
+    existing_wall_keys = set()
+
+    for elem in existing_elements:
+        e_cls = elem.get("class") if isinstance(elem, dict) else getattr(elem, "class_", "")
+        if e_cls == "IfcWall":
+            place = elem.get("placement", {}) if isinstance(elem, dict) else getattr(elem, "placement", None)
+            if place:
+                st = place.get("storey") if isinstance(place, dict) else getattr(place, "storey", None)
+                fg = place.get("from_grid") if isinstance(place, dict) else getattr(place, "from_grid", None)
+                tg = place.get("to_grid") if isinstance(place, dict) else getattr(place, "to_grid", None)
+                if st and fg and tg:
+                    fg_t = (str(fg[0]), str(fg[1]))
+                    tg_t = (str(tg[0]), str(tg[1]))
+                    existing_wall_keys.add((st, frozenset([fg_t, tg_t])))
+
+    expanded_elements = []
+
+    for inst in instances_raw:
+        inst_dict = inst if isinstance(inst, dict) else inst.model_dump(by_alias=True, exclude_none=True)
+        module_id = inst_dict.get("module")
+        replicate_cfg = inst_dict.get("replicate")
+
+        if replicate_cfg:
+            if isinstance(replicate_cfg, dict):
+                r_module = replicate_cfg.get("module") or module_id
+                count = replicate_cfg.get("count", 1)
+                along = replicate_cfg.get("along", "grid_x")
+                grid_x_mapping = replicate_cfg.get("grid_x_mapping")
+                grid_y_mapping = replicate_cfg.get("grid_y_mapping")
+                prefix_pattern = replicate_cfg.get("prefix_pattern", "U{index}_")
+                party_wall_dedup = replicate_cfg.get("party_wall_deduplication", True)
+            else:
+                r_module = getattr(replicate_cfg, "module", module_id)
+                count = getattr(replicate_cfg, "count", 1)
+                along = getattr(replicate_cfg, "along", "grid_x")
+                grid_x_mapping = getattr(replicate_cfg, "grid_x_mapping", None)
+                grid_y_mapping = getattr(replicate_cfg, "grid_y_mapping", None)
+                prefix_pattern = getattr(replicate_cfg, "prefix_pattern", "U{index}_")
+                party_wall_dedup = getattr(replicate_cfg, "party_wall_deduplication", True)
+            module_id = r_module
+        else:
+            count = 1
+            along = "grid_x"
+            grid_x_mapping = None
+            grid_y_mapping = None
+            prefix_pattern = inst_dict.get("id_prefix") or "U{index}_"
+            party_wall_dedup = True
+
+        if not module_id or module_id not in modules_by_id:
+            continue
+
+        target_module = modules_by_id[module_id]
+        mod_dict = target_module if isinstance(target_module, dict) else target_module.model_dump(by_alias=True, exclude_none=True)
+        mod_elements = mod_dict.get("elements", []) or []
+        mod_local_grids = mod_dict.get("local_grids", {}) or {}
+
+        local_x_dict = mod_local_grids.get("axes_x", {}) if isinstance(mod_local_grids, dict) else getattr(mod_local_grids, "axes_x", {})
+        local_y_dict = mod_local_grids.get("axes_y", {}) if isinstance(mod_local_grids, dict) else getattr(mod_local_grids, "axes_y", {})
+
+        local_x_axes = sorted(local_x_dict.keys(), key=lambda k: local_x_dict[k]) if local_x_dict else []
+        local_y_axes = sorted(local_y_dict.keys(), key=lambda k: local_y_dict[k]) if local_y_dict else []
+
+        num_bays_x = max(1, len(local_x_axes) - 1) if local_x_axes else 1
+        num_bays_y = max(1, len(local_y_axes) - 1) if local_y_axes else 1
+
+        for idx in range(1, count + 1):
+            offset_i = idx - 1
+
+            # Determine grid_x_mapping for this index
+            mapping_x = {}
+            if grid_x_mapping and len(grid_x_mapping) >= idx:
+                item_x = grid_x_mapping[offset_i]
+                if isinstance(item_x, dict):
+                    if len(item_x) == 1 and isinstance(list(item_x.values())[0], dict):
+                        item_x = list(item_x.values())[0]
+                    mapping_x = {str(k): str(v) for k, v in item_x.items()}
+
+            if not mapping_x:
+                if along == "grid_x":
+                    for p, loc_x in enumerate(local_x_axes):
+                        target_p = p + offset_i * num_bays_x
+                        if global_x_axes and target_p < len(global_x_axes):
+                            mapping_x[str(loc_x)] = str(global_x_axes[target_p])
+                        elif str(loc_x).isdigit():
+                            mapping_x[str(loc_x)] = str(int(loc_x) + offset_i * num_bays_x)
+                        elif len(str(loc_x)) == 1 and str(loc_x).isalpha():
+                            mapping_x[str(loc_x)] = chr(ord(loc_x) + offset_i * num_bays_x)
+                        else:
+                            mapping_x[str(loc_x)] = f"{loc_x}_{offset_i}"
+                else:
+                    for loc_x in local_x_axes:
+                        mapping_x[str(loc_x)] = str(loc_x)
+
+            # Determine grid_y_mapping for this index
+            mapping_y = {}
+            if grid_y_mapping and len(grid_y_mapping) >= idx:
+                item_y = grid_y_mapping[offset_i]
+                if isinstance(item_y, dict):
+                    if len(item_y) == 1 and isinstance(list(item_y.values())[0], dict):
+                        item_y = list(item_y.values())[0]
+                    mapping_y = {str(k): str(v) for k, v in item_y.items()}
+
+            if not mapping_y:
+                if along == "grid_y":
+                    for p, loc_y in enumerate(local_y_axes):
+                        target_p = p + offset_i * num_bays_y
+                        if global_y_axes and target_p < len(global_y_axes):
+                            mapping_y[str(loc_y)] = str(global_y_axes[target_p])
+                        elif len(str(loc_y)) == 1 and str(loc_y).isalpha():
+                            mapping_y[str(loc_y)] = chr(ord(loc_y) + offset_i * num_bays_y)
+                        elif str(loc_y).isdigit():
+                            mapping_y[str(loc_y)] = str(int(loc_y) + offset_i * num_bays_y)
+                        else:
+                            mapping_y[str(loc_y)] = f"{loc_y}_{offset_i}"
+                else:
+                    for loc_y in local_y_axes:
+                        mapping_y[str(loc_y)] = str(loc_y)
+
+            # Process elements in module
+            for orig_elem in mod_elements:
+                elem_copy = copy.deepcopy(orig_elem if isinstance(orig_elem, dict) else orig_elem.model_dump(by_alias=True, exclude_none=True))
+
+                # Prefix tag
+                orig_tag = elem_copy.get("tag", "")
+                if "{tag}" in prefix_pattern or "{original_tag}" in prefix_pattern:
+                    new_tag = prefix_pattern.format(index=idx, tag=orig_tag, original_tag=orig_tag)
+                else:
+                    new_tag = prefix_pattern.format(index=idx) + orig_tag
+                elem_copy["tag"] = new_tag
+
+                # Remap child element tags if any
+                if "children" in elem_copy and isinstance(elem_copy["children"], list):
+                    for child in elem_copy["children"]:
+                        if isinstance(child, dict) and "tag" in child:
+                            c_tag = child["tag"]
+                            if "{tag}" in prefix_pattern or "{original_tag}" in prefix_pattern:
+                                child["tag"] = prefix_pattern.format(index=idx, tag=c_tag, original_tag=c_tag)
+                            else:
+                                child["tag"] = prefix_pattern.format(index=idx) + c_tag
+
+                # Remap placement grid references
+                if "placement" in elem_copy and isinstance(elem_copy["placement"], dict):
+                    _remap_placement_grids(elem_copy["placement"], mapping_x, mapping_y)
+
+                # Check party wall deduplication
+                e_cls = elem_copy.get("class") or elem_copy.get("class_")
+                if e_cls == "IfcWall" and party_wall_dedup:
+                    place = elem_copy.get("placement", {})
+                    st = place.get("storey")
+                    fg = place.get("from_grid")
+                    tg = place.get("to_grid")
+                    if st and fg and tg:
+                        fg_t = (str(fg[0]), str(fg[1]))
+                        tg_t = (str(tg[0]), str(tg[1]))
+                        w_key = (st, frozenset([fg_t, tg_t]))
+                        if w_key in existing_wall_keys:
+                            # Skip coincident party wall
+                            continue
+                        existing_wall_keys.add(w_key)
+
+                expanded_elements.append(elem_copy)
+
+    data["elements"] = existing_elements + expanded_elements
+
+    if is_manifest_obj:
+        from debim.schema import ProjectManifest
+        return ProjectManifest.model_validate(data)
+    return data
+
+
+def load_manifest(path: Optional[Union[Path, str]] = None) -> Any:
+    """
+    Load and validate .debim / project.yaml manifest file, resolving included modular files,
+    expanding module instances, and returning a ProjectManifest instance.
+    """
+    from debim.schema import ProjectManifest
+
+    resolved_path = resolve_default_manifest_path(path)
+    if not resolved_path.exists():
+        raise FileNotFoundError(f"Manifest file not found: {resolved_path}")
+
+    data = load_debim_file(resolved_path)
+    if data.get("modules") and data.get("instances"):
+        data = expand_module_instances(data)
+    return ProjectManifest.model_validate(data)
