@@ -21,6 +21,7 @@ from debim.schema import (
     IfcAirTerminal,
     IfcAlignment,
     IfcBeam,
+    IfcMember,
     IfcBearing,
     IfcDiscreteAccessory,
     IfcBridge,
@@ -226,6 +227,39 @@ class ResolvedBeam(BaseModel):
     yaw_angle: float = 0.0
     waypoints: List[Tuple[float, float, float]] = []
     layer: str = "structure/framing/beams"
+
+    @property
+    def width(self) -> float:
+        prof = self.element.profile
+        w = getattr(prof, "width", getattr(prof, "overall_width", getattr(prof, "flange_width", None)))
+        if w is None:
+            w = getattr(prof, "diameter", getattr(prof, "radius", 0.2))
+        return float(w)
+
+    @property
+    def depth(self) -> float:
+        prof = self.element.profile
+        d = getattr(prof, "depth", getattr(prof, "overall_depth", None))
+        if d is None:
+            d = getattr(prof, "diameter", getattr(prof, "radius", 0.4))
+        return float(d)
+
+
+class ResolvedMember(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcMember
+    start_point: Tuple[float, float, float]
+    end_point: Tuple[float, float, float]
+    span_length: float  # True 3D Euclidean spatial length L
+    direction_vector: Tuple[float, float] = (1.0, 0.0)
+    direction_vector_3d: Tuple[float, float, float] = (1.0, 0.0, 0.0)
+    rotation_angle: float = 0.0
+    pitch_angle: float = 0.0
+    yaw_angle: float = 0.0
+    waypoints: List[Tuple[float, float, float]] = []
+    layer: str = "structure/framing/members"
 
     @property
     def width(self) -> float:
@@ -1597,6 +1631,7 @@ class ResolvedDistributionFlowElement(BaseModel):
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
+    ResolvedMember,
     ResolvedWall,
     ResolvedFooting,
     ResolvedSlab,
@@ -1660,6 +1695,7 @@ class ResolvedManifest(BaseModel):
     footings: List[ResolvedFooting] = []
     columns: List[ResolvedColumn] = []
     beams: List[ResolvedBeam] = []
+    members: List[ResolvedMember] = []
     walls: List[ResolvedWall] = []
     slabs: List[ResolvedSlab] = []
     coverings: List[ResolvedCovering] = []
@@ -1834,17 +1870,24 @@ class SpatialResolver:
 
         z1 = from_st.elevation + beam.placement.offset_z
 
-        if beam.placement.to_storey:
-            to_st = self.get_storey(beam.placement.to_storey)
-        else:
-            to_st = from_st
+        dx = x2 - x1
+        dy = y2 - y1
+        span_2d = math.hypot(dx, dy)
 
-        to_off_z = (
-            beam.placement.to_offset_z
-            if beam.placement.to_offset_z is not None
-            else beam.placement.offset_z
-        )
-        z2 = to_st.elevation + to_off_z
+        if beam.pitch_deg is not None:
+            z2 = z1 + span_2d * math.tan(math.radians(beam.pitch_deg))
+        else:
+            if beam.placement.to_storey:
+                to_st = self.get_storey(beam.placement.to_storey)
+            else:
+                to_st = from_st
+
+            to_off_z = (
+                beam.placement.to_offset_z
+                if beam.placement.to_offset_z is not None
+                else beam.placement.offset_z
+            )
+            z2 = to_st.elevation + to_off_z
 
         start_point = (x1, y1, z1)
         end_point = (x2, y2, z2)
@@ -1920,6 +1963,93 @@ class SpatialResolver:
             yaw_angle=yaw_angle,
             waypoints=waypoints_3d,
             layer=derive_default_layer(beam),
+        )
+
+    def resolve_member(self, member: IfcMember) -> ResolvedMember:
+        x1, y1 = self.get_grid_xy(member.placement.from_grid)
+        x2, y2 = self.get_grid_xy(member.placement.to_grid)
+        from_st = self.get_storey(member.placement.storey)
+
+        z1 = from_st.elevation + member.placement.offset_z
+
+        dx = x2 - x1
+        dy = y2 - y1
+        span_2d = math.hypot(dx, dy)
+
+        if member.pitch_deg is not None:
+            z2 = z1 + span_2d * math.tan(math.radians(member.pitch_deg))
+        else:
+            if member.placement.to_storey:
+                to_st = self.get_storey(member.placement.to_storey)
+            else:
+                to_st = from_st
+
+            to_off_z = (
+                member.placement.to_offset_z
+                if member.placement.to_offset_z is not None
+                else member.placement.offset_z
+            )
+            z2 = to_st.elevation + to_off_z
+
+        start_point = (x1, y1, z1)
+        end_point = (x2, y2, z2)
+
+        waypoints_3d: List[Tuple[float, float, float]] = []
+
+        if member.placement.waypoints and len(member.placement.waypoints) >= 2:
+            for wpt in member.placement.waypoints:
+                if wpt.x is not None and wpt.y is not None:
+                    wx = float(wpt.x)
+                    wy = float(wpt.y)
+                    wz = float(wpt.z) if wpt.z is not None else (from_st.elevation + wpt.offset_z)
+                elif wpt.grid:
+                    wgx, wgy = wpt.grid
+                    wx = self.axes_x[wgx] + wpt.offset_x
+                    wy = self.axes_y[wgy] + wpt.offset_y
+                    wz = from_st.elevation + wpt.offset_z
+                else:
+                    wx, wy, wz = (0.0, 0.0, from_st.elevation + wpt.offset_z)
+                waypoints_3d.append((wx, wy, wz))
+        else:
+            waypoints_3d = [start_point, end_point]
+
+        total_length = sum(
+            math.dist(waypoints_3d[i], waypoints_3d[i + 1])
+            for i in range(len(waypoints_3d) - 1)
+        )
+
+        dz = z2 - z1
+        euclidean_dist = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+        if euclidean_dist > 0:
+            dir_3d = (dx / euclidean_dist, dy / euclidean_dist, dz / euclidean_dist)
+            pitch_angle = math.asin(dz / euclidean_dist)
+            yaw_angle = math.atan2(dy, dx)
+        else:
+            dir_3d = (1.0, 0.0, 0.0)
+            pitch_angle = 0.0
+            yaw_angle = 0.0
+
+        if span_2d > 0:
+            dir_2d = (dx / span_2d, dy / span_2d)
+        else:
+            dir_2d = (1.0, 0.0)
+
+        rotation_angle = yaw_angle
+
+        return ResolvedMember(
+            tag=member.tag,
+            element=member,
+            start_point=start_point,
+            end_point=end_point,
+            span_length=total_length,
+            direction_vector=dir_2d,
+            direction_vector_3d=dir_3d,
+            rotation_angle=rotation_angle,
+            pitch_angle=pitch_angle,
+            yaw_angle=yaw_angle,
+            waypoints=waypoints_3d,
+            layer=derive_default_layer(member),
         )
 
     def resolve_wall(
@@ -3761,7 +3891,7 @@ class SpatialResolver:
 
         st = self.storeys[roof.placement.storey]
         z0 = st.elevation + roof.placement.offset_z
-        pitch = roof.covering.pitch if roof.covering else 30.0
+        pitch = roof.pitch_deg if roof.pitch_deg is not None else (roof.covering.pitch if roof.covering else 30.0)
         pitch_rad = math.radians(pitch)
 
         # 4 Eaves corners at base eaves elevation
@@ -3860,6 +3990,177 @@ class SpatialResolver:
                         end_point=v_end,
                         length=math.dist(v_start, v_end),
                         ridge_type="VERGE",
+                    ))
+
+        elif roof_type == "GABLE_HIP":
+            # Gable-Hip (Manila / Vernacular Thai-Isan roof)
+            if orientation == "Y" or (orientation == "ALONG_LENGTH" and length > width):
+                half_span = width / 2.0
+                rise_h = half_span * math.tan(pitch_rad)
+                zr = z0 + rise_h
+                x_mid = (x0 + x1) / 2.0
+                y_a = y0 + half_span
+                y_b = y1 - half_span
+                if y_b < y_a:
+                    y_a = y_b = (y0 + y1) / 2.0
+
+                r1 = (x_mid, y_a, zr)
+                r2 = (x_mid, y_b, zr)
+                ridge_len = y_b - y_a
+                if ridge_len > 0.01:
+                    ridges.append(ResolvedRoofRidge(
+                        tag=f"{roof.tag}-Ridge",
+                        start_point=r1,
+                        end_point=r2,
+                        length=ridge_len,
+                        ridge_type="RIDGE",
+                    ))
+
+                d_g = half_span / 2.0
+                z_g = z0 + d_g * math.tan(pitch_rad)
+
+                gh1_s = (x0 + d_g, y0 + d_g, z_g)
+                gh1_n = (x1 - d_g, y0 + d_g, z_g)
+                gh2_s = (x0 + d_g, y1 - d_g, z_g)
+                gh2_n = (x1 - d_g, y1 - d_g, z_g)
+
+                hip_lines = [
+                    ("Hip-SW", c1, gh1_s),
+                    ("Hip-SE", c2, gh1_n),
+                    ("Hip-NE", c3, gh2_n),
+                    ("Hip-NW", c4, gh2_s),
+                ]
+                for h_tag, h_s, h_e in hip_lines:
+                    ridges.append(ResolvedRoofRidge(
+                        tag=f"{roof.tag}-{h_tag}",
+                        start_point=h_s,
+                        end_point=h_e,
+                        length=math.dist(h_s, h_e),
+                        ridge_type="HIP",
+                    ))
+
+                ridges.append(ResolvedRoofRidge(
+                    tag=f"{roof.tag}-GableEave-South",
+                    start_point=gh1_s,
+                    end_point=gh1_n,
+                    length=math.dist(gh1_s, gh1_n),
+                    ridge_type="EAVE",
+                ))
+                ridges.append(ResolvedRoofRidge(
+                    tag=f"{roof.tag}-GableEave-North",
+                    start_point=gh2_s,
+                    end_point=gh2_n,
+                    length=math.dist(gh2_s, gh2_n),
+                    ridge_type="EAVE",
+                ))
+
+                p_south_hip = [c1, c2, gh1_n, gh1_s]
+                p_south_gable = [gh1_s, gh1_n, r1]
+                p_north_hip = [c3, c4, gh2_s, gh2_n]
+                p_north_gable = [gh2_n, gh2_s, r2]
+                p_east = [c2, c3, r2, r1]
+                p_west = [c4, c1, r1, r2]
+
+                for p_tag, poly in [
+                    ("SouthHip", p_south_hip),
+                    ("SouthGable", p_south_gable),
+                    ("NorthHip", p_north_hip),
+                    ("NorthGable", p_north_gable),
+                    ("EastSlope", p_east),
+                    ("WestSlope", p_west),
+                ]:
+                    area, normal = _calc_polygon_3d(poly)
+                    planes.append(ResolvedRoofPlane(
+                        tag=f"{roof.tag}-{p_tag}",
+                        polygon=poly,
+                        area=area,
+                        slope_degrees=pitch,
+                        normal=normal,
+                    ))
+
+            else:
+                # Ridge along X (default)
+                half_span = length / 2.0
+                rise_h = half_span * math.tan(pitch_rad)
+                zr = z0 + rise_h
+                y_mid = (y0 + y1) / 2.0
+                x_a = x0 + half_span
+                x_b = x1 - half_span
+                if x_b < x_a:
+                    x_a = x_b = (x0 + x1) / 2.0
+
+                r1 = (x_a, y_mid, zr)
+                r2 = (x_b, y_mid, zr)
+                ridge_len = x_b - x_a
+                if ridge_len > 0.01:
+                    ridges.append(ResolvedRoofRidge(
+                        tag=f"{roof.tag}-Ridge",
+                        start_point=r1,
+                        end_point=r2,
+                        length=ridge_len,
+                        ridge_type="RIDGE",
+                    ))
+
+                d_g = half_span / 2.0
+                z_g = z0 + d_g * math.tan(pitch_rad)
+
+                gh1_w = (x0 + d_g, y0 + d_g, z_g)
+                gh1_e = (x0 + d_g, y1 - d_g, z_g)
+                gh2_w = (x1 - d_g, y0 + d_g, z_g)
+                gh2_e = (x1 - d_g, y1 - d_g, z_g)
+
+                hip_lines = [
+                    ("Hip-SW", c1, gh1_w),
+                    ("Hip-NW", c4, gh1_e),
+                    ("Hip-SE", c2, gh2_w),
+                    ("Hip-NE", c3, gh2_e),
+                ]
+                for h_tag, h_s, h_e in hip_lines:
+                    ridges.append(ResolvedRoofRidge(
+                        tag=f"{roof.tag}-{h_tag}",
+                        start_point=h_s,
+                        end_point=h_e,
+                        length=math.dist(h_s, h_e),
+                        ridge_type="HIP",
+                    ))
+
+                ridges.append(ResolvedRoofRidge(
+                    tag=f"{roof.tag}-GableEave-West",
+                    start_point=gh1_w,
+                    end_point=gh1_e,
+                    length=math.dist(gh1_w, gh1_e),
+                    ridge_type="EAVE",
+                ))
+                ridges.append(ResolvedRoofRidge(
+                    tag=f"{roof.tag}-GableEave-East",
+                    start_point=gh2_w,
+                    end_point=gh2_e,
+                    length=math.dist(gh2_w, gh2_e),
+                    ridge_type="EAVE",
+                ))
+
+                p_west_hip = [c1, c4, gh1_e, gh1_w]
+                p_west_gable = [gh1_w, gh1_e, r1]
+                p_east_hip = [c2, gh2_w, gh2_e, c3]
+                p_east_gable = [gh2_w, r2, gh2_e]
+                p_south = [c1, c2, r2, r1]
+                p_north = [c4, r1, r2, c3]
+
+                for p_tag, poly in [
+                    ("WestHip", p_west_hip),
+                    ("WestGable", p_west_gable),
+                    ("EastHip", p_east_hip),
+                    ("EastGable", p_east_gable),
+                    ("SouthSlope", p_south),
+                    ("NorthSlope", p_north),
+                ]:
+                    area, normal = _calc_polygon_3d(poly)
+                    planes.append(ResolvedRoofPlane(
+                        tag=f"{roof.tag}-{p_tag}",
+                        polygon=poly,
+                        area=area,
+                        slope_degrees=pitch,
+                        normal=normal,
                     ))
 
         elif roof_type == "HIP":
@@ -4028,6 +4329,12 @@ class SpatialResolver:
         # Roof Framing Members Synthesis (โครงสร้างหลังคาแยกชิ้นส่วน: อะเส, ขื่อ, อกไก่, ดั้ง, ตะเข้สัน, จันทัน, แป)
         framing_members: List[ResolvedRoofFramingMember] = []
         f_mat = roof.framing.material if roof.framing else "STEEL_SS400"
+        profiles_dict = roof.framing.profiles if (roof.framing and roof.framing.profiles and isinstance(roof.framing.profiles, dict)) else {}
+        raf_prof = profiles_dict.get("rafter", "C100x50x20x3.2")
+        pur_prof = profiles_dict.get("purlin", "C75x45x15x2.3")
+        ridge_prof = profiles_dict.get("ridge", "2C150x50x20x3.2")
+        hip_prof = profiles_dict.get("hip", "2C150x50x20x3.2")
+        wp_prof = profiles_dict.get("wall_plate", "C150x50x20x3.2")
 
         # 1. อะเส (Wall Plates) รอบแนวอาคาร/ชายคา
         wall_plate_corners = [
@@ -4046,7 +4353,7 @@ class SpatialResolver:
                 length=math.dist(p_s, p_e),
                 color="#3B82F6",  # Blue
                 material=f_mat,
-                profile="C150x50x20x3.2",
+                profile=wp_prof,
             ))
 
         # 2. อกไก่ (Ridge Beam), ตะเข้สัน (Hip Rafters), เสาดั้ง (King Posts), ขื่อ (Tie Beams)
@@ -4061,7 +4368,7 @@ class SpatialResolver:
                     length=r.length,
                     color="#EF4444",  # Red
                     material=f_mat,
-                    profile="2C150x50x20x3.2",
+                    profile=ridge_prof,
                 ))
                 # เสาดั้ง (King Posts) ที่ปลายอกไก่ลงมาที่ระดับอะเส
                 framing_members.append(ResolvedRoofFramingMember(
@@ -4109,11 +4416,11 @@ class SpatialResolver:
                     length=r.length,
                     color="#F59E0B",  # Amber
                     material=f_mat,
-                    profile="2C150x50x20x3.2",
+                    profile=hip_prof,
                 ))
 
         # 3. จันทัน (Rafters - Common & Jack Rafters) ตามระยะสแปน
-        r_spacing = roof.framing.spacing if roof.framing and roof.framing.spacing else 1.0
+        r_spacing = roof.framing.rafter_spacing if (roof.framing and roof.framing.rafter_spacing) else (roof.framing.spacing if roof.framing else 1.0)
         # กระจายจันทันบนแต่ละผืนหลังคา (Planes)
         rafter_idx = 1
         for plane in planes:
@@ -4157,7 +4464,7 @@ class SpatialResolver:
                                 length=l_raf,
                                 color="#06B6D4",  # Cyan
                                 material=f_mat,
-                                profile="C100x50x20x3.2",
+                                profile=raf_prof,
                             ))
                             rafter_idx += 1
                     y_curr += r_spacing
@@ -4192,7 +4499,7 @@ class SpatialResolver:
                                 length=l_raf,
                                 color="#06B6D4",  # Cyan
                                 material=f_mat,
-                                profile="C100x50x20x3.2",
+                                profile=raf_prof,
                             ))
                             rafter_idx += 1
                     x_curr += r_spacing
@@ -4233,7 +4540,7 @@ class SpatialResolver:
                                 length=l_pur,
                                 color="#10B981",  # Emerald Green
                                 material=f_mat,
-                                profile="C75x45x15x2.3",
+                                profile=pur_prof,
                             ))
                             purlin_idx += 1
                 z_curr += dz_purlin
@@ -6734,6 +7041,10 @@ class SpatialResolver:
                 r_beam = self.resolve_beam(elem)
                 resolved_manifest.beams.append(r_beam)
                 resolved_manifest.elements.append(r_beam)
+            elif isinstance(elem, IfcMember):
+                r_mem = self.resolve_member(elem)
+                resolved_manifest.members.append(r_mem)
+                resolved_manifest.elements.append(r_mem)
             elif isinstance(elem, IfcWall):
                 r_wall = self.walls_by_tag[elem.tag]
                 # Doors and windows were extracted during resolve_wall
