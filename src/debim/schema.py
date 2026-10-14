@@ -3514,6 +3514,33 @@ class ComplianceRule(BaseModel):
     notes: Optional[str] = None
 
 
+Elements = List[Element]
+
+
+class ModuleDefinition(BaseModel):
+    id: str
+    name: Optional[str] = None
+    local_grids: Optional[Grids] = None
+    elements: Optional[Elements] = None
+
+
+class ReplicationConfig(BaseModel):
+    module: str
+    count: int
+    along: Optional[Literal["grid_x", "grid_y", "vector"]] = "grid_x"
+    grid_x_mapping: Optional[List[Dict[str, str]]] = None
+    grid_y_mapping: Optional[List[Dict[str, str]]] = None
+    prefix_pattern: str = "U{index}_"
+    party_wall_deduplication: bool = True
+
+
+class InstanceConfig(BaseModel):
+    module: Optional[str] = None
+    replicate: Optional[ReplicationConfig] = None
+    origin: Optional[Dict[str, str]] = None
+    id_prefix: Optional[str] = None
+
+
 class ProjectManifest(BaseModel):
     schema_version: str = Field(alias="schema", default="IFC4-Minimal")
     project: ProjectInfo
@@ -3521,6 +3548,8 @@ class ProjectManifest(BaseModel):
     grids: Grids
     materials: List[Material]
     elements: List[Element] = Field(default_factory=list)
+    modules: Optional[List[ModuleDefinition]] = None
+    instances: Optional[List[InstanceConfig]] = None
     railways: List[Union[IfcRailway, IfcRailwayPart, IfcTrackElement]] = Field(default_factory=list)
     marine_facilities: Optional[List[IfcMarineFacility]] = None
     proxies: List[IfcBuildingElementProxy] = Field(default_factory=list)
