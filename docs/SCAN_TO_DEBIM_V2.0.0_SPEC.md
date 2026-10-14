@@ -108,37 +108,39 @@ sequenceDiagram
 
     Bank->>Sim: ส่งผ่านไฟล์ .debim อาคารต้นแบบ (บ้าน, ตึกแถว, โกดัง)
     Sim->>Sim: เรนเดอร์ 3D Mesh + จำลองยิงแสง LiDAR พร้อมสัญญาณรบกวน
-    Sim->>Sim: จำลองมุมกล้องและแสงตกกระทบสำหรับ 3DGS + วัตถุบดบัง (เฟอร์นิเจอร์)
+    Sim->>Sim: เรนเดอร์ 3D Mesh + จำลองยิงแสง LiDAR พร้อมสัญญาณรบกวน
+    Sim->>Sim: จำลองมุมกล้องและแสงตกกระทบสำหรับ 3DGS ในสภาพอาคารเปล่า (Bare Shell) + ท่อ MEP เปลือย
     Sim->>Ingest: ส่งมอบคู่ข้อมูล (Synthetic Noisy LiDAR + 3DGS)
-    Ingest->>Ingest: สกัดฮิสโตแกรมแกน Z (Storeys) + Slice RANSAC (Grids, Walls, Columns)
+    Ingest->>Ingest: สกัดฮิสโตแกรมแกน Z (Storeys) + Slice RANSAC (Grids, Walls, Columns) + MEP Extraction
     Ingest->>Eval: สร้างไฟล์ทำนาย candidate_project.debim
-    Eval->>Eval: เปรียบเทียบกับ Ground Truth (Grid Matching, Column IoU, Wall Angular Drift)
+    Eval->>Eval: เปรียบเทียบกับ Ground Truth (Grid Matching, Column IoU, Wall Angular Drift, MEP Alignment)
     Eval-->>DevAI: สร้าง Diagnostic Friction Report หาก Accuracy < 95%
     DevAI->>DevAI: Jules AI วิเคราะห์สาเหตุ ปรับแก้โค้ด Heuristic / Math Solver
     DevAI->>DevAI: Watchdog รัน Pytest และ Squash Merge เข้าสู่ Main Branch
     DevAI-->>Sim: ส่งรอบทดสอบถัดไปทันที (Non-stop Self-Evolution)
 ```
 
-### 3.1 Forward Simulation (การจำลองการสแกนสังเคราะห์)
-- นำโมเดล `.debim` ที่มีความถูกต้อง 100% (เช่น `shophouse_isan_3fl.debim`, `house.debim`, แบบมาตรฐานกรมโยธาฯ) มาคอมไพล์เป็น 3D Geometric Mesh
-- จำลองเซ็นเซอร์เสมือนจริง:
-  - **Virtual LiDAR:** ยิง Ray-casting พร้อมจำลองค่า Gaussian Noise ($\sigma = 2\text{ cm}$) และการขาดหายของข้อมูล (Drop-out rate 15%)
-  - **Virtual Camera Trajectory:** จำลองเส้นทางเดินถือกล้องของมนุษย์ พร้อมเรนเดอร์ภาพ RGB เพื่อสร้าง 3DGS เสมือน
-  - **Synthetic Clutter Injection:** สุ่มวางโมเดล 3D เฟอร์นิเจอร์ (โต๊ะ เก้าอี้ ตู้ ผ้าม่าน) เพื่อจำลองการบดบังในสภาพแวดล้อมจริง
+### 3.1 Forward Simulation: Bare-Shell & Exposed MEP Reality (สภาพอาคารจริงหน้างาน)
+ในหน้างานก่อสร้าง ปรับปรุง หรือรีโนเวทจริง ก่อนการสแกนพื้นที่ ผู้รับเหมาจะดำเนินการ **รื้อถอนและเคลียร์พื้นที่ (Demolition / Strip-Out)** ขนย้ายเฟอร์นิเจอร์ โต๊ะ ตู้ เตียง และสิ่งของออกไปทั้งหมดแล้ว ข้อมูลที่สแกนได้จึงเป็น **อาคารเปล่า (Bare Building Shell)** ซึ่งถือเป็นความได้เปรียบมหาศาล:
+- **ไร้สิ่งกีดขวาง (Zero Clutter Occlusion):** มองเห็นระนาบผิวเสา คาน ท้องพื้น และผนังอิฐก่อ 100% ทำให้ RANSAC และ Plane Fitting มีความแม่นยำสูงระดับมิลลิเมตร
+- **การมองเห็นท่อและงานระบบ (Exposed MEP Visibility):** ท่อดักท์แอร์ (HVAC Ducts), ท่อประปา-สุขาภิบาล (Pipes), รางร้อยสายไฟ (Cable Trays), และท่อดับเพลิงใต้ท้องพื้นจะเปลือยให้เห็นอย่างเด่นชัด สามารถสกัดเส้นแกนกลาง (Centroid Vector) เพื่อแปลงเป็น `IfcPipeSegment`, `IfcDuctSegment`, `IfcCableCarrierSegment` ได้โดยตรง
 
 ### 3.2 Inverse Symbolic Solver (ขั้นตอนการถอดรหัสสู่ .debim)
 1. **Storey Extraction (การหาระดับชั้น):**
    - วิเคราะห์ Histogram ความหนาแน่นของพิกัดแกน $Z$ ของ Point Cloud
-   - ยอดพีคระนาบแนวนอนขนาดใหญ่บ่งบอกถึงระดับพื้นคอนกรีต ($Z_{floor}$) และฝ้าเพดาน ($Z_{ceiling}$)
+   - ยอดพีคระนาบแนวนอนขนาดใหญ่บ่งบอกถึงระดับพื้นคอนกรีต ($Z_{floor}$) และท้องพื้นชั้นบน ($Z_{slab\_bottom}$)
 2. **Grid & Column Centerline Extraction (การหาแนวกริดและเสา):**
    - ตัดระนาบ Slice Point Cloud ในช่วงความสูงกึ่งกลางเสา ($Z_{floor} + 1.20\text{ ม.}$)
-   - นำกลุ่มจุดทรงลูกบาศก์เข้ากระบวนการ Clustering เพื่อหาจุดศูนย์ถ่วง (Centroids) ของเสา
+   - นำกลุ่มจุดทรงสี่เหลี่ยมเข้ากระบวนการ Clustering เพื่อหาจุดศูนย์ถ่วง (Centroids) ของเสาจริง
    - ใช้อัลกอริทึม RANSAC / Hough Line Transform ลากเส้นเชื่อมระหว่างเสาเพื่อสกัดระบบแกนกริด `axes_x` และ `axes_y`
 3. **Wall Identification & Thickness Calculation:**
    - ค้นหากลุ่มจุดที่เป็นระนาบแนวดิ่งระหว่างกริดเสา คำนวณความหนาผนัง ($t = \Delta \text{distance}$)
-4. **Semantic Feature Mapping via 3DGS Views:**
+4. **Exposed MEP Extraction (การสกัดท่อและงานระบบบนฝ้าเพดาน):**
+   - กรองกลุ่มจุดรูปทรงกระบอกและทรงกล่องยาวใต้ท้องพื้น ($Z_{slab\_bottom} - 0.20\text{ ถึง } -0.80\text{ ม.}$)
+   - สกัดเส้นแนวแกนกลางท่อ (Centerline Polyline) และวัดขนาดเส้นผ่านศูนย์กลาง/ความกว้าง-ลึก แปลงเป็นชิ้นส่วน MEP ของ debim โดยตรง
+5. **Semantic Feature Mapping via 3DGS Views:**
    - เรนเดอร์ภาพจาก 3DGS ในมุมมองตรง (Orthographic View) ของผนังแต่ละด้าน
-   - ส่งให้ Multimodal Vision Model (เช่น Gemini) ทำ Object Detection เพื่อระบุประเภทประตูและหน้าต่าง
+   - ส่งให้ Multimodal Vision Model (เช่น Gemini) ทำ Object Detection เพื่อระบุประเภทประตู ช่องเปิด และหน้าต่าง
 
 ### 3.3 Automated Metric Evaluation (เกณฑ์การวัดผลอัตโนมัติ)
 - **Grid Offset Error ($\epsilon_{grid}$):** ระยะเบี่ยงเบนของแกนกริดเมื่อเทียบกับ Ground Truth (เป้าหมาย: $\le 3\text{ cm}$)
