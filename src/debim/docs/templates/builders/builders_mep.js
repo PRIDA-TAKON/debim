@@ -73,6 +73,279 @@ function buildPump(sample3d, options) {
     return group;
 }
 
+function buildPipeFittingTee(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const r = sample3d.radius || 0.08;
+    const l = sample3d.length || 0.35;
+    const h = sample3d.height || 0.25;
+
+    const pipeMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.7
+    });
+    const flangeMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const weldMat = new THREE.MeshStandardMaterial({
+        color: 0x475569,
+        wireframe: wireframeMode,
+        roughness: 0.5,
+        metalness: 0.6
+    });
+
+    // Main run pipe (horizontal along X axis)
+    const runGeom = new THREE.CylinderGeometry(r, r, l, 24);
+    runGeom.rotateZ(Math.PI / 2.0);
+    const runMesh = new THREE.Mesh(runGeom, pipeMat);
+    group.add(runMesh);
+
+    // Branch pipe (vertical along +Y axis)
+    const branchGeom = new THREE.CylinderGeometry(r, r, h, 24);
+    const branchMesh = new THREE.Mesh(branchGeom, pipeMat);
+    branchMesh.position.set(0, h / 2.0, 0);
+    group.add(branchMesh);
+
+    // Weld neck reinforcement collar at junction
+    const neckReinf = new THREE.Mesh(new THREE.CylinderGeometry(r * 1.35, r * 1.15, r * 0.8, 24), weldMat);
+    neckReinf.position.set(0, r * 0.4, 0);
+    group.add(neckReinf);
+
+    // Raised-face welded neck flanges on 3 ports
+    const flangeR = r * 1.55;
+    const flangeThickness = 0.025;
+
+    // Run Port 1 (Left)
+    const f1 = new THREE.Mesh(new THREE.CylinderGeometry(flangeR, flangeR, flangeThickness, 24), flangeMat);
+    f1.rotation.z = Math.PI / 2.0;
+    f1.position.set(-l / 2.0 + flangeThickness / 2.0, 0, 0);
+    group.add(f1);
+    const r1 = new THREE.Mesh(new THREE.TorusGeometry(flangeR * 0.95, 0.008, 8, 24), weldMat);
+    r1.rotation.y = Math.PI / 2.0;
+    r1.position.set(-l / 2.0, 0, 0);
+    group.add(r1);
+
+    // Run Port 2 (Right)
+    const f2 = new THREE.Mesh(new THREE.CylinderGeometry(flangeR, flangeR, flangeThickness, 24), flangeMat);
+    f2.rotation.z = Math.PI / 2.0;
+    f2.position.set(l / 2.0 - flangeThickness / 2.0, 0, 0);
+    group.add(f2);
+    const r2 = new THREE.Mesh(new THREE.TorusGeometry(flangeR * 0.95, 0.008, 8, 24), weldMat);
+    r2.rotation.y = Math.PI / 2.0;
+    r2.position.set(l / 2.0, 0, 0);
+    group.add(r2);
+
+    // Branch Port (Top)
+    const f3 = new THREE.Mesh(new THREE.CylinderGeometry(flangeR, flangeR, flangeThickness, 24), flangeMat);
+    f3.position.set(0, h - flangeThickness / 2.0, 0);
+    group.add(f3);
+    const r3 = new THREE.Mesh(new THREE.TorusGeometry(flangeR * 0.95, 0.008, 8, 24), weldMat);
+    r3.rotation.x = Math.PI / 2.0;
+    r3.position.set(0, h, 0);
+    group.add(r3);
+
+    return group;
+}
+
+function buildInsulatedFlowSegment(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const r = sample3d.radius || 0.08;
+    const l = sample3d.length || 2.0;
+
+    const pipeMat = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.85
+    });
+    const jacketMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.3
+    });
+    const strapMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.9
+    });
+
+    // Inner fluid pipe body
+    const pipeGeom = new THREE.CylinderGeometry(r, r, l + 0.10, 24);
+    pipeGeom.rotateZ(Math.PI / 2.0);
+    const pipeMesh = new THREE.Mesh(pipeGeom, pipeMat);
+    group.add(pipeMesh);
+
+    // Outer thermal insulation jacket wrapping
+    const jacketR = r * 1.45;
+    const jacketGeom = new THREE.CylinderGeometry(jacketR, jacketR, l, 24);
+    jacketGeom.rotateZ(Math.PI / 2.0);
+    const jacketMesh = new THREE.Mesh(jacketGeom, jacketMat);
+    group.add(jacketMesh);
+
+    // Metallic end caps & connecting flanges
+    [-l / 2.0 - 0.02, l / 2.0 + 0.02].forEach(xPos => {
+        const flange = new THREE.Mesh(new THREE.CylinderGeometry(r * 1.6, r * 1.6, 0.03, 24), strapMat);
+        flange.rotation.z = Math.PI / 2.0;
+        flange.position.set(xPos, 0, 0);
+        group.add(flange);
+    });
+
+    // Metallic banding straps along the insulated length
+    const nStraps = 6;
+    for (let i = 0; i < nStraps; i++) {
+        const sx = -l / 2.0 + 0.15 + (i / (nStraps - 1)) * (l - 0.30);
+        const strap = new THREE.Mesh(new THREE.TorusGeometry(jacketR + 0.004, 0.008, 8, 24), strapMat);
+        strap.rotation.y = Math.PI / 2.0;
+        strap.position.set(sx, 0, 0);
+        group.add(strap);
+    }
+
+    return group;
+}
+
+function buildFloorDrainTerminal(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.30;
+    const h = sample3d.height || 0.25;
+
+    const bronzeMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const pvcMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        wireframe: wireframeMode,
+        roughness: 0.5,
+        metalness: 0.3
+    });
+    const holeMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        wireframe: wireframeMode
+    });
+
+    // Circular strainer rim face plate
+    const topRimR = w * 0.45;
+    const rimMesh = new THREE.Mesh(new THREE.CylinderGeometry(topRimR, topRimR * 0.95, 0.02, 24), bronzeMat);
+    rimMesh.position.set(0, h / 2.0 - 0.01, 0);
+    group.add(rimMesh);
+
+    // Perforated strainer grate holes pattern
+    for (let ring = 1; ring <= 3; ring++) {
+        const rPos = ring * (topRimR * 0.22);
+        const nHoles = ring * 6;
+        for (let i = 0; i < nHoles; i++) {
+            const angle = (i / nHoles) * Math.PI * 2.0;
+            const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.022, 12), holeMat);
+            hole.position.set(Math.cos(angle) * rPos, h / 2.0 - 0.008, Math.sin(angle) * rPos);
+            group.add(hole);
+        }
+    }
+
+    // Clamping ring collar
+    const clampRing = new THREE.Mesh(new THREE.CylinderGeometry(topRimR * 1.08, topRimR * 1.08, 0.025, 24), bronzeMat);
+    clampRing.position.set(0, h / 2.0 - 0.03, 0);
+    group.add(clampRing);
+
+    // Drainage funnel Sump body
+    const funnelGeom = new THREE.CylinderGeometry(topRimR * 0.90, w * 0.25, h * 0.45, 24);
+    const funnelMesh = new THREE.Mesh(funnelGeom, pvcMat);
+    funnelMesh.position.set(0, h / 2.0 - 0.22, 0);
+    group.add(funnelMesh);
+
+    // Water seal trap bucket & outlet tailpiece
+    const trapBody = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.25, w * 0.25, h * 0.35, 24), pvcMat);
+    trapBody.position.set(0, -h / 2.0 + h * 0.175, 0);
+    group.add(trapBody);
+
+    const outletPipe = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.18, w * 0.18, w * 0.35, 20), pvcMat);
+    outletPipe.rotation.z = Math.PI / 2.0;
+    outletPipe.position.set(w * 0.20, -h / 2.0 + h * 0.15, 0);
+    group.add(outletPipe);
+
+    return group;
+}
+
+function buildFlexibleShaftCoupling(sample3d, options) {
+    const { wireframeMode, col } = options;
+    const group = new THREE.Group();
+    const w = sample3d.width || 0.25;
+    const h = sample3d.height || 0.30;
+
+    const hubMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(col),
+        wireframe: wireframeMode,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const spiderMat = new THREE.MeshStandardMaterial({
+        color: 0xdc2626, // Red elastomeric insert
+        wireframe: wireframeMode,
+        roughness: 0.4,
+        metalness: 0.2
+    });
+    const shaftMat = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        wireframe: wireframeMode,
+        roughness: 0.2,
+        metalness: 0.85
+    });
+
+    const hubR = h * 0.38;
+
+    // Left Shaft & Clamping Hub (Motor side)
+    const shaftL = new THREE.Mesh(new THREE.CylinderGeometry(hubR * 0.45, hubR * 0.45, w * 0.50, 20), shaftMat);
+    shaftL.rotation.z = Math.PI / 2.0;
+    shaftL.position.set(-w * 0.45, 0, 0);
+    group.add(shaftL);
+
+    const hubL = new THREE.Mesh(new THREE.CylinderGeometry(hubR, hubR, w * 0.35, 24), hubMat);
+    hubL.rotation.z = Math.PI / 2.0;
+    hubL.position.set(-w * 0.18, 0, 0);
+    group.add(hubL);
+
+    // Right Shaft & Clamping Hub (Pump side)
+    const shaftR = new THREE.Mesh(new THREE.CylinderGeometry(hubR * 0.45, hubR * 0.45, w * 0.50, 20), shaftMat);
+    shaftR.rotation.z = Math.PI / 2.0;
+    shaftR.position.set(w * 0.45, 0, 0);
+    group.add(shaftR);
+
+    const hubRMesh = new THREE.Mesh(new THREE.CylinderGeometry(hubR, hubR, w * 0.35, 24), hubMat);
+    hubRMesh.rotation.z = Math.PI / 2.0;
+    hubRMesh.position.set(w * 0.18, 0, 0);
+    group.add(hubRMesh);
+
+    // Center elastomeric spider coupling insert
+    const spiderDisc = new THREE.Mesh(new THREE.CylinderGeometry(hubR * 1.05, hubR * 1.05, w * 0.12, 24), spiderMat);
+    spiderDisc.rotation.z = Math.PI / 2.0;
+    spiderDisc.position.set(0, 0, 0);
+    group.add(spiderDisc);
+
+    // Interlocking jaw teeth (4 prongs per side)
+    for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2.0;
+        const jawL = new THREE.Mesh(new THREE.BoxGeometry(w * 0.18, hubR * 0.40, hubR * 0.30), hubMat);
+        jawL.position.set(-w * 0.06, Math.cos(angle) * hubR * 0.60, Math.sin(angle) * hubR * 0.60);
+        group.add(jawL);
+
+        const jawR = new THREE.Mesh(new THREE.BoxGeometry(w * 0.18, hubR * 0.40, hubR * 0.30), hubMat);
+        jawR.position.set(w * 0.06, Math.cos(angle + Math.PI / 4) * hubR * 0.60, Math.sin(angle + Math.PI / 4) * hubR * 0.60);
+        group.add(jawR);
+    }
+
+    return group;
+}
+
 function buildAudiovisualDisplay(sample3d, options) {
     const { wireframeMode, col } = options;
     const group = new THREE.Group();
