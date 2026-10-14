@@ -10006,6 +10006,62 @@
       "title": "IfcWindow",
       "type": "object"
     },
+    "InstanceConfig": {
+      "properties": {
+        "module": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Module"
+        },
+        "replicate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReplicationConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Origin"
+        },
+        "id_prefix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id Prefix"
+        }
+      },
+      "title": "InstanceConfig",
+      "type": "object"
+    },
     "LShapeProfile": {
       "properties": {
         "shape": {
@@ -10404,6 +10460,223 @@
         "unit_cost_ref"
       ],
       "title": "Material",
+      "type": "object"
+    },
+    "ModuleDefinition": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "local_grids": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Grids"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "elements": {
+          "anyOf": [
+            {
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/IfcColumn"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcBeam"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcWall"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcFooting"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcSlab"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcSpace"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcCovering"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcStair"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcStairFlight"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRamp"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRailing"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRoof"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcCurtainWall"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcPlate"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcPipeSegment"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcCableCarrierSegment"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcDuctSegment"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcSanitaryTerminal"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcWasteTerminal"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcDistributionBoard"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcElectricDistributionBoard"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcLightFixture"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcSwitchingDevice"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcOutlet"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcAirTerminal"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcDamper"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcFlowController"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcUnitaryEquipment"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcEarthworksElement"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcEarthworksCut"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcEarthworksFill"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcGeotechnicalStratum"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcSoil"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRetainingWall"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcAlignment"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRoad"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcBridge"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRailway"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRailwayPart"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcTrackElement"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcBridgePart"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcBearing"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcDiscreteAccessory"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcMarineFacility"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcMarinePart"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcMooringDevice"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcNavigationElement"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcDistributionFlowElement"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcFurniture"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcFurnishingElement"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcChimney"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcEnergyConversionDevice"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcFlowMovingDevice"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcCustomElement"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcBuildingElementProxy"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Elements"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ModuleDefinition",
       "type": "object"
     },
     "MooringDevicePlacement": {
@@ -11912,6 +12185,87 @@
         }
       },
       "title": "RectangleHollowProfile",
+      "type": "object"
+    },
+    "ReplicationConfig": {
+      "properties": {
+        "module": {
+          "title": "Module",
+          "type": "string"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "along": {
+          "anyOf": [
+            {
+              "enum": [
+                "grid_x",
+                "grid_y",
+                "vector"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "grid_x",
+          "title": "Along"
+        },
+        "grid_x_mapping": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid X Mapping"
+        },
+        "grid_y_mapping": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid Y Mapping"
+        },
+        "prefix_pattern": {
+          "default": "U{index}_",
+          "title": "Prefix Pattern",
+          "type": "string"
+        },
+        "party_wall_deduplication": {
+          "default": true,
+          "title": "Party Wall Deduplication",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "module",
+        "count"
+      ],
+      "title": "ReplicationConfig",
       "type": "object"
     },
     "RetainingWallPlacement": {
@@ -14147,6 +14501,36 @@
       },
       "title": "Elements",
       "type": "array"
+    },
+    "modules": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/ModuleDefinition"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Modules"
+    },
+    "instances": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/InstanceConfig"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Instances"
     },
     "railways": {
       "items": {
