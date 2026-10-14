@@ -508,12 +508,35 @@ def load_debim_file(
     return data
 
 
+def _format_tag(pattern: str, idx: int, tag: str) -> str:
+    """Format element tag using prefix_pattern template string."""
+    try:
+        formatted = pattern.format(index=idx, tag=tag, original_tag=tag)
+        if "{tag}" in pattern or "{original_tag}" in pattern:
+            return formatted
+        return formatted + tag
+    except Exception:
+        return f"{pattern}{tag}"
+
+
+def _map_axis(val: str, mapping: Dict[str, str]) -> str:
+    """Map a local grid axis string (e.g., '1', '1+0.1', 'A-0.2') to a global grid axis."""
+    if val in mapping:
+        return mapping[val]
+    m = re.match(r"^([A-Za-z0-9_]+)([\+\-].*)$", val)
+    if m:
+        base, offset = m.groups()
+        if base in mapping:
+            return f"{mapping[base]}{offset}"
+    return val
+
+
 def _remap_grid_pair(pair: Any, mapping_x: Dict[str, str], mapping_y: Dict[str, str]) -> Any:
     if not pair or not isinstance(pair, (list, tuple)) or len(pair) < 2:
         return pair
     gx, gy = str(pair[0]), str(pair[1])
-    new_gx = mapping_x.get(gx, gx)
-    new_gy = mapping_y.get(gy, gy)
+    new_gx = _map_axis(gx, mapping_x)
+    new_gy = _map_axis(gy, mapping_y)
     return [new_gx, new_gy] if isinstance(pair, list) else (new_gx, new_gy)
 
 
@@ -718,21 +741,14 @@ def expand_module_instances(manifest_or_data: Any) -> Any:
 
                 # Prefix tag
                 orig_tag = elem_copy.get("tag", "")
-                if "{tag}" in prefix_pattern or "{original_tag}" in prefix_pattern:
-                    new_tag = prefix_pattern.format(index=idx, tag=orig_tag, original_tag=orig_tag)
-                else:
-                    new_tag = prefix_pattern.format(index=idx) + orig_tag
-                elem_copy["tag"] = new_tag
+                elem_copy["tag"] = _format_tag(prefix_pattern, idx, orig_tag)
 
                 # Remap child element tags if any
                 if "children" in elem_copy and isinstance(elem_copy["children"], list):
                     for child in elem_copy["children"]:
                         if isinstance(child, dict) and "tag" in child:
                             c_tag = child["tag"]
-                            if "{tag}" in prefix_pattern or "{original_tag}" in prefix_pattern:
-                                child["tag"] = prefix_pattern.format(index=idx, tag=c_tag, original_tag=c_tag)
-                            else:
-                                child["tag"] = prefix_pattern.format(index=idx) + c_tag
+                            child["tag"] = _format_tag(prefix_pattern, idx, c_tag)
 
                 # Remap placement grid references
                 if "placement" in elem_copy and isinstance(elem_copy["placement"], dict):
