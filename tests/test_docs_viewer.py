@@ -362,3 +362,47 @@ def test_procedural_3d_geometry_handlers_in_html():
     assert "civil_culvert" in html_str
     assert "parametric_component_proxy" in html_str
     assert "virtual_boundary_zone" in html_str
+
+
+def test_spatial_transform_controls_in_html():
+    """Test that generated HTML contains interactive spatial positioning, rotation, and sizing test controls."""
+    html_str = generate_class_directory_html()
+
+    # Toolbar button & panel
+    assert 'id="transform-btn"' in html_str
+    assert "Transform &amp; Sizing" in html_str or "Transform & Sizing" in html_str
+    assert 'id="transform-panel"' in html_str
+    assert "Spatial &amp; Parametric Test" in html_str or "Spatial & Parametric Test" in html_str
+
+    # Positioning controls
+    assert 'id="pos-x-range"' in html_str
+    assert 'id="pos-x-num"' in html_str
+    assert 'id="pos-y-range"' in html_str
+    assert 'id="pos-y-num"' in html_str
+    assert 'id="pos-z-range"' in html_str
+    assert 'id="pos-z-num"' in html_str
+
+    # Rotation controls
+    assert 'id="rot-x-range"' in html_str
+    assert 'id="rot-x-num"' in html_str
+    assert 'id="rot-y-range"' in html_str
+    assert 'id="rot-y-num"' in html_str
+    assert 'id="rot-z-range"' in html_str
+    assert 'id="rot-z-num"' in html_str
+
+    # Parametric sizing scale controls
+    assert 'id="scale-w-range"' in html_str
+    assert 'id="scale-w-num"' in html_str
+    assert 'id="scale-d-range"' in html_str
+    assert 'id="scale-d-num"' in html_str
+    assert 'id="scale-h-range"' in html_str
+    assert 'id="scale-h-num"' in html_str
+
+    # Reset button
+    assert 'id="reset-transform-btn"' in html_str
+
+    # JS Handler functions
+    assert "toggleTransformPanel" in html_str
+    assert "syncAndApplyTransform" in html_str
+    assert "resetTransform" in html_str
+    assert "applyTransform" in html_str

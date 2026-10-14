@@ -81,7 +81,87 @@
                             <button class="tool-btn" id="wireframe-btn" onclick="toggleWireframe()">Wireframe</button>
 
                             <button class="tool-btn" id="bbox-btn" onclick="toggleBBox()">BBox</button>
+                            <button class="tool-btn" id="transform-btn" onclick="toggleTransformPanel()">📐 Transform & Sizing</button>
                             <button class="tool-btn" onclick="reset3DCamera()">Reset Cam</button>
+                        </div>
+                        <!-- Floating Spatial & Parametric Test Control Card -->
+                        <div class="transform-card hidden" id="transform-panel">
+                            <div class="transform-card-header">
+                                <span class="transform-card-title">📐 Spatial & Parametric Test</span>
+                                <button class="transform-close-btn" onclick="toggleTransformPanel()">✕</button>
+                            </div>
+                            <div class="transform-card-body">
+                                <!-- Group 1: Positioning (พิกัด X, Y, Z) -->
+                                <div class="transform-group">
+                                    <div class="transform-group-title">Positioning (พิกัด X, Y, Z)</div>
+                                    <div class="transform-row">
+                                        <label class="transform-label">Pos X</label>
+                                        <input type="range" class="transform-slider" id="pos-x-range" min="-5.0" max="5.0" step="0.1" value="0.0" oninput="syncAndApplyTransform('pos-x-range', 'pos-x-num')">
+                                        <input type="number" class="transform-num" id="pos-x-num" min="-5.0" max="5.0" step="0.1" value="0.0" oninput="syncAndApplyTransform('pos-x-num', 'pos-x-range')">
+                                        <span class="transform-unit">m</span>
+                                    </div>
+                                    <div class="transform-row">
+                                        <label class="transform-label">Pos Y (Elev)</label>
+                                        <input type="range" class="transform-slider" id="pos-y-range" min="-5.0" max="5.0" step="0.1" value="0.0" oninput="syncAndApplyTransform('pos-y-range', 'pos-y-num')">
+                                        <input type="number" class="transform-num" id="pos-y-num" min="-5.0" max="5.0" step="0.1" value="0.0" oninput="syncAndApplyTransform('pos-y-num', 'pos-y-range')">
+                                        <span class="transform-unit">m</span>
+                                    </div>
+                                    <div class="transform-row">
+                                        <label class="transform-label">Pos Z</label>
+                                        <input type="range" class="transform-slider" id="pos-z-range" min="-5.0" max="5.0" step="0.1" value="0.0" oninput="syncAndApplyTransform('pos-z-range', 'pos-z-num')">
+                                        <input type="number" class="transform-num" id="pos-z-num" min="-5.0" max="5.0" step="0.1" value="0.0" oninput="syncAndApplyTransform('pos-z-num', 'pos-z-range')">
+                                        <span class="transform-unit">m</span>
+                                    </div>
+                                </div>
+
+                                <!-- Group 2: Rotation (หันทิศทาง Yaw, Pitch, Roll) -->
+                                <div class="transform-group">
+                                    <div class="transform-group-title">Orientation / Rotation (หันทิศทาง)</div>
+                                    <div class="transform-row">
+                                        <label class="transform-label">Rot X</label>
+                                        <input type="range" class="transform-slider" id="rot-x-range" min="0" max="360" step="15" value="0" oninput="syncAndApplyTransform('rot-x-range', 'rot-x-num')">
+                                        <input type="number" class="transform-num" id="rot-x-num" min="0" max="360" step="15" value="0" oninput="syncAndApplyTransform('rot-x-num', 'rot-x-range')">
+                                        <span class="transform-unit">°</span>
+                                    </div>
+                                    <div class="transform-row">
+                                        <label class="transform-label">Rot Y (Yaw)</label>
+                                        <input type="range" class="transform-slider" id="rot-y-range" min="0" max="360" step="15" value="0" oninput="syncAndApplyTransform('rot-y-range', 'rot-y-num')">
+                                        <input type="number" class="transform-num" id="rot-y-num" min="0" max="360" step="15" value="0" oninput="syncAndApplyTransform('rot-y-num', 'rot-y-range')">
+                                        <span class="transform-unit">°</span>
+                                    </div>
+                                    <div class="transform-row">
+                                        <label class="transform-label">Rot Z</label>
+                                        <input type="range" class="transform-slider" id="rot-z-range" min="0" max="360" step="15" value="0" oninput="syncAndApplyTransform('rot-z-range', 'rot-z-num')">
+                                        <input type="number" class="transform-num" id="rot-z-num" min="0" max="360" step="15" value="0" oninput="syncAndApplyTransform('rot-z-num', 'rot-z-range')">
+                                        <span class="transform-unit">°</span>
+                                    </div>
+                                </div>
+
+                                <!-- Group 3: Parametric Sizing (การใส่ขนาด Width, Depth, Height) -->
+                                <div class="transform-group">
+                                    <div class="transform-group-title">Parametric Sizing (การใส่ขนาด)</div>
+                                    <div class="transform-row">
+                                        <label class="transform-label">Scale W</label>
+                                        <input type="range" class="transform-slider" id="scale-w-range" min="0.2" max="3.0" step="0.1" value="1.0" oninput="syncAndApplyTransform('scale-w-range', 'scale-w-num')">
+                                        <input type="number" class="transform-num" id="scale-w-num" min="0.2" max="3.0" step="0.1" value="1.0" oninput="syncAndApplyTransform('scale-w-num', 'scale-w-range')">
+                                        <span class="transform-unit">x</span>
+                                    </div>
+                                    <div class="transform-row">
+                                        <label class="transform-label">Scale D</label>
+                                        <input type="range" class="transform-slider" id="scale-d-range" min="0.2" max="3.0" step="0.1" value="1.0" oninput="syncAndApplyTransform('scale-d-range', 'scale-d-num')">
+                                        <input type="number" class="transform-num" id="scale-d-num" min="0.2" max="3.0" step="0.1" value="1.0" oninput="syncAndApplyTransform('scale-d-num', 'scale-d-range')">
+                                        <span class="transform-unit">x</span>
+                                    </div>
+                                    <div class="transform-row">
+                                        <label class="transform-label">Scale H</label>
+                                        <input type="range" class="transform-slider" id="scale-h-range" min="0.2" max="3.0" step="0.1" value="1.0" oninput="syncAndApplyTransform('scale-h-range', 'scale-h-num')">
+                                        <input type="number" class="transform-num" id="scale-h-num" min="0.2" max="3.0" step="0.1" value="1.0" oninput="syncAndApplyTransform('scale-h-num', 'scale-h-range')">
+                                        <span class="transform-unit">x</span>
+                                    </div>
+                                </div>
+
+                                <button class="reset-transform-btn" id="reset-transform-btn" onclick="resetTransform()">Reset Transform & Sizing</button>
+                            </div>
                         </div>
                         <div class="overlay-card">
                             <div class="card-row">
@@ -188,6 +268,9 @@
 
         let edgesMode = true;
         let edgesGroup = null;
+
+        let transformMode = false;
+        let currentBaseSample3D = null;
 
         // Init App
         function init() {
@@ -349,7 +432,9 @@
             document.getElementById('spec-test').textContent = specs.testing || 'ไม่มีข้อมูล';
 
             // 3D Model
-            update3DModel(item.sample_3d);
+            currentBaseSample3D = item.sample_3d ? JSON.parse(JSON.stringify(item.sample_3d)) : null;
+            resetTransformUI();
+            update3DModel(currentBaseSample3D);
 
             // Update Farnsworth House Showcase link
             const farnsworthClasses = ['IfcColumn', 'IfcBeam', 'IfcSlab', 'IfcWall'];
@@ -499,8 +584,92 @@
             return edgeLinesGroup;
         }
 
+        // Spatial & Parametric Transform Control Logic
+        function toggleTransformPanel() {
+            transformMode = !transformMode;
+            const panel = document.getElementById('transform-panel');
+            const btn = document.getElementById('transform-btn');
+            if (panel) panel.classList.toggle('hidden', !transformMode);
+            if (btn) btn.classList.toggle('active', transformMode);
+        }
+
+        function syncAndApplyTransform(sourceId, targetId) {
+            const src = document.getElementById(sourceId);
+            const tgt = document.getElementById(targetId);
+            if (src && tgt) {
+                tgt.value = src.value;
+            }
+            applyTransform();
+        }
+
+        function resetTransformUI() {
+            const defaults = {
+                'pos-x': '0.0', 'pos-y': '0.0', 'pos-z': '0.0',
+                'rot-x': '0', 'rot-y': '0', 'rot-z': '0',
+                'scale-w': '1.0', 'scale-d': '1.0', 'scale-h': '1.0'
+            };
+            for (const [key, val] of Object.entries(defaults)) {
+                const rangeEl = document.getElementById(`${key}-range`);
+                const numEl = document.getElementById(`${key}-num`);
+                if (rangeEl) rangeEl.value = val;
+                if (numEl) numEl.value = val;
+            }
+        }
+
+        function resetTransform() {
+            resetTransformUI();
+            applyTransform();
+        }
+
+        function applyTransform() {
+            if (!currentBaseSample3D) return;
+
+            const posX = parseFloat(document.getElementById('pos-x-num')?.value || 0);
+            const posY = parseFloat(document.getElementById('pos-y-num')?.value || 0);
+            const posZ = parseFloat(document.getElementById('pos-z-num')?.value || 0);
+
+            const rotX = parseFloat(document.getElementById('rot-x-num')?.value || 0);
+            const rotY = parseFloat(document.getElementById('rot-y-num')?.value || 0);
+            const rotZ = parseFloat(document.getElementById('rot-z-num')?.value || 0);
+
+            const scaleW = parseFloat(document.getElementById('scale-w-num')?.value || 1.0);
+            const scaleD = parseFloat(document.getElementById('scale-d-num')?.value || 1.0);
+            const scaleH = parseFloat(document.getElementById('scale-h-num')?.value || 1.0);
+
+            const scaledSample3D = JSON.parse(JSON.stringify(currentBaseSample3D));
+            if (scaledSample3D.width !== undefined) scaledSample3D.width = currentBaseSample3D.width * scaleW;
+            if (scaledSample3D.depth !== undefined) scaledSample3D.depth = currentBaseSample3D.depth * scaleD;
+            if (scaledSample3D.height !== undefined) scaledSample3D.height = currentBaseSample3D.height * scaleH;
+            if (scaledSample3D.length !== undefined) scaledSample3D.length = currentBaseSample3D.length * scaleD;
+            if (scaledSample3D.radius !== undefined) scaledSample3D.radius = currentBaseSample3D.radius * ((scaleW + scaleD) / 2.0);
+
+            update3DModel(scaledSample3D, true);
+
+            if (!currentMesh) return;
+
+            const meshHeight = scaledSample3D.height || scaledSample3D.length || 1.0;
+            currentMesh.position.set(posX, posY + (meshHeight / 2.0), posZ);
+            currentMesh.rotation.set(
+                (rotX * Math.PI) / 180,
+                (rotY * Math.PI) / 180,
+                (rotZ * Math.PI) / 180
+            );
+            currentMesh.updateMatrixWorld(true);
+
+            if (edgesGroup) scene.remove(edgesGroup);
+            edgesGroup = attachSketchupEdges(currentMesh);
+            edgesGroup.visible = edgesMode;
+            scene.add(edgesGroup);
+
+            if (bboxMode) {
+                if (bboxHelper) scene.remove(bboxHelper);
+                bboxHelper = new THREE.BoxHelper(currentMesh, 0xf59e0b);
+                scene.add(bboxHelper);
+            }
+        }
+
         // Update 3D Model Shape
-        function update3DModel(sample3d) {
+        function update3DModel(sample3d, isTransformCall = false) {
             if (currentMesh) {
                 scene.remove(currentMesh);
                 currentMesh = null;
@@ -715,7 +884,7 @@ currentMesh = buildStructuralFastener(sample3d, options);
                 }
             }
 
-            const meshHeight = sample3d.height || 1;
+            const meshHeight = sample3d.height || sample3d.length || 1.0;
             currentMesh.position.y = meshHeight / 2.0;
             scene.add(currentMesh);
 
@@ -729,7 +898,9 @@ currentMesh = buildStructuralFastener(sample3d, options);
                 scene.add(bboxHelper);
             }
 
-            reset3DCamera();
+            if (!isTransformCall) {
+                reset3DCamera();
+            }
         }
 
         function toggleEdges() {
