@@ -30,7 +30,7 @@ function buildStairConcrete(sample3d, options) {
     const slabGeom = new THREE.BoxGeometry(w, waistThick, slopeLen);
     const slabMesh = new THREE.Mesh(slabGeom, concreteMat);
     slabMesh.position.set(0, -waistThick * 0.50, 0);
-    slabMesh.rotation.x = slopeAngle;
+    slabMesh.rotation.x = -slopeAngle;
     concreteGroup.add(slabMesh);
 
     const stepGeom = new THREE.BoxGeometry(w, rh, td);
@@ -68,7 +68,7 @@ function buildStairFlight(sample3d, options) {
     [-w / 2.0 + 0.03, w / 2.0 - 0.03].forEach(xOffset => {
         const stringerMesh = new THREE.Mesh(stringerGeom, stringerMat);
         stringerMesh.position.set(xOffset, 0, 0);
-        stringerMesh.rotation.x = stringerAngle;
+        stringerMesh.rotation.x = -stringerAngle;
         group.add(stringerMesh);
     });
 
