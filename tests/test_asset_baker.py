@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import numpy as np
 import pytest
-from tests.cli_runner import CliRunner
+from cli_runner import CliRunner
 
 from debim.cli import app
 from debim.importer import _bake_element_to_glb, import_ifc_to_manifest

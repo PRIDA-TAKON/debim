@@ -12,7 +12,7 @@ if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
 import pytest
-from tests.cli_runner import CliRunner
+from cli_runner import CliRunner
 
 from debim.cli import app
 from tools.benchmark_vqa_gemini import (

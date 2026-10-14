@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 import pytest
 import yaml
-from tests.cli_runner import CliRunner
+from cli_runner import CliRunner
 
 from debim.cli import app
 from debim.spec.registry import (

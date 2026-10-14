@@ -4,7 +4,7 @@ Unit tests for 3D Viewer generator and local HTTP server (debim.viewer)
 
 import re
 from pathlib import Path
-from tests.cli_runner import CliRunner
+from cli_runner import CliRunner
 from debim.cli import app
 from debim.schema import load_manifest
 from debim.viewer import generate_viewer_html
