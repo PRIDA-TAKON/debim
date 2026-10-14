@@ -9,6 +9,13 @@ import math
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 from pydantic import BaseModel, ConfigDict, Field
 
+from debim.geometry2d import (
+    point_in_polygon,
+    polygon_inset,
+    polygon_perimeter,
+    shoelace_area,
+    signed_shoelace_area,
+)
 from debim.schema import (
     Dimensions,
     IfcAirTerminal,
@@ -2549,52 +2556,17 @@ class SpatialResolver:
         # Check for inset / boundary_offset
         inset_val = getattr(space.placement, "inset", None) or getattr(space.placement, "boundary_offset", None)
         if inset_val and len(pts_2d) >= 3:
-            # Simple inward polygon offset along vertex normal bisectors
-            n = len(pts_2d)
-            offset_dist = abs(float(inset_val))
-            new_pts = []
-            for i in range(n):
-                p_prev = pts_2d[(i - 1) % n]
-                p_curr = pts_2d[i]
-                p_next = pts_2d[(i + 1) % n]
-                # Edge vectors
-                v1 = (p_curr[0] - p_prev[0], p_curr[1] - p_prev[1])
-                v2 = (p_next[0] - p_curr[0], p_next[1] - p_curr[1])
-                l1 = math.hypot(v1[0], v1[1])
-                l2 = math.hypot(v2[0], v2[1])
-                if l1 > 1e-6 and l2 > 1e-6:
-                    n1 = (-v1[1] / l1, v1[0] / l1)
-                    n2 = (-v2[1] / l2, v2[0] / l2)
-                    bisector = (n1[0] + n2[0], n1[1] + n2[1])
-                    blen = math.hypot(bisector[0], bisector[1])
-                    if blen > 1e-6:
-                        # Offset inward
-                        scale = offset_dist / blen
-                        new_pts.append((p_curr[0] - bisector[0] * scale, p_curr[1] - bisector[1] * scale))
-                    else:
-                        new_pts.append(p_curr)
-                else:
-                    new_pts.append(p_curr)
-            pts_2d = new_pts
+            offset_dist = float(inset_val)
+            pts_2d = polygon_inset(pts_2d, offset_dist)
             poly_3d = [(p[0], p[1], z) for p in pts_2d]
 
         # Calculate polygon area (Shoelace) and perimeter
-        n = len(pts_2d)
-        area = 0.0
-        perimeter = 0.0
-        if n >= 3:
-            for i in range(n):
-                j = (i + 1) % n
-                area += pts_2d[i][0] * pts_2d[j][1]
-                area -= pts_2d[j][0] * pts_2d[i][1]
-                dx = pts_2d[j][0] - pts_2d[i][0]
-                dy = pts_2d[j][1] - pts_2d[i][1]
-                perimeter += math.hypot(dx, dy)
-            area = abs(area) / 2.0
+        area = shoelace_area(pts_2d)
+        perimeter = polygon_perimeter(pts_2d)
 
-        if n > 0:
-            cx = sum(p[0] for p in pts_2d) / n
-            cy = sum(p[1] for p in pts_2d) / n
+        if pts_2d:
+            cx = sum(p[0] for p in pts_2d) / len(pts_2d)
+            cy = sum(p[1] for p in pts_2d) / len(pts_2d)
         else:
             cx, cy = 0.0, 0.0
 
@@ -2630,62 +2602,33 @@ class SpatialResolver:
                 x, y = self.get_grid_xy(grid_pt)
                 pts_2d.append((x, y))
 
-            # Perform polygon offset or slab clipping using Shapely if requested or needed
+            # Perform polygon offset or slab clipping using geometry2d if requested or needed
             offset_dist = getattr(covering.placement, "boundary_offset", None)
             clip_to_slab = getattr(covering.placement, "clip_to_slab", False)
 
-            from shapely.geometry import Polygon
             if len(pts_2d) >= 3:
-                poly_shape = Polygon(pts_2d)
-
                 # Apply clip to slab boundary on same storey if specified
                 if clip_to_slab:
                     for elem in self.manifest.elements:
                         if isinstance(elem, IfcSlab) and elem.placement.storey == covering.placement.storey:
                             slab_pts = [self.get_grid_xy(pt) for pt in elem.placement.boundary]
                             if len(slab_pts) >= 3:
-                                slab_poly = Polygon(slab_pts)
-                                poly_shape = poly_shape.intersection(slab_poly)
+                                pts_2d = [pt for pt in pts_2d if point_in_polygon(pt, slab_pts)] or pts_2d
                                 break
 
                 # Apply boundary offset if specified (e.g. -0.05m clearance)
                 if offset_dist is not None and abs(offset_dist) > 1e-5:
-                    buffered = poly_shape.buffer(offset_dist, join_style="mitre")
-                    if not buffered.is_empty:
-                        poly_shape = buffered
+                    pts_2d = polygon_inset(pts_2d, -offset_dist)
 
-                if poly_shape.geom_type == "Polygon":
-                    ext_coords = list(poly_shape.exterior.coords)[:-1]
-                    if ext_coords:
-                        pts_2d = [(float(pt[0]), float(pt[1])) for pt in ext_coords]
-                elif poly_shape.geom_type == "MultiPolygon":
-                    # Take largest polygon if multi-polygon
-                    largest = max(poly_shape.geoms, key=lambda g: g.area)
-                    ext_coords = list(largest.exterior.coords)[:-1]
-                    if ext_coords:
-                        pts_2d = [(float(pt[0]), float(pt[1])) for pt in ext_coords]
+            poly_3d = [(x, y, z) for x, y in pts_2d]
 
-            for x, y in pts_2d:
-                poly_3d.append((x, y, z))
+            calc_area = shoelace_area(pts_2d)
+            calc_perimeter = polygon_perimeter(pts_2d)
 
-            n = len(pts_2d)
-            calc_area = 0.0
-            calc_perimeter = 0.0
-            if n >= 3:
-                signed_area = 0.0
-                for i in range(n):
-                    j = (i + 1) % n
-                    signed_area += pts_2d[i][0] * pts_2d[j][1]
-                    signed_area -= pts_2d[j][0] * pts_2d[i][1]
-                    dx = pts_2d[j][0] - pts_2d[i][0]
-                    dy = pts_2d[j][1] - pts_2d[i][1]
-                    calc_perimeter += math.sqrt(dx * dx + dy * dy)
-                signed_area = signed_area / 2.0
-                calc_area = abs(signed_area)
-
-                if covering.covering_type == "CEILING" and signed_area > 0:
-                    pts_2d.reverse()
-                    poly_3d.reverse()
+            signed_a = signed_shoelace_area(pts_2d)
+            if covering.covering_type == "CEILING" and signed_a > 0:
+                pts_2d.reverse()
+                poly_3d.reverse()
             
             area = covering.placement.area if covering.placement.area is not None else calc_area
             perimeter = covering.placement.length if covering.placement.length is not None else calc_perimeter
