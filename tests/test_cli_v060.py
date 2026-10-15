@@ -67,11 +67,17 @@ elements:
     manifest_file.write_text(valid_yaml, encoding="utf-8")
 
     runner = CliRunner()
+    # Test with -m flag
     res = runner.invoke(app, ["validate", "-m", str(manifest_file)])
     assert res.exit_code == 0
     assert "Pydantic Schema Validation passed" in res.output
     assert "Topological Continuity Validation passed" in res.output
     assert "AABB Clash Detection passed" in res.output
+
+    # Test with positional argument
+    res_pos = runner.invoke(app, ["validate", str(manifest_file)])
+    assert res_pos.exit_code == 0
+    assert "Pydantic Schema Validation passed" in res_pos.output
 
 
 def test_cli_validate_floating_column_and_clash(tmp_path):
@@ -208,6 +214,17 @@ elements:
     excel_file = tmp_path / "boq_output.xlsx"
 
     runner = CliRunner()
+    # Test positional manifest with --rules cg-v480
+    res_pos = runner.invoke(app, [
+        "boq",
+        str(manifest_file),
+        "--rules", "cg-v480",
+    ])
+    assert res_pos.exit_code == 0
+    assert "แบบ ปร.4 - รายการปริมาณงานและราคา" in res_pos.output
+    assert "แบบ ปร.5 - สรุปราคากลางค่าก่อสร้าง" in res_pos.output
+
+    # Test with -m flag, --province, and --export-excel
     res = runner.invoke(app, [
         "boq",
         "-m", str(manifest_file),
