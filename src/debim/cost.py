@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 
 from debim.qto import ProjectQTO, calculate_qto
-from debim.resolver import ResolvedDoor, ResolvedWindow, resolve_manifest
+from debim.resolver import ResolvedDoor, ResolvedWindow, ResolvedMember, resolve_manifest
 from debim.schema import ProjectManifest, load_manifest
 
 

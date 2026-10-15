@@ -1,0 +1,1456 @@
+# yaml-language-server: $schema=../../debim.schema.json
+# ==============================================================================
+# Model: Baan Thai L-Shape (บ้านไทยทรง L-Shapeร่วมสมัย)
+# Benchmark Showcase: 225+ Element Comprehensive Declarative OpenBIM Model
+# Features: Substructure stub columns, cantilever beams, grid openings,
+#           composite L-hip roof, compound floor finishes, and complete MEP.
+# Format: Official debim Language File (.debim) v0.8.1
+# ==============================================================================
+
+schema: "IFC4-Minimal"
+version: "0.8.1"
+
+project:
+  id: "PRJ-THAI-L-HOUSE-2025"
+  name: "Baan Thai L-Shape Contemporary Residence (บ้านพักอาศัย ค.ส.ล. 1 ชั้น ทรง L)"
+  units:
+    length: "METER"
+    area: "SQUARE_METER"
+    volume: "CUBIC_METER"
+
+site:
+  name: "Chiang Mai Residential Estate, Thailand"
+  bounding_box: [-5.0, -5.0, 25.0, 20.0]
+
+spatial_structure:
+  storeys:
+    - id: "Foundation"
+      name: "Foundation & Underground Level"
+      elevation: -1.50
+      height: 1.00
+    - id: "Ground"
+      name: "Ground Level (ระดับดินเดิม)"
+      elevation: -0.50
+      height: 0.50
+    - id: "FL1"
+      name: "First Floor Living Level (+1.00m)"
+      elevation: 1.00
+      height: 3.50
+    - id: "Roof"
+      name: "Roof Level (ระดับอกไก่)"
+      elevation: 4.50
+      height: 2.20
+
+grids:
+  axes_x:
+    "1": 0.00
+    "2": 3.50
+    "3": 7.00
+    "4": 10.50
+    "5": 14.00
+    "6": 17.50
+  axes_y:
+    "A": 0.00
+    "B": 3.50
+    "C": 7.00
+    "D": 10.50
+    "E": 14.00
+
+materials:
+  - id: "RC_CONCRETE_240"
+    name: "Reinforced Concrete 240 ksc"
+    category: "concrete"
+    unit_cost_ref: "MAT-CONC-240"
+  - id: "BRICK_MON"
+    name: "Red Clay Mon Brick Masonry (อิฐมอญก่อ)"
+    category: "masonry"
+    unit_cost_ref: "MAT-BRICK-MON"
+  - id: "AAC_BLOCK"
+    name: "Autoclaved Aerated Concrete 7.5cm (อิฐมวลเบา)"
+    category: "masonry"
+    unit_cost_ref: "MAT-AAC-75"
+  - id: "GRANITO_60"
+    name: "Granito Tile 60x60cm (กระเบื้องแกรนิตโต้)"
+    category: "finishes"
+    unit_cost_ref: "MAT-GRANITO"
+  - id: "STEEL_C_CHANNEL"
+    name: "Light Gauge C-Channel Roof Truss Steel"
+    category: "steel"
+    unit_cost_ref: "MAT-STEEL-TRUSS"
+  - id: "ROOF_CPAC"
+    name: "CPAC Monier Concrete Roof Tile (กระเบื้องซีแพค)"
+    category: "other"
+    unit_cost_ref: "MAT-ROOF-CPAC"
+
+elements:
+  # ============================================================================
+  # 1. SUBSTRUCTURE: Isolated Reinforced Concrete Footings (F1) - 24 Items
+  # ============================================================================
+  - class: IfcFooting
+    tag: "F1-1A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["1", "A"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-2A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["2", "A"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-3A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["3", "A"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-4A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["4", "A"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-5A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["5", "A"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-6A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["6", "A"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-1B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["1", "B"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-2B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["2", "B"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-3B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["3", "B"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-4B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["4", "B"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-5B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["5", "B"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-6B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["6", "B"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-1C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["1", "C"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-2C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["2", "C"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-3C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["3", "C"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-4C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["4", "C"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-5C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["5", "C"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-6C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["6", "C"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-1D"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["1", "D"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-2D"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["2", "D"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-3D"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["3", "D"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-1E"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["1", "E"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-2E"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["2", "E"], storey: "Foundation"}
+
+  - class: IfcFooting
+    tag: "F1-3E"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 1.20, depth: 1.20, thickness: 0.35}
+    placement: {grid: ["3", "E"], storey: "Foundation"}
+
+  # ============================================================================
+  # 2. SUBSTRUCTURE: Stub Concrete Columns (CS) - 24 Items
+  # ============================================================================
+  - class: IfcColumn
+    tag: "CS-1A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["1", "A"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-2A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["2", "A"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-3A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["3", "A"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-4A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["4", "A"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-5A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["5", "A"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-6A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["6", "A"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-1B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["1", "B"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-2B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["2", "B"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-3B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["3", "B"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-4B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["4", "B"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-5B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["5", "B"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-6B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["6", "B"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-1C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["1", "C"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-2C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["2", "C"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-3C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["3", "C"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-4C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["4", "C"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-5C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["5", "C"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-6C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["6", "C"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-1D"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["1", "D"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-2D"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["2", "D"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-3D"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["3", "D"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-1E"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["1", "E"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-2E"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["2", "E"], base_storey: "Foundation", top_storey: "Ground"}
+
+  - class: IfcColumn
+    tag: "CS-3E"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["3", "E"], base_storey: "Foundation", top_storey: "Ground"}
+
+  # ============================================================================
+  # 3. SUPERSTRUCTURE: FL1 RC Columns (C1) - 24 Items
+  # ============================================================================
+  - class: IfcColumn
+    tag: "C1-1A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["1", "A"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-2A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["2", "A"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-3A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["3", "A"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-4A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["4", "A"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-5A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["5", "A"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-6A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["6", "A"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-1B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["1", "B"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-2B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["2", "B"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-3B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["3", "B"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-4B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["4", "B"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-5B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["5", "B"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-6B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["6", "B"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-1C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["1", "C"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-2C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["2", "C"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-3C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["3", "C"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-4C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["4", "C"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-5C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["5", "C"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-6C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["6", "C"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-1D"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["1", "D"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-2D"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["2", "D"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-3D"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["3", "D"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-1E"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["1", "E"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-2E"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["2", "E"], base_storey: "FL1", top_storey: "Roof"}
+
+  - class: IfcColumn
+    tag: "C1-3E"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.20}
+    placement: {grid: ["3", "E"], base_storey: "FL1", top_storey: "Roof"}
+
+  # ============================================================================
+  # 4. GROUND BEAMS (GB - Soil Bearing Ground Beams) - 30 Items
+  # ============================================================================
+  - class: IfcBeam
+    tag: "GB-A1"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "A"], to_grid: ["2", "A"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-A2"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["2", "A"], to_grid: ["3", "A"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-A3"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["3", "A"], to_grid: ["4", "A"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-A4"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["4", "A"], to_grid: ["5", "A"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-A5"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["5", "A"], to_grid: ["6", "A"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-B1"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "B"], to_grid: ["2", "B"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-B2"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["2", "B"], to_grid: ["3", "B"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-B3"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["3", "B"], to_grid: ["4", "B"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-B4"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["4", "B"], to_grid: ["5", "B"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-B5"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["5", "B"], to_grid: ["6", "B"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-C1"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "C"], to_grid: ["2", "C"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-C2"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["2", "C"], to_grid: ["3", "C"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-C3"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["3", "C"], to_grid: ["4", "C"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-C4"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["4", "C"], to_grid: ["5", "C"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-C5"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["5", "C"], to_grid: ["6", "C"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-D1"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "D"], to_grid: ["2", "D"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-D2"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["2", "D"], to_grid: ["3", "D"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-E1"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "E"], to_grid: ["2", "E"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-E2"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["2", "E"], to_grid: ["3", "E"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-1A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "A"], to_grid: ["1", "B"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-1B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "B"], to_grid: ["1", "C"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-1C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "C"], to_grid: ["1", "D"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-1D"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "D"], to_grid: ["1", "E"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-3A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["3", "A"], to_grid: ["3", "B"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-3B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["3", "B"], to_grid: ["3", "C"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-3C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["3", "C"], to_grid: ["3", "D"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-3D"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["3", "D"], to_grid: ["3", "E"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-6A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["6", "A"], to_grid: ["6", "B"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  - class: IfcBeam
+    tag: "GB-6B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["6", "B"], to_grid: ["6", "C"], storey: "Ground", support_type: "SOIL_BEARING"}
+
+  # ============================================================================
+  # 5. SUPERSTRUCTURE: FL1 Floor Beams & Cantilevers (B1/B2) - 30 Items
+  # ============================================================================
+  - class: IfcBeam
+    tag: "B1-A1"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "A"], to_grid: ["2", "A"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-A2"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["2", "A"], to_grid: ["3", "A"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-A3"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["3", "A"], to_grid: ["4", "A"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-A4"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["4", "A"], to_grid: ["5", "A"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-A5"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["5", "A"], to_grid: ["6", "A"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-B1"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "B"], to_grid: ["2", "B"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-B2"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["2", "B"], to_grid: ["3", "B"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-B3"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["3", "B"], to_grid: ["4", "B"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-B4"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["4", "B"], to_grid: ["5", "B"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-B5"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["5", "B"], to_grid: ["6", "B"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-C1"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "C"], to_grid: ["2", "C"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-C2"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["2", "C"], to_grid: ["3", "C"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-C3"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["3", "C"], to_grid: ["4", "C"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-C4"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["4", "C"], to_grid: ["5", "C"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-C5"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["5", "C"], to_grid: ["6", "C"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-D1"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "D"], to_grid: ["2", "D"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-D2"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["2", "D"], to_grid: ["3", "D"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-E1"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["1", "E"], to_grid: ["2", "E"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "B1-E2"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.40}
+    placement: {from_grid: ["2", "E"], to_grid: ["3", "E"], storey: "FL1"}
+
+  - class: IfcBeam
+    tag: "CANT-1A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.35}
+    placement: {from_grid: ["1", "A"], to_grid: ["1", "A"], storey: "FL1", support_type: "CANTILEVER", allow_cantilever: true, cantilever_end: "END"}
+
+  - class: IfcBeam
+    tag: "CANT-6A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.35}
+    placement: {from_grid: ["6", "A"], to_grid: ["6", "A"], storey: "FL1", support_type: "CANTILEVER", allow_cantilever: true, cantilever_end: "END"}
+
+  - class: IfcBeam
+    tag: "CANT-1E"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.35}
+    placement: {from_grid: ["1", "E"], to_grid: ["1", "E"], storey: "FL1", support_type: "CANTILEVER", allow_cantilever: true, cantilever_end: "END"}
+
+  # Roof Level Ring Beams (RB)
+  - class: IfcBeam
+    tag: "RB-1A"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.35}
+    placement: {from_grid: ["1", "A"], to_grid: ["6", "A"], storey: "Roof"}
+
+  - class: IfcBeam
+    tag: "RB-1B"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.35}
+    placement: {from_grid: ["1", "C"], to_grid: ["6", "C"], storey: "Roof"}
+
+  - class: IfcBeam
+    tag: "RB-1C"
+    material: "RC_CONCRETE_240"
+    profile: {shape: "BOX", width: 0.20, depth: 0.35}
+    placement: {from_grid: ["1", "E"], to_grid: ["3", "E"], storey: "Roof"}
+
+  # ============================================================================
+  # 6. SLABS & SPACES: RC Slabs with Drops & Spaces for Finishes - 6 Items
+  # ============================================================================
+  - class: IfcSlab
+    tag: "SLAB-MAIN"
+    material: "RC_CONCRETE_240"
+    thickness: 0.12
+    placement:
+      storey: "FL1"
+      boundary:
+        - ["1", "A"]
+        - ["6", "A"]
+        - ["6", "C"]
+        - ["3", "C"]
+        - ["3", "E"]
+        - ["1", "E"]
+
+  - class: IfcSlab
+    tag: "SLAB-PORCH"
+    material: "RC_CONCRETE_240"
+    thickness: 0.10
+    placement:
+      storey: "FL1"
+      boundary:
+        - ["1", "D"]
+        - ["3", "D"]
+        - ["3", "E"]
+        - ["1", "E"]
+
+  - class: IfcSpace
+    tag: "SPACE-LIVING"
+    name: "Living & Dining Room (ห้องนั่งเล่น)"
+    floor_material: "GRANITO_60"
+    floor_thickness: 0.02
+    drop_elevation: 0.00
+    placement: {storey: "FL1", boundary: [["3", "A"], ["6", "A"], ["6", "C"], ["3", "C"]]}
+
+  - class: IfcSpace
+    tag: "SPACE-BATH1"
+    name: "Master Bathroom (ห้องน้ำใหญ่ - Sunken Drop -0.10m)"
+    floor_material: "GRANITO_60"
+    floor_thickness: 0.02
+    drop_elevation: -0.10
+    placement: {storey: "FL1", boundary: [["2", "B"], ["3", "B"], ["3", "C"], ["2", "C"]]}
+
+  - class: IfcSpace
+    tag: "SPACE-BED1"
+    name: "Bedroom 1 (ห้องนอน 1)"
+    floor_material: "GRANITO_60"
+    floor_thickness: 0.02
+    drop_elevation: 0.00
+    placement: {storey: "FL1", boundary: [["1", "A"], ["3", "A"], ["3", "B"], ["1", "B"]]}
+
+  - class: IfcSpace
+    tag: "SPACE-BED2"
+    name: "Bedroom 2 (ห้องนอน 2)"
+    floor_material: "GRANITO_60"
+    floor_thickness: 0.02
+    drop_elevation: 0.00
+    placement: {storey: "FL1", boundary: [["1", "B"], ["3", "B"], ["3", "C"], ["1", "C"]]}
+
+  # ============================================================================
+  # 7. ARCHITECTURE: Composite Masonry Walls (W1..W30) - 22 Items
+  # ============================================================================
+  - class: IfcWall
+    tag: "W-SOUTH-1"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["1", "A"], to_grid: ["2", "A"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-SOUTH-2"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["2", "A"], to_grid: ["3", "A"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-SOUTH-3"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["3", "A"], to_grid: ["4", "A"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-SOUTH-4"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["4", "A"], to_grid: ["5", "A"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-SOUTH-5"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["5", "A"], to_grid: ["6", "A"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-EAST-1"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["6", "A"], to_grid: ["6", "B"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-EAST-2"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["6", "B"], to_grid: ["6", "C"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-MID-1"
+    material: "AAC_BLOCK"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["3", "C"], to_grid: ["4", "C"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-MID-2"
+    material: "AAC_BLOCK"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["4", "C"], to_grid: ["5", "C"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-MID-3"
+    material: "AAC_BLOCK"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["5", "C"], to_grid: ["6", "C"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-NORTH-1"
+    material: "AAC_BLOCK"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["1", "E"], to_grid: ["2", "E"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-NORTH-2"
+    material: "AAC_BLOCK"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["2", "E"], to_grid: ["3", "E"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-WEST-1"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["1", "A"], to_grid: ["1", "B"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-WEST-2"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["1", "B"], to_grid: ["1", "C"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-WEST-3"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["1", "C"], to_grid: ["1", "D"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-WEST-4"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 3.00
+    placement: {from_grid: ["1", "D"], to_grid: ["1", "E"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-INT-1"
+    material: "AAC_BLOCK"
+    thickness: 0.07
+    height: 3.00
+    placement: {from_grid: ["2", "A"], to_grid: ["2", "B"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-INT-2"
+    material: "AAC_BLOCK"
+    thickness: 0.07
+    height: 3.00
+    placement: {from_grid: ["2", "B"], to_grid: ["2", "C"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-INT-3"
+    material: "AAC_BLOCK"
+    thickness: 0.07
+    height: 3.00
+    placement: {from_grid: ["3", "A"], to_grid: ["3", "B"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-INT-4"
+    material: "AAC_BLOCK"
+    thickness: 0.07
+    height: 3.00
+    placement: {from_grid: ["3", "B"], to_grid: ["3", "C"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-PARAPET-1"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 0.80
+    placement: {from_grid: ["1", "D"], to_grid: ["1", "E"], storey: "FL1"}
+
+  - class: IfcWall
+    tag: "W-PARAPET-2"
+    material: "BRICK_MON"
+    thickness: 0.10
+    height: 0.80
+    placement: {from_grid: ["3", "D"], to_grid: ["3", "E"], storey: "FL1"}
+
+  # ============================================================================
+  # 8. OPENINGS: Host Doors & Windows with Grid-Relative Openings - 10 Items
+  # ============================================================================
+  - class: IfcDoor
+    tag: "D-MAIN"
+    at_grid: ["3", "C"]
+    dimensions: {width: 1.00, height: 2.20}
+    host_wall: "W-MID-1"
+
+  - class: IfcDoor
+    tag: "D-BED1"
+    at_grid: ["2", "A"]
+    dimensions: {width: 0.90, height: 2.10}
+    host_wall: "W-INT-1"
+
+  - class: IfcDoor
+    tag: "D-BATH1"
+    at_grid: ["2", "B"]
+    dimensions: {width: 0.80, height: 2.00}
+    host_wall: "W-INT-2"
+
+  - class: IfcDoor
+    tag: "D-BACK"
+    at_grid: ["1", "E"]
+    dimensions: {width: 0.90, height: 2.10}
+    host_wall: "W-NORTH-1"
+
+  - class: IfcWindow
+    tag: "WIN-LIVING-1"
+    at_grid: ["3", "A"]
+    dimensions: {width: 2.00, height: 1.50}
+    sill_height: 0.80
+    host_wall: "W-SOUTH-3"
+
+  - class: IfcWindow
+    tag: "WIN-LIVING-2"
+    at_grid: ["4", "A"]
+    dimensions: {width: 2.00, height: 1.50}
+    sill_height: 0.80
+    host_wall: "W-SOUTH-4"
+
+  - class: IfcWindow
+    tag: "WIN-LIVING-3"
+    at_grid: ["5", "A"]
+    dimensions: {width: 2.00, height: 1.50}
+    sill_height: 0.80
+    host_wall: "W-SOUTH-5"
+
+  - class: IfcWindow
+    tag: "WIN-BED1"
+    at_grid: ["1", "A"]
+    dimensions: {width: 1.50, height: 1.20}
+    sill_height: 0.90
+    host_wall: "W-WEST-1"
+
+  - class: IfcWindow
+    tag: "WIN-BED2"
+    at_grid: ["1", "B"]
+    dimensions: {width: 1.50, height: 1.20}
+    sill_height: 0.90
+    host_wall: "W-WEST-2"
+
+  - class: IfcWindow
+    tag: "WIN-BATH1"
+    at_grid: ["1", "C"]
+    dimensions: {width: 0.60, height: 0.60}
+    sill_height: 1.80
+    host_wall: "W-WEST-3"
+
+  # ============================================================================
+  # 9. ROOF STRUCTURE: L-Shaped Composite Roof, Beams & Framing - 17 Items
+  # ============================================================================
+  - class: IfcRoof
+    tag: "ROOF-MAIN"
+    material: "ROOF_CPAC"
+    roof_type: "GABLE_HIP"
+    pitch_deg: 30.0
+    placement:
+      storey: "Roof"
+      boundary:
+        - ["1", "A"]
+        - ["6", "A"]
+        - ["6", "C"]
+        - ["3", "C"]
+        - ["3", "E"]
+        - ["1", "E"]
+
+  - class: IfcBeam
+    tag: "RB-RIDGE-1"
+    material: "STEEL_C_CHANNEL"
+    pitch_deg: 30.0
+    profile: {shape: "BOX", width: 0.10, depth: 0.20}
+    placement: {from_grid: ["1", "B"], to_grid: ["6", "B"], storey: "Roof", support_type: "CANTILEVER", allow_cantilever: true, cantilever_end: "END"}
+
+  - class: IfcBeam
+    tag: "RB-HIP-1"
+    material: "STEEL_C_CHANNEL"
+    pitch_deg: 30.0
+    profile: {shape: "BOX", width: 0.10, depth: 0.20}
+    placement: {from_grid: ["1", "A"], to_grid: ["3", "C"], storey: "Roof", support_type: "CANTILEVER", allow_cantilever: true, cantilever_end: "END"}
+
+  - class: IfcBeam
+    tag: "RB-HIP-2"
+    material: "STEEL_C_CHANNEL"
+    pitch_deg: 30.0
+    profile: {shape: "BOX", width: 0.10, depth: 0.20}
+    placement: {from_grid: ["6", "A"], to_grid: ["3", "C"], storey: "Roof", support_type: "CANTILEVER", allow_cantilever: true, cantilever_end: "END"}
+
+  - class: IfcMember
+    tag: "PUR-1"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.10}
+    placement: {from_grid: ["1", "A"], to_grid: ["6", "A"], storey: "Roof"}
+
+  - class: IfcMember
+    tag: "PUR-2"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.10}
+    placement: {from_grid: ["1", "C"], to_grid: ["6", "C"], storey: "Roof"}
+
+  - class: IfcMember
+    tag: "PUR-3"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.10}
+    placement: {from_grid: ["1", "E"], to_grid: ["3", "E"], storey: "Roof"}
+
+  - class: IfcMember
+    tag: "PUR-4"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.10}
+    placement: {from_grid: ["2", "A"], to_grid: ["5", "A"], storey: "Roof"}
+
+  - class: IfcMember
+    tag: "PUR-5"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.10}
+    placement: {from_grid: ["2", "B"], to_grid: ["5", "B"], storey: "Roof"}
+
+  - class: IfcMember
+    tag: "PUR-6"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.10}
+    placement: {from_grid: ["2", "C"], to_grid: ["5", "C"], storey: "Roof"}
+
+  - class: IfcMember
+    tag: "PUR-7"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.10}
+    placement: {from_grid: ["1", "D"], to_grid: ["3", "D"], storey: "Roof"}
+
+  - class: IfcMember
+    tag: "RAF-1"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.15}
+    placement: {from_grid: ["1", "A"], to_grid: ["1", "C"], storey: "Roof"}
+
+  - class: IfcMember
+    tag: "RAF-2"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.15}
+    placement: {from_grid: ["2", "A"], to_grid: ["2", "C"], storey: "Roof"}
+
+  - class: IfcMember
+    tag: "RAF-3"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.15}
+    placement: {from_grid: ["3", "A"], to_grid: ["3", "C"], storey: "Roof"}
+
+  - class: IfcMember
+    tag: "RAF-4"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.15}
+    placement: {from_grid: ["4", "A"], to_grid: ["4", "C"], storey: "Roof"}
+
+  - class: IfcMember
+    tag: "RAF-5"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.15}
+    placement: {from_grid: ["5", "A"], to_grid: ["5", "C"], storey: "Roof"}
+
+  - class: IfcMember
+    tag: "RAF-6"
+    material: "STEEL_C_CHANNEL"
+    profile: {shape: "BOX", width: 0.05, depth: 0.15}
+    placement: {from_grid: ["6", "A"], to_grid: ["6", "C"], storey: "Roof"}
+
+  # ============================================================================
+  # 10. MEP SYSTEMS: Sanitary, HVAC, Electrical, Fixtures & Conduits - 45 Items
+  # ============================================================================
+  # Sanitary Fixtures & Outlets
+  - class: IfcSanitaryTerminal
+    tag: "WC-1"
+    predefined_type: "WATERCLOSET"
+    placement: {grid: ["2", "B"], storey: "FL1", offset_x: 0.5, offset_y: 0.5}
+
+  - class: IfcSanitaryTerminal
+    tag: "WHB-1"
+    predefined_type: "WASHHANDBASIN"
+    placement: {grid: ["2", "B"], storey: "FL1", offset_x: 1.2, offset_y: 0.5}
+
+  - class: IfcSanitaryTerminal
+    tag: "FD-1"
+    predefined_type: "SINK"
+    placement: {grid: ["2", "C"], storey: "FL1", offset_x: 0.5, offset_y: 0.5}
+
+  - class: IfcSanitaryTerminal
+    tag: "WC-2"
+    predefined_type: "WATERCLOSET"
+    placement: {grid: ["3", "D"], storey: "FL1", offset_x: 0.5, offset_y: 0.5}
+
+  - class: IfcSanitaryTerminal
+    tag: "WHB-2"
+    predefined_type: "WASHHANDBASIN"
+    placement: {grid: ["3", "D"], storey: "FL1", offset_x: 1.2, offset_y: 0.5}
+
+  - class: IfcSanitaryTerminal
+    tag: "SINK-KITCHEN"
+    predefined_type: "SINK"
+    placement: {grid: ["4", "C"], storey: "FL1", offset_x: 1.0, offset_y: 0.5}
+
+  # HVAC Units & Terminals
+  - class: IfcUnitaryEquipment
+    tag: "AC-LIVING"
+    placement: {grid: ["5", "A"], storey: "FL1", offset_z: 2.8}
+
+  - class: IfcUnitaryEquipment
+    tag: "AC-BED1"
+    placement: {grid: ["1", "A"], storey: "FL1", offset_z: 2.8}
+
+  - class: IfcUnitaryEquipment
+    tag: "AC-BED2"
+    placement: {grid: ["1", "B"], storey: "FL1", offset_z: 2.8}
+
+  - class: IfcAirTerminal
+    tag: "FAN-EXHAUST-1"
+    placement: {grid: ["2", "B"], storey: "FL1", offset_z: 3.0}
+
+  - class: IfcAirTerminal
+    tag: "FAN-EXHAUST-2"
+    placement: {grid: ["3", "D"], storey: "FL1", offset_z: 3.0}
+
+  # Piping Networks
+  - class: IfcPipeSegment
+    tag: "PIPE-CW-1"
+    nominal_diameter: 0.025
+    placement: {from_grid: ["1", "A"], to_grid: ["2", "C"], storey: "FL1"}
+
+  - class: IfcPipeSegment
+    tag: "PIPE-CW-2"
+    nominal_diameter: 0.025
+    placement: {from_grid: ["2", "C"], to_grid: ["3", "E"], storey: "FL1"}
+
+  - class: IfcPipeSegment
+    tag: "PIPE-SOIL-1"
+    nominal_diameter: 0.100
+    placement: {from_grid: ["2", "B"], to_grid: ["1", "A"], storey: "Ground"}
+
+  - class: IfcPipeSegment
+    tag: "PIPE-SOIL-2"
+    nominal_diameter: 0.100
+    placement: {from_grid: ["3", "D"], to_grid: ["1", "A"], storey: "Ground"}
+
+  - class: IfcPipeSegment
+    tag: "PIPE-WASTE-1"
+    nominal_diameter: 0.050
+    placement: {from_grid: ["2", "C"], to_grid: ["1", "A"], storey: "Ground"}
+
+  - class: IfcPipeSegment
+    tag: "PIPE-WASTE-2"
+    nominal_diameter: 0.050
+    placement: {from_grid: ["3", "E"], to_grid: ["1", "A"], storey: "Ground"}
+
+  # Electrical Lighting & Distribution
+  - class: IfcLightFixture
+    tag: "L-LIVING-1"
+    placement: {grid: ["4", "A"], storey: "FL1", offset_z: 3.2}
+
+  - class: IfcLightFixture
+    tag: "L-LIVING-2"
+    placement: {grid: ["5", "A"], storey: "FL1", offset_z: 3.2}
+
+  - class: IfcLightFixture
+    tag: "L-LIVING-3"
+    placement: {grid: ["6", "A"], storey: "FL1", offset_z: 3.2}
+
+  - class: IfcLightFixture
+    tag: "L-BED1-1"
+    placement: {grid: ["1", "A"], storey: "FL1", offset_z: 3.2}
+
+  - class: IfcLightFixture
+    tag: "L-BED1-2"
+    placement: {grid: ["2", "A"], storey: "FL1", offset_z: 3.2}
+
+  - class: IfcLightFixture
+    tag: "L-BED2-1"
+    placement: {grid: ["1", "B"], storey: "FL1", offset_z: 3.2}
+
+  - class: IfcLightFixture
+    tag: "L-BED2-2"
+    placement: {grid: ["2", "B"], storey: "FL1", offset_z: 3.2}
+
+  - class: IfcLightFixture
+    tag: "L-PORCH-1"
+    placement: {grid: ["1", "D"], storey: "FL1", offset_z: 3.2}
+
+  - class: IfcLightFixture
+    tag: "L-PORCH-2"
+    placement: {grid: ["2", "D"], storey: "FL1", offset_z: 3.2}
+
+  - class: IfcLightFixture
+    tag: "L-BATH1-1"
+    placement: {grid: ["2", "C"], storey: "FL1", offset_z: 3.2}
+
+  - class: IfcLightFixture
+    tag: "L-BATH2-1"
+    placement: {grid: ["3", "D"], storey: "FL1", offset_z: 3.2}
+
+  # Electrical Outlets & Switches
+  - class: IfcOutlet
+    tag: "OUT-LIVING-1"
+    placement: {grid: ["4", "A"], storey: "FL1", offset_z: 0.3}
+
+  - class: IfcOutlet
+    tag: "OUT-LIVING-2"
+    placement: {grid: ["5", "A"], storey: "FL1", offset_z: 0.3}
+
+  - class: IfcOutlet
+    tag: "OUT-LIVING-3"
+    placement: {grid: ["6", "B"], storey: "FL1", offset_z: 0.3}
+
+  - class: IfcOutlet
+    tag: "OUT-BED1-1"
+    placement: {grid: ["1", "A"], storey: "FL1", offset_z: 0.3}
+
+  - class: IfcOutlet
+    tag: "OUT-BED1-2"
+    placement: {grid: ["2", "A"], storey: "FL1", offset_z: 0.3}
+
+  - class: IfcOutlet
+    tag: "OUT-BED2-1"
+    placement: {grid: ["1", "B"], storey: "FL1", offset_z: 0.3}
+
+  - class: IfcOutlet
+    tag: "OUT-BED2-2"
+    placement: {grid: ["2", "B"], storey: "FL1", offset_z: 0.3}
+
+  - class: IfcSwitchingDevice
+    tag: "SW-LIVING-1"
+    placement: {grid: ["4", "B"], storey: "FL1", offset_z: 1.2}
+
+  - class: IfcSwitchingDevice
+    tag: "SW-BED1-1"
+    placement: {grid: ["1", "A"], storey: "FL1", offset_z: 1.2}
+
+  - class: IfcSwitchingDevice
+    tag: "SW-BED2-1"
+    placement: {grid: ["1", "B"], storey: "FL1", offset_z: 1.2}
+
+  - class: IfcSwitchingDevice
+    tag: "SW-BATH1-1"
+    placement: {grid: ["2", "B"], storey: "FL1", offset_z: 1.2}
+
+  - class: IfcElectricDistributionBoard
+    tag: "MDB-MAIN"
+    placement: {grid: ["1", "E"], storey: "FL1", offset_z: 1.5}
+
+  - class: IfcCableCarrierSegment
+    tag: "CONDUIT-ELEC-1"
+    placement: {from_grid: ["1", "E"], to_grid: ["1", "A"], storey: "FL1"}
+
+  - class: IfcCableCarrierSegment
+    tag: "CONDUIT-ELEC-2"
+    placement: {from_grid: ["1", "A"], to_grid: ["6", "A"], storey: "FL1"}
+
+  - class: IfcCableCarrierSegment
+    tag: "CONDUIT-ELEC-3"
+    placement: {from_grid: ["1", "C"], to_grid: ["6", "C"], storey: "FL1"}
+
+  - class: IfcCableCarrierSegment
+    tag: "CONDUIT-ELEC-4"
+    placement: {from_grid: ["3", "C"], to_grid: ["3", "E"], storey: "FL1"}

@@ -21,6 +21,7 @@ if sys.platform == "win32":
 
 from debim.version import __version__, check_and_notify_updates
 from debim.compiler import compile_to_ifc
+from debim.ingest import ingest_dxf_file
 from debim.bsdd import validate_manifest_psets, PropertyValidationStatus
 from debim.scaffold import scaffold_element
 from debim.cost import estimate_cost, generate_cost_template, load_price_catalog
@@ -1168,6 +1169,31 @@ def cmd_import(args):
         sys.exit(1)
 
 
+def cmd_ingest(args):
+    file_path = Path(args.file_path)
+    if not file_path.exists():
+        console.print(f"[bold red]Error:[/bold red] File '{file_path}' not found.")
+        sys.exit(1)
+
+    output_dir = Path(args.output_dir) if args.output_dir else None
+    console.print(f"[bold green]Ingesting CAD/PDF grid & column coordinates from:[/bold green] {file_path}")
+
+    try:
+        out_path = ingest_dxf_file(file_path, output_dir=output_dir)
+        console.print(
+            Panel(
+                f"[bold green]CAD Ingestion & Scaffolding Complete![/bold green]\n"
+                f"[bold cyan]Input CAD File:[/bold cyan] {file_path}\n"
+                f"[bold cyan]Emitted Manifest:[/bold cyan] {out_path}\n"
+                f"[dim]Run 'debim validate {out_path}' or 'debim view {out_path}' to inspect.[/dim]",
+                title="[bold green]debim CAD Ingestion Assistant[/bold green]",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Ingestion Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
 def _resolve_target_manifest(target_str: str) -> ProjectManifest:
     resolved = resolve_default_manifest_path(target_str)
     if resolved.exists() and resolved.is_file():
@@ -2120,6 +2146,12 @@ def build_parser() -> argparse.ArgumentParser:
     bake_group.add_argument("--bake-assets", dest="bake_assets", action="store_true", help="Automated GLB asset baker")
     bake_group.add_argument("--no-bake-assets", dest="bake_assets", action="store_false", default=False)
     p_import.set_defaults(func=cmd_import)
+
+    # ingest
+    p_ingest = subparsers.add_parser("ingest", help="Extract grid labels and dimensions from DXF/CAD into project.debim")
+    p_ingest.add_argument("file_path", help="Path to input DXF/CAD drawing file")
+    p_ingest.add_argument("-o", "--out", dest="output_dir", help="Output directory path for generated project.debim")
+    p_ingest.set_defaults(func=cmd_ingest)
 
     # diff
     p_diff = subparsers.add_parser("diff", help="Git-aware manifest comparison engine")
