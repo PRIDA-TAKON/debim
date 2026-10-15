@@ -505,6 +505,10 @@ def load_debim_file(
     data["spatial_structure"] = {"storeys": merged_storeys}
     data["grids"] = {"axes_x": merged_axes_x, "axes_y": merged_axes_y}
 
+    if data.get("macro_elements"):
+        from debim.modular import expand_macro_elements
+        data = expand_macro_elements(data)
+
     return data
 
 
@@ -582,6 +586,10 @@ def expand_module_instances(manifest_or_data: Any) -> Any:
     Expands `modules:` and `instances:` blocks into concrete elements.
     Accepts either a dict or a ProjectManifest object.
     """
+    from debim.modular import expand_macro_elements
+
+    manifest_or_data = expand_macro_elements(manifest_or_data)
+
     is_manifest_obj = False
     if hasattr(manifest_or_data, "modules") and hasattr(manifest_or_data, "instances"):
         is_manifest_obj = True
@@ -789,12 +797,15 @@ def load_manifest(path: Optional[Union[Path, str]] = None) -> Any:
     expanding module instances, and returning a ProjectManifest instance.
     """
     from debim.schema import ProjectManifest
+    from debim.modular import expand_macro_elements
 
     resolved_path = resolve_default_manifest_path(path)
     if not resolved_path.exists():
         raise FileNotFoundError(f"Manifest file not found: {resolved_path}")
 
     data = load_debim_file(resolved_path)
+    if data.get("macro_elements"):
+        data = expand_macro_elements(data)
     if data.get("modules") and data.get("instances"):
         data = expand_module_instances(data)
     return ProjectManifest.model_validate(data)
