@@ -761,12 +761,22 @@ class BeamPlacement(BaseModel):
     to_offset_z: Optional[float] = None
     waypoints: Optional[List[BeamWaypoint]] = None
     curve: Optional[Dict[str, Any]] = None
+    support_type: Optional[Literal["PINNED", "FIXED", "SOIL_BEARING", "CANTILEVER"]] = None
+    allow_cantilever: Optional[bool] = False
+    cantilever_end: Optional[Literal["START", "END", "BOTH"]] = None
 
     @field_validator("from_grid", "to_grid", mode="before")
     @classmethod
     def convert_grid_items_to_str(cls, v):
         if isinstance(v, (list, tuple)):
             return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("support_type", "cantilever_end", mode="before")
+    @classmethod
+    def upper_support_string(cls, v):
+        if isinstance(v, str):
+            return v.upper()
         return v
 
 
