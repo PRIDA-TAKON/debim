@@ -772,8 +772,19 @@ def check_topological_continuity(
 
             return False
 
-        s1_ok = is_point_supported(sp1)
-        s2_ok = is_point_supported(sp2)
+        st_upper = str(getattr(beam.element.placement, "support_type", "") or "").upper()
+        cant_end_upper = str(getattr(beam.element.placement, "cantilever_end", "") or "").upper() if getattr(beam.element.placement, "cantilever_end", None) else None
+        allow_cant = bool(getattr(beam.element.placement, "allow_cantilever", False))
+
+        is_soil_bearing = (st_upper == "SOIL_BEARING")
+        is_cantilever = (st_upper == "CANTILEVER" or allow_cant or cant_end_upper is not None)
+
+        if is_soil_bearing:
+            s1_ok = True
+            s2_ok = True
+        else:
+            s1_ok = is_point_supported(sp1)
+            s2_ok = is_point_supported(sp2)
 
         if not s1_ok and not s2_ok:
             warnings.append({
@@ -783,17 +794,40 @@ def check_topological_continuity(
                 "position": sp1,
                 "message": f"Unsupported Beam '{beam.tag}' span from ({sp1[0]:.2f}, {sp1[1]:.2f}, {sp1[2]:.2f}) to ({sp2[0]:.2f}, {sp2[1]:.2f}, {sp2[2]:.2f}) has no support at either endpoint.",
             })
-        elif not s1_ok or not s2_ok:
-            unsupported_pt = sp1 if not s1_ok else sp2
-            warnings.append({
-                "type": "DANGLING_CANTILEVER",
-                "tag": beam.tag,
-                "class": "IfcBeam",
-                "position": unsupported_pt,
-                "message": f"Beam '{beam.tag}' has dangling/unsupported endpoint at ({unsupported_pt[0]:.2f}, {unsupported_pt[1]:.2f}, {unsupported_pt[2]:.2f}).",
-            })
+        elif not s1_ok:
+            # sp1 is unsupported, sp2 is supported
+            s1_cant_allowed = is_cantilever and (cant_end_upper in ("START", "BOTH", None))
+            if not s1_cant_allowed:
+                warnings.append({
+                    "type": "DANGLING_CANTILEVER",
+                    "tag": beam.tag,
+                    "class": "IfcBeam",
+                    "position": sp1,
+                    "message": f"Beam '{beam.tag}' has dangling/unsupported endpoint at ({sp1[0]:.2f}, {sp1[1]:.2f}, {sp1[2]:.2f}).",
+                })
+        elif not s2_ok:
+            # sp2 is unsupported, sp1 is supported
+            s2_cant_allowed = is_cantilever and (cant_end_upper in ("END", "BOTH", None))
+            if not s2_cant_allowed:
+                warnings.append({
+                    "type": "DANGLING_CANTILEVER",
+                    "tag": beam.tag,
+                    "class": "IfcBeam",
+                    "position": sp2,
+                    "message": f"Beam '{beam.tag}' has dangling/unsupported endpoint at ({sp2[0]:.2f}, {sp2[1]:.2f}, {sp2[2]:.2f}).",
+                })
 
     return warnings
+
+
+def verify_structural_topology(
+    target: Union[ProjectManifest, ResolvedManifest, Path, str]
+) -> List[Dict[str, Any]]:
+    """
+    Perform topological structural continuity check.
+    Identifies floating columns (unsupported bases), unsupported beams, or dangling cantilevers.
+    """
+    return check_topological_continuity(target)
 
 
 def detect_mep_structural_clashes(

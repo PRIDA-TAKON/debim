@@ -884,6 +884,53 @@
           ],
           "default": null,
           "title": "Curve"
+        },
+        "support_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "PINNED",
+                "FIXED",
+                "SOIL_BEARING",
+                "CANTILEVER"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Support Type"
+        },
+        "allow_cantilever": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": false,
+          "title": "Allow Cantilever"
+        },
+        "cantilever_end": {
+          "anyOf": [
+            {
+              "enum": [
+                "START",
+                "END",
+                "BOTH"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cantilever End"
         }
       },
       "required": [
