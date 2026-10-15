@@ -1722,7 +1722,7 @@ class IfcChimney(BaseModel):
 
 
 # Roof element definitions
-RoofType = Literal["GABLE", "HIP", "GABLE_HIP", "SHED", "FLAT", "MANSARD"]
+RoofType = Literal["GABLE", "HIP", "GABLE_HIP", "SHED", "FLAT", "MANSARD", "L_SHAPE", "L_SHAPE_HIP"]
 RidgeOrientation = Literal["X", "Y", "ALONG_LENGTH", "ALONG_WIDTH"]
 
 
@@ -1732,6 +1732,10 @@ class RoofPlacement(BaseModel):
     offset_z: float = 0.00
     overhang: float = 1.00  # Eave overhang in meters (ระยะยื่นชายคา)
     ridge_orientation: RidgeOrientation = "X"
+    eaves_levels: Optional[Dict[str, float]] = None
+    porch_eaves_level: Optional[float] = None
+    main_ridge_height: Optional[float] = None
+    porch_ridge_height: Optional[float] = None
 
     @field_validator("boundary", mode="before")
     @classmethod

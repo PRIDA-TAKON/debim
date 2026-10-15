@@ -773,6 +773,7 @@ class ResolvedRoof(BaseModel):
     total_sloped_area: float     # Actual sloped roof covering area (m2)
     total_ridge_length: float    # Main ridge cap length (m)
     total_hip_length: float      # Hip ridge cap length (m)
+    total_valley_length: float = 0.0  # Valley gutter cap length (m)
     total_eaves_length: float    # Fascia / gutter perimeter length (m)
     total_steel_weight: float    # Structural steel framing weight (kg)
     layer: str = "architecture/roofs"
@@ -4005,6 +4006,39 @@ class SpatialResolver:
             raise ValueError(f"Terminal '{terminal.tag}' placement must specify either wall or grid.")
 
     def resolve_roof(self, roof: IfcRoof) -> ResolvedRoof:
+        st = self.storeys[roof.placement.storey]
+        roof_type_upper = roof.roof_type.upper()
+
+        if roof_type_upper in ("L_SHAPE", "L_SHAPE_HIP") or len(roof.placement.boundary) == 6:
+            from debim.roof import solve_l_shape_roof
+            l_res = solve_l_shape_roof(
+                roof=roof,
+                axes_x=self.axes_x,
+                axes_y=self.axes_y,
+                storey_elevation=st.elevation,
+            )
+            return ResolvedRoof(
+                tag=roof.tag,
+                element=roof,
+                roof_type=l_res["roof_type"],
+                pitch=l_res["pitch"],
+                eaves_elevation=l_res["eaves_elevation"],
+                ridge_elevation=l_res["ridge_elevation"],
+                footprint_polygon=l_res["footprint_polygon"],
+                planes=l_res["planes"],
+                ridges=l_res["ridges"],
+                framing_members=l_res["framing_members"],
+                children=[],
+                total_footprint_area=l_res["total_footprint_area"],
+                total_sloped_area=l_res["total_sloped_area"],
+                total_ridge_length=l_res["total_ridge_length"],
+                total_hip_length=l_res["total_hip_length"],
+                total_valley_length=l_res["total_valley_length"],
+                total_eaves_length=l_res["total_eaves_length"],
+                total_steel_weight=l_res["total_steel_weight"],
+                layer=roof.layer or "architecture/roofs",
+            )
+
         xs = []
         ys = []
         for pt in roof.placement.boundary:
