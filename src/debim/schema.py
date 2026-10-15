@@ -8,7 +8,17 @@ from pathlib import Path
 import re
 from typing import Annotated, Any, ClassVar, Dict, List, Literal, Optional, Tuple, Union
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, RootModel, Discriminator, PrivateAttr, field_validator, model_validator
+from debim.compat import (
+    BaseModel,
+    ConfigDict,
+    Discriminator,
+    Field,
+    PrivateAttr,
+    RootModel,
+    Tag,
+    field_validator,
+    model_validator,
+)
 from debim.loader import expand_module_instances, load_debim_file, load_manifest, resolve_default_manifest_path
 
 
@@ -3486,9 +3496,6 @@ class IfcDistributionSystem(BaseModel):
     predefined_type: Optional[str] = None
     description: Optional[str] = None
     elements: List[str] = Field(default_factory=list)
-
-
-from pydantic import Tag
 
 
 EXPLICIT_TYPED_ELEMENT_CLASSES = {
