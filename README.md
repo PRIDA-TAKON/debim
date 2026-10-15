@@ -57,12 +57,17 @@
 
 Traditional BIM tools (like Revit or Archicad) were conceived over 25 years ago for humans clicking with computer mice. They lock architectural data inside heavy, proprietary gigabyte files (`.rvt`), charge thousands of dollars in annual licenses, and remain completely opaque to modern automation and AI agents.
 
-**debim** is built on **5 Core Architectural Tenets**:
-1. **Building-as-Code & Git-Native:** Buildings are software. Expressed as compact YAML (Kilobytes, not Gigabytes) for transparent Version Control, line-by-line Git diffs, and branching.
+**debim** is built on **6 Core Architectural Tenets**:
+1. **Building-as-Code & Git-Native:** Buildings are software. Expressed as compact YAML/`.debim` (Kilobytes, not Gigabytes) for transparent Version Control, line-by-line Git diffs, and branching.
 2. **Deterministic Code Compliance:** Building codes and engineering regulations are treated as automated Unit Tests (`pytest`), catching setback violations and structural errors in 0.01 seconds before ground is broken.
 3. **Zero-License & Zero-Friction Visualization:** Instant geometric verification through lightweight 3D HTML viewers that load in any browser or mobile device in 2 seconds without expensive licenses.
 4. **Universal Bridge & Dual Representation:** Seamlessly connects 2D drafts, 3D DCC tools (Blender/SketchUp), and open IFC standards using a dual approach: 90% geometric primitives for engineering/BOQ + 10% baked GLB assets for architectural refinement.
 5. **Human & AI Super-Collaboration:** Designed with explicit uncertainty flags (`review_status: needs_review`), enabling humans and autonomous AI agents to co-author and verify building models without friction.
+6. **"The Mermaid.js of BIM" (Zero-Dependency & Air-Gapped Sandboxes):** Operates seamlessly inside secure enterprise environments, air-gapped VMs, and LLM Code Interpreters (ChatGPT, Claude Artifacts, Gemini Code Execution) using 100% Python Standard Library with **zero pip dependencies**.
+
+> [!NOTE]
+> **🔒 The "Mermaid.js" Philosophy for Isolated VMs & Sandboxes:**  
+> Just as **Markdown** freed documentation from MS Word and **Mermaid.js** freed diagramming from Visio, **debim** frees building design from 20GB closed CAD suites. An AI agent in an offline, air-gapped VM without internet access can analyze requirements and generate an exact `.debim` file in 0.01 seconds. Downstream systems and community compilers outside the sandbox then turn that file into IFC4, AutoCAD DXF, or full bills of quantities!
 
 ---
 
@@ -226,6 +231,17 @@ docker run --rm -v "${PWD}:/workspace" -w /workspace ghcr.io/prida-takon/debim:l
 
 # Alternatively, build the container image locally from source
 docker build -t debim .
+```
+
+#### 🔒 Air-Gapped Sandboxes & Zero-Dependency Execution (Pure Standard Library)
+
+In highly secured enterprise environments, air-gapped VMs, or LLM Code Interpreter sandboxes (e.g., **ChatGPT Advanced Data Analysis, Claude Artifacts, Gemini Code Execution, Kaggle**) where internet access and `pip install` are restricted:
+
+```bash
+# Run standalone zero-dependency engine (Pure Python Standard Library: math, json, re, argparse)
+# Requires ZERO pip packages:
+python skills/debim/scripts/debim_zero.py validate -m model.debim
+python skills/debim/scripts/debim_zero.py qto -m model.debim
 ```
 
 #### 🛠️ Install from Source (Development)
