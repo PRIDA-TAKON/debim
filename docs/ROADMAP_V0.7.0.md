@@ -63,8 +63,13 @@ flowchart LR
 - **Test:** `tests/test_host_openings.py` (4/4 tests passed)
 - **Status:** Merged via PR #447 (Resolves #446)
 
-### [ ] Wave 4: Multi-Flight Dog-Leg Stair Scheduling and Landing Elevation (FINAL JULES WAVE)
-- **Target:** `src/debim/schema.py`, `src/debim/qto.py`
+### [x] Wave 4: Multi-Flight Dog-Leg Stair Scheduling and Landing Elevation (COMPLETED)
+- **Target:** `src/debim/schema.py`, `src/debim/resolver.py`, `src/debim/qto.py`
 - **Goal:** Support `flight_steps: [11, 6]` and `landing_elevation: 2.70` for split U-shaped RC stairs.
-- **Test:** `tests/test_stair_multiflight.py`
-- **Status:** Currently in progress by Jules (Issue #448). This concludes the automated Jules roadmap for v0.7.0.
+- **Test:** `tests/test_stair_multiflight.py` (5/5 tests passed)
+- **Status:** Merged via PR #449 (Resolves #448)
+
+### [x] Wave 5: Documentation, Skills Update, AI Agent Context & v0.7.0 Release (COMPLETED)
+- **Target:** `SKILL.md`, `llms.txt`, `README.md`, `pyproject.toml`, `version.py`
+- **Goal:** Update all agent skills and LLM documentation with v0.7.0 declarative schemas, boundary arithmetic, host-wall openings, multi-level composite hip roofs, and multi-flight stairs.
+- **Status:** Completed & Ready for Release Tag `v0.7.0`.

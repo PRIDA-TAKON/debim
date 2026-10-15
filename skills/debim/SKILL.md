@@ -4,8 +4,8 @@ description: Deterministic BOQ generation, Quantitative Take-Off (QTO), and Decl
 ---
 
 # debim Skill — Deterministic BOQ & Declarative BIM Engine
-**Version:** 0.6.0 (Zero-Dependency & Offline VM Ready)  
-**Specification:** debim Standard Spatial & Declarative Language Specification v0.6.0
+**Version:** 0.7.0 (The Contemporary Thai House Release)  
+**Specification:** debim Standard Spatial & Declarative Language Specification v0.7.0
 
 This skill empowers AI agents to generate professional, deterministic **Bills of Quantities (BOQ)**, calculate structural material quantities (**QTO**), and compile international standard **IFC4 BIM models** from architectural descriptions or sketches without hallucinating numbers.
 
@@ -332,15 +332,72 @@ elements:
     framing: { rafter_spacing: 1.00, purlin_spacing: 0.35, material: STEEL_SS400 }
 ```
 
-### 4. Monolithic RC Dog-Leg Stairs
+### 4. Multi-Flight Dog-Leg Stairs with Landing Elevation (v0.7.0)
 ```yaml
 elements:
   - class: IfcStair
-    tag: STAIR-L1
+    tag: STAIR-L1-L2
     stair_type: DOG_LEG
-    from_storey: L1
-    to_storey: L2
-    parameters: { riser_height: 0.175, tread_depth: 0.250, waist_thickness: 0.12, landing_depth: 1.10 }
+    flight_steps: [11, 6]      # Explicit riser scheduling (Flight 1: 11, Flight 2: 6)
+    landing_elevation: 2.20    # Explicit intermediate landing level datum
+    width: 1.10
+    waist_thickness: 0.15
+    material: CONC_240
+    placement:
+      grid_anchor: ["1", "A"]
+      from_storey: L1
+      to_storey: L2
+```
+
+### 5. Sunken Bathroom Slabs & Cantilevers with Arithmetic Offsets (v0.7.0)
+```yaml
+elements:
+  - class: IfcSlab
+    tag: SLAB-BATH-SUNKEN
+    material: CONC_240
+    thickness: 0.10
+    elevation_offset: -0.10    # Recessed 10cm below storey level for waterproofing
+    placement:
+      storey: L1
+      boundary:
+        - ["1 + 0.10", "A + 0.10"]
+        - ["2 - 0.10", "A + 0.10"]
+        - ["2 - 0.10", "B - 0.10"]
+        - ["1 + 0.10", "B - 0.10"]
+```
+
+### 6. Host-Wall Auto-Punching & Multi-Storey Openings (v0.7.0)
+```yaml
+elements:
+  - class: IfcWindow
+    tag: W5-STAIR-TALL
+    host_wall: WALL-EXT-1       # Automatically cuts opening in host wall geometry
+    span_storeys: ["L1", "L2"]  # Spans double-height stairwell without tag duplication
+    overall_width: 1.40
+    overall_height: 2.90
+    placement:
+      storey: L1
+      offset_x: 1.20
+      sill_height: 0.80
+```
+
+### 7. L-Shaped Composite Hip Roof with 3D Valley & Hip Solver (v0.7.0)
+```yaml
+elements:
+  - class: IfcRoof
+    tag: ROOF-COMPOSITE-L
+    roof_type: HIP
+    pitch_deg: 35.0
+    storey: L2
+    elevation: 6.65
+    boundary:
+      - ["1", "A"]
+      - ["5", "A"]
+      - ["5", "C"]
+      - ["3", "C"]
+      - ["3", "E"]
+      - ["1", "E"]
+    eaves_overhang: 1.00
 ```
 
 ---

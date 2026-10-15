@@ -1,4 +1,4 @@
-# debim v0.6.0 — Declarative BIM & Building-as-Code Engine for AI Agents
+# debim v0.7.0 — Declarative BIM & Building-as-Code Engine for AI Agents
 
 > **debim** is a Git-native, declarative Building Information Modeling (BIM) compiler designed specifically for AI agents (Antigravity, Claude Code, Cursor, AutoGen, CrewAI, ChatGPT) and human engineers/architects.
 
@@ -36,10 +36,11 @@ Instead, follow this deterministic Building-as-Code workflow:
 ### 🏛️ Core Engine (Built-in, Zero-Dependency)
 - **`pip install debim`** includes:
   - Declarative YAML / `.debim` Loader with Module Macro Expansion
-  - Relative Grid & Storey 3D Topological Coordinate Resolver
-  - Slab Void Cutouts (`voids:`) & Wall Openings
-  - Parametric Roof Generator (`GABLE_HIP`, `HIP`, `GABLE`, `SHED`) with `pitch_deg`
-  - Monolithic RC Dog-Leg Stairs Engine (`IfcStair: DOG_LEG`)
+  - Relative Grid & Storey 3D Topological Coordinate Resolver with Local Arithmetic Expressions (`["1 - 0.60", "B + 1.20"]`)
+  - Recessed / Sunken Slabs & Cantilevers via `elevation_offset` (e.g. bathroom drop, balcony overhangs)
+  - Slab Void Cutouts (`voids:`) & Host-Wall Auto-Punching (`host_wall:` & `span_storeys:`)
+  - Procedural Multi-Plane & L-Shape Composite Hip Roof Generator with 3D Valley/Hip Bisector Ridge Solver
+  - Multi-Flight RC Dog-Leg Stairs Engine with `flight_steps: [11, 6]` and `landing_elevation`
   - Deterministic QTO Engine (Concrete, Formwork, Rebar kg/m³)
   - Thai Government CGD ว480 BOQ Engine (ปร.4, ปร.4(พ), ปร.5)
   - Structural Continuity & Bounding-Box Clash Detection (`debim validate`)
@@ -131,18 +132,70 @@ elements:
       material: STEEL_SS400
 ```
 
-### 4. Monolithic RC Dog-Leg Stairs
+### 4. Multi-Flight Dog-Leg Stairs with Landing Elevation (v0.7.0)
 ```yaml
 elements:
   - class: IfcStair
     tag: STAIR-L1-L2
     stair_type: DOG_LEG
-    from_storey: L1
-    to_storey: L2
-    placement: { start_grid: ["1", "C"], width: 1.10 }
-    parameters:
-      riser_height: 0.175
-      tread_depth: 0.250
-      waist_thickness: 0.12
-      landing_depth: 1.10
+    flight_steps: [11, 6]      # Explicit riser scheduling (Flight 1: 11, Flight 2: 6)
+    landing_elevation: 2.20    # Explicit intermediate landing level datum
+    width: 1.10
+    waist_thickness: 0.15
+    material: CONC_240
+    placement:
+      grid_anchor: ["1", "A"]
+      from_storey: L1
+      to_storey: L2
+```
+
+### 5. Sunken Bathroom Slabs & Cantilevers with Arithmetic Offsets (v0.7.0)
+```yaml
+elements:
+  - class: IfcSlab
+    tag: SLAB-BATH-SUNKEN
+    material: CONC_240
+    thickness: 0.10
+    elevation_offset: -0.10    # Recessed 10cm below storey level for waterproofing
+    placement:
+      storey: L1
+      boundary:
+        - ["1 + 0.10", "A + 0.10"]
+        - ["2 - 0.10", "A + 0.10"]
+        - ["2 - 0.10", "B - 0.10"]
+        - ["1 + 0.10", "B - 0.10"]
+```
+
+### 6. Host-Wall Auto-Punching & Multi-Storey Openings (v0.7.0)
+```yaml
+elements:
+  - class: IfcWindow
+    tag: W5-STAIR-TALL
+    host_wall: WALL-EXT-1       # Automatically cuts opening in host wall geometry
+    span_storeys: ["L1", "L2"]  # Spans double-height stairwell without tag duplication
+    overall_width: 1.40
+    overall_height: 2.90
+    placement:
+      storey: L1
+      offset_x: 1.20
+      sill_height: 0.80
+```
+
+### 7. L-Shaped Composite Hip Roof with 3D Valley & Hip Solver (v0.7.0)
+```yaml
+elements:
+  - class: IfcRoof
+    tag: ROOF-COMPOSITE-L
+    roof_type: HIP
+    pitch_deg: 35.0
+    storey: L2
+    elevation: 6.65
+    boundary:
+      - ["1", "A"]
+      - ["5", "A"]
+      - ["5", "C"]
+      - ["3", "C"]
+      - ["3", "E"]
+      - ["1", "E"]
+    eaves_overhang: 1.00
 ```

@@ -252,7 +252,7 @@ cd debim
 pip install -e ".[all,dev]"
 ```
 
-### 2. Basic Commands (v0.6.0)
+### 2. Basic Commands (v0.7.0)
 
 ```bash
 # Initialize a new project
