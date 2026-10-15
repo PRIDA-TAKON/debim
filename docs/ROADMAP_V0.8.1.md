@@ -252,7 +252,7 @@ flowchart TD
 
 ---
 
-### Wave 1: Entry Point `__main__.py` & Smart Cantilever/Soil-Bearing Beam Validation
+### [x] Wave 1: Entry Point `__main__.py` & Smart Cantilever/Soil-Bearing Beam Validation (COMPLETED)
 * **Target Files:**
   - `src/debim/__main__.py` (สร้างใหม่)
   - `src/debim/schema.py` (เพิ่ม `support_type`, `allow_cantilever`, `cantilever_end` ใน `BeamPlacement`)
@@ -260,8 +260,8 @@ flowchart TD
 * **Goals:**
   - รองรับการรันคำสั่ง `python -m debim [COMMAND]`
   - ยกเว้นการเตือน `DANGLING_CANTILEVER` เมื่อคานมี `support_type: SOIL_BEARING` หรือ `allow_cantilever: true`
-* **Test Suite:** `tests/test_cantilever_beams.py`, `tests/test_main_entry.py`
-* **Acceptance Criteria:** รัน `python -m debim validate` ผ่าน 100% กับโปรเจกต์ที่มีคานยื่นรับเฉลียงและคานคอดิน
+* **Test Suite:** `tests/test_cantilever_beams.py`, `tests/test_main_entry.py` (8/8 tests passed)
+* **Status:** Merged via PR #459 (Resolves #458)
 
 ---
 
