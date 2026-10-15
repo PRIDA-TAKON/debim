@@ -7,6 +7,7 @@ import shutil
 from typing import Any, Dict, List, Optional, Tuple
 import yaml
 
+from debim.compat import BaseModel, Field, RootModel, field_validator, model_validator
 from debim.schema import ProjectManifest, derive_default_layer, load_manifest
 
 
