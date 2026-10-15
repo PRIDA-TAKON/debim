@@ -618,8 +618,11 @@ Solid = Annotated[
 # Column placement & element
 class ColumnPlacement(BaseModel):
     grid: Tuple[str, str]
-    base_storey: str
-    top_storey: str
+    base_storey: Optional[str] = None
+    top_storey: Optional[str] = None
+    base_elevation: Optional[float] = None
+    top_elevation: Optional[float] = None
+    height: Optional[float] = None
     top_grid: Optional[Tuple[str, str]] = None
     offset_base: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     offset_top: Tuple[float, float, float] = (0.0, 0.0, 0.0)
@@ -3825,11 +3828,11 @@ class ProjectManifest(BaseModel):
 
             # Verify storey and grid references per element type
             if isinstance(elem, IfcColumn):
-                if elem.placement.base_storey not in storey_ids:
+                if elem.placement.base_storey and elem.placement.base_storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown base_storey '{elem.placement.base_storey}'"
                     )
-                if elem.placement.top_storey not in storey_ids:
+                if elem.placement.top_storey and elem.placement.top_storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown top_storey '{elem.placement.top_storey}'"
                     )

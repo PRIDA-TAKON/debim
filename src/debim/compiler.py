@@ -1402,6 +1402,11 @@ class StepSerializer:
         # 1. Columns
         for col in resolved.columns:
             st_id = col.element.placement.base_storey
+            if not st_id and storey_elevations:
+                st_id = min(
+                    storey_elevations.keys(),
+                    key=lambda s_id: abs(storey_elevations[s_id] - col.start_point[2])
+                )
 
             prof = col.element.profile
             pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
@@ -1424,8 +1429,8 @@ class StepSerializer:
                 "IfcProductDefinitionShape", None, None, [shape_rep]
             )
 
-            st_pl_ref = storey_pl_refs.get(st_id)
-            st_elev = storey_elevations.get(st_id, 0.0)
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+            st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
 
             px, py, pz = col.start_point
             rel_z = float(pz - st_elev)
@@ -1448,7 +1453,7 @@ class StepSerializer:
                 None,
             )
             element_tag_refs[col.tag] = elem_ref
-            if st_id in storey_elements:
+            if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
         # 2. Beams & Members
@@ -3032,6 +3037,11 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             "root.create_entity", model, ifc_class="IfcColumn", name=col.tag
         )
         st_id = col.element.placement.base_storey
+        if not st_id and storey_objs:
+            st_id = min(
+                storey_objs.keys(),
+                key=lambda s_id: abs((storey_objs[s_id].Elevation or 0.0) - col.start_point[2])
+            )
         if st_id in storey_products:
             storey_products[st_id].append(col_obj)
 
