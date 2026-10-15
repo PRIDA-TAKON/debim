@@ -1,0 +1,34 @@
+[
+  {
+    "match_keywords": ["start_v080", "init_v080"],
+    "next_issue": {
+      "title": "feat(compat): Pydantic v1 and v2 dual-compatibility shim for air-gapped sandboxes",
+      "body": "### Overview\nAs part of debim v0.8.0 Wave 1, enable debim to run seamlessly inside older Google Colab environments and Linux sandboxes with Pydantic 1.x without throwing `ImportError: cannot import name 'RootModel'`.\n\n### Tasks\n1. Create `src/debim/compat.py` providing unified exports for `RootModel`, `model_validator`, `field_validator`, and `ConfigDict` that fallback gracefully on Pydantic v1.\n2. Update `src/debim/schema.py` and `src/debim/modular.py` to import from `debim.compat`.\n3. Add unit tests in `tests/test_compat_pydantic.py` verifying model instantiation under both v1 and v2 semantics.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["compat", "pydantic", "v1", "v2"],
+    "next_issue": {
+      "title": "feat(resolver): local point offsets and arithmetic grid expressions on columns, footings, and walls",
+      "body": "### Overview\nAs part of debim v0.8.0 Wave 2, allow `offset_x` and `offset_y` directly on single-point and linear elements (`ColumnPlacement`, `FootingPlacement`, `WallPlacement`), and resolve arithmetic grid coordinates such as `grid: ['3 + 1.00', 'ข - 0.50']` and `from_grid: ['1 - 0.20', 'A']`.\n\n### Tasks\n1. In `src/debim/schema.py`: Add `offset_x: Optional[float] = 0.0` and `offset_y: Optional[float] = 0.0` to `ColumnPlacement`, `FootingPlacement`, and `WallPlacement`.\n2. In `src/debim/resolver.py`: Support string arithmetic expressions in single-point `grid` and line `from_grid`/`to_grid` coordinates.\n3. Add unit tests in `tests/test_point_offsets.py` verifying displaced columns (carport offsets) and cantilever wall alignments.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["point_offsets", "point offset", "offset_x", "offset_y", "arithmetic grid"],
+    "next_issue": {
+      "title": "feat(macros): structural framing array macros (ColumnGrid and BeamBay generator)",
+      "body": "### Overview\nAs part of debim v0.8.0 Wave 3, eliminate manual repetitive coding of 50+ columns and 70+ beams by introducing `macro_elements:` with `ColumnGrid` and `BeamBay`.\n\n### Tasks\n1. In `src/debim/schema.py`: Define `ColumnGrid` and `BeamBay` macro specifications with `grids_x: List[str]`, `grids_y: List[str]`, profiles, storeys, and `except_points: Optional[List[Tuple[str, str]]]`.\n2. In `src/debim/modular.py` and `loader.py`: Expand macro elements into discrete `IfcColumn` and `IfcBeam` elements during manifest parsing.\n3. Add unit tests in `tests/test_framing_macros.py` verifying generation of 20+ columns and beams from a single macro definition.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["framing_macros", "columngrid", "beambay", "macro_elements", "macros"],
+    "next_issue": {
+      "title": "feat(viewer): smart floor isolation toggle in 3D WebGL and net wall opening deduction in QTO",
+      "body": "### Overview\nAs part of debim v0.8.0 Wave 4, add smart floor isolation controls in the 3D WebGL viewer and deduct door/window openings from wall surface areas in QTO.\n\n### Tasks\n1. In `src/debim/viewer.py`: Add interactive storey filter buttons (`[All Storeys]`, `[FL1]`, `[FL2]`, etc.) in the Three.js HTML viewer to isolate and inspect interior framing.\n2. In `src/debim/qto.py`: Deduct `host_wall` door and window opening cutouts from gross wall surface areas for net plaster and masonry take-off.\n3. Add unit tests in `tests/test_viewer_and_net_qto.py`.",
+      "label": "jules"
+    }
+  }
+]
