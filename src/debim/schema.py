@@ -623,6 +623,8 @@ class ColumnPlacement(BaseModel):
     top_grid: Optional[Tuple[str, str]] = None
     offset_base: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     offset_top: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    offset_x: Optional[float] = 0.0
+    offset_y: Optional[float] = 0.0
     inclination_angle: Optional[float] = None
 
     @field_validator("grid", "top_grid", mode="before")
@@ -674,6 +676,8 @@ class FootingProfile(BaseModel):
 class FootingPlacement(BaseModel):
     grid: Tuple[str, str]
     storey: str
+    offset_x: Optional[float] = 0.0
+    offset_y: Optional[float] = 0.0
     offset_z: float = 0.00
 
     @field_validator("grid", mode="before")
@@ -856,6 +860,8 @@ class WallPlacement(BaseModel):
     from_grid: Tuple[str, str]
     to_grid: Tuple[str, str]
     storey: str
+    offset_x: Optional[float] = 0.0
+    offset_y: Optional[float] = 0.0
 
     @field_validator("from_grid", "to_grid", mode="before")
     @classmethod
@@ -3733,21 +3739,21 @@ class ProjectManifest(BaseModel):
                         f"Element '{elem.tag}' references unknown top_storey '{elem.placement.top_storey}'"
                     )
                 gx, gy = elem.placement.grid
-                if gx not in grid_x_ids:
+                if not _is_valid_grid_ref(gx, grid_x_ids):
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown X grid '{gx}'"
                     )
-                if gy not in grid_y_ids:
+                if not _is_valid_grid_ref(gy, grid_y_ids):
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown Y grid '{gy}'"
                     )
                 if elem.placement.top_grid:
                     tgx, tgy = elem.placement.top_grid
-                    if tgx not in grid_x_ids:
+                    if not _is_valid_grid_ref(tgx, grid_x_ids):
                         raise ValueError(
                             f"Element '{elem.tag}' top_grid references unknown X grid '{tgx}'"
                         )
-                    if tgy not in grid_y_ids:
+                    if not _is_valid_grid_ref(tgy, grid_y_ids):
                         raise ValueError(
                             f"Element '{elem.tag}' top_grid references unknown Y grid '{tgy}'"
                         )
@@ -3763,19 +3769,19 @@ class ProjectManifest(BaseModel):
                     )
                 fgx, fgy = elem.placement.from_grid
                 tgx, tgy = elem.placement.to_grid
-                if fgx not in grid_x_ids:
+                if not _is_valid_grid_ref(fgx, grid_x_ids):
                     raise ValueError(
                         f"Element '{elem.tag}' from_grid references unknown X grid '{fgx}'"
                     )
-                if fgy not in grid_y_ids:
+                if not _is_valid_grid_ref(fgy, grid_y_ids):
                     raise ValueError(
                         f"Element '{elem.tag}' from_grid references unknown Y grid '{fgy}'"
                     )
-                if tgx not in grid_x_ids:
+                if not _is_valid_grid_ref(tgx, grid_x_ids):
                     raise ValueError(
                         f"Element '{elem.tag}' to_grid references unknown X grid '{tgx}'"
                     )
-                if tgy not in grid_y_ids:
+                if not _is_valid_grid_ref(tgy, grid_y_ids):
                     raise ValueError(
                         f"Element '{elem.tag}' to_grid references unknown Y grid '{tgy}'"
                     )
@@ -3787,19 +3793,19 @@ class ProjectManifest(BaseModel):
                     )
                 fgx, fgy = elem.placement.from_grid
                 tgx, tgy = elem.placement.to_grid
-                if fgx not in grid_x_ids:
+                if not _is_valid_grid_ref(fgx, grid_x_ids):
                     raise ValueError(
                         f"Element '{elem.tag}' from_grid references unknown X grid '{fgx}'"
                     )
-                if fgy not in grid_y_ids:
+                if not _is_valid_grid_ref(fgy, grid_y_ids):
                     raise ValueError(
                         f"Element '{elem.tag}' from_grid references unknown Y grid '{fgy}'"
                     )
-                if tgx not in grid_x_ids:
+                if not _is_valid_grid_ref(tgx, grid_x_ids):
                     raise ValueError(
                         f"Element '{elem.tag}' to_grid references unknown X grid '{tgx}'"
                     )
-                if tgy not in grid_y_ids:
+                if not _is_valid_grid_ref(tgy, grid_y_ids):
                     raise ValueError(
                         f"Element '{elem.tag}' to_grid references unknown Y grid '{tgy}'"
                     )
@@ -3810,11 +3816,11 @@ class ProjectManifest(BaseModel):
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
                     )
                 gx, gy = elem.placement.grid
-                if gx not in grid_x_ids:
+                if not _is_valid_grid_ref(gx, grid_x_ids):
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown X grid '{gx}'"
                     )
-                if gy not in grid_y_ids:
+                if not _is_valid_grid_ref(gy, grid_y_ids):
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown Y grid '{gy}'"
                     )
