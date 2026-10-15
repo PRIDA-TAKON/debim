@@ -40,3 +40,7 @@ benchmark_output/
 # Secrets & Environment variables
 .env
 .env.*
+
+# Skill caches
+**/scripts/cache/*.json
+!**/scripts/cache/.gitkeep
