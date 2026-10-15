@@ -22,6 +22,22 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+# Safe Unicode output for Windows console
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+
+def safe_print(msg: str):
+    """Print message safely without encoding errors on any console."""
+    try:
+        print(msg)
+    except UnicodeEncodeError:
+        print(msg.encode("ascii", errors="replace").decode("ascii"))
+
 
 def run(cmd, cwd=None):
     res = subprocess.run(
@@ -30,6 +46,7 @@ def run(cmd, cwd=None):
         capture_output=True,
         text=True,
         encoding="utf-8",
+        errors="replace",
         cwd=cwd
     )
     return res.returncode, res.stdout.strip(), res.stderr.strip()
@@ -56,9 +73,9 @@ def load_roadmap(config_path: Path):
             with open(config_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            print(f"[WARN] Failed to load custom roadmap from {config_path}: {e}")
+            safe_print(f"[WARN] Failed to load custom roadmap from {config_path}: {e}")
     
-    print(f"[ERROR] Roadmap configuration not found at {config_path}")
+    safe_print(f"[ERROR] Roadmap configuration not found at {config_path}")
     return []
 
 
@@ -73,9 +90,9 @@ def trigger_next_roadmap_issue(merged_title, roadmap, cwd=None):
 
             # Protection against infinite loops: Check if this was the final wave
             if is_final or not next_issue:
-                print(f"\n🎉 [ROADMAP COMPLETE] Wave {wave_num} was the final wave!")
-                print(f"All planned roadmap milestones have been successfully merged.")
-                print(f"No further issues will be created (infinite loop prevented).\n")
+                safe_print(f"\n[ROADMAP COMPLETE] Wave {wave_num} was the final wave!")
+                safe_print("All planned roadmap milestones have been successfully merged.")
+                safe_print("No further issues will be created (infinite loop prevented).\n")
                 return True
 
             iss_title = next_issue.get("title", "").strip()
@@ -84,44 +101,44 @@ def trigger_next_roadmap_issue(merged_title, roadmap, cwd=None):
 
             # Double check if issue already exists (open OR closed) to prevent duplicates
             if check_existing_issue(iss_title, cwd=cwd):
-                print(f"[SKIP] Issue '{iss_title}' already exists in GitHub (open or closed). Skipping creation to avoid loop.")
+                safe_print(f"[SKIP] Issue '{iss_title}' already exists in GitHub (open or closed). Skipping creation to avoid loop.")
                 return True
 
-            print(f"\n🚀 [NEXT WAVE TRIGGERED] Matched Wave {wave_num}! Triggering next issue for Jules:")
-            print(f"Title: {iss_title}")
+            safe_print(f"\n[NEXT WAVE TRIGGERED] Matched Wave {wave_num}! Triggering next issue for Jules:")
+            safe_print(f"Title: {iss_title}")
             cmd = [
                 "gh", "issue", "create",
                 "--title", iss_title,
                 "--body", iss_body,
                 "--label", iss_label
             ]
-            res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", cwd=cwd)
+            res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=cwd)
             if res.returncode == 0:
-                print(f"Successfully created next issue:\n{res.stdout.strip()}")
+                safe_print(f"Successfully created next issue:\n{res.stdout.strip()}")
             else:
-                print(f"Failed to create issue:\n{res.stderr.strip()}")
+                safe_print(f"Failed to create issue:\n{res.stderr.strip()}")
             return True
 
-    print(f"[INFO] No matching next roadmap wave for merged PR: '{merged_title}'")
+    safe_print(f"[INFO] No matching next roadmap wave for merged PR: '{merged_title}'")
     return False
 
 
 def check_and_process_prs(roadmap, cwd=None):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{now_str}] Checking open PRs...")
+    safe_print(f"[{now_str}] Checking open PRs...")
     code, stdout, _ = run("gh pr list --state open --json number,title,isDraft,headRefName", cwd=cwd)
     if code != 0 or not stdout:
-        print(f"[{now_str}] No PRs or error listing PRs.")
+        safe_print(f"[{now_str}] No PRs or error listing PRs.")
         return False
 
     try:
         prs = json.loads(stdout)
     except Exception as e:
-        print(f"Error parsing PR list: {e}")
+        safe_print(f"Error parsing PR list: {e}")
         return False
 
     if not prs:
-        print(f"[{now_str}] No open PRs found. Watching and waiting for Jules...")
+        safe_print(f"[{now_str}] No open PRs found. Watching and waiting for Jules...")
         return False
 
     merged_any = False
@@ -130,42 +147,44 @@ def check_and_process_prs(roadmap, cwd=None):
         title = pr["title"]
         is_draft = pr["isDraft"]
         branch = pr["headRefName"]
-        print(f"[{now_str}] Found PR #{num}: {title} (Draft: {is_draft}, Branch: {branch})")
+        safe_print(f"[{now_str}] Found PR #{num}: {title} (Draft: {is_draft}, Branch: {branch})")
 
         # 1. Inspect CI checks
         code, checks_out, _ = run(f"gh pr checks {num}", cwd=cwd)
-        print(f"Checks for #{num}:\n{checks_out}")
+        safe_print(f"Checks for #{num}:\n{checks_out}")
 
         if "fail" in checks_out.lower():
-            print(f"PR #{num} has failed checks. Skipping auto-merge.")
+            safe_print(f"PR #{num} has failed checks. Skipping auto-merge.")
             continue
 
         if any(w in checks_out.lower() for w in ["pending", "in_progress", "queued"]):
-            print(f"PR #{num} has checks still in progress. Waiting for CI to complete...")
+            safe_print(f"PR #{num} has checks still in progress. Waiting for CI to complete...")
             continue
 
         # 2. Mark ready for review if draft
         if is_draft:
-            print(f"Marking PR #{num} ready for review...")
+            safe_print(f"Marking PR #{num} ready for review...")
             run(f"gh pr ready {num}", cwd=cwd)
 
         # 3. Squash merge
-        print(f"Attempting squash merge for #{num}...")
+        safe_print(f"Attempting squash merge for #{num}...")
         m_code, m_out, m_err = run(f"gh pr merge {num} --squash --delete-branch", cwd=cwd)
-        print(f"Merge result: {m_out} {m_err}")
+        safe_print(f"Merge result: {m_out} {m_err}")
 
         if m_code == 0:
             merged_any = True
-            print(f"Successfully merged PR #{num}!")
+            safe_print(f"Successfully merged PR #{num}!")
 
-            # 4. Pull to main and verify
-            run("git checkout main ; git pull origin main", cwd=cwd)
-            print("Verifying core test suite on main...")
-            t_code, t_out, _ = run("pytest tests/test_qto.py tests/test_schema.py tests/test_compiler.py tests/test_resolver.py", cwd=cwd)
+            # 4. Pull to main cleanly and verify
+            run("git checkout -- debim.schema.json spec/debim.schema.json docs/index.html", cwd=cwd)
+            run("git checkout main", cwd=cwd)
+            run("git pull origin main", cwd=cwd)
+            safe_print("Verifying core test suite on main...")
+            t_code, t_out, _ = run("pytest tests/test_cantilever_beams.py tests/test_main_entry.py", cwd=cwd)
             if t_code == 0:
-                print("Core tests verified successfully!")
+                safe_print("Core tests verified successfully!")
             else:
-                print("Notice: Core tests reported warnings or failures, inspect when convenient.")
+                safe_print(f"Notice: Tests reported output: {t_out}")
 
             # 5. Open next roadmap issue
             trigger_next_roadmap_issue(title, roadmap, cwd=cwd)
@@ -188,29 +207,29 @@ def main():
 
     roadmap = load_roadmap(config_file)
     if not roadmap:
-        print("[FATAL] Cannot run watchdog without a valid roadmap configuration.")
+        safe_print("[FATAL] Cannot run watchdog without a valid roadmap configuration.")
         sys.exit(1)
 
     if args.once:
         check_and_process_prs(roadmap, cwd=work_dir)
         return
 
-    print("=== Starting Jules PR Watchdog Orchestrator ===")
-    print(f"Target Directory: {work_dir}")
-    print(f"Roadmap Config:   {config_file.name} ({len(roadmap)} waves configured)")
-    print(f"Polling Interval: {args.interval} seconds ({args.interval / 60:.1f} minutes)")
-    print(f"Loop Protection:  Active (checks all open/closed issues, final wave halts)")
-    print("Press Ctrl+C to stop.\n")
+    safe_print("=== Starting Jules PR Watchdog Orchestrator ===")
+    safe_print(f"Target Directory: {work_dir}")
+    safe_print(f"Roadmap Config:   {config_file.name} ({len(roadmap)} waves configured)")
+    safe_print(f"Polling Interval: {args.interval} seconds ({args.interval / 60:.1f} minutes)")
+    safe_print(f"Loop Protection:  Active (checks all open/closed issues, final wave halts)")
+    safe_print("Press Ctrl+C to stop.\n")
 
     while True:
         try:
             check_and_process_prs(roadmap, cwd=work_dir)
             time.sleep(args.interval)
         except KeyboardInterrupt:
-            print("\nWatchdog stopped by user.")
+            safe_print("\nWatchdog stopped by user.")
             break
         except Exception as e:
-            print(f"Unexpected error in watchdog loop: {e}")
+            safe_print(f"Unexpected error in watchdog loop: {e}")
             time.sleep(args.interval)
 
 
