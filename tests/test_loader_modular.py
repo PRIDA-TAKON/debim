@@ -322,3 +322,94 @@ def test_idempotent_module_expansion():
     count_2 = len(expanded_2["elements"])
 
     assert count_1 == count_2 == 49
+
+
+def test_grid_y_module_replication():
+    """Test module replication along grid_y axis."""
+    grid_y_yaml = """
+schema: IFC4-Minimal
+project:
+  id: PRJ-TOWER-Y
+  name: "Vertical Bay Tower"
+spatial_structure:
+  storeys:
+    - id: L1
+      name: "Ground Floor"
+      elevation: 0.00
+      height: 3.50
+grids:
+  axes_x:
+    "1": 0.0
+    "2": 6.0
+  axes_y:
+    "A": 0.0
+    "B": 6.0
+    "C": 12.0
+    "D": 18.0
+materials:
+  - id: MAT_CONC
+    name: "Concrete"
+    category: concrete
+    unit_cost_ref: REF-CONC
+modules:
+  - id: BAY_Y
+    name: "Y Bay Module"
+    local_grids:
+      axes_x:
+        "1": 0.0
+        "2": 6.0
+      axes_y:
+        "A": 0.0
+        "B": 6.0
+    elements:
+      - class: IfcColumn
+        tag: COL-1
+        material: MAT_CONC
+        profile:
+          shape: BOX
+          width: 0.30
+          depth: 0.30
+        placement:
+          grid: ["1", "A"]
+          base_storey: L1
+          top_storey: L1
+      - class: IfcColumn
+        tag: COL-2
+        material: MAT_CONC
+        profile:
+          shape: BOX
+          width: 0.30
+          depth: 0.30
+        placement:
+          grid: ["1", "B"]
+          base_storey: L1
+          top_storey: L1
+instances:
+  - module: BAY_Y
+    replicate:
+      module: BAY_Y
+      count: 3
+      along: grid_y
+      prefix_pattern: "ROW{index}_"
+"""
+    manifest = ProjectManifest.model_validate(yaml.safe_load(grid_y_yaml))
+    columns = [e for e in manifest.elements if isinstance(e, IfcColumn)]
+
+    # 3 bays along Y * 2 columns = 6 columns
+    assert len(columns) == 6
+
+    # Verify grid remapping along Y:
+    # ROW1: A -> A, B -> B
+    # ROW2: A -> B, B -> C
+    # ROW3: A -> C, B -> D
+    u1_cols = {e.tag: e.placement.grid for e in columns if e.tag.startswith("ROW1_")}
+    assert u1_cols["ROW1_COL-1"] == ("1", "A")
+    assert u1_cols["ROW1_COL-2"] == ("1", "B")
+
+    u2_cols = {e.tag: e.placement.grid for e in columns if e.tag.startswith("ROW2_")}
+    assert u2_cols["ROW2_COL-1"] == ("1", "B")
+    assert u2_cols["ROW2_COL-2"] == ("1", "C")
+
+    u3_cols = {e.tag: e.placement.grid for e in columns if e.tag.startswith("ROW3_")}
+    assert u3_cols["ROW3_COL-1"] == ("1", "C")
+    assert u3_cols["ROW3_COL-2"] == ("1", "D")
