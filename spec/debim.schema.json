@@ -9235,6 +9235,33 @@
           "title": "Landing Depth",
           "type": "number"
         },
+        "landing_elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Landing Elevation"
+        },
+        "flight_steps": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Flight Steps"
+        },
         "riser_height": {
           "anyOf": [
             {

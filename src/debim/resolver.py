@@ -3084,9 +3084,24 @@ class SpatialResolver:
 
         if stair.stair_type == "DOG_LEG":
             # Dog-leg U-shape stair with mid-landing
+            eff_landing_elev = stair.landing_elevation if stair.landing_elevation is not None else (stair.landing.elevation if stair.landing else None)
             n_total_risers = max(2, int(round(total_height / riser)))
-            if stair.landing and stair.landing.elevation is not None:
-                landing_elev = stair.landing.elevation
+
+            if stair.flight_steps and len(stair.flight_steps) >= 2:
+                n_risers_1 = max(1, int(stair.flight_steps[0]))
+                n_risers_2 = max(1, int(stair.flight_steps[1]))
+                if eff_landing_elev is not None:
+                    landing_elev = eff_landing_elev
+                    rise_1 = landing_elev
+                    rise_2 = total_height - landing_elev
+                else:
+                    landing_elev = total_height * (n_risers_1 / (n_risers_1 + n_risers_2))
+                    rise_1 = landing_elev
+                    rise_2 = total_height - landing_elev
+                actual_riser_1 = rise_1 / n_risers_1
+                actual_riser_2 = rise_2 / n_risers_2
+            elif eff_landing_elev is not None:
+                landing_elev = eff_landing_elev
                 rise_1 = landing_elev
                 rise_2 = total_height - landing_elev
                 n_risers_1 = max(1, int(round(rise_1 / riser)))
