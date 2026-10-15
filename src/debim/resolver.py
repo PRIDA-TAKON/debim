@@ -2093,6 +2093,57 @@ class SpatialResolver:
             layer=derive_default_layer(member),
         )
 
+    def resolve_opening_offset(
+        self,
+        at_grid: Union[str, Tuple[str, str], List[str]],
+        x1: float,
+        y1: float,
+        ux: float,
+        uy: float,
+    ) -> float:
+        """Calculates scalar offset distance along a wall baseline vector starting at (x1, y1) with unit vector (ux, uy) for a given at_grid expression."""
+        if isinstance(at_grid, (tuple, list)) and len(at_grid) == 2:
+            gx, gy = at_grid
+            x_grid = self.parse_coordinate_expression(gx, is_x=True)
+            y_grid = self.parse_coordinate_expression(gy, is_x=False)
+            return (x_grid - x1) * ux + (y_grid - y1) * uy
+
+        s = str(at_grid).strip()
+        tokens = re.findall(r"[^\s\+\-\*\/\(\)]+|[\+\-\*\/\(\)]", s)
+
+        has_x = any(t in self.axes_x for t in tokens)
+        has_y = any(t in self.axes_y for t in tokens)
+
+        if has_x and not has_y:
+            x_grid = self.parse_coordinate_expression(s, is_x=True)
+            if abs(ux) > 1e-6:
+                return (x_grid - x1) / ux
+            else:
+                return 0.0
+        elif has_y and not has_x:
+            y_grid = self.parse_coordinate_expression(s, is_x=False)
+            if abs(uy) > 1e-6:
+                return (y_grid - y1) / uy
+            else:
+                return 0.0
+        elif has_x and has_y:
+            x_grid = self.parse_coordinate_expression(s, is_x=True)
+            y_grid = self.parse_coordinate_expression(s, is_x=False)
+            return (x_grid - x1) * ux + (y_grid - y1) * uy
+        else:
+            try:
+                val = float(s)
+                if abs(ux) >= abs(uy) and abs(ux) > 1e-6:
+                    return (val - x1) / ux
+                elif abs(uy) > 1e-6:
+                    return (val - y1) / uy
+                return val
+            except ValueError:
+                x_grid = self.parse_coordinate_expression(s, is_x=True)
+                if abs(ux) > 1e-6:
+                    return (x_grid - x1) / ux
+                return 0.0
+
     def resolve_wall(
         self, wall: IfcWall
     ) -> Tuple[ResolvedWall, List[ResolvedDoor], List[ResolvedWindow]]:
@@ -2126,8 +2177,18 @@ class SpatialResolver:
         resolved_windows: List[ResolvedWindow] = []
 
         for child in wall.children:
-            child_x = x1 + ux * child.offset_distance
-            child_y = y1 + uy * child.offset_distance
+            if child.at_grid is not None:
+                offset_dist = self.resolve_opening_offset(child.at_grid, x1, y1, ux, uy)
+                if getattr(child, "offset_distance", None) is None:
+                    try:
+                        object.__setattr__(child, "offset_distance", offset_dist)
+                    except Exception:
+                        pass
+            else:
+                offset_dist = child.offset_distance if child.offset_distance is not None else 0.0
+
+            child_x = x1 + ux * offset_dist
+            child_y = y1 + uy * offset_dist
 
             # If span_storeys is provided, base elevation comes from the first storey in span_storeys
             if child.span_storeys and len(child.span_storeys) > 0:
@@ -2147,7 +2208,7 @@ class SpatialResolver:
                     position=child_pos,
                     width=child.dimensions.width,
                     height=child.dimensions.height,
-                    offset_distance=child.offset_distance,
+                    offset_distance=offset_dist,
                     sill_height=child.sill_height,
                     frame_thickness=f_thick,
                     frame_width=0.05,
@@ -2169,7 +2230,7 @@ class SpatialResolver:
                     position=child_pos,
                     width=child.dimensions.width,
                     height=child.dimensions.height,
-                    offset_distance=child.offset_distance,
+                    offset_distance=offset_dist,
                     sill_height=child.sill_height,
                     frame_thickness=f_thick,
                     frame_width=0.05,
@@ -4772,6 +4833,7 @@ class SpatialResolver:
         st = self.storeys[roof.placement.storey]
         for child in roof.children:
             pos = (0.0, 0.0, st.elevation + child.sill_height)
+            off_dist = child.offset_distance if child.offset_distance is not None else 0.0
             if isinstance(child, IfcDoor):
                 f_thick = child.frame_thickness if child.frame_thickness is not None else 0.05
                 r_door = ResolvedDoor(
@@ -4780,7 +4842,7 @@ class SpatialResolver:
                     position=pos,
                     width=child.dimensions.width,
                     height=child.dimensions.height,
-                    offset_distance=child.offset_distance,
+                    offset_distance=off_dist,
                     sill_height=child.sill_height,
                     frame_thickness=f_thick,
                     frame_width=0.05,
@@ -4797,7 +4859,7 @@ class SpatialResolver:
                     position=pos,
                     width=child.dimensions.width,
                     height=child.dimensions.height,
-                    offset_distance=child.offset_distance,
+                    offset_distance=off_dist,
                     sill_height=child.sill_height,
                     frame_thickness=f_thick,
                     frame_width=0.05,

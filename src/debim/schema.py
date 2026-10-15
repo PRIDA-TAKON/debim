@@ -840,7 +840,8 @@ class IfcDoor(BaseModel):
     tag: str
     material: Optional[str] = None
     dimensions: Dimensions
-    offset_distance: float
+    offset_distance: Optional[float] = None
+    at_grid: Optional[Union[str, Tuple[str, str], List[str]]] = None
     sill_height: float = 0.00
     frame_thickness: Optional[float] = None
     operation_type: Optional[str] = None
@@ -848,6 +849,12 @@ class IfcDoor(BaseModel):
     host_wall: Optional[str] = None
     span_storeys: Optional[List[str]] = None
     layer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_positioning(self) -> "IfcDoor":
+        if self.offset_distance is None and self.at_grid is None:
+            raise ValueError(f"Door '{self.tag}' must specify either 'offset_distance' or 'at_grid'")
+        return self
 
 
 class IfcWindow(BaseModel):
@@ -855,7 +862,8 @@ class IfcWindow(BaseModel):
     tag: str
     material: Optional[str] = None
     dimensions: Dimensions
-    offset_distance: float
+    offset_distance: Optional[float] = None
+    at_grid: Optional[Union[str, Tuple[str, str], List[str]]] = None
     sill_height: float = 0.00
     frame_thickness: Optional[float] = None
     operation_type: Optional[str] = None
@@ -863,6 +871,12 @@ class IfcWindow(BaseModel):
     host_wall: Optional[str] = None
     span_storeys: Optional[List[str]] = None
     layer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_positioning(self) -> "IfcWindow":
+        if self.offset_distance is None and self.at_grid is None:
+            raise ValueError(f"Window '{self.tag}' must specify either 'offset_distance' or 'at_grid'")
+        return self
 
 
 WallChild = Annotated[Union[IfcDoor, IfcWindow], Field(discriminator="class_")]
