@@ -45,20 +45,23 @@ flowchart LR
     W4 --> W5["Wave 5:<br>Thai House 9 Showcase<br>& Release 0.7.0"]
 ```
 
-### [ ] Wave 1: Local Grid Expressions & Arithmetic Offsets in Boundary Coordinates
+### [x] Wave 1: Local Grid Expressions & Arithmetic Offsets in Boundary Coordinates (COMPLETED)
 - **Target:** `src/debim/resolver.py`, `src/debim/schema.py`
 - **Goal:** Allow arithmetic expressions `["1 - 0.60", "B + 0.40"]` in `IfcSlab.boundary` and `voids:`. Add `elevation_offset`.
-- **Test:** `tests/test_boundary_offsets.py`
+- **Test:** `tests/test_boundary_offsets.py` (4/4 tests passed)
+- **Status:** Merged via PR #443 (Resolves #442)
 
-### [ ] Wave 2: L-Shape Composite Hip Roof with Valley/Hip 3D Intersection Solver
+### [x] Wave 2: L-Shape Composite Hip Roof with Valley/Hip 3D Intersection Solver (COMPLETED)
 - **Target:** `src/debim/roof.py`, `src/debim/compiler.py`
 - **Goal:** Procedural 3D roof generation for L-shaped and multi-level eaves boundaries.
-- **Test:** `tests/test_roof_l_shape.py`
+- **Test:** `tests/test_roof_l_shape.py` (3/3 tests passed)
+- **Status:** Merged via PR #445 (Resolves #444)
 
-### [ ] Wave 3: Host-Wall Auto-Punching and Multi-Storey Window Placement
+### [x] Wave 3: Host-Wall Auto-Punching and Multi-Storey Window Placement (COMPLETED)
 - **Target:** `src/debim/resolver.py`, `src/debim/compiler.py`
 - **Goal:** Add `host_wall: TAG` and `span_storeys` for tall stairwell windows.
-- **Test:** `tests/test_host_openings.py`
+- **Test:** `tests/test_host_openings.py` (4/4 tests passed)
+- **Status:** Merged via PR #447 (Resolves #446)
 
 ### [ ] Wave 4: Multi-Flight Dog-Leg Stair Scheduling and Landing Elevation
 - **Target:** `src/debim/schema.py`, `src/debim/qto.py`
