@@ -818,6 +818,8 @@ class IfcDoor(BaseModel):
     frame_thickness: Optional[float] = None
     operation_type: Optional[str] = None
     flipped: bool = False
+    host_wall: Optional[str] = None
+    span_storeys: Optional[List[str]] = None
     layer: Optional[str] = None
 
 
@@ -831,6 +833,8 @@ class IfcWindow(BaseModel):
     frame_thickness: Optional[float] = None
     operation_type: Optional[str] = None
     flipped: bool = False
+    host_wall: Optional[str] = None
+    span_storeys: Optional[List[str]] = None
     layer: Optional[str] = None
 
 
@@ -3517,6 +3521,8 @@ Element = Annotated[
         Annotated[IfcBeam, Tag("IfcBeam")],
         Annotated[IfcMember, Tag("IfcMember")],
         Annotated[IfcWall, Tag("IfcWall")],
+        Annotated[IfcDoor, Tag("IfcDoor")],
+        Annotated[IfcWindow, Tag("IfcWindow")],
         Annotated[IfcFooting, Tag("IfcFooting")],
         Annotated[IfcSlab, Tag("IfcSlab")],
         Annotated[IfcSpace, Tag("IfcSpace")],
@@ -3679,6 +3685,7 @@ class ProjectManifest(BaseModel):
         material_ids = {m.id for m in self.materials}
 
         all_manifest_elements = list(self.elements) + list(self.proxies)
+        wall_tags = {e.tag for e in all_manifest_elements if isinstance(e, IfcWall)}
 
         for elem in all_manifest_elements:
             # Verify material ID reference if applicable
@@ -3687,6 +3694,19 @@ class ProjectManifest(BaseModel):
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown material '{elem.material}'"
                     )
+
+            # Verify host_wall and span_storeys if specified
+            if hasattr(elem, "host_wall") and elem.host_wall:
+                if elem.host_wall not in wall_tags:
+                    raise ValueError(
+                        f"Element '{elem.tag}' references unknown host_wall '{elem.host_wall}'"
+                    )
+            if hasattr(elem, "span_storeys") and elem.span_storeys:
+                for s_id in elem.span_storeys:
+                    if s_id not in storey_ids:
+                        raise ValueError(
+                            f"Element '{elem.tag}' span_storeys references unknown storey '{s_id}'"
+                        )
 
             # Verify storey and grid references per element type
             if isinstance(elem, IfcColumn):

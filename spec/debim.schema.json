@@ -5240,6 +5240,33 @@
           "title": "Flipped",
           "type": "boolean"
         },
+        "host_wall": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Host Wall"
+        },
+        "span_storeys": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Span Storeys"
+        },
         "layer": {
           "anyOf": [
             {
@@ -10164,6 +10191,33 @@
           "title": "Flipped",
           "type": "boolean"
         },
+        "host_wall": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Host Wall"
+        },
+        "span_storeys": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Span Storeys"
+        },
         "layer": {
           "anyOf": [
             {
@@ -10686,6 +10740,12 @@
                   },
                   {
                     "$ref": "#/$defs/IfcWall"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcDoor"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcWindow"
                   },
                   {
                     "$ref": "#/$defs/IfcFooting"
@@ -14634,6 +14694,12 @@
           },
           {
             "$ref": "#/$defs/IfcWall"
+          },
+          {
+            "$ref": "#/$defs/IfcDoor"
+          },
+          {
+            "$ref": "#/$defs/IfcWindow"
           },
           {
             "$ref": "#/$defs/IfcFooting"
