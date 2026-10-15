@@ -38,22 +38,26 @@ flowchart LR
     W3 --> W4["Wave 4:<br>3D Floor Isolation<br>& Net Wall QTO"]
 ```
 
-### [ ] Wave 1: Pydantic v1 and v2 Dual-Compatibility Shim for Air-Gapped Sandboxes
+### [x] Wave 1: Pydantic v1 and v2 Dual-Compatibility Shim for Air-Gapped Sandboxes (COMPLETED)
 - **Target:** `src/debim/compat.py`, `src/debim/schema.py`, `src/debim/modular.py`
 - **Goal:** Create unified shim importing Pydantic v2 classes when available, falling back gracefully to v1 equivalents (`validator`, `root_validator`, `BaseModel`) so code runs on both Pydantic v1.10+ and v2+.
-- **Test:** `tests/test_compat_pydantic.py`
+- **Test:** `tests/test_compat_pydantic.py` (4/4 tests passed)
+- **Status:** Merged via PR #451 (Resolves #450)
 
-### [ ] Wave 2: Local Point Offsets and Grid Arithmetic on Columns, Footings, and Walls
+### [x] Wave 2: Local Point Offsets and Grid Arithmetic on Columns, Footings, and Walls (COMPLETED)
 - **Target:** `src/debim/schema.py`, `src/debim/resolver.py`
 - **Goal:** Support `offset_x`, `offset_y` in `ColumnPlacement`, `FootingPlacement`, and `WallPlacement`, and evaluate arithmetic string coordinates (`grid: ["3 + 1.00", "ข - 0.50"]`).
-- **Test:** `tests/test_point_offsets.py`
+- **Test:** `tests/test_point_offsets.py` (4/4 tests passed)
+- **Status:** Merged via PR #453 (Resolves #452)
 
-### [ ] Wave 3: Structural Framing Array Macros (ColumnGrid & BeamBay Generator)
+### [x] Wave 3: Structural Framing Array Macros (ColumnGrid & BeamBay Generator) (COMPLETED)
 - **Target:** `src/debim/schema.py`, `src/debim/loader.py`, `src/debim/modular.py`
 - **Goal:** Add `macro_elements:` supporting `ColumnGrid` and `BeamBay` to batch-generate columns and connecting beams across 2D grid intersections with exception filters.
-- **Test:** `tests/test_framing_macros.py`
+- **Test:** `tests/test_framing_macros.py` (5/5 tests passed)
+- **Status:** Merged via PR #455 (Resolves #454)
 
-### [ ] Wave 4: 3D Smart Floor Isolation Toggle and Net Wall Opening Deduction in QTO
+### [x] Wave 4: 3D Smart Floor Isolation Toggle and Net Wall Opening Deduction in QTO (COMPLETED)
 - **Target:** `src/debim/viewer.py`, `src/debim/qto.py`
 - **Goal:** Add storey isolation UI controls in Three.js viewer HTML, and deduct `host_wall` window/door opening areas from gross wall surface areas in QTO.
-- **Test:** `tests/test_viewer_and_net_qto.py`
+- **Test:** `tests/test_viewer_and_net_qto.py` (2/2 tests passed)
+- **Status:** Merged via PR #457 (Resolves #456)

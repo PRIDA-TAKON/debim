@@ -4,8 +4,8 @@ description: Deterministic BOQ generation, Quantitative Take-Off (QTO), and Decl
 ---
 
 # debim Skill — Deterministic BOQ & Declarative BIM Engine
-**Version:** 0.7.0 (The Contemporary Thai House Release)  
-**Specification:** debim Standard Spatial & Declarative Language Specification v0.7.0
+**Version:** 0.8.0 (The Engineering Productivity & High-Fidelity Release)  
+**Specification:** debim Standard Spatial & Declarative Language Specification v0.8.0
 
 This skill empowers AI agents to generate professional, deterministic **Bills of Quantities (BOQ)**, calculate structural material quantities (**QTO**), and compile international standard **IFC4 BIM models** from architectural descriptions or sketches without hallucinating numbers.
 
@@ -398,6 +398,47 @@ elements:
       - ["3", "E"]
       - ["1", "E"]
     eaves_overhang: 1.00
+```
+
+### 8. Structural Framing Array Macros (ColumnGrid & BeamBay) (v0.8.0)
+```yaml
+# Eliminate manual coding of 50+ columns and 70+ beams!
+macro_elements:
+  - type: ColumnGrid
+    prefix: "COL"
+    material: CONC_240
+    profile: { shape: BOX, width: 0.25, depth: 0.25 }
+    grids_x: ["1", "2", "3", "5", "6", "7"]
+    grids_y: ["A", "B", "C", "D"]
+    base_storey: FL1
+    top_storey: FL2
+    except_points:
+      - ["1", "A"]   # Point without column (e.g. open porch corner)
+
+  - type: BeamBay
+    prefix: "BEAM-FL1"
+    material: CONC_240
+    profile: { shape: BOX, width: 0.20, depth: 0.50 }
+    storey: FL1
+    grids_x: ["1", "2", "3", "5", "6", "7"]
+    grids_y: ["A", "B", "C", "D"]
+    direction: BOTH  # Generates beams along X and Y axes automatically
+```
+
+### 9. Point Offsets & String Arithmetic on Columns and Walls (v0.8.0)
+```yaml
+elements:
+  # Displaced column (e.g. carport offset from main grid)
+  - class: IfcColumn
+    tag: COL-CARPORT-OFFSET
+    material: CONC_240
+    profile: { shape: BOX, width: 0.25, depth: 0.25 }
+    placement:
+      grid: ["3 + 1.00", "B - 0.50"]   # Direct string arithmetic
+      offset_x: 0.20                   # Or explicit offset parameters
+      offset_y: 0.00
+      base_storey: FL1
+      top_storey: FL2
 ```
 
 ---
