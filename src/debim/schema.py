@@ -937,6 +937,7 @@ class SlabPlacement(BaseModel):
     boundary: List[Tuple[str, str]]  # List of grid intersections forming polygon, e.g. [["1", "A"], ["2", "A"], ["2", "B"], ["1", "B"]]
     storey: str
     offset_z: float = 0.00
+    elevation_offset: Optional[float] = 0.0
     voids: Optional[List[List[Tuple[str, str]]]] = None
     openings: Optional[List[SlabOpening]] = None
     boundary_offset: Optional[Union[float, Dict[str, Any]]] = None
@@ -984,14 +985,17 @@ class IfcSlab(BaseModel):
     Anchor Point: TOP-FINISH ([thickness])
     Dimension Keys: thickness
     """
+    model_config = ConfigDict(populate_by_name=True)
+
     ANCHOR_POINT: ClassVar[str] = "TOP-FINISH"
     DIMENSION_KEYS: ClassVar[List[str]] = ["thickness"]
 
-    class_: Literal["IfcSlab"] = Field(alias="class")
+    class_: Literal["IfcSlab"] = Field(alias="class", default="IfcSlab")
     tag: str
     material: str
     thickness: float = Field(..., description="Slab thickness in meters. Anchor: TOP-FINISH")
     slab_type: Literal["SOLID", "PRECAST_PLANK", "TOPPING", "GROUND_SLAB"] = "SOLID"
+    elevation_offset: Optional[float] = 0.0
     placement: SlabPlacement
     reinforcement: Optional[SlabReinforcement] = None
     finishes: Optional[SlabFinishesConfig] = None
@@ -3610,6 +3614,22 @@ class ReplicationConfig(BaseModel):
     party_wall_deduplication: bool = True
 
 
+def _is_valid_grid_ref(val_str: str, grid_ids: set) -> bool:
+    s = str(val_str).strip()
+    if s in grid_ids:
+        return True
+    base_name = re.split(r"[\+\-\*\/]", s)[0].strip()
+    if base_name in grid_ids:
+        return True
+    if "." in base_name:
+        try:
+            float(base_name)
+            return True
+        except ValueError:
+            pass
+    return False
+
+
 class InstanceConfig(BaseModel):
     module: Optional[str] = None
     replicate: Optional[ReplicationConfig] = None
@@ -3772,11 +3792,11 @@ class ProjectManifest(BaseModel):
                     )
                 for pt in elem.placement.boundary:
                     gx, gy = pt
-                    if gx not in grid_x_ids:
+                    if not _is_valid_grid_ref(gx, grid_x_ids):
                         raise ValueError(
                             f"Element '{elem.tag}' boundary references unknown X grid '{gx}'"
                         )
-                    if gy not in grid_y_ids:
+                    if not _is_valid_grid_ref(gy, grid_y_ids):
                         raise ValueError(
                             f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'"
                         )
@@ -3789,11 +3809,11 @@ class ProjectManifest(BaseModel):
                 if elem.placement.boundary:
                     for pt in elem.placement.boundary:
                         gx, gy = pt
-                        if gx not in grid_x_ids:
+                        if not _is_valid_grid_ref(gx, grid_x_ids):
                             raise ValueError(
                                 f"Element '{elem.tag}' boundary references unknown X grid '{gx}'"
                             )
-                        if gy not in grid_y_ids:
+                        if not _is_valid_grid_ref(gy, grid_y_ids):
                             raise ValueError(
                                 f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'"
                             )
@@ -3880,11 +3900,11 @@ class ProjectManifest(BaseModel):
                     )
                 for pt in elem.placement.boundary:
                     gx, gy = pt
-                    if gx not in grid_x_ids:
+                    if not _is_valid_grid_ref(gx, grid_x_ids):
                         raise ValueError(
                             f"Element '{elem.tag}' boundary references unknown X grid '{gx}'"
                         )
-                    if gy not in grid_y_ids:
+                    if not _is_valid_grid_ref(gy, grid_y_ids):
                         raise ValueError(
                             f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'"
                         )
@@ -3896,16 +3916,13 @@ class ProjectManifest(BaseModel):
                 if elem.placement.boundary:
                     for pt in elem.placement.boundary:
                         gx_str, gy_str = pt
-                        # Extract base grid name before any '+' or '-'
-                        gx_name = gx_str.split('+')[0].split('-')[0].strip()
-                        gy_name = gy_str.split('+')[0].split('-')[0].strip()
-                        if gx_name not in grid_x_ids:
+                        if not _is_valid_grid_ref(gx_str, grid_x_ids):
                             raise ValueError(
-                                f"Element '{elem.tag}' boundary references unknown X grid '{gx_name}'"
+                                f"Element '{elem.tag}' boundary references unknown X grid '{gx_str}'"
                             )
-                        if gy_name not in grid_y_ids:
+                        if not _is_valid_grid_ref(gy_str, grid_y_ids):
                             raise ValueError(
-                                f"Element '{elem.tag}' boundary references unknown Y grid '{gy_name}'"
+                                f"Element '{elem.tag}' boundary references unknown Y grid '{gy_str}'"
                             )
 
             elif isinstance(elem, IfcCurtainWall):
@@ -3942,9 +3959,9 @@ class ProjectManifest(BaseModel):
                 if elem.placement.boundary:
                     for pt in elem.placement.boundary:
                         gx, gy = pt
-                        if gx not in grid_x_ids:
+                        if not _is_valid_grid_ref(gx, grid_x_ids):
                             raise ValueError(f"Element '{elem.tag}' boundary references unknown X grid '{gx}'")
-                        if gy not in grid_y_ids:
+                        if not _is_valid_grid_ref(gy, grid_y_ids):
                             raise ValueError(f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'")
 
             elif isinstance(elem, (IfcPipeSegment, IfcCableCarrierSegment, IfcDuctSegment)):
@@ -4003,9 +4020,9 @@ class ProjectManifest(BaseModel):
                 if elem.placement.boundary:
                     for pt in elem.placement.boundary:
                         gx, gy = pt
-                        if gx not in grid_x_ids:
+                        if not _is_valid_grid_ref(gx, grid_x_ids):
                             raise ValueError(f"Element '{elem.tag}' boundary references unknown X grid '{gx}'")
-                        if gy not in grid_y_ids:
+                        if not _is_valid_grid_ref(gy, grid_y_ids):
                             raise ValueError(f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'")
 
             elif isinstance(elem, IfcRetainingWall):
