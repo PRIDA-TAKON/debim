@@ -547,6 +547,11 @@ class ResolvedSpace(BaseModel):
     net_floor_area: float  # Usable area (m2)
     perimeter: float  # Perimeter length (m)
     air_volume: float  # HVAC air volume (m3)
+    floor_material: Optional[str] = None
+    floor_thickness: float = 0.0
+    drop_elevation: float = 0.0
+    floor_finish_area: float = 0.0
+    floor_finish_volume: float = 0.0
     center: Tuple[float, float, float]  # Centroid in 3D (cx, cy, cz)
     layer: str = "architecture/spaces"
 
@@ -2834,6 +2839,12 @@ class SpatialResolver:
         height = float(space.height) if getattr(space, "height", None) else float(storey.height)
         air_volume = area * height
 
+        fl_mat = getattr(space, "floor_material", None)
+        fl_thick = float(getattr(space, "floor_thickness", 0.0) or 0.0)
+        drop_elev = float(getattr(space, "drop_elevation", 0.0) or 0.0)
+        fl_area = area
+        fl_vol = fl_area * fl_thick
+
         return ResolvedSpace(
             tag=space.tag,
             element=space,
@@ -2845,6 +2856,11 @@ class SpatialResolver:
             net_floor_area=area,
             perimeter=perimeter,
             air_volume=air_volume,
+            floor_material=fl_mat,
+            floor_thickness=fl_thick,
+            drop_elevation=drop_elev,
+            floor_finish_area=fl_area,
+            floor_finish_volume=fl_vol,
             center=(cx, cy, z),
             layer=getattr(space, "layer", None) or "architecture/spaces",
         )
@@ -4121,9 +4137,9 @@ class SpatialResolver:
         st = self.storeys[roof.placement.storey]
         roof_type_upper = roof.roof_type.upper()
 
-        if roof_type_upper in ("L_SHAPE", "L_SHAPE_HIP") or len(roof.placement.boundary) == 6:
-            from debim.roof import solve_l_shape_roof
-            l_res = solve_l_shape_roof(
+        if roof_type_upper in ("L_SHAPE", "L_SHAPE_HIP", "T_SHAPE", "T_SHAPE_HIP") or len(roof.placement.boundary) in (6, 8):
+            from debim.roof import solve_composite_hip_roof
+            l_res = solve_composite_hip_roof(
                 roof=roof,
                 axes_x=self.axes_x,
                 axes_y=self.axes_y,
