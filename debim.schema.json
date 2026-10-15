@@ -8822,6 +8822,7 @@
       "properties": {
         "class": {
           "const": "IfcSlab",
+          "default": "IfcSlab",
           "title": "Class",
           "type": "string"
         },
@@ -8848,6 +8849,18 @@
           ],
           "title": "Slab Type",
           "type": "string"
+        },
+        "elevation_offset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.0,
+          "title": "Elevation Offset"
         },
         "placement": {
           "$ref": "#/$defs/SlabPlacement"
@@ -8888,7 +8901,6 @@
         }
       },
       "required": [
-        "class",
         "tag",
         "material",
         "thickness",
@@ -13266,6 +13278,18 @@
           "default": 0.0,
           "title": "Offset Z",
           "type": "number"
+        },
+        "elevation_offset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.0,
+          "title": "Elevation Offset"
         },
         "voids": {
           "anyOf": [

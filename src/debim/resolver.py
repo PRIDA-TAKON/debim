@@ -1774,7 +1774,7 @@ class SpatialResolver:
         self.walls_by_tag: Dict[str, ResolvedWall] = {}
 
     def parse_coordinate_expression(self, expr: str, is_x: bool) -> float:
-        """Parses a coordinate string like 'GX_1', '1', 'GX_1 + 0.10', 'GY_2 - 0.25', or raw float."""
+        """Parses a coordinate string like 'GX_1', '1', 'GX_1 + 0.10', 'GY_2 - 0.25', '1 - 0.60', 'B + 1.20', or raw float."""
         s = str(expr).strip()
         axes = self.axes_x if is_x else self.axes_y
         axis_label = "X" if is_x else "Y"
@@ -1783,7 +1783,34 @@ class SpatialResolver:
         if s in axes:
             return float(axes[s])
 
-        # 2. Regex match for Grid + Offset (e.g. 'GX_1 + 0.10' or '1 - 0.5')
+        # 2. Direct float fallback (e.g. '2.50' or '-1.20')
+        try:
+            return float(s)
+        except ValueError:
+            pass
+
+        # 3. Tokenize expression and replace grid tokens
+        tokens = re.findall(r"[A-Za-z_][A-Za-z0-9_]*|\d+\.\d+|\d+|[\+\-\*\/\(\)]", s)
+        if tokens:
+            has_grid_match = False
+            replaced_tokens = []
+            for token in tokens:
+                if token in axes:
+                    has_grid_match = True
+                    replaced_tokens.append(f"({float(axes[token])})")
+                else:
+                    replaced_tokens.append(token)
+
+            if has_grid_match:
+                math_str = " ".join(replaced_tokens)
+                if re.match(r"^[0-9\.\+\-\*\/\(\)\s]+$", math_str):
+                    try:
+                        res = eval(math_str, {"__builtins__": None}, {})
+                        return float(res)
+                    except Exception as err:
+                        raise ValueError(f"Failed to evaluate coordinate expression '{expr}': {err}")
+
+        # 4. Legacy regex fallback for grid + offset
         match = re.match(r"^([A-Za-z0-9_]+)(?:\s*([+-])\s*([0-9.]+))?$", s)
         if match:
             grid_name, sign, offset_str = match.groups()
@@ -1792,12 +1819,6 @@ class SpatialResolver:
                 if sign == "-":
                     offset = -offset
                 return float(axes[grid_name]) + offset
-
-        # 3. Direct float fallback (e.g. '2.50')
-        try:
-            return float(s)
-        except ValueError:
-            pass
 
         raise ValueError(f"Grid {axis_label} axis '{s}' not found in manifest grids.")
 
@@ -2573,7 +2594,8 @@ class SpatialResolver:
 
     def resolve_slab(self, slab: IfcSlab) -> ResolvedSlab:
         storey = self.get_storey(slab.placement.storey)
-        z = storey.elevation + slab.placement.offset_z
+        elev_off = (getattr(slab, "elevation_offset", 0.0) or 0.0) + (getattr(slab.placement, "elevation_offset", 0.0) or 0.0)
+        z = storey.elevation + slab.placement.offset_z + elev_off
 
         # Resolve polygon vertices in 2D and 3D
         poly_3d: List[Tuple[float, float, float]] = []
