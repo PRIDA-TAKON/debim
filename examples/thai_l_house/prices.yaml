@@ -1,0 +1,50 @@
+currency: THB
+items:
+  MAT-CONC-240:
+    name: Reinforced Concrete 240 ksc
+    unit: m3
+    material_cost: 2400.0
+    labor_cost: 450.0
+    standards:
+      masterformat: "03 30 00"
+      uniformat: "A1010"
+  MAT-BRICK-MON:
+    name: Red Clay Mon Brick Masonry (อิฐมอญก่อ)
+    unit: m2
+    material_cost: 320.0
+    labor_cost: 150.0
+    standards:
+      masterformat: "04 21 00"
+      uniformat: "B2010"
+  MAT-AAC-75:
+    name: Autoclaved Aerated Concrete 7.5cm (อิฐมวลเบา)
+    unit: m2
+    material_cost: 280.0
+    labor_cost: 110.0
+    standards:
+      masterformat: "04 22 00"
+      uniformat: "B2010"
+  MAT-GRANITO:
+    name: Granito Tile 60x60cm (กระเบื้องแกรนิตโต้)
+    unit: m2
+    material_cost: 450.0
+    labor_cost: 180.0
+    standards:
+      masterformat: "09 30 00"
+      uniformat: "C1010"
+  MAT-STEEL-TRUSS:
+    name: Light Gauge C-Channel Roof Truss Steel
+    unit: kg
+    material_cost: 38.0
+    labor_cost: 8.0
+    standards:
+      masterformat: "05 12 00"
+      uniformat: "B1020"
+  MAT-ROOF-CPAC:
+    name: CPAC Monier Concrete Roof Tile (กระเบื้องซีแพค)
+    unit: m2
+    material_cost: 380.0
+    labor_cost: 120.0
+    standards:
+      masterformat: "07 31 00"
+      uniformat: "B1020"

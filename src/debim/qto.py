@@ -14,6 +14,7 @@ from debim.resolver import (
     ResolvedAirTerminal,
     ResolvedAlignment,
     ResolvedBeam,
+    ResolvedMember,
     ResolvedBearing,
     ResolvedDiscreteAccessory,
     ResolvedBridge,
@@ -1107,7 +1108,7 @@ def calculate_element_qto(
                 total_rebar_weight=total_rebar,
             )
 
-    elif isinstance(resolved, ResolvedBeam):
+    elif isinstance(resolved, (ResolvedBeam, ResolvedMember)):
         elem = resolved.element
         profile = elem.profile
         length = resolved.span_length
