@@ -92,6 +92,20 @@ def parse_framing_profile(profile: Optional[str], length: float) -> Dict[str, An
     }
 
 
+def _get_element_storey(resolved_obj: Any) -> Optional[str]:
+    if hasattr(resolved_obj, "element") and resolved_obj.element:
+        elem = resolved_obj.element
+        if hasattr(elem, "placement") and elem.placement:
+            pl = elem.placement
+            if hasattr(pl, "storey") and pl.storey:
+                return str(pl.storey)
+            if hasattr(pl, "base_storey") and pl.base_storey:
+                return str(pl.base_storey)
+            if hasattr(pl, "from_storey") and pl.from_storey:
+                return str(pl.from_storey)
+    return None
+
+
 def extract_profile_viewer_dim(prof: Any, length_or_height: float, is_column: bool = True) -> Dict[str, Any]:
     shape = getattr(prof, "shape", "BOX")
     len_key = "height" if is_column else "length"
@@ -177,6 +191,7 @@ def generate_viewer_html(
 
     # Footings & Piles
     for footing in resolved.footings:
+        st = _get_element_storey(footing)
         elements_data.append({
             "tag": footing.tag,
             "class": "IfcFooting",
@@ -194,6 +209,7 @@ def generate_viewer_html(
             },
             "color": "#6A6A6A",
             "layer": footing.layer,
+            "storey": st,
         })
 
         for pile in footing.piles:
@@ -214,10 +230,12 @@ def generate_viewer_html(
                 },
                 "color": "#4F4F4F",
                 "layer": pile.layer,
+                "storey": st,
             })
 
     # Columns
     for col in resolved.columns:
+        st = _get_element_storey(col)
         prof = col.element.profile
         dim = extract_profile_viewer_dim(prof, col.height, is_column=True)
 
@@ -233,10 +251,12 @@ def generate_viewer_html(
             "dimensions": dim,
             "color": "#808080",
             "layer": col.layer,
+            "storey": st,
         })
 
     # Beams
     for beam in resolved.beams:
+        st = _get_element_storey(beam)
         prof = beam.element.profile
         dim = extract_profile_viewer_dim(prof, beam.span_length, is_column=False)
 
@@ -251,6 +271,7 @@ def generate_viewer_html(
                 "layer": beam.layer,
                 "material": beam.element.material,
                 "dimensions": dim,
+                "storey": st,
             })
         else:
             cx = (beam.start_point[0] + beam.end_point[0]) / 2.0
@@ -267,10 +288,12 @@ def generate_viewer_html(
                 "dimensions": dim,
                 "color": "#9A9A9A",
                 "layer": beam.layer,
+                "storey": st,
             })
 
     # Slabs
     for slab in resolved.slabs:
+        st = _get_element_storey(slab)
         xs = [pt[0] for pt in slab.polygon]
         ys = [pt[1] for pt in slab.polygon]
         min_x, max_x = min(xs), max(xs)
@@ -300,6 +323,7 @@ def generate_viewer_html(
             "transparent": True,
             "opacity": 0.85,
             "layer": slab.layer,
+            "storey": st,
         })
 
     # Stairs Assembly
@@ -511,6 +535,7 @@ def generate_viewer_html(
 
     # Walls & Children
     for wall in resolved.walls:
+        st = _get_element_storey(wall)
         dx = wall.end_point[0] - wall.start_point[0]
         dy = wall.end_point[1] - wall.start_point[1]
         angle = math.atan2(dy, dx)
@@ -531,9 +556,11 @@ def generate_viewer_html(
             },
             "color": "#D3D3D3",
             "layer": wall.layer,
+            "storey": st,
         })
 
         for child in wall.children:
+            ch_st = _get_element_storey(child) or st
             if isinstance(child, ResolvedDoor):
                 elements_data.append({
                     "tag": child.tag,
@@ -558,6 +585,7 @@ def generate_viewer_html(
                     },
                     "color": "#8B4513",
                     "layer": child.layer,
+                    "storey": ch_st,
                 })
             elif isinstance(child, ResolvedWindow):
                 elements_data.append({
@@ -579,6 +607,7 @@ def generate_viewer_html(
                     "transparent": True,
                     "opacity": 0.6,
                     "layer": child.layer,
+                    "storey": ch_st,
                 })
 
     # Roofs
@@ -2832,6 +2861,10 @@ def generate_viewer_html(
         <button id="section-btn" class="view-btn" onclick="toggleSectionPlaneUI()">Section</button>
         <button id="measure-btn" class="view-btn" onclick="toggleMeasureTool()">Measure</button>
         <button id="clear-measure-btn" class="view-btn" onclick="clearMeasurements()" style="display:none;">Clear</button>
+        <span style="display:inline-block; width:1px; height:16px; background:rgba(255,255,255,0.2); margin:0 4px;"></span>
+        <span style="font-size:0.7rem; color:#94a3b8; font-weight:600; margin-right:2px;">Storey:</span>
+        <button class="view-btn storey-btn active" data-storey="all" onclick="filterStorey('all')">All Storeys</button>
+        <span id="storey-toolbar-btns" style="display:inline-flex; gap:4px;"></span>
     </div>
 
     <div id="section-plane-panel" class="ui-panel" style="display: none; top: 60px; left: 50%; transform: translateX(-50%); width: 380px; z-index: 1000;">
@@ -2983,7 +3016,22 @@ def generate_viewer_html(
             }}
         }}
 
-        // Setup Section Plane slider & quick buttons
+        // Storey isolation filter state
+        let activeStoreyFilter = "all";
+
+        window.filterStorey = function(storeyId) {{
+            activeStoreyFilter = storeyId;
+            document.querySelectorAll('.storey-btn').forEach(btn => {{
+                if (btn.dataset.storey === storeyId) {{
+                    btn.classList.add('active');
+                }} else {{
+                    btn.classList.remove('active');
+                }}
+            }});
+            update3DVisibility();
+        }};
+
+        // Setup Section Plane slider & quick buttons & storey toolbar buttons
         setTimeout(() => {{
             const slider = document.getElementById('cut-height-slider');
             if (slider) {{
@@ -2994,8 +3042,10 @@ def generate_viewer_html(
                 document.getElementById('cut-z-display').textContent = currentCutZ.toFixed(2) + ' m';
             }}
             const quickBtnsContainer = document.getElementById('storey-quick-btns');
-            if (quickBtnsContainer) {{
-                sceneData.storeys.forEach(s => {{
+            const storeyToolbarContainer = document.getElementById('storey-toolbar-btns');
+
+            sceneData.storeys.forEach(s => {{
+                if (quickBtnsContainer) {{
                     const btn = document.createElement('button');
                     btn.className = 'batch-btn';
                     btn.textContent = `${{s.name}} (+${{s.elevation.toFixed(1)}}m)`;
@@ -3007,8 +3057,17 @@ def generate_viewer_html(
                         onSectionSliderChange(targetZ);
                     }};
                     quickBtnsContainer.appendChild(btn);
-                }});
-            }}
+                }}
+
+                if (storeyToolbarContainer) {{
+                    const btn = document.createElement('button');
+                    btn.className = 'view-btn storey-btn';
+                    btn.dataset.storey = s.id;
+                    btn.textContent = s.name || s.id;
+                    btn.onclick = () => filterStorey(s.id);
+                    storeyToolbarContainer.appendChild(btn);
+                }}
+            }});
         }}, 100);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -3457,6 +3516,7 @@ def generate_viewer_html(
                 let layerPath = data.layer || "general/other";
                 if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
                 doorGroup.userData.layer = layerPath;
+                if (data.storey) doorGroup.userData.storey = data.storey;
 
                 scene.add(doorGroup);
                 pickableObjects.push(doorGroup);
@@ -3516,6 +3576,7 @@ def generate_viewer_html(
                 layerPath = "general/" + layerPath;
             }}
             mesh.userData.layer = layerPath;
+            if (data.storey) mesh.userData.storey = data.storey;
 
             scene.add(mesh);
             pickableObjects.push(mesh);
@@ -3535,11 +3596,13 @@ def generate_viewer_html(
                         let layerPath = data.layer || "general/other";
                         if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
                         model.userData.layer = layerPath;
+                        if (data.storey) model.userData.storey = data.storey;
 
                         model.traverse((child) => {{
                             if (child.isMesh) {{
                                 child.userData = data;
                                 child.userData.layer = layerPath;
+                                if (data.storey) child.userData.storey = data.storey;
                             }}
                         }});
 
@@ -3656,6 +3719,7 @@ def generate_viewer_html(
                 layerPath = "general/" + layerPath;
             }}
             object3D.userData.layer = layerPath;
+            if (data.storey) object3D.userData.storey = data.storey;
 
             scene.add(object3D);
             pickableObjects.push(object3D);
@@ -3899,6 +3963,11 @@ def generate_viewer_html(
 
         function update3DVisibility() {{
             function checkObjectVisible(obj) {{
+                if (activeStoreyFilter !== "all") {{
+                    if (obj.userData && obj.userData.storey && obj.userData.storey !== activeStoreyFilter) {{
+                        return false;
+                    }}
+                }}
                 let layerPath = obj.userData.layer || "general/other";
                 if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
                 const parts = layerPath.split("/");
