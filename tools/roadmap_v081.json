@@ -1,0 +1,49 @@
+[
+  {
+    "wave": 1,
+    "issue_key": "wave_1_main_and_beam_cantilever",
+    "match_keywords": ["__main__", "entry point", "cantilever", "soil_bearing", "soil-bearing", "dangling_cantilever"],
+    "next_issue": {
+      "title": "feat(columns): independent height and elevation parameters for stub columns and roof posts",
+      "body": "### Overview\nAs part of debim v0.8.1 Wave 2, allow `IfcColumn` to be placed with explicit `base_elevation`, `top_elevation`, or `height` without being strictly coupled to Storey levels.\n\n### Tasks\n1. In `src/debim/schema.py`: Update `ColumnPlacement` to support optional `base_elevation: Optional[float] = None`, `top_elevation: Optional[float] = None`, and `height: Optional[float] = None`.\n2. In `src/debim/resolver.py` and `compiler.py`: Calculate 3D extrusion coordinates from explicit elevations if provided, bypassing Storey floor-to-floor constraints.\n3. Support landing posts (e.g., CN stair post from +0.00 to +2.35m) and roof ridge posts (e.g., CX post on tie beams at +7.45m up to +10.65m ridge).\n4. Add unit tests in `tests/test_independent_columns.py`.\n\n### Acceptance Criteria\n- `IfcColumn` models correctly at custom elevations in IFC4 export and 3D viewer.\n- QTO calculates concrete volume and formwork for stub and ridge columns accurately.\n- `pytest tests/` passes.",
+      "label": "jules"
+    }
+  },
+  {
+    "wave": 2,
+    "issue_key": "wave_2_independent_columns",
+    "match_keywords": ["independent height", "stub column", "roof post", "base_elevation", "top_elevation", "columns"],
+    "next_issue": {
+      "title": "feat(openings): grid-relative parametric placement for doors and windows in host walls",
+      "body": "### Overview\nAs part of debim v0.8.1 Wave 3, support grid-relative placement for `IfcDoor` and `IfcWindow` inside host walls, allowing openings to reference project grids directly (e.g., `at_grid: '2 + 1.20'`).\n\n### Tasks\n1. In `src/debim/schema.py`: Add `at_grid: Optional[str] = None` and optional `sill_height: float = 0.00` in door/window placement models so `offset_distance` is not mandatory when grid expression is used.\n2. In `src/debim/resolver.py`: Compute the scalar offset along the wall vector by projecting the resolved grid position onto the wall segment.\n3. Ensure that when grid spacing changes, openings automatically move with the grid.\n4. In `src/debim/compiler.py`: Cut openings cleanly in host wall geometry.\n5. Add unit tests in `tests/test_grid_relative_openings.py`.\n\n### Acceptance Criteria\n- Openings specified with `at_grid` are positioned accurately relative to grid lines.\n- Wall net area QTO correctly subtracts door/window cutouts.\n- `pytest tests/` passes.",
+      "label": "jules"
+    }
+  },
+  {
+    "wave": 3,
+    "issue_key": "wave_3_grid_relative_openings",
+    "match_keywords": ["grid-relative", "at_grid", "parametric placement", "openings", "doors and windows"],
+    "next_issue": {
+      "title": "feat(roof-slab): compound slab space finishes and native L-shaped composite hip roof solver",
+      "body": "### Overview\nAs part of debim v0.8.1 Wave 4, decouple structural RC slab from architectural floor finishes via `IfcSpace`, and implement a native 3D geometry solver for L-shaped and T-shaped composite hip roofs.\n\n### Tasks\n1. In `src/debim/schema.py`: Support `finish` configuration on `IfcSpace` (e.g. `floor_material`, `floor_thickness`, `drop_elevation`) so structural `IfcSlab` can remain a single continuous slab.\n2. In `src/debim/roof.py`: Enhance the hip roof solver to accept non-convex concave polygons (L-shaped, T-shaped boundaries) and automatically generate valleys (ตะเข้ราง), hips (สันตะเข้), and ridges (อกไก่) without requiring split roof entities.\n3. In `src/debim/qto.py`: Report structural concrete and architectural floor finish quantities separately in QTO.\n4. Add unit tests in `tests/test_compound_slab_finishes.py` and `tests/test_composite_hip_roof.py`.\n\n### Acceptance Criteria\n- Single continuous L-shaped hip roof compiles into watertight 3D geometry with correct valley/hip seams.\n- Sunken bathroom slab drops (-0.10m) and distinct room flooring are properly accounted for in QTO.\n- `pytest tests/` passes.",
+      "label": "jules"
+    }
+  },
+  {
+    "wave": 4,
+    "issue_key": "wave_4_roof_slab_finishes",
+    "match_keywords": ["compound slab", "space finish", "l-shape hip", "composite hip", "valley gutter", "roof-slab"],
+    "next_issue": {
+      "title": "feat(ingest): scaffolding ingestion assistant for CAD/PDF and Thai house L-benchmark showcase",
+      "body": "### Overview\nAs part of debim v0.8.1 Wave 5 (Final Wave), add the `debim ingest` scaffolding assistant to extract grid labels and dimensions from DXF/PDF, and provide a full Thai House L-Shaped benchmark project.\n\n### Tasks\n1. Create `src/debim/ingest.py`: Implement basic DXF/CAD parser using `ezdxf` to extract LINE/TEXT/DIMENSION entities into boilerplate `project.debim` grid axes and column coordinates.\n2. In `src/debim/cli.py`: Expose command `debim ingest <file.dxf> [--out <output_dir>]`.\n3. Add `examples/thai_l_house/`: A comprehensive 220+ element benchmark model (Baan Thai L-Shape) showcasing all v0.8.1 features (cantilevers, stub columns, grid openings, L-roof, compound finishes).\n4. Add unit tests in `tests/test_ingest.py` and integration test in `tests/test_thai_l_house_benchmark.py`.\n\n### Acceptance Criteria\n- `debim ingest` successfully parses DXF grids into valid YAML manifest.\n- The benchmark project compiles cleanly to IFC4 and passes Thai CGD ว480 QTO validation.\n- `pytest tests/` passes.",
+      "label": "jules"
+    }
+  },
+  {
+    "wave": 5,
+    "issue_key": "wave_5_ingest_and_benchmark",
+    "match_keywords": ["ingest", "scaffolding", "thai house", "l-benchmark", "cad/pdf"],
+    "is_final_wave": true,
+    "next_issue": null
+  }
+]
