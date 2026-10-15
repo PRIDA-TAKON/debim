@@ -1836,8 +1836,8 @@ class SpatialResolver:
 
     def resolve_column(self, col: IfcColumn) -> ResolvedColumn:
         gx1, gy1 = self.get_grid_xy(col.placement.grid)
-        base_s = self.get_storey(col.placement.base_storey)
-        top_s = self.get_storey(col.placement.top_storey)
+        base_s = self.get_storey(col.placement.base_storey) if col.placement.base_storey else None
+        top_s = self.get_storey(col.placement.top_storey) if col.placement.top_storey else None
 
         ob = col.placement.offset_base
         ot = col.placement.offset_top
@@ -1847,7 +1847,13 @@ class SpatialResolver:
 
         x1 = gx1 + ob[0] + off_x
         y1 = gy1 + ob[1] + off_y
-        z1 = base_s.elevation + ob[2]
+
+        if col.placement.base_elevation is not None:
+            z1 = col.placement.base_elevation + ob[2]
+        elif base_s:
+            z1 = base_s.elevation + ob[2]
+        else:
+            z1 = ob[2]
 
         if col.placement.top_grid:
             gx2, gy2 = self.get_grid_xy(col.placement.top_grid)
@@ -1857,7 +1863,16 @@ class SpatialResolver:
             x2 = gx1 + ot[0] + off_x
             y2 = gy1 + ot[1] + off_y
 
-        z2 = top_s.elevation + ot[2]
+        if col.placement.top_elevation is not None:
+            z2 = col.placement.top_elevation + ot[2]
+        elif col.placement.height is not None:
+            z2 = z1 + col.placement.height + ot[2]
+        elif top_s:
+            z2 = top_s.elevation + ot[2]
+        elif base_s:
+            z2 = z1 + base_s.height + ot[2]
+        else:
+            z2 = z1 + 3.0 + ot[2]
 
         dx = x2 - x1
         dy = y2 - y1

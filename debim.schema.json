@@ -2045,12 +2045,64 @@
           "type": "array"
         },
         "base_storey": {
-          "title": "Base Storey",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Storey"
         },
         "top_storey": {
-          "title": "Top Storey",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Storey"
+        },
+        "base_elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Elevation"
+        },
+        "top_elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Elevation"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height"
         },
         "top_grid": {
           "anyOf": [
@@ -2156,9 +2208,7 @@
         }
       },
       "required": [
-        "grid",
-        "base_storey",
-        "top_storey"
+        "grid"
       ],
       "title": "ColumnPlacement",
       "type": "object"
