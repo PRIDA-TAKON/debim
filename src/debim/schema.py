@@ -3667,6 +3667,86 @@ class InstanceConfig(BaseModel):
     id_prefix: Optional[str] = None
 
 
+class ColumnGrid(BaseModel):
+    """
+    Macro specification for 2D/3D column array generation across grid intersections.
+    """
+    type: Literal["ColumnGrid", "column_grid"] = Field(alias="type", default="ColumnGrid")
+    grids_x: List[str]
+    grids_y: List[str]
+    material: str = "CONCRETE"
+    profile: Optional[Profile] = None
+    profiles: Optional[Union[Profile, Dict[str, Profile]]] = None
+    storey: Optional[str] = None
+    storeys: Optional[List[Union[str, Tuple[str, str]]]] = None
+    base_storey: Optional[str] = None
+    top_storey: Optional[str] = None
+    except_points: Optional[List[Tuple[str, str]]] = None
+    tag_prefix: Optional[str] = "C_"
+    reinforcement: Optional[ColumnReinforcement] = None
+    layer: Optional[str] = None
+
+    @field_validator("grids_x", "grids_y", mode="before")
+    @classmethod
+    def convert_grids_list(cls, v):
+        if isinstance(v, list):
+            return [str(x) for x in v]
+        return v
+
+    @field_validator("except_points", mode="before")
+    @classmethod
+    def convert_except_points(cls, v):
+        if isinstance(v, list):
+            res = []
+            for item in v:
+                if isinstance(item, (list, tuple)) and len(item) >= 2:
+                    res.append((str(item[0]), str(item[1])))
+                else:
+                    res.append(item)
+            return res
+        return v
+
+
+class BeamBay(BaseModel):
+    """
+    Macro specification for structural beam array generation along grid lines between bays.
+    """
+    type: Literal["BeamBay", "beam_bay"] = Field(alias="type", default="BeamBay")
+    grids_x: List[str]
+    grids_y: List[str]
+    material: str = "CONCRETE"
+    profile: Optional[Profile] = None
+    profiles: Optional[Union[Profile, Dict[str, Profile]]] = None
+    storey: Optional[str] = None
+    storeys: Optional[List[str]] = None
+    direction: Optional[Literal["X", "Y", "BOTH", "both"]] = "BOTH"
+    except_points: Optional[List[Tuple[str, str]]] = None
+    except_beams: Optional[List[Tuple[Tuple[str, str], Tuple[str, str]]]] = None
+    tag_prefix: Optional[str] = "B_"
+    reinforcement: Optional[BeamReinforcement] = None
+    layer: Optional[str] = None
+
+    @field_validator("grids_x", "grids_y", mode="before")
+    @classmethod
+    def convert_grids_list(cls, v):
+        if isinstance(v, list):
+            return [str(x) for x in v]
+        return v
+
+    @field_validator("except_points", mode="before")
+    @classmethod
+    def convert_except_points(cls, v):
+        if isinstance(v, list):
+            res = []
+            for item in v:
+                if isinstance(item, (list, tuple)) and len(item) >= 2:
+                    res.append((str(item[0]), str(item[1])))
+                else:
+                    res.append(item)
+            return res
+        return v
+
+
 class ProjectManifest(BaseModel):
     schema_version: str = Field(alias="schema", default="IFC4-Minimal")
     project: ProjectInfo
@@ -3676,6 +3756,8 @@ class ProjectManifest(BaseModel):
     elements: List[Element] = Field(default_factory=list)
     modules: Optional[List[ModuleDefinition]] = None
     instances: Optional[List[InstanceConfig]] = None
+    macro_elements: Optional[List[Union[ColumnGrid, BeamBay, Dict[str, Any]]]] = None
+    _macro_elements_expanded: bool = PrivateAttr(default=False)
     railways: List[Union[IfcRailway, IfcRailwayPart, IfcTrackElement]] = Field(default_factory=list)
     marine_facilities: Optional[List[IfcMarineFacility]] = None
     proxies: List[IfcBuildingElementProxy] = Field(default_factory=list)
@@ -3691,6 +3773,9 @@ class ProjectManifest(BaseModel):
     @classmethod
     def pre_expand_modules(cls, data: Any) -> Any:
         if isinstance(data, dict):
+            if data.get("macro_elements") and not data.get("_macro_elements_expanded"):
+                from debim.modular import expand_macro_elements
+                data = expand_macro_elements(data)
             if data.get("modules") and data.get("instances") and not data.get("_modules_expanded"):
                 data = expand_module_instances(data)
         return data

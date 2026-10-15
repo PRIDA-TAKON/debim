@@ -395,6 +395,405 @@
       "title": "ArbitraryProfile",
       "type": "object"
     },
+    "BeamBay": {
+      "description": "Macro specification for structural beam array generation along grid lines between bays.",
+      "properties": {
+        "type": {
+          "default": "BeamBay",
+          "enum": [
+            "BeamBay",
+            "beam_bay"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "grids_x": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Grids X",
+          "type": "array"
+        },
+        "grids_y": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Grids Y",
+          "type": "array"
+        },
+        "material": {
+          "default": "CONCRETE",
+          "title": "Material",
+          "type": "string"
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "ARBITRARY": "#/$defs/ArbitraryProfile",
+                  "ARBITRARY_CLOSED": "#/$defs/ArbitraryProfile",
+                  "ARBITRARY_WITH_VOIDS": "#/$defs/ArbitraryProfile",
+                  "BOX": "#/$defs/BoxProfile",
+                  "BOX_HOLLOW": "#/$defs/RectangleHollowProfile",
+                  "C": "#/$defs/UShapeProfile",
+                  "CHS": "#/$defs/CircleHollowProfile",
+                  "CIRCLE_HOLLOW": "#/$defs/CircleHollowProfile",
+                  "CIRCULAR": "#/$defs/CircularProfile",
+                  "CSHAPE": "#/$defs/UShapeProfile",
+                  "ELLIPSE": "#/$defs/EllipseProfile",
+                  "H": "#/$defs/IShapeProfile",
+                  "I": "#/$defs/IShapeProfile",
+                  "ISHAPE": "#/$defs/IShapeProfile",
+                  "L": "#/$defs/LShapeProfile",
+                  "LSHAPE": "#/$defs/LShapeProfile",
+                  "PIPE_HOLLOW": "#/$defs/CircleHollowProfile",
+                  "POLYGON": "#/$defs/ArbitraryProfile",
+                  "RECTANGLE_HOLLOW": "#/$defs/RectangleHollowProfile",
+                  "RHS": "#/$defs/RectangleHollowProfile",
+                  "T": "#/$defs/TShapeProfile",
+                  "TSHAPE": "#/$defs/TShapeProfile",
+                  "U": "#/$defs/UShapeProfile",
+                  "USHAPE": "#/$defs/UShapeProfile"
+                },
+                "propertyName": "shape"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/BoxProfile"
+                },
+                {
+                  "$ref": "#/$defs/CircularProfile"
+                },
+                {
+                  "$ref": "#/$defs/EllipseProfile"
+                },
+                {
+                  "$ref": "#/$defs/IShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/LShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/UShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/TShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/RectangleHollowProfile"
+                },
+                {
+                  "$ref": "#/$defs/CircleHollowProfile"
+                },
+                {
+                  "$ref": "#/$defs/ArbitraryProfile"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profile"
+        },
+        "profiles": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "ARBITRARY": "#/$defs/ArbitraryProfile",
+                  "ARBITRARY_CLOSED": "#/$defs/ArbitraryProfile",
+                  "ARBITRARY_WITH_VOIDS": "#/$defs/ArbitraryProfile",
+                  "BOX": "#/$defs/BoxProfile",
+                  "BOX_HOLLOW": "#/$defs/RectangleHollowProfile",
+                  "C": "#/$defs/UShapeProfile",
+                  "CHS": "#/$defs/CircleHollowProfile",
+                  "CIRCLE_HOLLOW": "#/$defs/CircleHollowProfile",
+                  "CIRCULAR": "#/$defs/CircularProfile",
+                  "CSHAPE": "#/$defs/UShapeProfile",
+                  "ELLIPSE": "#/$defs/EllipseProfile",
+                  "H": "#/$defs/IShapeProfile",
+                  "I": "#/$defs/IShapeProfile",
+                  "ISHAPE": "#/$defs/IShapeProfile",
+                  "L": "#/$defs/LShapeProfile",
+                  "LSHAPE": "#/$defs/LShapeProfile",
+                  "PIPE_HOLLOW": "#/$defs/CircleHollowProfile",
+                  "POLYGON": "#/$defs/ArbitraryProfile",
+                  "RECTANGLE_HOLLOW": "#/$defs/RectangleHollowProfile",
+                  "RHS": "#/$defs/RectangleHollowProfile",
+                  "T": "#/$defs/TShapeProfile",
+                  "TSHAPE": "#/$defs/TShapeProfile",
+                  "U": "#/$defs/UShapeProfile",
+                  "USHAPE": "#/$defs/UShapeProfile"
+                },
+                "propertyName": "shape"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/BoxProfile"
+                },
+                {
+                  "$ref": "#/$defs/CircularProfile"
+                },
+                {
+                  "$ref": "#/$defs/EllipseProfile"
+                },
+                {
+                  "$ref": "#/$defs/IShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/LShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/UShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/TShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/RectangleHollowProfile"
+                },
+                {
+                  "$ref": "#/$defs/CircleHollowProfile"
+                },
+                {
+                  "$ref": "#/$defs/ArbitraryProfile"
+                }
+              ]
+            },
+            {
+              "additionalProperties": {
+                "discriminator": {
+                  "mapping": {
+                    "ARBITRARY": "#/$defs/ArbitraryProfile",
+                    "ARBITRARY_CLOSED": "#/$defs/ArbitraryProfile",
+                    "ARBITRARY_WITH_VOIDS": "#/$defs/ArbitraryProfile",
+                    "BOX": "#/$defs/BoxProfile",
+                    "BOX_HOLLOW": "#/$defs/RectangleHollowProfile",
+                    "C": "#/$defs/UShapeProfile",
+                    "CHS": "#/$defs/CircleHollowProfile",
+                    "CIRCLE_HOLLOW": "#/$defs/CircleHollowProfile",
+                    "CIRCULAR": "#/$defs/CircularProfile",
+                    "CSHAPE": "#/$defs/UShapeProfile",
+                    "ELLIPSE": "#/$defs/EllipseProfile",
+                    "H": "#/$defs/IShapeProfile",
+                    "I": "#/$defs/IShapeProfile",
+                    "ISHAPE": "#/$defs/IShapeProfile",
+                    "L": "#/$defs/LShapeProfile",
+                    "LSHAPE": "#/$defs/LShapeProfile",
+                    "PIPE_HOLLOW": "#/$defs/CircleHollowProfile",
+                    "POLYGON": "#/$defs/ArbitraryProfile",
+                    "RECTANGLE_HOLLOW": "#/$defs/RectangleHollowProfile",
+                    "RHS": "#/$defs/RectangleHollowProfile",
+                    "T": "#/$defs/TShapeProfile",
+                    "TSHAPE": "#/$defs/TShapeProfile",
+                    "U": "#/$defs/UShapeProfile",
+                    "USHAPE": "#/$defs/UShapeProfile"
+                  },
+                  "propertyName": "shape"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/BoxProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/CircularProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/EllipseProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/IShapeProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/LShapeProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/UShapeProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/TShapeProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/RectangleHollowProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/CircleHollowProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/ArbitraryProfile"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profiles"
+        },
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "storeys": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storeys"
+        },
+        "direction": {
+          "anyOf": [
+            {
+              "enum": [
+                "X",
+                "Y",
+                "BOTH",
+                "both"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "BOTH",
+          "title": "Direction"
+        },
+        "except_points": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Except Points"
+        },
+        "except_beams": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "prefixItems": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ],
+                    "type": "array"
+                  },
+                  {
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "prefixItems": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ],
+                    "type": "array"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Except Beams"
+        },
+        "tag_prefix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "B_",
+          "title": "Tag Prefix"
+        },
+        "reinforcement": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BeamReinforcement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "grids_x",
+        "grids_y"
+      ],
+      "title": "BeamBay",
+      "type": "object"
+    },
     "BeamPlacement": {
       "properties": {
         "from_grid": {
@@ -1203,6 +1602,383 @@
         }
       },
       "title": "CircularProfile",
+      "type": "object"
+    },
+    "ColumnGrid": {
+      "description": "Macro specification for 2D/3D column array generation across grid intersections.",
+      "properties": {
+        "type": {
+          "default": "ColumnGrid",
+          "enum": [
+            "ColumnGrid",
+            "column_grid"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "grids_x": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Grids X",
+          "type": "array"
+        },
+        "grids_y": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Grids Y",
+          "type": "array"
+        },
+        "material": {
+          "default": "CONCRETE",
+          "title": "Material",
+          "type": "string"
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "ARBITRARY": "#/$defs/ArbitraryProfile",
+                  "ARBITRARY_CLOSED": "#/$defs/ArbitraryProfile",
+                  "ARBITRARY_WITH_VOIDS": "#/$defs/ArbitraryProfile",
+                  "BOX": "#/$defs/BoxProfile",
+                  "BOX_HOLLOW": "#/$defs/RectangleHollowProfile",
+                  "C": "#/$defs/UShapeProfile",
+                  "CHS": "#/$defs/CircleHollowProfile",
+                  "CIRCLE_HOLLOW": "#/$defs/CircleHollowProfile",
+                  "CIRCULAR": "#/$defs/CircularProfile",
+                  "CSHAPE": "#/$defs/UShapeProfile",
+                  "ELLIPSE": "#/$defs/EllipseProfile",
+                  "H": "#/$defs/IShapeProfile",
+                  "I": "#/$defs/IShapeProfile",
+                  "ISHAPE": "#/$defs/IShapeProfile",
+                  "L": "#/$defs/LShapeProfile",
+                  "LSHAPE": "#/$defs/LShapeProfile",
+                  "PIPE_HOLLOW": "#/$defs/CircleHollowProfile",
+                  "POLYGON": "#/$defs/ArbitraryProfile",
+                  "RECTANGLE_HOLLOW": "#/$defs/RectangleHollowProfile",
+                  "RHS": "#/$defs/RectangleHollowProfile",
+                  "T": "#/$defs/TShapeProfile",
+                  "TSHAPE": "#/$defs/TShapeProfile",
+                  "U": "#/$defs/UShapeProfile",
+                  "USHAPE": "#/$defs/UShapeProfile"
+                },
+                "propertyName": "shape"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/BoxProfile"
+                },
+                {
+                  "$ref": "#/$defs/CircularProfile"
+                },
+                {
+                  "$ref": "#/$defs/EllipseProfile"
+                },
+                {
+                  "$ref": "#/$defs/IShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/LShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/UShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/TShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/RectangleHollowProfile"
+                },
+                {
+                  "$ref": "#/$defs/CircleHollowProfile"
+                },
+                {
+                  "$ref": "#/$defs/ArbitraryProfile"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profile"
+        },
+        "profiles": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "ARBITRARY": "#/$defs/ArbitraryProfile",
+                  "ARBITRARY_CLOSED": "#/$defs/ArbitraryProfile",
+                  "ARBITRARY_WITH_VOIDS": "#/$defs/ArbitraryProfile",
+                  "BOX": "#/$defs/BoxProfile",
+                  "BOX_HOLLOW": "#/$defs/RectangleHollowProfile",
+                  "C": "#/$defs/UShapeProfile",
+                  "CHS": "#/$defs/CircleHollowProfile",
+                  "CIRCLE_HOLLOW": "#/$defs/CircleHollowProfile",
+                  "CIRCULAR": "#/$defs/CircularProfile",
+                  "CSHAPE": "#/$defs/UShapeProfile",
+                  "ELLIPSE": "#/$defs/EllipseProfile",
+                  "H": "#/$defs/IShapeProfile",
+                  "I": "#/$defs/IShapeProfile",
+                  "ISHAPE": "#/$defs/IShapeProfile",
+                  "L": "#/$defs/LShapeProfile",
+                  "LSHAPE": "#/$defs/LShapeProfile",
+                  "PIPE_HOLLOW": "#/$defs/CircleHollowProfile",
+                  "POLYGON": "#/$defs/ArbitraryProfile",
+                  "RECTANGLE_HOLLOW": "#/$defs/RectangleHollowProfile",
+                  "RHS": "#/$defs/RectangleHollowProfile",
+                  "T": "#/$defs/TShapeProfile",
+                  "TSHAPE": "#/$defs/TShapeProfile",
+                  "U": "#/$defs/UShapeProfile",
+                  "USHAPE": "#/$defs/UShapeProfile"
+                },
+                "propertyName": "shape"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/BoxProfile"
+                },
+                {
+                  "$ref": "#/$defs/CircularProfile"
+                },
+                {
+                  "$ref": "#/$defs/EllipseProfile"
+                },
+                {
+                  "$ref": "#/$defs/IShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/LShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/UShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/TShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/RectangleHollowProfile"
+                },
+                {
+                  "$ref": "#/$defs/CircleHollowProfile"
+                },
+                {
+                  "$ref": "#/$defs/ArbitraryProfile"
+                }
+              ]
+            },
+            {
+              "additionalProperties": {
+                "discriminator": {
+                  "mapping": {
+                    "ARBITRARY": "#/$defs/ArbitraryProfile",
+                    "ARBITRARY_CLOSED": "#/$defs/ArbitraryProfile",
+                    "ARBITRARY_WITH_VOIDS": "#/$defs/ArbitraryProfile",
+                    "BOX": "#/$defs/BoxProfile",
+                    "BOX_HOLLOW": "#/$defs/RectangleHollowProfile",
+                    "C": "#/$defs/UShapeProfile",
+                    "CHS": "#/$defs/CircleHollowProfile",
+                    "CIRCLE_HOLLOW": "#/$defs/CircleHollowProfile",
+                    "CIRCULAR": "#/$defs/CircularProfile",
+                    "CSHAPE": "#/$defs/UShapeProfile",
+                    "ELLIPSE": "#/$defs/EllipseProfile",
+                    "H": "#/$defs/IShapeProfile",
+                    "I": "#/$defs/IShapeProfile",
+                    "ISHAPE": "#/$defs/IShapeProfile",
+                    "L": "#/$defs/LShapeProfile",
+                    "LSHAPE": "#/$defs/LShapeProfile",
+                    "PIPE_HOLLOW": "#/$defs/CircleHollowProfile",
+                    "POLYGON": "#/$defs/ArbitraryProfile",
+                    "RECTANGLE_HOLLOW": "#/$defs/RectangleHollowProfile",
+                    "RHS": "#/$defs/RectangleHollowProfile",
+                    "T": "#/$defs/TShapeProfile",
+                    "TSHAPE": "#/$defs/TShapeProfile",
+                    "U": "#/$defs/UShapeProfile",
+                    "USHAPE": "#/$defs/UShapeProfile"
+                  },
+                  "propertyName": "shape"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/BoxProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/CircularProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/EllipseProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/IShapeProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/LShapeProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/UShapeProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/TShapeProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/RectangleHollowProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/CircleHollowProfile"
+                  },
+                  {
+                    "$ref": "#/$defs/ArbitraryProfile"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profiles"
+        },
+        "storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
+        },
+        "storeys": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "prefixItems": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ],
+                    "type": "array"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storeys"
+        },
+        "base_storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Storey"
+        },
+        "top_storey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Storey"
+        },
+        "except_points": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Except Points"
+        },
+        "tag_prefix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "C_",
+          "title": "Tag Prefix"
+        },
+        "reinforcement": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ColumnReinforcement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "grids_x",
+        "grids_y"
+      ],
+      "title": "ColumnGrid",
       "type": "object"
     },
     "ColumnPlacement": {
@@ -14990,6 +15766,32 @@
       ],
       "default": null,
       "title": "Instances"
+    },
+    "macro_elements": {
+      "anyOf": [
+        {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ColumnGrid"
+              },
+              {
+                "$ref": "#/$defs/BeamBay"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Macro Elements"
     },
     "railways": {
       "items": {
