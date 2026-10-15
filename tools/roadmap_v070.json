@@ -1,0 +1,42 @@
+[
+  {
+    "match_keywords": ["start_v070", "init_v070"],
+    "next_issue": {
+      "title": "feat(resolver): local grid expressions and arithmetic offsets in boundary coordinates",
+      "body": "### Overview\nAs part of debim v0.7.0 Wave 1, allow arithmetic offsets in boundary points (e.g. `['1 - 0.60', 'B + 1.20']`) and `elevation_offset` in `IfcSlab` to eliminate auxiliary dummy grids for cantilevers, balconies, and sunken bathroom slabs.\n\n### Tasks\n1. In `src/debim/resolver.py`: Enhance 2D point resolver to parse string expressions with arithmetic (`['1 - 0.60', 'B']`) when resolving polygon boundaries.\n2. In `src/debim/schema.py`: Support `elevation_offset: Optional[float] = 0.0` on `IfcSlab`.\n3. Add unit tests in `tests/test_boundary_offsets.py` verifying recessed bathroom slab and cantilever balcony take-off.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["boundary", "offset", "elevation_offset"],
+    "next_issue": {
+      "title": "feat(roof): L-shape composite hip roof with valley/hip 3D intersection solver",
+      "body": "### Overview\nAs part of debim v0.7.0 Wave 2, enable `IfcRoof` to handle non-convex L-shaped boundaries and calculate intersecting hips (สันตะเข้) and valleys (ตะเข้ราง) with multi-level eaves.\n\n### Tasks\n1. In `src/debim/roof.py`: Add polygon ridge solver for L-shaped boundary polygons.\n2. Support `eaves_levels` or dual ridge heights for porch vs. main roof planes.\n3. Add unit tests in `tests/test_roof_l_shape.py` verifying geometry and rafter/purlin take-off.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["l-shape", "valley", "roof_l_shape"],
+    "next_issue": {
+      "title": "feat(openings): host-wall auto-punching and multi-storey window placement",
+      "body": "### Overview\nAs part of debim v0.7.0 Wave 3, support multi-storey tall windows (e.g. stairwell window W5 1.40x2.90m) and host-wall automatic cutout.\n\n### Tasks\n1. In `src/debim/schema.py`: Add `host_wall: Optional[str]` and `span_storeys: Optional[List[str]]` to `IfcWindow` / `IfcDoor`.\n2. In `src/debim/resolver.py` and `compiler.py`: Generate boolean opening cutouts (`IfcOpeningElement`) in host walls.\n3. Add unit tests in `tests/test_host_openings.py`.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["host-wall", "multi-storey", "host_openings"],
+    "next_issue": {
+      "title": "feat(stair): multi-flight dog-leg stair scheduling and landing elevation parameter",
+      "body": "### Overview\nAs part of debim v0.7.0 Wave 4, support explicit multi-flight step distribution and landing elevations in `IfcStair: DOG_LEG`.\n\n### Tasks\n1. In `src/debim/schema.py`: Support `flight_steps: Optional[List[int]]` (e.g. `[11, 6]`) and `landing_elevation: Optional[float]` in `IfcStair`.\n2. In `src/debim/qto.py`: Calculate concrete volume and formwork for multi-flight configurations.\n3. Add unit tests in `tests/test_stair_multiflight.py`.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["flight_steps", "stair_multiflight"],
+    "next_issue": {
+      "title": "example(thai-house): add 'บ้านร่วมสมัย ๙' 168-element model and v0.7.0 documentation",
+      "body": "### Overview\nAs part of debim v0.7.0 Wave 5, integrate the official 168-element Contemporary Thai House 9 model into `examples/contemporary_thai_house/project.debim` and update docs/release notes.\n\n### Tasks\n1. Create `examples/contemporary_thai_house/project.debim` utilizing v0.7.0 features (local offsets, L-roof, host openings, ST.3 stairs).\n2. Update `ROADMAP_V0.7.0.md` checklists to completed.\n3. Verify with `debim validate`, `debim qto`, and `debim boq --rules cg-v480`.",
+      "label": "jules"
+    }
+  }
+]
