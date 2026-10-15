@@ -1,0 +1,382 @@
+# yaml-language-server: $schema=../../debim.schema.json
+# ==============================================================================
+# Model: Farnsworth House (1951) - Plano, Illinois
+# Original Architect: Ludwig Mies van der Rohe (National Historic Landmark)
+# Format: Official debim Language File (.debim) v0.6.0
+# Workflow: Autonomous architectural research -> Declarative .debim -> OpenBIM IFC4
+# ==============================================================================
+
+schema: "IFC4-Minimal"
+version: "0.6.0"
+
+project:
+  id: "PRJ-MIES-FARNSWORTH-1951"
+  name: "Farnsworth House (Ludwig Mies van der Rohe, 1951 - Plano, Illinois)"
+  units:
+    length: "METER"
+    area: "SQUARE_METER"
+    volume: "CUBIC_METER"
+
+site:
+  name: "Fox River Estate, Plano, Illinois"
+  bounding_box: [-10.0, -15.0, 35.0, 20.0]
+
+spatial_structure:
+  storeys:
+    - id: "Ground"
+      name: "Natural Ground"
+      elevation: 0.00
+      height: 1.60
+    - id: "Terrace"
+      name: "Lower Terrace"
+      elevation: 0.75
+      height: 0.85
+    - id: "Main_Floor"
+      name: "Living Level"
+      elevation: 1.60
+      height: 3.00
+    - id: "Roof"
+      name: "Roof Plane"
+      elevation: 4.60
+      height: 0.40
+
+grids:
+  axes_x:
+    "G0": -1.50
+    "G1": 0.00
+    "G2": 6.70
+    "G3": 13.40
+    "G4": 20.10
+    "G5": 22.00
+    "G6": 23.50
+    "C1": 7.00
+    "C2": 16.50
+  axes_y:
+    "T1": -6.70
+    "GA": 0.00
+    "CS": 3.20
+    "CN": 5.60
+    "GB": 8.80
+
+materials:
+  - id: "STEEL_WHITE"
+    name: "White Painted Structural Steel"
+    category: "steel"
+    unit_cost_ref: "MAT-STEEL-01"
+  - id: "TRAVERTINE"
+    name: "Italian Roman Travertine"
+    category: "masonry"
+    unit_cost_ref: "MAT-STONE-01"
+  - id: "GLASS_CLEAR"
+    name: "Clear Architectural Float Glass"
+    category: "other"
+    unit_cost_ref: "MAT-GLASS-01"
+  - id: "TEAK_CORE"
+    name: "Natural Teak Wood Core Paneling"
+    category: "timber"
+    unit_cost_ref: "MAT-TIMBER-01"
+  - id: "PLASTER_WHITE"
+    name: "Smooth White Finish Ceiling"
+    category: "masonry"
+    unit_cost_ref: "MAT-PLASTER-01"
+
+elements:
+  # ----------------------------------------------------------------------------
+  # Structural Columns (White Painted Wide-Flange H-Columns)
+  # ----------------------------------------------------------------------------
+  - class: IfcColumn
+    tag: "COL-A1"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.30
+      depth: 0.30
+    placement:
+      grid: ["G1", "GA"]
+      base_storey: "Ground"
+      top_storey: "Roof"
+
+  - class: IfcColumn
+    tag: "COL-A2"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.30
+      depth: 0.30
+    placement:
+      grid: ["G2", "GA"]
+      base_storey: "Ground"
+      top_storey: "Roof"
+
+  - class: IfcColumn
+    tag: "COL-A3"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.30
+      depth: 0.30
+    placement:
+      grid: ["G3", "GA"]
+      base_storey: "Ground"
+      top_storey: "Roof"
+
+  - class: IfcColumn
+    tag: "COL-A4"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.30
+      depth: 0.30
+    placement:
+      grid: ["G4", "GA"]
+      base_storey: "Ground"
+      top_storey: "Roof"
+
+  - class: IfcColumn
+    tag: "COL-B1"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.30
+      depth: 0.30
+    placement:
+      grid: ["G1", "GB"]
+      base_storey: "Ground"
+      top_storey: "Roof"
+
+  - class: IfcColumn
+    tag: "COL-B2"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.30
+      depth: 0.30
+    placement:
+      grid: ["G2", "GB"]
+      base_storey: "Ground"
+      top_storey: "Roof"
+
+  - class: IfcColumn
+    tag: "COL-B3"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.30
+      depth: 0.30
+    placement:
+      grid: ["G3", "GB"]
+      base_storey: "Ground"
+      top_storey: "Roof"
+
+  - class: IfcColumn
+    tag: "COL-B4"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.30
+      depth: 0.30
+    placement:
+      grid: ["G4", "GB"]
+      base_storey: "Ground"
+      top_storey: "Roof"
+
+  # Terrace Columns
+  - class: IfcColumn
+    tag: "COL-T1"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.25
+      depth: 0.25
+    placement:
+      grid: ["G1", "T1"]
+      base_storey: "Ground"
+      top_storey: "Terrace"
+
+  - class: IfcColumn
+    tag: "COL-T2"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.25
+      depth: 0.25
+    placement:
+      grid: ["G3", "T1"]
+      base_storey: "Ground"
+      top_storey: "Terrace"
+
+  # ----------------------------------------------------------------------------
+  # Floor & Roof Slabs (Travertine & Smooth Plaster)
+  # ----------------------------------------------------------------------------
+  - class: IfcSlab
+    tag: "SLAB-MAIN"
+    material: "TRAVERTINE"
+    thickness: 0.38
+    placement:
+      storey: "Main_Floor"
+      boundary:
+        - ["G0", "GA"]
+        - ["G6", "GA"]
+        - ["G6", "GB"]
+        - ["G0", "GB"]
+
+  - class: IfcSlab
+    tag: "SLAB-TERRACE"
+    material: "TRAVERTINE"
+    thickness: 0.38
+    placement:
+      storey: "Terrace"
+      boundary:
+        - ["G0", "T1"]
+        - ["G3", "T1"]
+        - ["G3", "GA"]
+        - ["G0", "GA"]
+
+  - class: IfcSlab
+    tag: "SLAB-ROOF"
+    material: "PLASTER_WHITE"
+    thickness: 0.38
+    placement:
+      storey: "Roof"
+      boundary:
+        - ["G0", "GA"]
+        - ["G6", "GA"]
+        - ["G6", "GB"]
+        - ["G0", "GB"]
+
+  # ----------------------------------------------------------------------------
+  # Perimeter Steel Fascia Beams (White Painted Steel C-Channels)
+  # ----------------------------------------------------------------------------
+  - class: IfcBeam
+    tag: "FASCIA-ROOF-SOUTH"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.38
+      depth: 0.15
+    placement:
+      from_grid: ["G0", "GA"]
+      to_grid: ["G6", "GA"]
+      storey: "Roof"
+
+  - class: IfcBeam
+    tag: "FASCIA-ROOF-NORTH"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.38
+      depth: 0.15
+    placement:
+      from_grid: ["G0", "GB"]
+      to_grid: ["G6", "GB"]
+      storey: "Roof"
+
+  - class: IfcBeam
+    tag: "FASCIA-FLOOR-SOUTH"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.38
+      depth: 0.15
+    placement:
+      from_grid: ["G0", "GA"]
+      to_grid: ["G6", "GA"]
+      storey: "Main_Floor"
+
+  - class: IfcBeam
+    tag: "FASCIA-FLOOR-NORTH"
+    material: "STEEL_WHITE"
+    profile:
+      shape: "BOX"
+      width: 0.38
+      depth: 0.15
+    placement:
+      from_grid: ["G0", "GB"]
+      to_grid: ["G6", "GB"]
+      storey: "Main_Floor"
+
+  # ----------------------------------------------------------------------------
+  # Central Service Core (Teak Wood Enclosure - Bathrooms & Fireplace)
+  # ----------------------------------------------------------------------------
+  - class: IfcWall
+    tag: "CORE-SOUTH"
+    material: "TEAK_CORE"
+    thickness: 0.15
+    height: 2.80
+    placement:
+      from_grid: ["C1", "CS"]
+      to_grid: ["C2", "CS"]
+      storey: "Main_Floor"
+
+  - class: IfcWall
+    tag: "CORE-NORTH"
+    material: "TEAK_CORE"
+    thickness: 0.15
+    height: 2.80
+    placement:
+      from_grid: ["C1", "CN"]
+      to_grid: ["C2", "CN"]
+      storey: "Main_Floor"
+
+  - class: IfcWall
+    tag: "CORE-WEST"
+    material: "TEAK_CORE"
+    thickness: 0.15
+    height: 2.80
+    placement:
+      from_grid: ["C1", "CS"]
+      to_grid: ["C1", "CN"]
+      storey: "Main_Floor"
+
+  - class: IfcWall
+    tag: "CORE-EAST"
+    material: "TEAK_CORE"
+    thickness: 0.15
+    height: 2.80
+    placement:
+      from_grid: ["C2", "CS"]
+      to_grid: ["C2", "CN"]
+      storey: "Main_Floor"
+
+  # ----------------------------------------------------------------------------
+  # Exterior Floor-to-Ceiling Glass Facades
+  # ----------------------------------------------------------------------------
+  - class: IfcWall
+    tag: "GLASS-SOUTH"
+    material: "GLASS_CLEAR"
+    thickness: 0.05
+    height: 2.85
+    placement:
+      from_grid: ["G1", "GA"]
+      to_grid: ["G5", "GA"]
+      storey: "Main_Floor"
+
+  - class: IfcWall
+    tag: "GLASS-NORTH"
+    material: "GLASS_CLEAR"
+    thickness: 0.05
+    height: 2.85
+    placement:
+      from_grid: ["G1", "GB"]
+      to_grid: ["G5", "GB"]
+      storey: "Main_Floor"
+
+  - class: IfcWall
+    tag: "GLASS-WEST"
+    material: "GLASS_CLEAR"
+    thickness: 0.05
+    height: 2.85
+    placement:
+      from_grid: ["G1", "GA"]
+      to_grid: ["G1", "GB"]
+      storey: "Main_Floor"
+
+  - class: IfcWall
+    tag: "GLASS-EAST"
+    material: "GLASS_CLEAR"
+    thickness: 0.05
+    height: 2.85
+    placement:
+      from_grid: ["G5", "GA"]
+      to_grid: ["G5", "GB"]
+      storey: "Main_Floor"

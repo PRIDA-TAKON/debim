@@ -8,6 +8,7 @@
 # ==============================================================================
 
 schema: IFC4-Minimal
+version: "0.6.0"
 project:
   id: PRJ-MIES-FARNSWORTH-1951
   name: Farnsworth House (Ludwig Mies van der Rohe, 1951 - Plano, Illinois)
