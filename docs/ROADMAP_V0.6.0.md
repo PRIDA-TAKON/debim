@@ -324,25 +324,25 @@ sequenceDiagram
 
 ## 6. แผนการดำเนินงานและการแบ่งภารกิจ (Execution Waves 1 - 4)
 
-### 🌊 Wave 1: Schema & Module Macro Expansion (Core DSL)
-- [ ] **Task 1.1:** นิยาม Pydantic Model สำหรับ `modules`, `instances`, และ `replicate` ใน `src/debim/schema.py`
-- [ ] **Task 1.2:** พัฒนา AST Preprocessor ใน `src/debim/loader.py` เพื่อคลายตัวแปร (Macro Expansion) ก่อนส่งต่อให้ Geometry Engine
-- [ ] **Task 1.3:** เขียน Unit Test ทดสอบการทำซ้ำ 4 คูหาจาก Blueprint เดียว เทียบกับไฟล์ Flat List เดิม
+### 🌊 Wave 1: Schema & Module Macro Expansion (Core DSL) [COMPLETED]
+- [x] **Task 1.1:** นิยาม Pydantic Model สำหรับ `modules`, `instances`, และ `replicate` ใน `src/debim/schema.py`
+- [x] **Task 1.2:** พัฒนา AST Preprocessor ใน `src/debim/loader.py` เพื่อคลายตัวแปร (Macro Expansion) ก่อนส่งต่อให้ Geometry Engine
+- [x] **Task 1.3:** เขียน Unit Test ทดสอบการทำซ้ำ 4 คูหาจาก Blueprint เดียว เทียบกับไฟล์ Flat List เดิม (`tests/test_loader_modular.py`)
 
-### 🌊 Wave 2: Geometry & Parametric Generators (Envelopes & Voids)
-- [ ] **Task 2.1:** พัฒนาตัวสร้างทรงหลังคา `IfcRoof` (GABLE, HIP, GABLE_HIP) พร้อมระบบคำนวณจันทันและแปอัตโนมัติใน `src/debim/compiler.py`
-- [ ] **Task 2.2:** ยกระดับ `SlabPlacement` ให้รองรับ `voids` ใน Three.js Viewer (Path Holes) และ IFC (`IfcArbitraryProfileDefWithVoids`)
-- [ ] **Task 2.3:** พัฒนาตัวขึ้นรูปบันได ค.ส.ล. แบบพับผ้า `IfcStair` (ลูกตั้ง, ลูกนอน, เอวบันได, ชานพัก)
+### 🌊 Wave 2: Geometry & Parametric Generators (Envelopes & Voids) [COMPLETED]
+- [x] **Task 2.1:** พัฒนาตัวสร้างทรงหลังคา `IfcRoof` (GABLE, HIP, GABLE_HIP) พร้อมระบบคำนวณจันทันและแปอัตโนมัติใน `src/debim/compiler.py` (`tests/test_roof_parametric.py`)
+- [x] **Task 2.2:** ยกระดับ `SlabPlacement` ให้รองรับ `voids` ใน Three.js Viewer (Path Holes) และ IFC (`IfcArbitraryProfileDefWithVoids`) (`tests/test_slab_voids.py`)
+- [x] **Task 2.3:** พัฒนาตัวขึ้นรูปบันได ค.ส.ล. แบบพับผ้า `IfcStair` (ลูกตั้ง, ลูกนอน, เอวบันได, ชานพัก) (`tests/test_stair_dogleg.py`)
 
-### 🌊 Wave 3: Thai Public Works BOQ Engine (`cg-v480`)
-- [ ] **Task 3.1:** ผนวกตารางความหนาแน่นเหล็กเสริมตามปริมาตรคอนกรีตมาตรฐานราชการไทยใน `src/debim/qto.py`
-- [ ] **Task 3.2:** พัฒนาสูตรคำนวณพื้นที่ไม้แบบหักรอยต่อ (Contact Surface Deductions)
-- [ ] **Task 3.3:** พัฒนา Export Template สำหรับตาราง ปร.4, ปร.4(พ), และ ปร.5 ใน `src/debim/cost.py`
+### 🌊 Wave 3: Thai Public Works BOQ Engine (`cg-v480`) [COMPLETED]
+- [x] **Task 3.1:** ผนวกตารางความหนาแน่นเหล็กเสริมตามปริมาตรคอนกรีตมาตรฐานราชการไทยใน `src/debim/qto.py` (`tests/test_qto_v480.py`)
+- [x] **Task 3.2:** พัฒนาสูตรคำนวณพื้นที่ไม้แบบหักรอยต่อ (Contact Surface Deductions)
+- [x] **Task 3.3:** พัฒนา Export Template สำหรับตาราง ปร.4, ปร.4(พ), และ ปร.5 ใน `src/debim/cost.py`
 
 ### 🌊 Wave 4: AI Agent Tools & Visual Validation
-- [ ] **Task 4.1:** พัฒนา CLI `debim validate` เพื่อตรวจจับจุดต่อโครงสร้างและ Clash Detection
+- [x] **Task 4.1:** พัฒนา CLI `debim validate` เพื่อตรวจจับจุดต่อโครงสร้างและ Clash Detection (`tests/test_cli_v060.py`)
 - [ ] **Task 4.2:** สร้างแบบทดสอบย้อนกลับ (Regression Verification) โดยนำโมเดล `shophouse_isan_3fl.debim` มาเขียนใหม่ด้วยไวยากรณ์ v0.6.0 และวัดผลการลดทอนจำนวนบรรทัดโค้ด (เป้าหมาย: ลดลง $\ge 65\%$)
-- [ ] **Task 4.3:** จัดทำเอกสารคู่มือและ MCP Tool Definition สำหรับ Claude / Gemini Agents ในการเรียกใช้งาน `debim` v0.6.0
+- [x] **Task 4.3:** จัดทำเอกสารคู่มือและ MCP Tool Definition สำหรับ Claude / Gemini Agents ในการเรียกใช้งาน `debim` v0.6.0
 
 ---
 *เอกสารนี้จัดทำขึ้นเพื่อใช้เป็นพิมพ์เขียวหลักในการขับเคลื่อน debim v0.6.0 สู่งานวิจัยเชิงระบบและมาตรฐาน OpenBIM เชิงประกาศระดับสากล*

@@ -4,8 +4,8 @@ description: Deterministic BOQ generation, Quantitative Take-Off (QTO), and Decl
 ---
 
 # debim Skill — Deterministic BOQ & Declarative BIM Engine
-**Version:** 0.4.0 (Zero-Dependency & Offline VM Ready)  
-**Specification:** debim Standard Spatial & Declarative Language Specification
+**Version:** 0.6.0 (Zero-Dependency & Offline VM Ready)  
+**Specification:** debim Standard Spatial & Declarative Language Specification v0.6.0
 
 This skill empowers AI agents to generate professional, deterministic **Bills of Quantities (BOQ)**, calculate structural material quantities (**QTO**), and compile international standard **IFC4 BIM models** from architectural descriptions or sketches without hallucinating numbers.
 
@@ -249,8 +249,8 @@ elements:
         - ["A + 0.10", "2 - 0.10"]
 ```
 
-### Step 2: Validate Model Integrity
-Run validation either with full debim or zero-dependency script:
+### Step 2: Validate Model Integrity & Continuity
+Run validation to check schema, structural continuity (floating columns/unsupported beams), and AABB clash detection:
 ```bash
 # Standard CLI
 debim validate -m project.yaml
@@ -260,6 +260,7 @@ python scripts/debim_zero.py validate project.yaml
 ```
 
 ### Step 3: Calculate Quantitative Take-Off (QTO)
+Extract concrete volume ($m^3$), formwork surface area ($m^2$), and rebar schedule ($kg$):
 ```bash
 # Standard CLI
 debim qto -m project.yaml
@@ -269,6 +270,13 @@ python scripts/debim_zero.py qto project.yaml
 ```
 
 ### Step 4: Generate Cost Estimation & BOQ
+#### Option A: Thai Government Public Works (ว480 & Commercial Ministry Index)
+Automatically calculate rebar tonnage by member density, formwork contact deductions, Factor F, and export official ปร.4, ปร.5:
+```bash
+debim boq --rules cg-v480 --province nakhon_ratchasima -m project.yaml -o boq_v480.csv
+```
+
+#### Option B: Custom Commercial Unit Price Catalog
 ```bash
 debim cost template -m project.yaml -o prices.yaml
 debim cost -m project.yaml -p prices.yaml -o boq.csv
@@ -278,6 +286,61 @@ debim cost -m project.yaml -p prices.yaml -o boq.csv
 ```bash
 debim compile -m project.yaml -o model.ifc
 debim view -m project.yaml -e viewer.html --no-browser
+```
+
+---
+
+## 🏗️ Advanced v0.6.0 Modeling Patterns
+
+### 1. Module Array Replication (`modules:` & `instances: replicate:`)
+```yaml
+modules:
+  - id: SHOPHOUSE_BAY
+    local_grids: { axes_x: { "1": 0.0, "2": 4.0 }, axes_y: { "A": 0.0, "B": 12.0 } }
+    elements: [...]
+
+instances:
+  - replicate:
+      module: SHOPHOUSE_BAY
+      count: 4
+      along: grid_x
+      prefix_pattern: "U{index}_"
+      party_wall_deduplication: true
+```
+
+### 2. Slab Voids (Double-Volume & Stair Openings)
+```yaml
+elements:
+  - class: IfcSlab
+    tag: SLAB-MEZZ
+    thickness: 0.12
+    placement:
+      storey: Mezzanine
+      boundary: [["1", "A"], ["5", "A"], ["5", "D"], ["1", "D"]]
+      voids:
+        - [["2", "B"], ["4", "B"], ["4", "C"], ["2", "C"]] # Atrium void
+```
+
+### 3. Parametric Vernacular Roof (`IfcRoof: GABLE_HIP`)
+```yaml
+elements:
+  - class: IfcRoof
+    tag: ROOF-MAIN
+    roof_type: GABLE_HIP
+    pitch_deg: 32.5
+    boundary: [["1", "A"], ["5", "A"], ["5", "D"], ["1", "D"]]
+    framing: { rafter_spacing: 1.00, purlin_spacing: 0.35, material: STEEL_SS400 }
+```
+
+### 4. Monolithic RC Dog-Leg Stairs
+```yaml
+elements:
+  - class: IfcStair
+    tag: STAIR-L1
+    stair_type: DOG_LEG
+    from_storey: L1
+    to_storey: L2
+    parameters: { riser_height: 0.175, tread_depth: 0.250, waist_thickness: 0.12, landing_depth: 1.10 }
 ```
 
 ---

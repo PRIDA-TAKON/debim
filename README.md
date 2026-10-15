@@ -203,10 +203,11 @@ debim --help
 
 | Package Target | Command | Included Capabilities |
 |---|---|---|
-| **Core** | `pip install debim` | Fast CLI, Declarative YAML engine, 3D WebGL viewer generator, QTO & Costing |
-| **All (Recommended)** | `pip install "debim[all]"` | Full suite: Core + IFC4 Compiler (`ifcopenshell`) + FastMCP Server |
-| **IFC only** | `pip install "debim[ifc]"` | Core + buildingSMART IFC4 compiler |
-| **MCP only** | `pip install "debim[mcp]"` | Core + Model Context Protocol server for Claude / Cursor |
+| **Core** | `pip install debim` | Fast CLI, Declarative YAML engine, 3D WebGL viewer generator, QTO, Thai CGD ว480 BOQ (ปร.4/ปร.5), Modular replication, Pure-Python STEP export |
+| **All (Recommended)** | `pip install "debim[all]"` | Full suite: Core + IFC4 Compiler (`ifcopenshell`) + FastMCP Server + DOCX Specification Builder |
+| **IFC only** | `pip install "debim[ifc]"` | Core + buildingSMART IFC4/IFC4X3 compiler (`ifcopenshell`) |
+| **MCP only** | `pip install "debim[mcp]"` | Core + Model Context Protocol server for Claude / Cursor / Antigravity |
+| **DOCX only** | `pip install "debim[docx]"` | Core + Specification Book compiler to Microsoft Word (`python-docx`) |
 
 #### 🐳 Docker Container (Zero-Install & Sandbox)
 
@@ -234,25 +235,28 @@ cd debim
 pip install -e ".[all,dev]"
 ```
 
-### 2. Basic Commands
+### 2. Basic Commands (v0.6.0)
 
 ```bash
 # Initialize a new project
 debim init my-project
 
-# Validate schema syntax & grid references
+# Validate schema syntax, structural continuity & bounding-box clash detection
 debim validate -m examples/farnsworth_house/project.yaml
 
 # Run automated building code compliance checks (pytest)
 debim test
 
-# Calculate Quantitative Take-Off (Steel weight, stone volume, glass area)
+# Calculate Quantitative Take-Off (Concrete m3, formwork m2, rebar kg)
 debim qto -m examples/farnsworth_house/project.yaml
+
+# Generate official Thai Government BOQ (CGD ว480 with Factor F & steel density)
+debim boq --rules cg-v480 --province nakhon_ratchasima -m project.debim -o dist/boq_v480.csv
 
 # Generate project-scoped price template with international classifications
 debim cost template -m examples/farnsworth_house/project.yaml -o prices.template.yaml
 
-# Estimate project budget & export BOQ to CSV
+# Estimate project budget & export commercial BOQ to CSV
 debim cost -m examples/farnsworth_house/project.yaml -p examples/farnsworth_house/prices.yaml -o dist/boq.csv
 
 # Scaffold a new BIM element class boilerplate

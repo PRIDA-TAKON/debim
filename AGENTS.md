@@ -68,16 +68,20 @@ debim/
 
 ---
 
-## 🛠️ Tech Stack & Conventions
+## 🛠️ Tech Stack & Conventions (v0.6.0)
 
 - **Language:** Python 3.11+
-- **CLI Framework:** Typer + Rich
+- **CLI Framework:** Python Standard Library `argparse` (Zero-dependency CLI architecture)
 - **Data Validation:** Pydantic v2
 - **Data Serialization:** PyYAML
-- **3D / Geometry:** Trimesh, NumPy, Shapely
-- **CAD / Drafting:** ezdxf (Export-only)
-- **BIM / IFC:** IfcOpenShell (`ifcopenshell`)
-- **Testing:** Pytest
+- **Core 2D/3D Geometry:** Pure-Python `geometry2d.py`, NumPy (Divergence theorem for watertight volumes)
+- **BIM Core:** Pure-Python `StepSerializer` (Built-in STEP ISO 10303-21 generation)
+- **Optional Compilers:**
+  - `debim[ifc]`: IfcOpenShell (`ifcopenshell`) for buildingSMART certification
+  - `debim[docx]`: `python-docx` for Word specifications
+  - `debim[mcp]`: Model Context Protocol FastMCP server
+  - `ezdxf`: AutoCAD DXF export-only bridge
+- **Testing:** Pytest (22/22 v0.6.0 suites passing)
 
 ---
 
