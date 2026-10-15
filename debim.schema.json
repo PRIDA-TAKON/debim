@@ -6124,8 +6124,47 @@
           "$ref": "#/$defs/Dimensions"
         },
         "offset_distance": {
-          "title": "Offset Distance",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Offset Distance"
+        },
+        "at_grid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "At Grid"
         },
         "sill_height": {
           "default": 0.0,
@@ -6203,8 +6242,7 @@
       },
       "required": [
         "tag",
-        "dimensions",
-        "offset_distance"
+        "dimensions"
       ],
       "title": "IfcDoor",
       "type": "object"
@@ -11102,8 +11140,47 @@
           "$ref": "#/$defs/Dimensions"
         },
         "offset_distance": {
-          "title": "Offset Distance",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Offset Distance"
+        },
+        "at_grid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "At Grid"
         },
         "sill_height": {
           "default": 0.0,
@@ -11181,8 +11258,7 @@
       },
       "required": [
         "tag",
-        "dimensions",
-        "offset_distance"
+        "dimensions"
       ],
       "title": "IfcWindow",
       "type": "object"
