@@ -610,6 +610,11 @@ class SpaceQTO(BaseModel):
     perimeter: float = 0.0           # Perimeter length (m)
     clear_height: float = 2.80       # Room clear height (m)
     air_volume: float = 0.0          # HVAC room air volume (m3)
+    floor_material: Optional[str] = None
+    floor_thickness: float = 0.0
+    drop_elevation: float = 0.0
+    floor_finish_area: float = 0.0
+    floor_finish_volume: float = 0.0
     room_number: Optional[str] = None
     name: Optional[str] = None
 
@@ -777,6 +782,8 @@ class ProjectQTO(BaseModel):
     total_spaces_count: int = 0
     total_usable_floor_area: float = 0.0
     total_hvac_air_volume: float = 0.0
+    total_floor_finish_area: float = 0.0
+    total_floor_finish_volume: float = 0.0
 
 
     def get_element(self, tag: str) -> Optional[ElementQTO]:
@@ -2520,7 +2527,7 @@ def calculate_element_qto(
         return ElementQTO(
             tag=tag,
             element_class="IfcSpace",
-            material=None,
+            material=resolved.floor_material,
             concrete_volume=0.0,
             formwork_area=0.0,
             rebar_weights={},
@@ -2530,6 +2537,11 @@ def calculate_element_qto(
                 perimeter=resolved.perimeter,
                 clear_height=resolved.height,
                 air_volume=resolved.air_volume,
+                floor_material=resolved.floor_material,
+                floor_thickness=resolved.floor_thickness,
+                drop_elevation=resolved.drop_elevation,
+                floor_finish_area=resolved.floor_finish_area,
+                floor_finish_volume=resolved.floor_finish_volume,
                 room_number=resolved.room_number,
                 name=resolved.name,
             ),
@@ -2695,6 +2707,8 @@ def calculate_qto(
     total_spaces_cnt = 0
     total_usable_floor_area = 0.0
     total_hvac_air_volume = 0.0
+    total_floor_finish_area = 0.0
+    total_floor_finish_volume = 0.0
 
     # Build material category lookup
     material_categories = {
@@ -2977,6 +2991,8 @@ def calculate_qto(
             total_spaces_cnt += 1
             total_usable_floor_area += eqto.space.net_floor_area
             total_hvac_air_volume += eqto.space.air_volume
+            total_floor_finish_area += eqto.space.floor_finish_area
+            total_floor_finish_volume += eqto.space.floor_finish_volume
 
     return ProjectQTO(
         elements=qto_elements,
@@ -3094,4 +3110,6 @@ def calculate_qto(
         total_spaces_count=total_spaces_cnt,
         total_usable_floor_area=total_usable_floor_area,
         total_hvac_air_volume=total_hvac_air_volume,
+        total_floor_finish_area=total_floor_finish_area,
+        total_floor_finish_volume=total_floor_finish_volume,
     )

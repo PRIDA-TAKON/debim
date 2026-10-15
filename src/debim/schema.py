@@ -1088,6 +1088,9 @@ class IfcSpace(BaseModel):
     long_name: Optional[str] = None
     room_number: Optional[str] = None
     height: float = Field(default=2.80, description="Clear room height in meters. Anchor: BOTTOM-PERIMETER")
+    floor_material: Optional[str] = Field(default=None, description="Architectural floor finish material")
+    floor_thickness: float = Field(default=0.00, description="Architectural floor finish thickness in meters")
+    drop_elevation: float = Field(default=0.00, description="Slab drop/depression offset relative to storey finish in meters (e.g. -0.10 for sunken bathroom)")
     placement: SpacePlacement
     properties: Dict[str, Any] = Field(default_factory=dict)
     layer: Optional[str] = "architecture/spaces"
@@ -1776,7 +1779,7 @@ class IfcChimney(BaseModel):
 
 
 # Roof element definitions
-RoofType = Literal["GABLE", "HIP", "GABLE_HIP", "SHED", "FLAT", "MANSARD", "L_SHAPE", "L_SHAPE_HIP"]
+RoofType = Literal["GABLE", "HIP", "GABLE_HIP", "SHED", "FLAT", "MANSARD", "L_SHAPE", "L_SHAPE_HIP", "T_SHAPE", "T_SHAPE_HIP"]
 RidgeOrientation = Literal["X", "Y", "ALONG_LENGTH", "ALONG_WIDTH"]
 
 

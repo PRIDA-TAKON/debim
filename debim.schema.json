@@ -9540,7 +9540,9 @@
             "FLAT",
             "MANSARD",
             "L_SHAPE",
-            "L_SHAPE_HIP"
+            "L_SHAPE_HIP",
+            "T_SHAPE",
+            "T_SHAPE_HIP"
           ],
           "title": "Roof Type",
           "type": "string"
@@ -10116,6 +10118,31 @@
           "default": 2.8,
           "description": "Clear room height in meters. Anchor: BOTTOM-PERIMETER",
           "title": "Height",
+          "type": "number"
+        },
+        "floor_material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Architectural floor finish material",
+          "title": "Floor Material"
+        },
+        "floor_thickness": {
+          "default": 0.0,
+          "description": "Architectural floor finish thickness in meters",
+          "title": "Floor Thickness",
+          "type": "number"
+        },
+        "drop_elevation": {
+          "default": 0.0,
+          "description": "Slab drop/depression offset relative to storey finish in meters (e.g. -0.10 for sunken bathroom)",
+          "title": "Drop Elevation",
           "type": "number"
         },
         "placement": {

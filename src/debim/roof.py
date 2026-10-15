@@ -1,6 +1,6 @@
-"""L-shaped composite hip roof geometry and framing solver module for debim.
+"""Composite hip roof geometry and framing solver module for debim.
 
-Provides 3D polygon ridge solver for non-convex L-shaped boundary polygons,
+Provides 3D polygon ridge solver for non-convex L-shaped and T-shaped boundary polygons,
 intersecting hips (สันตะเข้) and valleys (ตะเข้ราง) solver, multi-level eaves,
 dual ridge heights, and structural rafter/purlin take-off synthesis.
 """
@@ -35,7 +35,7 @@ def _calc_polygon_3d(pts: List[Tuple[float, float, float]]) -> Tuple[float, Tupl
 
 
 def _offset_l_shape_2d(poly: List[Tuple[float, float]], offset: float) -> List[Tuple[float, float]]:
-    """Offsets a 2D simple polygon (such as an L-shape) outwards by offset meters.
+    """Offsets a 2D simple polygon (L-shape, T-shape, etc.) outwards by offset meters.
 
     Preserves vertex order and handles convex vs. re-entrant (concave) corners correctly.
     """
@@ -92,7 +92,7 @@ def _offset_l_shape_2d(poly: List[Tuple[float, float]], offset: float) -> List[T
     return new_poly
 
 
-def solve_l_shape_roof(
+def solve_composite_hip_roof(
     roof: IfcRoof,
     axes_x: Dict[str, float],
     axes_y: Dict[str, float],
@@ -100,7 +100,7 @@ def solve_l_shape_roof(
 ) -> Dict[str, Any]:
     """Solves geometry, 3D hip/valley intersections, sloped planes, and framing take-off
 
-    for non-convex L-shaped composite roofs.
+    for non-convex concave composite roofs (L-shaped, T-shaped boundaries).
     """
     from debim.resolver import ResolvedRoofPlane, ResolvedRoofRidge, ResolvedRoofFramingMember
 
@@ -128,15 +128,21 @@ def solve_l_shape_roof(
         e_z = z0 + eaves_levels.get(key, eaves_levels.get(str(idx), 0.0))
         footprint_polygon_3d.append((x, y, e_z))
 
-    # 2. Decompose L-shape into Main Wing and Porch Wing
+    # 2. Decompose boundary into Main Wing and Stem / Porch Wing
     xs = [p[0] for p in boundary_pts]
     ys = [p[1] for p in boundary_pts]
     min_x, max_x = min(xs), max(xs)
     min_y, max_y = min(ys), max(ys)
 
-    # Find internal re-entrant (concave) corner
     n_pts = len(boundary_pts)
-    reentrant_idx = -1
+    signed_area = sum(
+        boundary_pts[k][0] * boundary_pts[(k + 1) % n_pts][1] - boundary_pts[(k + 1) % n_pts][0] * boundary_pts[k][1]
+        for k in range(n_pts)
+    )
+
+    reentrant_indices = []
+    convex_indices = []
+
     for i in range(n_pts):
         p_prev = boundary_pts[(i - 1) % n_pts]
         p_curr = boundary_pts[i]
@@ -146,55 +152,76 @@ def solve_l_shape_roof(
         v2 = (p_next[0] - p_curr[0], p_next[1] - p_curr[1])
         cross = v1[0] * v2[1] - v1[1] * v2[0]
 
-        # In CCW winding, re-entrant corner has negative cross product (right turn)
-        # Check signed area to know CCW vs CW
-        signed_area = sum(boundary_pts[k][0] * boundary_pts[(k+1)%n_pts][1] - boundary_pts[(k+1)%n_pts][0] * boundary_pts[k][1] for k in range(n_pts))
         if (signed_area > 0 and cross < -1e-4) or (signed_area < 0 and cross > 1e-4):
-            reentrant_idx = i
-            break
-
-    if reentrant_idx == -1:
-        # Fallback to simple bounding box if not 6-pt L-shape
-        reentrant_idx = 0
-
-    re_corner_2d = boundary_pts[reentrant_idx]
-    re_eave_2d = eave_poly_2d[reentrant_idx]
-
-    # Decompose into Main Wing (larger rectangle) and Porch Wing
-    # For standard L-shape, re-entrant corner splits X and Y ranges
-    rx, ry = re_corner_2d
-
-    # Main Wing vs Porch Wing bounding boxes
-    # Determine orientation of wings
-    dx_range = max_x - min_x
-    dy_range = max_y - min_y
-
-    # Main rectangle bounding box
-    if rx in (min_x, max_x):
-        # Porch extends along Y
-        main_x0, main_x1 = min_x, max_x
-        if ry > (min_y + max_y) / 2.0:
-            main_y0, main_y1 = min_y, ry
-            porch_y0, porch_y1 = ry, max_y
+            reentrant_indices.append(i)
         else:
-            main_y0, main_y1 = ry, max_y
-            porch_y0, porch_y1 = min_y, ry
+            convex_indices.append(i)
 
-        # Porch X span
-        porch_x0 = min_x if abs(rx - max_x) < 1e-3 else rx
-        porch_x1 = rx if abs(rx - max_x) < 1e-3 else max_x
+    if not reentrant_indices:
+        reentrant_indices = [0]
+
+    # Handle L-shape (1 re-entrant) vs T-shape (2 re-entrants) or fallback
+    if len(reentrant_indices) == 1:
+        reentrant_idx = reentrant_indices[0]
+        re_corner_2d = boundary_pts[reentrant_idx]
+        rx, ry = re_corner_2d
+
+        if rx in (min_x, max_x):
+            main_x0, main_x1 = min_x, max_x
+            if ry > (min_y + max_y) / 2.0:
+                main_y0, main_y1 = min_y, ry
+                porch_y0, porch_y1 = ry, max_y
+            else:
+                main_y0, main_y1 = ry, max_y
+                porch_y0, porch_y1 = min_y, ry
+            porch_x0 = min_x if abs(rx - max_x) < 1e-3 else rx
+            porch_x1 = rx if abs(rx - max_x) < 1e-3 else max_x
+        else:
+            main_y0, main_y1 = min_y, max_y
+            if rx > (min_x + max_x) / 2.0:
+                main_x0, main_x1 = min_x, rx
+                porch_x0, porch_x1 = rx, max_x
+            else:
+                main_x0, main_x1 = rx, max_x
+                porch_x0, porch_x1 = min_x, rx
+            porch_y0 = min_y if abs(ry - max_y) < 1e-3 else ry
+            porch_y1 = ry if abs(ry - max_y) < 1e-3 else max_y
     else:
-        # Porch extends along X
-        main_y0, main_y1 = min_y, max_y
-        if rx > (min_x + max_x) / 2.0:
-            main_x0, main_x1 = min_x, rx
-            porch_x0, porch_x1 = rx, max_x
-        else:
-            main_x0, main_x1 = rx, max_x
-            porch_x0, porch_x1 = min_x, rx
+        # T-Shape or multi-concave wing decomposition
+        r0 = boundary_pts[reentrant_indices[0]]
+        r1 = boundary_pts[reentrant_indices[1]]
 
-        porch_y0 = min_y if abs(ry - max_y) < 1e-3 else ry
-        porch_y1 = ry if abs(ry - max_y) < 1e-3 else max_y
+        if abs(r0[1] - r1[1]) < 1e-3:
+            # Stem extends in Y
+            stem_x0, stem_x1 = min(r0[0], r1[0]), max(r0[0], r1[0])
+            main_x0, main_x1 = min_x, max_x
+
+            # Check stem direction
+            stem_pts_y = [p[1] for idx, p in enumerate(boundary_pts) if idx not in (reentrant_indices[0], reentrant_indices[1]) and stem_x0 <= p[0] <= stem_x1]
+            avg_stem_y = sum(stem_pts_y) / max(1, len(stem_pts_y)) if stem_pts_y else r0[1]
+
+            if avg_stem_y > r0[1]:
+                main_y0, main_y1 = min_y, r0[1]
+                porch_y0, porch_y1 = r0[1], max_y
+            else:
+                main_y0, main_y1 = r0[1], max_y
+                porch_y0, porch_y1 = min_y, r0[1]
+            porch_x0, porch_x1 = stem_x0, stem_x1
+        else:
+            # Stem extends in X
+            stem_y0, stem_y1 = min(r0[1], r1[1]), max(r0[1], r1[1])
+            main_y0, main_y1 = min_y, max_y
+
+            stem_pts_x = [p[0] for idx, p in enumerate(boundary_pts) if idx not in (reentrant_indices[0], reentrant_indices[1]) and stem_y0 <= p[1] <= stem_y1]
+            avg_stem_x = sum(stem_pts_x) / max(1, len(stem_pts_x)) if stem_pts_x else r0[0]
+
+            if avg_stem_x > r0[0]:
+                main_x0, main_x1 = min_x, r0[0]
+                porch_x0, porch_x1 = r0[0], max_x
+            else:
+                main_x0, main_x1 = r0[0], max_x
+                porch_x0, porch_x1 = min_x, r0[0]
+            porch_y0, porch_y1 = stem_y0, stem_y1
 
     # Overhang extended wing bounding boxes
     m_x0, m_x1 = main_x0 - oh, main_x1 + oh
@@ -203,8 +230,8 @@ def solve_l_shape_roof(
     p_y0, p_y1 = porch_y0 - oh, porch_y1 + oh
 
     # 3. Ridge Heights & Elevations
-    m_width = m_x1 - m_x0 if (main_x1 - main_x0) < (main_y1 - main_y0) else (main_y1 - m_y0)
-    p_width = (porch_x1 - porch_x0) if (porch_x1 - porch_x0) < (porch_y1 - porch_y0) else (porch_y1 - porch_y0)
+    m_width = (m_x1 - m_x0) if (m_x1 - m_x0) < (m_y1 - m_y0) else (m_y1 - m_y0)
+    p_width = (p_x1 - p_x0) if (p_x1 - p_x0) < (p_y1 - p_y0) else (p_y1 - p_y0)
 
     z_eave_main = z0
     z_eave_porch = z0 + porch_eave_dz
@@ -227,17 +254,36 @@ def solve_l_shape_roof(
     framing_members: List[ResolvedRoofFramingMember] = []
 
     # 4. Construct 3D Ridge, Valley, and Hip Lines
-    # Determine main ridge endpoints
-    if (main_x1 - main_x0) >= (main_y1 - main_y0):
+    if (m_x1 - m_x0) >= (m_y1 - m_y0):
         # Main ridge along X
         y_m_mid = (m_y0 + m_y1) / 2.0
         mr_start = (m_x0 + m_width / 2.0, y_m_mid, zr_main)
         mr_end = (m_x1 - m_width / 2.0, y_m_mid, zr_main)
+
+        # Porch extends in Y
+        mid_x = (p_x0 + p_x1) / 2.0
+        v_top_x = mid_x
+        v_top_y = y_m_mid
+        if p_y0 < (m_y0 + m_y1) / 2.0:
+            pr_start = (mid_x, p_y0 + p_width / 2.0, zr_porch)
+        else:
+            pr_start = (mid_x, p_y1 - p_width / 2.0, zr_porch)
     else:
         # Main ridge along Y
         x_m_mid = (m_x0 + m_x1) / 2.0
         mr_start = (x_m_mid, m_y0 + m_width / 2.0, zr_main)
         mr_end = (x_m_mid, m_y1 - m_width / 2.0, zr_main)
+
+        # Porch extends in X
+        mid_y = (p_y0 + p_y1) / 2.0
+        v_top_x = x_m_mid
+        v_top_y = mid_y
+        if p_x0 < (m_x0 + m_x1) / 2.0:
+            pr_start = (p_x0 + p_width / 2.0, mid_y, zr_porch)
+        else:
+            pr_start = (p_x1 - p_width / 2.0, mid_y, zr_porch)
+
+    v_top_3d = (v_top_x, v_top_y, zr_porch)
 
     m_ridge_len = math.dist(mr_start, mr_end)
     if m_ridge_len > 0.01:
@@ -249,86 +295,62 @@ def solve_l_shape_roof(
             ridge_type="RIDGE",
         ))
 
-    # Porch ridge line & Valley intersection point
-    # Re-entrant eave corner in 3D
-    ex, ey = re_eave_2d
-    re_eave_3d = (ex, ey, z_eave_main)
-
-    # Valley top intersection (where porch roof meets main roof)
-    # Direction of valley from re-entrant corner towards main ridge
-    vx_dir = 1.0 if ex < (m_x0 + m_x1) / 2.0 else -1.0
-    vy_dir = 1.0 if ey < (m_y0 + m_y1) / 2.0 else -1.0
-
-    # Valley top point at porch ridge or main slope intersection
-    v_top_x = ex + vx_dir * (p_width / 2.0)
-    v_top_y = ey + vy_dir * (p_width / 2.0)
-    v_top_z = zr_porch
-    v_top_3d = (v_top_x, v_top_y, v_top_z)
-
-    # Valley line (ตะเข้ราง)
-    v_len = math.dist(re_eave_3d, v_top_3d)
-    ridges.append(ResolvedRoofRidge(
-        tag=f"{roof.tag}-Valley-1",
-        start_point=re_eave_3d,
-        end_point=v_top_3d,
-        length=v_len,
-        ridge_type="VALLEY",
-    ))
-
-    # Porch ridge line extending from porch end up to valley top or main ridge
-    if (porch_x1 - porch_x0) > (porch_y1 - porch_y0):
-        # Porch along X
-        pr_start = (p_x0 + p_width / 2.0 if p_x0 < ex else p_x1 - p_width / 2.0, (p_y0 + p_y1) / 2.0, zr_porch)
-        pr_end = v_top_3d
-    else:
-        # Porch along Y
-        pr_start = ((p_x0 + p_x1) / 2.0, p_y0 + p_width / 2.0 if p_y0 < ey else p_y1 - p_width / 2.0, zr_porch)
-        pr_end = v_top_3d
-
-    p_ridge_len = math.dist(pr_start, pr_end)
+    # Porch Ridge
+    p_ridge_len = math.dist(pr_start, v_top_3d)
     if p_ridge_len > 0.01:
         ridges.append(ResolvedRoofRidge(
             tag=f"{roof.tag}-PorchRidge",
             start_point=pr_start,
-            end_point=pr_end,
+            end_point=v_top_3d,
             length=p_ridge_len,
             ridge_type="RIDGE",
         ))
 
+    # Valleys at re-entrant corners
+    for v_i, r_idx in enumerate(reentrant_indices):
+        re_eave_2d = eave_poly_2d[r_idx]
+        re_eave_3d = (re_eave_2d[0], re_eave_2d[1], z_eave_main)
+        v_len = math.dist(re_eave_3d, v_top_3d)
+        ridges.append(ResolvedRoofRidge(
+            tag=f"{roof.tag}-Valley-{v_i+1}",
+            start_point=re_eave_3d,
+            end_point=v_top_3d,
+            length=v_len,
+            ridge_type="VALLEY",
+        ))
+
     # Secondary valley if porch ridge height is lower than main ridge height
     if zr_porch < zr_main - 0.01:
-        # Extension valley from v_top_3d up to main ridge
-        v2_end = (v_top_x + vx_dir * (zr_main - zr_porch) / math.tan(pitch_rad),
-                  v_top_y + vy_dir * (zr_main - zr_porch) / math.tan(pitch_rad),
-                  zr_main)
+        # Find point on main ridge closest to v_top_3d
+        v2_end = (v_top_x, v_top_y, zr_main)
         v2_len = math.dist(v_top_3d, v2_end)
         ridges.append(ResolvedRoofRidge(
-            tag=f"{roof.tag}-Valley-2",
+            tag=f"{roof.tag}-Valley-Secondary",
             start_point=v_top_3d,
             end_point=v2_end,
             length=v2_len,
             ridge_type="VALLEY",
         ))
 
-    # Hips (สันตะเข้) from the 5 convex corners of the L-shape
-    convex_hips = []
-    for idx, pt3d in enumerate(footprint_polygon_3d):
-        if idx == reentrant_idx:
-            continue  # Re-entrant corner has valley, not hip
+    # Hips (สันตะเข้) from all convex corners
+    corner_top_points: Dict[int, Tuple[float, float, float]] = {}
+    candidate_ridge_pts = [mr_start, mr_end, pr_start]
 
-        # Connect to closest ridge endpoint
-        candidate_ridge_pts = [mr_start, mr_end, pr_start]
-        best_r = min(candidate_ridge_pts, key=lambda rp: math.dist(pt3d, rp))
-
-        h_tag = f"Hip-C{idx+1}"
-        h_len = math.dist(pt3d, best_r)
-        ridges.append(ResolvedRoofRidge(
-            tag=f"{roof.tag}-{h_tag}",
-            start_point=pt3d,
-            end_point=best_r,
-            length=h_len,
-            ridge_type="HIP",
-        ))
+    for idx in range(n_pts):
+        pt3d = footprint_polygon_3d[idx]
+        if idx in reentrant_indices:
+            corner_top_points[idx] = v_top_3d
+        else:
+            best_r = min(candidate_ridge_pts, key=lambda rp: math.dist(pt3d, rp))
+            corner_top_points[idx] = best_r
+            h_len = math.dist(pt3d, best_r)
+            ridges.append(ResolvedRoofRidge(
+                tag=f"{roof.tag}-Hip-C{idx+1}",
+                start_point=pt3d,
+                end_point=best_r,
+                length=h_len,
+                ridge_type="HIP",
+            ))
 
     # Eaves perimeter ridges
     n_fp = len(footprint_polygon_3d)
@@ -344,32 +366,21 @@ def solve_l_shape_roof(
         ))
 
     # 5. Roof Planes (Sloped Facets)
-    # Create sloped planes for Main Wing and Porch Wing
-    # Main Wing Slopes
-    m_p1 = [footprint_polygon_3d[0], footprint_polygon_3d[1], mr_start]
-    m_p2 = [footprint_polygon_3d[1], footprint_polygon_3d[2], mr_end, mr_start] if m_ridge_len > 0.01 else [footprint_polygon_3d[1], footprint_polygon_3d[2], mr_start]
-    m_p3 = [footprint_polygon_3d[2], footprint_polygon_3d[3], mr_end]
-    m_p4 = [footprint_polygon_3d[3], footprint_polygon_3d[4], mr_start, mr_end] if m_ridge_len > 0.01 else [footprint_polygon_3d[3], footprint_polygon_3d[4], mr_start]
+    for i in range(n_fp):
+        e_s = footprint_polygon_3d[i]
+        e_e = footprint_polygon_3d[(i + 1) % n_fp]
+        r_s = corner_top_points[i]
+        r_e = corner_top_points[(i + 1) % n_fp]
 
-    for p_idx, poly in enumerate([m_p1, m_p2, m_p3, m_p4]):
-        area, normal = _calc_polygon_3d(poly)
+        if r_s == r_e:
+            facet_poly = [e_s, e_e, r_s]
+        else:
+            facet_poly = [e_s, e_e, r_e, r_s]
+
+        area, normal = _calc_polygon_3d(facet_poly)
         planes.append(ResolvedRoofPlane(
-            tag=f"{roof.tag}-MainSlope-{p_idx+1}",
-            polygon=poly,
-            area=area,
-            slope_degrees=pitch,
-            normal=normal,
-        ))
-
-    # Porch Wing Slopes
-    p_p1 = [re_eave_3d, v_top_3d, pr_start]
-    p_p2 = [footprint_polygon_3d[(reentrant_idx + 1) % n_fp], footprint_polygon_3d[(reentrant_idx + 2) % n_fp], pr_start, v_top_3d]
-
-    for p_idx, poly in enumerate([p_p1, p_p2]):
-        area, normal = _calc_polygon_3d(poly)
-        planes.append(ResolvedRoofPlane(
-            tag=f"{roof.tag}-PorchSlope-{p_idx+1}",
-            polygon=poly,
+            tag=f"{roof.tag}-Slope-{i+1}",
+            polygon=facet_poly,
             area=area,
             slope_degrees=pitch,
             normal=normal,
@@ -593,7 +604,7 @@ def solve_l_shape_roof(
                     pur_idx += 1
             z_curr += p_spacing * math.sin(pitch_rad)
 
-    # Calculate L-shape footprint area via Shoelace formula
+    # Calculate footprint area via Shoelace formula
     fp_area = 0.5 * abs(sum(eave_poly_2d[i][0] * eave_poly_2d[(i+1)%n_fp][1] - eave_poly_2d[(i+1)%n_fp][0] * eave_poly_2d[i][1] for i in range(n_fp)))
     tot_sloped_area = sum(p.area for p in planes)
     tot_ridge_len = sum(r.length for r in ridges if r.ridge_type == "RIDGE")
@@ -604,8 +615,12 @@ def solve_l_shape_roof(
     steel_rate = roof.framing.steel_weight_per_sqm if roof.framing else 18.0
     tot_steel = fp_area * steel_rate
 
+    target_type = str(roof.roof_type).upper()
+    if target_type not in ("L_SHAPE", "L_SHAPE_HIP", "T_SHAPE", "T_SHAPE_HIP"):
+        target_type = "L_SHAPE_HIP" if n_pts <= 6 else "T_SHAPE_HIP"
+
     return {
-        "roof_type": roof.roof_type if roof.roof_type in ("L_SHAPE", "L_SHAPE_HIP") else "L_SHAPE_HIP",
+        "roof_type": target_type,
         "pitch": pitch,
         "eaves_elevation": eaves_elevation,
         "ridge_elevation": ridge_elevation,
@@ -621,3 +636,6 @@ def solve_l_shape_roof(
         "total_eaves_length": tot_eaves_len,
         "total_steel_weight": tot_steel,
     }
+
+
+solve_l_shape_roof = solve_composite_hip_roof
