@@ -1791,7 +1791,7 @@ class SpatialResolver:
             pass
 
         # 3. Tokenize expression and replace grid tokens
-        tokens = re.findall(r"[A-Za-z_][A-Za-z0-9_]*|\d+\.\d+|\d+|[\+\-\*\/\(\)]", s)
+        tokens = re.findall(r"[^\s\+\-\*\/\(\)]+|[\+\-\*\/\(\)]", s)
         if tokens:
             has_grid_match = False
             replaced_tokens = []
@@ -1812,7 +1812,7 @@ class SpatialResolver:
                         raise ValueError(f"Failed to evaluate coordinate expression '{expr}': {err}")
 
         # 4. Legacy regex fallback for grid + offset
-        match = re.match(r"^([A-Za-z0-9_]+)(?:\s*([+-])\s*([0-9.]+))?$", s)
+        match = re.match(r"^([^\s\+\-]+)(?:\s*([+-])\s*([0-9.]+))?$", s)
         if match:
             grid_name, sign, offset_str = match.groups()
             if grid_name in axes:
@@ -1842,17 +1842,20 @@ class SpatialResolver:
         ob = col.placement.offset_base
         ot = col.placement.offset_top
 
-        x1 = gx1 + ob[0]
-        y1 = gy1 + ob[1]
+        off_x = col.placement.offset_x or 0.0
+        off_y = col.placement.offset_y or 0.0
+
+        x1 = gx1 + ob[0] + off_x
+        y1 = gy1 + ob[1] + off_y
         z1 = base_s.elevation + ob[2]
 
         if col.placement.top_grid:
             gx2, gy2 = self.get_grid_xy(col.placement.top_grid)
-            x2 = gx2 + ot[0]
-            y2 = gy2 + ot[1]
+            x2 = gx2 + ot[0] + off_x
+            y2 = gy2 + ot[1] + off_y
         else:
-            x2 = gx1 + ot[0]
-            y2 = gy1 + ot[1]
+            x2 = gx1 + ot[0] + off_x
+            y2 = gy1 + ot[1] + off_y
 
         z2 = top_s.elevation + ot[2]
 
@@ -2080,6 +2083,12 @@ class SpatialResolver:
     ) -> Tuple[ResolvedWall, List[ResolvedDoor], List[ResolvedWindow]]:
         x1, y1 = self.get_grid_xy(wall.placement.from_grid)
         x2, y2 = self.get_grid_xy(wall.placement.to_grid)
+        off_x = wall.placement.offset_x or 0.0
+        off_y = wall.placement.offset_y or 0.0
+        x1 += off_x
+        y1 += off_y
+        x2 += off_x
+        y2 += off_y
         storey = self.get_storey(wall.placement.storey)
 
         z = storey.elevation
@@ -2513,6 +2522,10 @@ class SpatialResolver:
 
     def resolve_footing(self, footing: IfcFooting) -> ResolvedFooting:
         gx, gy = self.get_grid_xy(footing.placement.grid)
+        off_x = footing.placement.offset_x or 0.0
+        off_y = footing.placement.offset_y or 0.0
+        gx += off_x
+        gy += off_y
         storey = self.get_storey(footing.placement.storey)
         z = storey.elevation + footing.placement.offset_z
 
