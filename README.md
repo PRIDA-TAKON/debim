@@ -51,6 +51,19 @@
 
 ---
 
+## ✨ What's New in v0.6.0 ("The Shophouse & Infrastructure Release")
+
+`debim` v0.6.0 introduces high-level declarative abstractions, parametric roof/stair geometry, native void cutouts, and official public works cost estimation:
+
+- **🏢 Modular Unit Replication (`modules:` & `instances:` `replicate:`):** Define reusable architectural/structural unit templates and array them across grid axes with automatic grid tag remapping and party wall deduplication.
+- **🕳️ Native Slab & Wall Voids:** Support inner polygon void loops in `IfcSlab` (for double-volume openings, elevator shafts, and stair cutouts) and native door/window openings in `IfcWall`.
+- **🏠 Parametric Roof Generator:** High-level `IfcRoof` generation supporting `GABLE_HIP` (vernacular Manila/Isan roof), `HIP`, `GABLE`, and `SHED` roof types, automatic rafter/purlin framing calculations, and 3D vector sloped orientation via `pitch_deg` or `end_elevation`.
+- **🪜 Monolithic RC Dog-Leg Stairs:** `IfcStair` with `DOG_LEG` layout, waist thickness, risers, treads, intermediate landings, and automatic concrete/formwork quantity calculation.
+- **📊 Thai Public Works CGD ว480 QTO & BOQ Engine:** Standard rebar density ratio fallbacks ($\text{kg/m}^3$), formwork contact face area deductions (subtracting beam-column and footing-column contact areas), provincial price index adjustments, and automated export to official **ปร.4, ปร.4(พ), and ปร.5** spreadsheet reports.
+- **🛠️ New CLI Commands:** `debim validate` (schema, structural continuity checks for floating columns or unsupported beams, and MEP vs structural AABB clash detection) and `debim boq --rules cg-v480` (public works BOQ generator with Excel export).
+
+---
+
 ## 🎯 Why debim?
 
 > *"debim originated from a simple desire: to make AI calculate accurate Bills of Quantities (BOQ). Asking an LLM to guess building dimensions directly in text leads to fatal hallucinations. An exact mathematical model (BIM) is essential, yet traditional IFC files are bloated and overwhelm AI context windows. The solution is Declarative YAML — but the resulting Building-as-Code engine proved far more transformative than our initial goal."*

@@ -1,5 +1,5 @@
 """
-Schema Exporter and Validator Tool for debim v0.5.0.
+Schema Exporter and Validator Tool for debim v0.6.0.
 
 Exports enriched debim JSON Schema with deterministic anchor points,
 Euler rotations, dimension keys, and coordinate/bounding rules

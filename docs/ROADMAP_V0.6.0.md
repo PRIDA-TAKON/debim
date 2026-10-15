@@ -325,19 +325,19 @@ sequenceDiagram
 ## 6. แผนการดำเนินงานและการแบ่งภารกิจ (Execution Waves 1 - 4)
 
 ### 🌊 Wave 1: Schema & Module Macro Expansion (Core DSL)
-- [ ] **Task 1.1:** นิยาม Pydantic Model สำหรับ `modules`, `instances`, และ `replicate` ใน `src/debim/schema.py`
-- [ ] **Task 1.2:** พัฒนา AST Preprocessor ใน `src/debim/loader.py` เพื่อคลายตัวแปร (Macro Expansion) ก่อนส่งต่อให้ Geometry Engine
-- [ ] **Task 1.3:** เขียน Unit Test ทดสอบการทำซ้ำ 4 คูหาจาก Blueprint เดียว เทียบกับไฟล์ Flat List เดิม
+- [x] **Task 1.1:** นิยาม Pydantic Model สำหรับ `modules`, `instances`, และ `replicate` ใน `src/debim/schema.py`
+- [x] **Task 1.2:** พัฒนา AST Preprocessor ใน `src/debim/loader.py` เพื่อคลายตัวแปร (Macro Expansion) ก่อนส่งต่อให้ Geometry Engine
+- [x] **Task 1.3:** เขียน Unit Test ทดสอบการทำซ้ำ 4 คูหาจาก Blueprint เดียว เทียบกับไฟล์ Flat List เดิม
 
 ### 🌊 Wave 2: Geometry & Parametric Generators (Envelopes & Voids)
-- [ ] **Task 2.1:** พัฒนาตัวสร้างทรงหลังคา `IfcRoof` (GABLE, HIP, GABLE_HIP) พร้อมระบบคำนวณจันทันและแปอัตโนมัติใน `src/debim/compiler.py`
-- [ ] **Task 2.2:** ยกระดับ `SlabPlacement` ให้รองรับ `voids` ใน Three.js Viewer (Path Holes) และ IFC (`IfcArbitraryProfileDefWithVoids`)
-- [ ] **Task 2.3:** พัฒนาตัวขึ้นรูปบันได ค.ส.ล. แบบพับผ้า `IfcStair` (ลูกตั้ง, ลูกนอน, เอวบันได, ชานพัก)
+- [x] **Task 2.1:** พัฒนาตัวสร้างทรงหลังคา `IfcRoof` (GABLE, HIP, GABLE_HIP) พร้อมระบบคำนวณจันทันและแปอัตโนมัติใน `src/debim/compiler.py`
+- [x] **Task 2.2:** ยกระดับ `SlabPlacement` ให้รองรับ `voids` ใน Three.js Viewer (Path Holes) และ IFC (`IfcArbitraryProfileDefWithVoids`)
+- [x] **Task 2.3:** พัฒนาตัวขึ้นรูปบันได ค.ส.ล. แบบพับผ้า `IfcStair` (ลูกตั้ง, ลูกนอน, เอวบันได, ชานพัก)
 
 ### 🌊 Wave 3: Thai Public Works BOQ Engine (`cg-v480`)
-- [ ] **Task 3.1:** ผนวกตารางความหนาแน่นเหล็กเสริมตามปริมาตรคอนกรีตมาตรฐานราชการไทยใน `src/debim/qto.py`
-- [ ] **Task 3.2:** พัฒนาสูตรคำนวณพื้นที่ไม้แบบหักรอยต่อ (Contact Surface Deductions)
-- [ ] **Task 3.3:** พัฒนา Export Template สำหรับตาราง ปร.4, ปร.4(พ), และ ปร.5 ใน `src/debim/cost.py`
+- [x] **Task 3.1:** ผนวกตารางความหนาแน่นเหล็กเสริมตามปริมาตรคอนกรีตมาตรฐานราชการไทยใน `src/debim/qto.py`
+- [x] **Task 3.2:** พัฒนาสูตรคำนวณพื้นที่ไม้แบบหักรอยต่อ (Contact Surface Deductions)
+- [x] **Task 3.3:** พัฒนา Export Template สำหรับตาราง ปร.4, ปร.4(พ), และ ปร.5 ใน `src/debim/cost.py`
 
 ### 🌊 Wave 4: AI Agent Tools & Visual Validation
 - [ ] **Task 4.1:** พัฒนา CLI `debim validate` เพื่อตรวจจับจุดต่อโครงสร้างและ Clash Detection

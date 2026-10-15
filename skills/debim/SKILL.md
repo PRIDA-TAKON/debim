@@ -4,7 +4,7 @@ description: Deterministic BOQ generation, Quantitative Take-Off (QTO), and Decl
 ---
 
 # debim Skill — Deterministic BOQ & Declarative BIM Engine
-**Version:** 0.4.0 (Zero-Dependency & Offline VM Ready)  
+**Version:** 0.6.0 (Zero-Dependency & Offline VM Ready)
 **Specification:** debim Standard Spatial & Declarative Language Specification
 
 This skill empowers AI agents to generate professional, deterministic **Bills of Quantities (BOQ)**, calculate structural material quantities (**QTO**), and compile international standard **IFC4 BIM models** from architectural descriptions or sketches without hallucinating numbers.
@@ -249,11 +249,14 @@ elements:
         - ["A + 0.10", "2 - 0.10"]
 ```
 
-### Step 2: Validate Model Integrity
-Run validation either with full debim or zero-dependency script:
+### Step 2: Validate Model Integrity & Continuity
+Run validation for schema syntax, structural topological continuity (floating columns / unsupported beams), and MEP vs structural AABB clash detection:
 ```bash
 # Standard CLI
 debim validate -m project.yaml
+
+# Strict schema & bSDD validation
+debim validate -m project.yaml --bsdd --strict-psets
 
 # Offline VM (Zero-Dependency)
 python scripts/debim_zero.py validate project.yaml
@@ -268,10 +271,13 @@ debim qto -m project.yaml
 python scripts/debim_zero.py qto project.yaml
 ```
 
-### Step 4: Generate Cost Estimation & BOQ
+### Step 4: Generate Cost Estimation & Public Works BOQ
 ```bash
 debim cost template -m project.yaml -o prices.yaml
 debim cost -m project.yaml -p prices.yaml -o boq.csv
+
+# Official Thai CGD ว480 BOQ with provincial pricing & Excel export (ปร.4, ปร.4(พ), ปร.5 sheets)
+debim boq -m project.yaml --rules cg-v480 --province nakhon_ratchasima --export-excel boq_cgd.xlsx
 ```
 
 ### Step 5: Compile IFC4 & 3D Web Viewer
