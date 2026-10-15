@@ -2104,7 +2104,15 @@ class SpatialResolver:
         for child in wall.children:
             child_x = x1 + ux * child.offset_distance
             child_y = y1 + uy * child.offset_distance
-            child_z = storey.elevation + child.sill_height
+
+            # If span_storeys is provided, base elevation comes from the first storey in span_storeys
+            if child.span_storeys and len(child.span_storeys) > 0:
+                base_s_id = child.span_storeys[0]
+                base_st = self.get_storey(base_s_id)
+                child_z = base_st.elevation + child.sill_height
+            else:
+                child_z = storey.elevation + child.sill_height
+
             child_pos = (child_x, child_y, child_z)
 
             if isinstance(child, IfcDoor):
@@ -7134,9 +7142,24 @@ class SpatialResolver:
     def resolve(self) -> ResolvedManifest:
         resolved_manifest = ResolvedManifest(manifest=self.manifest)
 
+        # Top-level standalone doors / windows mapped by host_wall
+        standalone_openings_by_wall: Dict[str, List[Union[IfcDoor, IfcWindow]]] = {}
+        for elem in self.manifest.elements:
+            if isinstance(elem, (IfcDoor, IfcWindow)) and getattr(elem, "host_wall", None):
+                standalone_openings_by_wall.setdefault(elem.host_wall, []).append(elem)
+
         # Pass 1: Resolve all walls first and store in lookup mapping
         for elem in self.manifest.elements:
             if isinstance(elem, IfcWall):
+                # Attach any top-level openings targeting this host_wall into wall.children
+                if elem.tag in standalone_openings_by_wall:
+                    top_children = standalone_openings_by_wall[elem.tag]
+                    existing_tags = {c.tag for c in elem.children}
+                    for tc in top_children:
+                        if tc.tag not in existing_tags:
+                            elem.children.append(tc)
+                            existing_tags.add(tc.tag)
+
                 r_wall, doors, windows = self.resolve_wall(elem)
                 self.walls_by_tag[elem.tag] = r_wall
 
