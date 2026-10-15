@@ -1,5 +1,9 @@
 # 🪟 Windows Package Manager (WinGet) Distribution Guide
 
+> [!WARNING]
+> **Status: Pending Upstream Review (อยู่ระหว่างรอการอนุมัติ)**  
+> The `debim` manifest submission to `microsoft/winget-pkgs` is currently under review by Microsoft moderators. `winget install debim` will become active once approved. In the meantime, please install via **pipx**, **uv**, or **pip** (`pip install "debim[all]"`).
+
 This document outlines the architecture and automated pipeline for distributing `debim` on Windows via **WinGet** (`winget install debim`).
 
 ---

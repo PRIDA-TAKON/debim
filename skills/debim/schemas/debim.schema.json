@@ -718,7 +718,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "title": "BearingPlacement",
@@ -1097,7 +1098,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "title": "ChimneyPlacement",
@@ -1805,7 +1807,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "title": "CulvertPlacement",
@@ -1862,6 +1865,7 @@
     "CustomElementPlacement": {
       "properties": {
         "position": {
+          "description": "Position vector [x, y, z] in meters",
           "maxItems": 3,
           "minItems": 3,
           "prefixItems": [
@@ -1885,6 +1889,9 @@
         "rotation": {
           "anyOf": [
             {
+              "type": "number"
+            },
+            {
               "maxItems": 3,
               "minItems": 3,
               "prefixItems": [
@@ -1905,7 +1912,9 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "description": "Euler rotation angles in radians [rx, ry, rz] or single yaw float in radians.",
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "required": [
@@ -2047,7 +2056,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "title": "DiscreteAccessoryPlacement",
@@ -2315,7 +2325,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "title": "EnergyConversionPlacement",
@@ -2423,7 +2434,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "title": "FlowMovingPlacement",
@@ -2635,6 +2647,7 @@
     "FurniturePlacement": {
       "properties": {
         "position": {
+          "description": "Position vector [x, y, z] in meters",
           "maxItems": 3,
           "minItems": 3,
           "prefixItems": [
@@ -2658,6 +2671,9 @@
         "rotation": {
           "anyOf": [
             {
+              "type": "number"
+            },
+            {
               "maxItems": 3,
               "minItems": 3,
               "prefixItems": [
@@ -2678,7 +2694,9 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "description": "Euler rotation angles in radians [rx, ry, rz] or single yaw float in radians.",
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "required": [
@@ -3259,9 +3277,11 @@
       "type": "object"
     },
     "IfcBeam": {
+      "description": "Deterministic Beam Element.\n\nAnchor Point: TOP-CENTERLINE ([width, depth])\nDimension Keys: width, depth",
       "properties": {
         "class": {
           "const": "IfcBeam",
+          "default": "IfcBeam",
           "title": "Class",
           "type": "string"
         },
@@ -3351,6 +3371,18 @@
           ],
           "default": null
         },
+        "pitch_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pitch Deg"
+        },
         "layer": {
           "anyOf": [
             {
@@ -3365,14 +3397,20 @@
         }
       },
       "required": [
-        "class",
         "tag",
         "material",
         "profile",
         "placement"
       ],
       "title": "IfcBeam",
-      "type": "object"
+      "type": "object",
+      "x-debim-anchor-point": "TOP-CENTERLINE",
+      "x-debim-dimension-keys": [
+        "width",
+        "depth"
+      ],
+      "x-debim-bounding-rules": "Top surface flush at storey reference elevation along span centerline.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
     },
     "IfcBearing": {
       "properties": {
@@ -4085,6 +4123,7 @@
       "type": "object"
     },
     "IfcColumn": {
+      "description": "Deterministic Column Element.\n\nAnchor Point: BOTTOM-CENTER ([width, depth])\nDimension Keys: width, depth",
       "properties": {
         "class": {
           "const": "IfcColumn",
@@ -4198,7 +4237,14 @@
         "placement"
       ],
       "title": "IfcColumn",
-      "type": "object"
+      "type": "object",
+      "x-debim-anchor-point": "BOTTOM-CENTER",
+      "x-debim-dimension-keys": [
+        "width",
+        "depth"
+      ],
+      "x-debim-bounding-rules": "Base centroid flush at base_storey elevation with cross-section profile dimensions.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
     },
     "IfcCovering": {
       "properties": {
@@ -6427,9 +6473,19 @@
         "placement"
       ],
       "title": "IfcFurnishingElement",
-      "type": "object"
+      "type": "object",
+      "x-debim-anchor-point": "BOTTOM-CENTER",
+      "x-debim-dimension-keys": [
+        "width",
+        "depth",
+        "height"
+      ],
+      "x-debim-bounding-rules": "Base center rested flush at storey elevation with width, depth, height bounding box.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float",
+      "description": "[debim Schema Rule] Anchor Point: BOTTOM-CENTER | Dimension Keys: width, depth, height"
     },
     "IfcFurniture": {
+      "description": "Deterministic Furniture Element.\n\nAnchor Point: BOTTOM-CENTER ([width, depth, height])\nDimension Keys: width, depth, height",
       "properties": {
         "class": {
           "const": "IfcFurniture",
@@ -6505,7 +6561,15 @@
         "placement"
       ],
       "title": "IfcFurniture",
-      "type": "object"
+      "type": "object",
+      "x-debim-anchor-point": "BOTTOM-CENTER",
+      "x-debim-dimension-keys": [
+        "width",
+        "depth",
+        "height"
+      ],
+      "x-debim-bounding-rules": "Base center rested flush at storey elevation with width, depth, height bounding box.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
     },
     "IfcGeotechnicalStratum": {
       "properties": {
@@ -7210,6 +7274,124 @@
         "tag"
       ],
       "title": "IfcMarinePart",
+      "type": "object"
+    },
+    "IfcMember": {
+      "description": "Deterministic Member Element (Structural Bracing, Truss Member, Rafter, Purlin).\n\nAnchor Point: CENTERLINE\nDimension Keys: width, depth",
+      "properties": {
+        "class": {
+          "const": "IfcMember",
+          "default": "IfcMember",
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "material": {
+          "title": "Material",
+          "type": "string"
+        },
+        "profile": {
+          "discriminator": {
+            "mapping": {
+              "ARBITRARY": "#/$defs/ArbitraryProfile",
+              "ARBITRARY_CLOSED": "#/$defs/ArbitraryProfile",
+              "ARBITRARY_WITH_VOIDS": "#/$defs/ArbitraryProfile",
+              "BOX": "#/$defs/BoxProfile",
+              "BOX_HOLLOW": "#/$defs/RectangleHollowProfile",
+              "C": "#/$defs/UShapeProfile",
+              "CHS": "#/$defs/CircleHollowProfile",
+              "CIRCLE_HOLLOW": "#/$defs/CircleHollowProfile",
+              "CIRCULAR": "#/$defs/CircularProfile",
+              "CSHAPE": "#/$defs/UShapeProfile",
+              "ELLIPSE": "#/$defs/EllipseProfile",
+              "H": "#/$defs/IShapeProfile",
+              "I": "#/$defs/IShapeProfile",
+              "ISHAPE": "#/$defs/IShapeProfile",
+              "L": "#/$defs/LShapeProfile",
+              "LSHAPE": "#/$defs/LShapeProfile",
+              "PIPE_HOLLOW": "#/$defs/CircleHollowProfile",
+              "POLYGON": "#/$defs/ArbitraryProfile",
+              "RECTANGLE_HOLLOW": "#/$defs/RectangleHollowProfile",
+              "RHS": "#/$defs/RectangleHollowProfile",
+              "T": "#/$defs/TShapeProfile",
+              "TSHAPE": "#/$defs/TShapeProfile",
+              "U": "#/$defs/UShapeProfile",
+              "USHAPE": "#/$defs/UShapeProfile"
+            },
+            "propertyName": "shape"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/BoxProfile"
+            },
+            {
+              "$ref": "#/$defs/CircularProfile"
+            },
+            {
+              "$ref": "#/$defs/EllipseProfile"
+            },
+            {
+              "$ref": "#/$defs/IShapeProfile"
+            },
+            {
+              "$ref": "#/$defs/LShapeProfile"
+            },
+            {
+              "$ref": "#/$defs/UShapeProfile"
+            },
+            {
+              "$ref": "#/$defs/TShapeProfile"
+            },
+            {
+              "$ref": "#/$defs/RectangleHollowProfile"
+            },
+            {
+              "$ref": "#/$defs/CircleHollowProfile"
+            },
+            {
+              "$ref": "#/$defs/ArbitraryProfile"
+            }
+          ],
+          "title": "Profile"
+        },
+        "placement": {
+          "$ref": "#/$defs/BeamPlacement"
+        },
+        "pitch_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pitch Deg"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "tag",
+        "material",
+        "profile",
+        "placement"
+      ],
+      "title": "IfcMember",
       "type": "object"
     },
     "IfcMooringDevice": {
@@ -8367,12 +8549,25 @@
           "enum": [
             "GABLE",
             "HIP",
+            "GABLE_HIP",
             "SHED",
             "FLAT",
             "MANSARD"
           ],
           "title": "Roof Type",
           "type": "string"
+        },
+        "pitch_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pitch Deg"
         },
         "placement": {
           "$ref": "#/$defs/RoofPlacement"
@@ -8623,6 +8818,7 @@
       "type": "object"
     },
     "IfcSlab": {
+      "description": "Deterministic Slab Element.\n\nAnchor Point: TOP-FINISH ([thickness])\nDimension Keys: thickness",
       "properties": {
         "class": {
           "const": "IfcSlab",
@@ -8638,6 +8834,7 @@
           "type": "string"
         },
         "thickness": {
+          "description": "Slab thickness in meters. Anchor: TOP-FINISH",
           "title": "Thickness",
           "type": "number"
         },
@@ -8698,7 +8895,13 @@
         "placement"
       ],
       "title": "IfcSlab",
-      "type": "object"
+      "type": "object",
+      "x-debim-anchor-point": "TOP-FINISH",
+      "x-debim-dimension-keys": [
+        "thickness"
+      ],
+      "x-debim-bounding-rules": "Top finish surface flush at storey reference elevation with downward thickness extrusion.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
     },
     "IfcSoil": {
       "properties": {
@@ -8861,6 +9064,7 @@
       "type": "object"
     },
     "IfcSpace": {
+      "description": "Deterministic Space Element.\n\nAnchor Point: BOTTOM-PERIMETER ([height])\nDimension Keys: height",
       "properties": {
         "class": {
           "const": "IfcSpace",
@@ -8910,6 +9114,7 @@
         },
         "height": {
           "default": 2.8,
+          "description": "Clear room height in meters. Anchor: BOTTOM-PERIMETER",
           "title": "Height",
           "type": "number"
         },
@@ -8939,7 +9144,13 @@
         "placement"
       ],
       "title": "IfcSpace",
-      "type": "object"
+      "type": "object",
+      "x-debim-anchor-point": "BOTTOM-PERIMETER",
+      "x-debim-dimension-keys": [
+        "height"
+      ],
+      "x-debim-bounding-rules": "Base polygon perimeter aligned with storey floor with clear vertical room height.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
     },
     "IfcStair": {
       "properties": {
@@ -8959,8 +9170,8 @@
         "stair_type": {
           "default": "DOG_LEG",
           "enum": [
-            "STRAIGHT",
             "DOG_LEG",
+            "STRAIGHT",
             "L_SHAPE",
             "SPIRAL",
             "LADDER"
@@ -8976,6 +9187,28 @@
         "waist_thickness": {
           "default": 0.12,
           "title": "Waist Thickness",
+          "type": "number"
+        },
+        "landing_depth": {
+          "default": 1.0,
+          "title": "Landing Depth",
+          "type": "number"
+        },
+        "riser_height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.1875,
+          "title": "Riser Height"
+        },
+        "tread_depth": {
+          "default": 0.25,
+          "title": "Tread Depth",
           "type": "number"
         },
         "placement": {
@@ -9581,6 +9814,7 @@
       "type": "object"
     },
     "IfcWall": {
+      "description": "Deterministic Wall Element.\n\nAnchor Point: BOTTOM-START-CENTERLINE ([thickness, height])\nDimension Keys: thickness, height",
       "properties": {
         "class": {
           "const": "IfcWall",
@@ -9614,9 +9848,11 @@
             }
           ],
           "default": null,
+          "description": "Wall thickness in meters. Anchor: BOTTOM-START-CENTERLINE",
           "title": "Thickness"
         },
         "height": {
+          "description": "Wall height in meters. Anchor: BOTTOM-START-CENTERLINE",
           "title": "Height",
           "type": "number"
         },
@@ -9689,7 +9925,14 @@
         "placement"
       ],
       "title": "IfcWall",
-      "type": "object"
+      "type": "object",
+      "x-debim-anchor-point": "BOTTOM-START-CENTERLINE",
+      "x-debim-dimension-keys": [
+        "thickness",
+        "height"
+      ],
+      "x-debim-bounding-rules": "Extruded along wall baseline from start_point to end_point with thickness and height.",
+      "x-debim-coordinate-system": "Z-up Cartesian, Euler rotation [rx, ry, rz] in radians or yaw float"
     },
     "IfcWasteTerminal": {
       "properties": {
@@ -9926,6 +10169,62 @@
         "offset_distance"
       ],
       "title": "IfcWindow",
+      "type": "object"
+    },
+    "InstanceConfig": {
+      "properties": {
+        "module": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Module"
+        },
+        "replicate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReplicationConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Origin"
+        },
+        "id_prefix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id Prefix"
+        }
+      },
+      "title": "InstanceConfig",
       "type": "object"
     },
     "LShapeProfile": {
@@ -10281,7 +10580,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "title": "MarinePartPlacement",
@@ -10325,6 +10625,226 @@
         "unit_cost_ref"
       ],
       "title": "Material",
+      "type": "object"
+    },
+    "ModuleDefinition": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "local_grids": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Grids"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "elements": {
+          "anyOf": [
+            {
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/IfcColumn"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcBeam"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcMember"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcWall"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcFooting"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcSlab"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcSpace"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcCovering"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcStair"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcStairFlight"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRamp"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRailing"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRoof"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcCurtainWall"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcPlate"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcPipeSegment"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcCableCarrierSegment"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcDuctSegment"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcSanitaryTerminal"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcWasteTerminal"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcDistributionBoard"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcElectricDistributionBoard"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcLightFixture"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcSwitchingDevice"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcOutlet"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcAirTerminal"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcDamper"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcFlowController"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcUnitaryEquipment"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcEarthworksElement"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcEarthworksCut"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcEarthworksFill"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcGeotechnicalStratum"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcSoil"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRetainingWall"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcAlignment"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRoad"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcBridge"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRailway"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcRailwayPart"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcTrackElement"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcBridgePart"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcBearing"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcDiscreteAccessory"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcMarineFacility"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcMarinePart"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcMooringDevice"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcNavigationElement"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcDistributionFlowElement"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcFurniture"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcFurnishingElement"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcChimney"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcEnergyConversionDevice"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcFlowMovingDevice"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcCustomElement"
+                  },
+                  {
+                    "$ref": "#/$defs/IfcBuildingElementProxy"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Elements"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ModuleDefinition",
       "type": "object"
     },
     "MooringDevicePlacement": {
@@ -10469,7 +10989,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "title": "MooringDevicePlacement",
@@ -10905,7 +11426,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         }
       },
       "required": [
@@ -11298,7 +11820,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         },
         "wall": {
           "anyOf": [
@@ -11832,6 +12355,87 @@
       "title": "RectangleHollowProfile",
       "type": "object"
     },
+    "ReplicationConfig": {
+      "properties": {
+        "module": {
+          "title": "Module",
+          "type": "string"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "along": {
+          "anyOf": [
+            {
+              "enum": [
+                "grid_x",
+                "grid_y",
+                "vector"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "grid_x",
+          "title": "Along"
+        },
+        "grid_x_mapping": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid X Mapping"
+        },
+        "grid_y_mapping": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grid Y Mapping"
+        },
+        "prefix_pattern": {
+          "default": "U{index}_",
+          "title": "Prefix Pattern",
+          "type": "string"
+        },
+        "party_wall_deduplication": {
+          "default": true,
+          "title": "Party Wall Deduplication",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "module",
+        "count"
+      ],
+      "title": "ReplicationConfig",
+      "type": "object"
+    },
     "RetainingWallPlacement": {
       "properties": {
         "storey": {
@@ -12294,6 +12898,18 @@
           "title": "Spacing",
           "type": "number"
         },
+        "rafter_spacing": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rafter Spacing"
+        },
         "purlin_spacing": {
           "default": 0.32,
           "title": "Purlin Spacing",
@@ -12303,6 +12919,19 @@
           "default": 18.0,
           "title": "Steel Weight Per Sqm",
           "type": "number"
+        },
+        "profiles": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profiles"
         }
       },
       "title": "RoofFramingConfig",
@@ -12680,6 +13309,22 @@
           ],
           "default": null,
           "title": "Openings"
+        },
+        "boundary_offset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boundary Offset"
         }
       },
       "required": [
@@ -12937,8 +13582,16 @@
     "StairLanding": {
       "properties": {
         "elevation": {
-          "title": "Elevation",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Elevation"
         },
         "depth": {
           "default": 1.0,
@@ -12974,9 +13627,6 @@
           "default": null
         }
       },
-      "required": [
-        "elevation"
-      ],
       "title": "StairLanding",
       "type": "object"
     },
@@ -13554,7 +14204,8 @@
             }
           ],
           "default": null,
-          "title": "Rotation"
+          "title": "Rotation",
+          "x-debim-rotation-units": "radians (Z-up Euler angles [rx, ry, rz] or single yaw float)"
         },
         "wall": {
           "anyOf": [
@@ -13902,6 +14553,9 @@
             "$ref": "#/$defs/IfcBeam"
           },
           {
+            "$ref": "#/$defs/IfcMember"
+          },
+          {
             "$ref": "#/$defs/IfcWall"
           },
           {
@@ -14064,6 +14718,36 @@
       },
       "title": "Elements",
       "type": "array"
+    },
+    "modules": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/ModuleDefinition"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Modules"
+    },
+    "instances": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/InstanceConfig"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Instances"
     },
     "railways": {
       "items": {

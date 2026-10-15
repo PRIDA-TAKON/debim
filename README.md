@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/debim/"><img src="https://img.shields.io/pypi/v/debim.svg?color=blue" alt="PyPI Version" /></a>
-  <a href="docs/winget.md"><img src="https://img.shields.io/badge/WinGet-debim-0078D4.svg?logo=windows&logoColor=white" alt="WinGet Package" /></a>
+  <a href="docs/winget.md"><img src="https://img.shields.io/badge/WinGet-Pending%20Review-orange.svg?logo=windows&logoColor=white" alt="WinGet Package (Pending Review)" /></a>
   <a href="https://github.com/PRIDA-TAKON/homebrew-debim"><img src="https://img.shields.io/badge/Homebrew-debim-FBB040.svg?logo=homebrew&logoColor=white" alt="Homebrew Tap" /></a>
   <a href="https://glama.ai/mcp/servers/PRIDA-TAKON/debim"><img src="https://glama.ai/mcp/servers/PRIDA-TAKON/debim/badges/score.svg" alt="Glama MCP Server Score" /></a>
   <a href="#-model-context-protocol-mcp-server"><img src="https://img.shields.io/badge/MCP-FastMCP%20Server-purple.svg?logo=anthropic" alt="MCP Server" /></a>
@@ -141,16 +141,17 @@ Choose your operating system and preferred terminal:
 #### 🪟 Windows (PowerShell / Command Prompt)
 
 ```powershell
-# Option A: Windows Package Manager (Zero-Python / One-Click Native Install)
-winget install debim
-
-# Option B: Isolated CLI (Recommended via pipx or uv)
+# Option A: Isolated CLI (Recommended via pipx or uv tool)
 pipx install "debim[all]"
 # or: uv tool install "debim[all]"
 
-# Option C: Standard pip
+# Option B: Standard pip
 python -m pip install --upgrade pip
 pip install "debim[all]"
+
+# Option C: Windows Package Manager (Zero-Python / One-Click Native)
+# Note: Manifest is currently pending upstream review on microsoft/winget-pkgs
+# winget install debim
 
 # Verify installation
 debim --help
