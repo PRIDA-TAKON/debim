@@ -63,12 +63,8 @@ flowchart LR
 - **Test:** `tests/test_host_openings.py` (4/4 tests passed)
 - **Status:** Merged via PR #447 (Resolves #446)
 
-### [ ] Wave 4: Multi-Flight Dog-Leg Stair Scheduling and Landing Elevation
+### [ ] Wave 4: Multi-Flight Dog-Leg Stair Scheduling and Landing Elevation (FINAL JULES WAVE)
 - **Target:** `src/debim/schema.py`, `src/debim/qto.py`
 - **Goal:** Support `flight_steps: [11, 6]` and `landing_elevation: 2.70` for split U-shaped RC stairs.
 - **Test:** `tests/test_stair_multiflight.py`
-
-### [ ] Wave 5: Official Contemporary Thai House Showcase & Documentation
-- **Target:** `examples/contemporary_thai_house/project.debim`, `llms.txt`, `README.md`
-- **Goal:** Full 168-element model validating all v0.7.0 features and docs update.
-- **Test:** `debim validate`, `debim qto`, `debim boq --rules cg-v480`
+- **Status:** Currently in progress by Jules (Issue #448). This concludes the automated Jules roadmap for v0.7.0.

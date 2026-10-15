@@ -30,13 +30,5 @@
       "body": "### Overview\nAs part of debim v0.7.0 Wave 4, support explicit multi-flight step distribution and landing elevations in `IfcStair: DOG_LEG`.\n\n### Tasks\n1. In `src/debim/schema.py`: Support `flight_steps: Optional[List[int]]` (e.g. `[11, 6]`) and `landing_elevation: Optional[float]` in `IfcStair`.\n2. In `src/debim/qto.py`: Calculate concrete volume and formwork for multi-flight configurations.\n3. Add unit tests in `tests/test_stair_multiflight.py`.",
       "label": "jules"
     }
-  },
-  {
-    "match_keywords": ["flight_steps", "stair_multiflight"],
-    "next_issue": {
-      "title": "example(thai-house): add 'บ้านร่วมสมัย ๙' 168-element model and v0.7.0 documentation",
-      "body": "### Overview\nAs part of debim v0.7.0 Wave 5, integrate the official 168-element Contemporary Thai House 9 model into `examples/contemporary_thai_house/project.debim` and update docs/release notes.\n\n### Tasks\n1. Create `examples/contemporary_thai_house/project.debim` utilizing v0.7.0 features (local offsets, L-roof, host openings, ST.3 stairs).\n2. Update `ROADMAP_V0.7.0.md` checklists to completed.\n3. Verify with `debim validate`, `debim qto`, and `debim boq --rules cg-v480`.",
-      "label": "jules"
-    }
   }
 ]
