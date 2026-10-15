@@ -8552,7 +8552,9 @@
             "GABLE_HIP",
             "SHED",
             "FLAT",
-            "MANSARD"
+            "MANSARD",
+            "L_SHAPE",
+            "L_SHAPE_HIP"
           ],
           "title": "Roof Type",
           "type": "string"
@@ -12992,6 +12994,57 @@
           ],
           "title": "Ridge Orientation",
           "type": "string"
+        },
+        "eaves_levels": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Eaves Levels"
+        },
+        "porch_eaves_level": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Porch Eaves Level"
+        },
+        "main_ridge_height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Main Ridge Height"
+        },
+        "porch_ridge_height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Porch Ridge Height"
         }
       },
       "required": [

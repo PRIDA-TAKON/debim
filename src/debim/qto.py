@@ -438,6 +438,7 @@ class RoofQTO(BaseModel):
     sloped_area: float = 0.0             # Sloped roof covering tile area (m²)
     ridge_cap_length: float = 0.0        # Ridge cap length (m)
     hip_cap_length: float = 0.0          # Hip cap length (m)
+    valley_cap_length: float = 0.0       # Valley gutter cap length (m)
     eaves_length: float = 0.0            # Eaves/fascia board length (m)
     purlin_length: float = 0.0           # Purlin/batten linear meters (m)
     rafter_length: float = 0.0           # Rafter/truss linear meters (m)
@@ -678,6 +679,7 @@ class ProjectQTO(BaseModel):
     total_roof_rafter_length: float = 0.0
     total_roof_ridge_length: float = 0.0
     total_roof_hip_length: float = 0.0
+    total_roof_valley_length: float = 0.0
     total_roof_eaves_length: float = 0.0
     total_roof_insulation_area: float = 0.0
     # Curtain Wall & Plate Totals
@@ -1669,6 +1671,7 @@ def calculate_element_qto(
             sloped_area=resolved.total_sloped_area,
             ridge_cap_length=resolved.total_ridge_length,
             hip_cap_length=resolved.total_hip_length,
+            valley_cap_length=getattr(resolved, "total_valley_length", 0.0),
             eaves_length=resolved.total_eaves_length,
             purlin_length=purlin_len,
             rafter_length=rafter_len,
@@ -2577,6 +2580,7 @@ def calculate_qto(
     total_roof_rafter_len = 0.0
     total_roof_ridge = 0.0
     total_roof_hip = 0.0
+    total_roof_valley = 0.0
     total_roof_eaves = 0.0
     total_roof_insul = 0.0
 
@@ -2827,6 +2831,7 @@ def calculate_qto(
             total_roof_rafter_len += eqto.roof.rafter_length
             total_roof_ridge += eqto.roof.ridge_cap_length
             total_roof_hip += eqto.roof.hip_cap_length
+            total_roof_valley += eqto.roof.valley_cap_length
             total_roof_eaves += eqto.roof.eaves_length
             total_roof_insul += eqto.roof.insulation_area
 
@@ -3002,6 +3007,7 @@ def calculate_qto(
         total_roof_rafter_length=total_roof_rafter_len,
         total_roof_ridge_length=total_roof_ridge,
         total_roof_hip_length=total_roof_hip,
+        total_roof_valley_length=total_roof_valley,
         total_roof_eaves_length=total_roof_eaves,
         total_roof_insulation_area=total_roof_insul,
         total_curtain_wall_facade_area=total_cw_facade_area,
