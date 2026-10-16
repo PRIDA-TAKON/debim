@@ -552,6 +552,11 @@ class ResolvedSpace(BaseModel):
     drop_elevation: float = 0.0
     floor_finish_area: float = 0.0
     floor_finish_volume: float = 0.0
+    contains: List[Any] = Field(default_factory=list)
+    contained_items: List[Dict[str, Any]] = Field(default_factory=list)
+    contained_items_footprint: float = 0.0
+    required_net_area: float = 0.0
+    design_spec: Optional[Any] = None
     center: Tuple[float, float, float]  # Centroid in 3D (cx, cy, cz)
     layer: str = "architecture/spaces"
 
@@ -2845,6 +2850,28 @@ class SpatialResolver:
         fl_area = area
         fl_vol = fl_area * fl_thick
 
+        raw_contains = getattr(space, "contains", None) or []
+        contained_items_list: List[Dict[str, Any]] = []
+        total_item_footprint = 0.0
+
+        for vref in raw_contains:
+            ref_id = vref.ref if hasattr(vref, "ref") else str(vref)
+            cnt = getattr(vref, "count", 1)
+            v_obj = self.manifest.get_variable(ref_id)
+            if v_obj:
+                fp = v_obj.get_envelope_footprint()
+                item_tot_area = fp["total_area"] * cnt
+                total_item_footprint += item_tot_area
+                contained_items_list.append({
+                    "ref": ref_id,
+                    "count": cnt,
+                    "variable": v_obj,
+                    "footprint": fp,
+                    "item_total_area": item_tot_area,
+                })
+
+        required_net_area = total_item_footprint * 1.30
+
         return ResolvedSpace(
             tag=space.tag,
             element=space,
@@ -2861,6 +2888,11 @@ class SpatialResolver:
             drop_elevation=drop_elev,
             floor_finish_area=fl_area,
             floor_finish_volume=fl_vol,
+            contains=raw_contains,
+            contained_items=contained_items_list,
+            contained_items_footprint=total_item_footprint,
+            required_net_area=required_net_area,
+            design_spec=getattr(space, "design_spec", None),
             center=(cx, cy, z),
             layer=getattr(space, "layer", None) or "architecture/spaces",
         )
