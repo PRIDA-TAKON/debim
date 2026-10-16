@@ -5171,6 +5171,7 @@
       "properties": {
         "class": {
           "const": "IfcColumn",
+          "default": "IfcColumn",
           "title": "Class",
           "type": "string"
         },
@@ -5274,7 +5275,6 @@
         }
       },
       "required": [
-        "class",
         "tag",
         "material",
         "profile",
@@ -7434,6 +7434,7 @@
       "properties": {
         "class": {
           "const": "IfcFooting",
+          "default": "IfcFooting",
           "title": "Class",
           "type": "string"
         },
@@ -7497,7 +7498,6 @@
         }
       },
       "required": [
-        "class",
         "tag",
         "material",
         "profile",
@@ -10332,6 +10332,7 @@
       "properties": {
         "class": {
           "const": "IfcStair",
+          "default": "IfcStair",
           "title": "Class",
           "type": "string"
         },
@@ -10561,7 +10562,6 @@
         }
       },
       "required": [
-        "class",
         "tag",
         "material",
         "placement"

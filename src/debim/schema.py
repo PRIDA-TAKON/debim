@@ -660,7 +660,7 @@ class IfcColumn(BaseModel):
     ANCHOR_POINT: ClassVar[str] = "BOTTOM-CENTER"
     DIMENSION_KEYS: ClassVar[List[str]] = ["width", "depth"]
 
-    class_: Literal["IfcColumn"] = Field(alias="class")
+    class_: Literal["IfcColumn"] = Field(alias="class", default="IfcColumn")
     tag: str
     material: str
     profile: Profile
@@ -726,7 +726,7 @@ class FootingSubstructureConfig(BaseModel):
 
 
 class IfcFooting(BaseModel):
-    class_: Literal["IfcFooting"] = Field(alias="class")
+    class_: Literal["IfcFooting"] = Field(alias="class", default="IfcFooting")
     tag: str
     material: str
     profile: FootingProfile
@@ -1345,7 +1345,7 @@ class StairReinforcement(BaseModel):
 
 
 class IfcStair(BaseModel):
-    class_: Literal["IfcStair"] = Field(alias="class")
+    class_: Literal["IfcStair"] = Field(alias="class", default="IfcStair")
     tag: str
     material: str
     stair_type: StairType = "DOG_LEG"
