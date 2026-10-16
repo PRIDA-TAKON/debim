@@ -1,0 +1,251 @@
+schema: "IFC4-Minimal"
+project:
+  id: "PRJ-TDD-RESIDENTIAL-2026"
+  name: "Baan TDD Residential Benchmark House"
+  description: "Full residential benchmark generated via touching spaces and debim derive engine"
+
+variables:
+  BED_KING_6FT:
+    class: IfcTypeProduct
+    dimensions: { width: 1.83, depth: 1.98, height: 0.90 }
+    clearance: { front: 0.60, left: 0.60, right: 0.60 }
+
+  BED_QUEEN_5FT:
+    class: IfcTypeProduct
+    dimensions: { width: 1.52, depth: 1.98, height: 0.90 }
+    clearance: { front: 0.60, left: 0.60, right: 0.60 }
+
+  WARDROBE_2M:
+    class: IfcTypeProduct
+    dimensions: { width: 2.00, depth: 0.60, height: 2.20 }
+    clearance: { front: 0.80 }
+
+  WORKING_DESK:
+    class: IfcTypeProduct
+    dimensions: { width: 1.20, depth: 0.60, height: 0.75 }
+    clearance: { front: 0.80 }
+
+  TOILET_SET:
+    class: IfcTypeProduct
+    dimensions: { width: 0.45, depth: 0.70, height: 0.75 }
+    clearance: { front: 0.60, left: 0.20, right: 0.20 }
+
+  SHOWER_ENCLOSURE:
+    class: IfcTypeProduct
+    dimensions: { width: 0.90, depth: 0.90, height: 2.00 }
+    clearance: { front: 0.60 }
+
+  DINING_TABLE_6SEAT:
+    class: IfcTypeProduct
+    dimensions: { width: 1.60, depth: 0.90, height: 0.75 }
+    clearance: { front: 0.90, back: 0.90, left: 0.80, right: 0.80 }
+
+spaces:
+  LIVING_ROOM:
+    class: IfcSpace
+    tag: LIVING_ROOM
+    name: "Living Room (ห้องรับแขก)"
+    space_type: LIVING
+    dimensions: [5.00, 4.00]
+    origin: [2.00, 2.00]
+    height: 2.80
+    floor_material: "GRANITO_60X60"
+    contains:
+      - ref: WORKING_DESK
+
+  DINING_ROOM:
+    class: IfcSpace
+    tag: DINING_ROOM
+    name: "Dining Room (ส่วนทานอาหาร)"
+    space_type: DINING
+    dimensions: [4.00, 4.00]
+    height: 2.80
+    floor_material: "GRANITO_60X60"
+    touching:
+      target: LIVING_ROOM
+      side: NORTH
+      align: LEFT
+    must_connect: [LIVING_ROOM]
+    contains:
+      - ref: DINING_TABLE_6SEAT
+
+  KITCHEN:
+    class: IfcSpace
+    tag: KITCHEN
+    name: "Kitchen (ห้องครัว)"
+    space_type: KITCHEN
+    dimensions: [3.50, 4.00]
+    height: 2.80
+    floor_material: "TILES_30X30"
+    touching:
+      target: DINING_ROOM
+      side: EAST
+      align: BOTTOM
+    must_connect: [DINING_ROOM]
+
+  SERVICE_YARD:
+    class: IfcSpace
+    tag: SERVICE_YARD
+    name: "Service Yard (ลานซักล้าง)"
+    space_type: SERVICE
+    dimensions: [3.50, 2.50]
+    height: 2.80
+    floor_material: "TILES_30X30"
+    touching:
+      target: KITCHEN
+      side: NORTH
+      align: LEFT
+    must_connect: [KITCHEN]
+
+  MASTER_BEDROOM:
+    class: IfcSpace
+    tag: MASTER_BEDROOM
+    name: "Master Bedroom (ห้องนอนใหญ่)"
+    space_type: BEDROOM
+    dimensions: [5.00, 4.50]
+    height: 2.80
+    floor_material: "WOOD_PARQUET"
+    touching:
+      target: LIVING_ROOM
+      side: EAST
+      align: BOTTOM
+    must_connect: [LIVING_ROOM]
+    contains:
+      - ref: BED_KING_6FT
+      - ref: WARDROBE_2M
+
+  WALK_IN_CLOSET:
+    class: IfcSpace
+    tag: WALK_IN_CLOSET
+    name: "Walk-in Closet (แต่งตัว)"
+    space_type: CLOSET
+    dimensions: [2.50, 2.50]
+    height: 2.80
+    floor_material: "WOOD_PARQUET"
+    touching:
+      target: MASTER_BEDROOM
+      side: EAST
+      align: TOP
+    must_connect: [MASTER_BEDROOM]
+
+  BEDROOM_02:
+    class: IfcSpace
+    tag: BEDROOM_02
+    name: "Bedroom 02 (ห้องนอน 2)"
+    space_type: BEDROOM
+    dimensions: [4.00, 4.50]
+    height: 2.80
+    floor_material: "WOOD_PARQUET"
+    touching:
+      target: MASTER_BEDROOM
+      side: NORTH
+      align: LEFT
+    must_connect: [DINING_ROOM]
+    contains:
+      - ref: BED_QUEEN_5FT
+      - ref: WORKING_DESK
+
+  BEDROOM_03:
+    class: IfcSpace
+    tag: BEDROOM_03
+    name: "Bedroom 03 (ห้องนอน 3)"
+    space_type: BEDROOM
+    dimensions: [3.50, 4.00]
+    height: 2.80
+    floor_material: "WOOD_PARQUET"
+    touching:
+      target: BEDROOM_02
+      side: EAST
+      align: BOTTOM
+    must_connect: [DINING_ROOM]
+
+  BATHROOM_MASTER:
+    class: IfcSpace
+    tag: BATHROOM_MASTER
+    name: "Master Bathroom (ห้องน้ำในห้องนอนใหญ่)"
+    space_type: BATHROOM
+    dimensions: [2.50, 2.50]
+    height: 2.60
+    floor_material: "ANTI_SLIP_TILES"
+    drop_elevation: -0.10
+    touching:
+      target: MASTER_BEDROOM
+      side: SOUTH
+      align: LEFT
+    must_connect: [MASTER_BEDROOM]
+    contains:
+      - ref: TOILET_SET
+      - ref: SHOWER_ENCLOSURE
+
+  BATHROOM_GUEST:
+    class: IfcSpace
+    tag: BATHROOM_GUEST
+    name: "Guest Bathroom (ห้องน้ำแขก)"
+    space_type: BATHROOM
+    dimensions: [2.50, 2.00]
+    height: 2.60
+    floor_material: "ANTI_SLIP_TILES"
+    drop_elevation: -0.10
+    touching:
+      target: LIVING_ROOM
+      side: SOUTH
+      align: LEFT
+    must_connect: [LIVING_ROOM]
+    contains:
+      - ref: TOILET_SET
+
+  CORRIDOR:
+    class: IfcSpace
+    tag: CORRIDOR
+    name: "Central Corridor (ทางเดินส่วนกลาง)"
+    space_type: CORRIDOR
+    dimensions: [2.50, 4.00]
+    height: 2.80
+    floor_material: "GRANITO_60X60"
+    touching:
+      target: DINING_ROOM
+      side: SOUTH
+      align: RIGHT
+    must_connect: [LIVING_ROOM, DINING_ROOM, BEDROOM_02]
+
+  FOYER:
+    class: IfcSpace
+    tag: FOYER
+    name: "Entrance Foyer (โถงทางเข้า)"
+    space_type: FOYER
+    dimensions: [2.00, 2.00]
+    height: 2.80
+    floor_material: "GRANITO_60X60"
+    touching:
+      target: LIVING_ROOM
+      side: WEST
+      align: BOTTOM
+    must_connect: [LIVING_ROOM]
+
+  TERRACE:
+    class: IfcSpace
+    tag: TERRACE
+    name: "Outdoor Terrace (เฉลียงพักผ่อน)"
+    space_type: TERRACE
+    dimensions: [5.00, 2.00]
+    height: 2.80
+    floor_material: "OUTDOOR_TILES"
+    touching:
+      target: LIVING_ROOM
+      side: SOUTH
+      align: RIGHT
+    must_connect: [LIVING_ROOM]
+
+  CARPORT:
+    class: IfcSpace
+    tag: CARPORT
+    name: "Carport (ที่จอดรถ 2 คัน)"
+    space_type: CARPORT
+    dimensions: [5.50, 5.00]
+    height: 2.80
+    floor_material: "WASHED_GRAVEL"
+    touching:
+      target: FOYER
+      side: WEST
+      align: BOTTOM
+    must_connect: [FOYER]

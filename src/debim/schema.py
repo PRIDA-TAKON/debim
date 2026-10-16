@@ -1188,13 +1188,29 @@ class SpaceDesignSpec(BaseModel):
     adjacencies: Optional[SpaceAdjacencySpec] = None
 
 
+class SpaceTouchingSpec(BaseModel):
+    target: str
+    side: Literal["NORTH", "SOUTH", "EAST", "WEST"]
+    align: Optional[Literal["LEFT", "RIGHT", "CENTER", "TOP", "BOTTOM"]] = "LEFT"
+
+    @field_validator("side", "align", mode="before")
+    @classmethod
+    def upper_string(cls, v):
+        if isinstance(v, str):
+            return v.upper()
+        return v
+
+
 class SpacePlacement(BaseModel):
-    storey: str
+    storey: Optional[str] = "STOREY-1"
     boundary: Optional[List[Tuple[str, str]]] = None  # Grid intersection or grid-offset expression
     boundary_points: Optional[List[Tuple[float, float]]] = None  # Local or global 2D points (x, y)
     inset: Optional[float] = None  # Inset distance in meters (e.g. 0.10)
     boundary_offset: Optional[float] = None  # Boundary offset in meters
     offset_z: float = 0.00
+    touching: Optional[SpaceTouchingSpec] = None
+    dimensions: Optional[Tuple[float, float]] = None
+    origin: Optional[Tuple[float, float]] = None
 
     @field_validator("boundary", mode="before")
     @classmethod
@@ -1208,6 +1224,13 @@ class SpacePlacement(BaseModel):
     def convert_space_points(cls, v):
         if isinstance(v, list):
             return [tuple(float(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+    @field_validator("dimensions", "origin", mode="before")
+    @classmethod
+    def convert_tuple_2d_float(cls, v):
+        if isinstance(v, (list, tuple)) and len(v) >= 2:
+            return (float(v[0]), float(v[1]))
         return v
 
 
@@ -1226,15 +1249,55 @@ class IfcSpace(BaseModel):
     name: Optional[str] = None
     long_name: Optional[str] = None
     room_number: Optional[str] = None
+    space_type: Optional[str] = None
     height: float = Field(default=2.80, description="Clear room height in meters. Anchor: BOTTOM-PERIMETER")
     floor_material: Optional[str] = Field(default=None, description="Architectural floor finish material")
     floor_thickness: float = Field(default=0.00, description="Architectural floor finish thickness in meters")
     drop_elevation: float = Field(default=0.00, description="Slab drop/depression offset relative to storey finish in meters (e.g. -0.10 for sunken bathroom)")
-    placement: SpacePlacement
+    placement: Optional[SpacePlacement] = None
+    touching: Optional[SpaceTouchingSpec] = None
+    dimensions: Optional[Tuple[float, float]] = None
+    origin: Optional[Tuple[float, float]] = None
+    must_connect: Optional[List[str]] = Field(default_factory=list)
     contains: Optional[List[VariableReference]] = None
     design_spec: Optional[SpaceDesignSpec] = None
     properties: Dict[str, Any] = Field(default_factory=dict)
     layer: Optional[str] = "architecture/spaces"
+
+    @field_validator("dimensions", "origin", mode="before")
+    @classmethod
+    def convert_tuple_2d_float(cls, v):
+        if isinstance(v, (list, tuple)) and len(v) >= 2:
+            return (float(v[0]), float(v[1]))
+        return v
+
+    @model_validator(mode="after")
+    def sync_space_relative_fields(self) -> "IfcSpace":
+        if self.touching and self.placement and not self.placement.touching:
+            self.placement.touching = self.touching
+        elif self.placement and self.placement.touching and not self.touching:
+            self.touching = self.placement.touching
+
+        if self.dimensions and self.placement and not self.placement.dimensions:
+            self.placement.dimensions = self.dimensions
+        elif self.placement and self.placement.dimensions and not self.dimensions:
+            self.dimensions = self.placement.dimensions
+
+        if self.origin and self.placement and not self.placement.origin:
+            self.placement.origin = self.origin
+        elif self.placement and self.placement.origin and not self.origin:
+            self.origin = self.placement.origin
+
+        if self.must_connect:
+            if not self.design_spec:
+                self.design_spec = SpaceDesignSpec()
+            if not self.design_spec.adjacencies:
+                self.design_spec.adjacencies = SpaceAdjacencySpec()
+            for mc in self.must_connect:
+                if mc not in self.design_spec.adjacencies.must_connect:
+                    self.design_spec.adjacencies.must_connect.append(mc)
+
+        return self
 
 
 StairType = Literal["DOG_LEG", "STRAIGHT", "L_SHAPE", "SPIRAL", "LADDER"]

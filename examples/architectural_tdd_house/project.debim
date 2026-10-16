@@ -1,0 +1,5862 @@
+schema: IFC4-Minimal
+project:
+  id: PRJ-TDD-RESIDENTIAL-2026
+  name: Baan TDD Residential Benchmark House
+  description: Complete 3D BIM Model generated from relative touching spaces via debim
+    derive
+  units:
+    length: METER
+    area: SQUARE_METER
+    volume: CUBIC_METER
+spatial_structure:
+  storeys:
+  - id: STOREY-1
+    name: Ground Floor (FL1)
+    elevation: 0.0
+    height: 2.8
+grids:
+  axes_x:
+    '1': -5.5
+    '2': 0.0
+    '3': 2.0
+    '4': 3.5
+    '5': 4.5
+    '6': 6.0
+    '7': 7.0
+    '8': 9.5
+    '9': 11.0
+    '10': 12.0
+    '11': 14.5
+  axes_y:
+    A: -0.5
+    B: 0.0
+    C: 2.0
+    D: 4.0
+    E: 6.0
+    F: 6.5
+    G: 7.0
+    H: 10.0
+    I: 10.5
+    J: 11.0
+    K: 12.5
+materials:
+- id: CONCRETE
+  name: Reinforced Concrete 240 ksc
+  category: structural
+  unit_cost_ref: MAT-CONC-240KSC
+- id: BRICK_MASONRY
+  name: Clay Brick Masonry
+  category: architectural
+  unit_cost_ref: MAT-BRICK-MASONRY
+- id: GLASS
+  name: Clear Float Glass 6mm
+  category: architectural
+  unit_cost_ref: MAT-GLASS-6MM
+- id: STEEL
+  name: Structural Steel SS400
+  category: structural
+  unit_cost_ref: MAT-STEEL-SS400
+elements:
+- class: IfcWall
+  tag: WALL-1C_2C
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '1'
+    - C
+    to_grid:
+    - '2'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-01
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 2.75
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-1C_2C
+- class: IfcBeam
+  tag: GB-1C_2C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '1'
+    - C
+    to_grid:
+    - '2'
+    - C
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-1C_2C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '1'
+    - C
+    to_grid:
+    - '2'
+    - C
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-2C_3C
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '2'
+    - C
+    to_grid:
+    - '3'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-02
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.0
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-2C_3C
+- class: IfcBeam
+  tag: GB-2C_3C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '2'
+    - C
+    to_grid:
+    - '3'
+    - C
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-2C_3C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '2'
+    - C
+    to_grid:
+    - '3'
+    - C
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-3C_4C
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '3'
+    - C
+    to_grid:
+    - '4'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children: []
+- class: IfcBeam
+  tag: GB-3C_4C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - C
+    to_grid:
+    - '4'
+    - C
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-3C_4C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - C
+    to_grid:
+    - '4'
+    - C
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-4C_5C
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '4'
+    - C
+    to_grid:
+    - '5'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children: []
+- class: IfcBeam
+  tag: GB-4C_5C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '4'
+    - C
+    to_grid:
+    - '5'
+    - C
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-4C_5C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '4'
+    - C
+    to_grid:
+    - '5'
+    - C
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-5C_6C
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '5'
+    - C
+    to_grid:
+    - '6'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children: []
+- class: IfcBeam
+  tag: GB-5C_6C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '5'
+    - C
+    to_grid:
+    - '6'
+    - C
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-5C_6C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '5'
+    - C
+    to_grid:
+    - '6'
+    - C
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-6C_7C
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '6'
+    - C
+    to_grid:
+    - '7'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-LIVING_ROOM_TERRACE
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 0.5
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-6C_7C
+- class: IfcBeam
+  tag: GB-6C_7C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - C
+    to_grid:
+    - '7'
+    - C
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-6C_7C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - C
+    to_grid:
+    - '7'
+    - C
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-7C_8C
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '7'
+    - C
+    to_grid:
+    - '8'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-BATHROOM_MASTER_MASTER_BEDROOM
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 1.25
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-7C_8C
+- class: IfcBeam
+  tag: GB-7C_8C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - C
+    to_grid:
+    - '8'
+    - C
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-7C_8C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - C
+    to_grid:
+    - '8'
+    - C
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-8C_10C
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '8'
+    - C
+    to_grid:
+    - '10'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-03
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.25
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-8C_10C
+- class: IfcBeam
+  tag: GB-8C_10C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '8'
+    - C
+    to_grid:
+    - '10'
+    - C
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-8C_10C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '8'
+    - C
+    to_grid:
+    - '10'
+    - C
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-3E_4E
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '3'
+    - E
+    to_grid:
+    - '4'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-DINING_ROOM_LIVING_ROOM
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 0.75
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-3E_4E
+- class: IfcBeam
+  tag: GB-3E_4E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - E
+    to_grid:
+    - '4'
+    - E
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-3E_4E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - E
+    to_grid:
+    - '4'
+    - E
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-4E_6E
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '4'
+    - E
+    to_grid:
+    - '6'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children: []
+- class: IfcBeam
+  tag: GB-4E_6E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '4'
+    - E
+    to_grid:
+    - '6'
+    - E
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-4E_6E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '4'
+    - E
+    to_grid:
+    - '6'
+    - E
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-6E_7E
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '6'
+    - E
+    to_grid:
+    - '7'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children: []
+- class: IfcBeam
+  tag: GB-6E_7E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - E
+    to_grid:
+    - '7'
+    - E
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-6E_7E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - E
+    to_grid:
+    - '7'
+    - E
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-7E_8E
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '7'
+    - E
+    to_grid:
+    - '8'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-04
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.25
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-7E_8E
+- class: IfcBeam
+  tag: GB-7E_8E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - E
+    to_grid:
+    - '8'
+    - E
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-7E_8E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - E
+    to_grid:
+    - '8'
+    - E
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-3H_6H
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '3'
+    - H
+    to_grid:
+    - '6'
+    - H
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-05
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 2.0
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-3H_6H
+- class: IfcBeam
+  tag: GB-3H_6H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - H
+    to_grid:
+    - '6'
+    - H
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-3H_6H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - H
+    to_grid:
+    - '6'
+    - H
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-6H_8H
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '6'
+    - H
+    to_grid:
+    - '8'
+    - H
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-KITCHEN_SERVICE_YARD
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 1.75
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-6H_8H
+- class: IfcBeam
+  tag: GB-6H_8H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - H
+    to_grid:
+    - '8'
+    - H
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-6H_8H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - H
+    to_grid:
+    - '8'
+    - H
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-6K_8K
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '6'
+    - K
+    to_grid:
+    - '8'
+    - K
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-06
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.75
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-6K_8K
+- class: IfcBeam
+  tag: GB-6K_8K
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - K
+    to_grid:
+    - '8'
+    - K
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-6K_8K
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - K
+    to_grid:
+    - '8'
+    - K
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-7F_9F
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '7'
+    - F
+    to_grid:
+    - '9'
+    - F
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-05
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 2.0
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-7F_9F
+- class: IfcBeam
+  tag: GB-7F_9F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - F
+    to_grid:
+    - '9'
+    - F
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-7F_9F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - F
+    to_grid:
+    - '9'
+    - F
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-9F_10F
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '9'
+    - F
+    to_grid:
+    - '10'
+    - F
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children: []
+- class: IfcBeam
+  tag: GB-9F_10F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '9'
+    - F
+    to_grid:
+    - '10'
+    - F
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-9F_10F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '9'
+    - F
+    to_grid:
+    - '10'
+    - F
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-10F_11F
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '10'
+    - F
+    to_grid:
+    - '11'
+    - F
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-06
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 1.25
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-10F_11F
+- class: IfcBeam
+  tag: GB-10F_11F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '10'
+    - F
+    to_grid:
+    - '11'
+    - F
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-10F_11F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '10'
+    - F
+    to_grid:
+    - '11'
+    - F
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-2D_3D
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '2'
+    - D
+    to_grid:
+    - '3'
+    - D
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-07
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.0
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-2D_3D
+- class: IfcBeam
+  tag: GB-2D_3D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '2'
+    - D
+    to_grid:
+    - '3'
+    - D
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-2D_3D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '2'
+    - D
+    to_grid:
+    - '3'
+    - D
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-10D_11D
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '10'
+    - D
+    to_grid:
+    - '11'
+    - D
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-08
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.25
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-10D_11D
+- class: IfcBeam
+  tag: GB-10D_11D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '10'
+    - D
+    to_grid:
+    - '11'
+    - D
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-10D_11D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '10'
+    - D
+    to_grid:
+    - '11'
+    - D
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-7J_9J
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '7'
+    - J
+    to_grid:
+    - '9'
+    - J
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-09
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 2.0
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-7J_9J
+- class: IfcBeam
+  tag: GB-7J_9J
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - J
+    to_grid:
+    - '9'
+    - J
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-7J_9J
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - J
+    to_grid:
+    - '9'
+    - J
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-9I_11I
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '9'
+    - I
+    to_grid:
+    - '11'
+    - I
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-10
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.75
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-9I_11I
+- class: IfcBeam
+  tag: GB-9I_11I
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '9'
+    - I
+    to_grid:
+    - '11'
+    - I
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-9I_11I
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '9'
+    - I
+    to_grid:
+    - '11'
+    - I
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-7A_8A
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '7'
+    - A
+    to_grid:
+    - '8'
+    - A
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-11
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.25
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-7A_8A
+- class: IfcBeam
+  tag: GB-7A_8A
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - A
+    to_grid:
+    - '8'
+    - A
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-7A_8A
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - A
+    to_grid:
+    - '8'
+    - A
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-3B_5B
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '3'
+    - B
+    to_grid:
+    - '5'
+    - B
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-07
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 1.25
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-3B_5B
+- class: IfcBeam
+  tag: GB-3B_5B
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - B
+    to_grid:
+    - '5'
+    - B
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-3B_5B
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - B
+    to_grid:
+    - '5'
+    - B
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-5B_7B
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '5'
+    - B
+    to_grid:
+    - '7'
+    - B
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-12
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.25
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-5B_7B
+- class: IfcBeam
+  tag: GB-5B_7B
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '5'
+    - B
+    to_grid:
+    - '7'
+    - B
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-5B_7B
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '5'
+    - B
+    to_grid:
+    - '7'
+    - B
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-1G_2G
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '1'
+    - G
+    to_grid:
+    - '2'
+    - G
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-13
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 2.75
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-1G_2G
+- class: IfcBeam
+  tag: GB-1G_2G
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '1'
+    - G
+    to_grid:
+    - '2'
+    - G
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-1G_2G
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '1'
+    - G
+    to_grid:
+    - '2'
+    - G
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-3B_3C
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '3'
+    - B
+    to_grid:
+    - '3'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-08
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 1.0
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-3B_3C
+- class: IfcBeam
+  tag: GB-3B_3C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - B
+    to_grid:
+    - '3'
+    - C
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-3B_3C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - B
+    to_grid:
+    - '3'
+    - C
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-3C_3D
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '3'
+    - C
+    to_grid:
+    - '3'
+    - D
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-FOYER_LIVING_ROOM
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 1.0
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-3C_3D
+- class: IfcBeam
+  tag: GB-3C_3D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - C
+    to_grid:
+    - '3'
+    - D
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-3C_3D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - C
+    to_grid:
+    - '3'
+    - D
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-3D_3E
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '3'
+    - D
+    to_grid:
+    - '3'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-14
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.0
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-3D_3E
+- class: IfcBeam
+  tag: GB-3D_3E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - D
+    to_grid:
+    - '3'
+    - E
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-3D_3E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - D
+    to_grid:
+    - '3'
+    - E
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-3E_3H
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '3'
+    - E
+    to_grid:
+    - '3'
+    - H
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-15
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 2.0
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-3E_3H
+- class: IfcBeam
+  tag: GB-3E_3H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - E
+    to_grid:
+    - '3'
+    - H
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-3E_3H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '3'
+    - E
+    to_grid:
+    - '3'
+    - H
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-7A_7B
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '7'
+    - A
+    to_grid:
+    - '7'
+    - B
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children: []
+- class: IfcBeam
+  tag: GB-7A_7B
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - A
+    to_grid:
+    - '7'
+    - B
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-7A_7B
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - A
+    to_grid:
+    - '7'
+    - B
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-7B_7C
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '7'
+    - B
+    to_grid:
+    - '7'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-10
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 1.0
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-7B_7C
+- class: IfcBeam
+  tag: GB-7B_7C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - B
+    to_grid:
+    - '7'
+    - C
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-7B_7C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - B
+    to_grid:
+    - '7'
+    - C
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-7C_7E
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '7'
+    - C
+    to_grid:
+    - '7'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-LIVING_ROOM_MASTER_BEDROOM
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 2.0
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-7C_7E
+- class: IfcBeam
+  tag: GB-7C_7E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - C
+    to_grid:
+    - '7'
+    - E
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-7C_7E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - C
+    to_grid:
+    - '7'
+    - E
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-7E_7F
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '7'
+    - E
+    to_grid:
+    - '7'
+    - F
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children: []
+- class: IfcBeam
+  tag: GB-7E_7F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - E
+    to_grid:
+    - '7'
+    - F
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-7E_7F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - E
+    to_grid:
+    - '7'
+    - F
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-7F_7J
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '7'
+    - F
+    to_grid:
+    - '7'
+    - J
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-16
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 2.25
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-7F_7J
+- class: IfcBeam
+  tag: GB-7F_7J
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - F
+    to_grid:
+    - '7'
+    - J
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-7F_7J
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '7'
+    - F
+    to_grid:
+    - '7'
+    - J
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-6C_6E
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '6'
+    - C
+    to_grid:
+    - '6'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-17
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 2.0
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-6C_6E
+- class: IfcBeam
+  tag: GB-6C_6E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - C
+    to_grid:
+    - '6'
+    - E
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-6C_6E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - C
+    to_grid:
+    - '6'
+    - E
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-6E_6H
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '6'
+    - E
+    to_grid:
+    - '6'
+    - H
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-DINING_ROOM_KITCHEN
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 2.0
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-6E_6H
+- class: IfcBeam
+  tag: GB-6E_6H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - E
+    to_grid:
+    - '6'
+    - H
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-6E_6H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - E
+    to_grid:
+    - '6'
+    - H
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-6H_6K
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '6'
+    - H
+    to_grid:
+    - '6'
+    - K
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-18
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.25
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-6H_6K
+- class: IfcBeam
+  tag: GB-6H_6K
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - H
+    to_grid:
+    - '6'
+    - K
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-6H_6K
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '6'
+    - H
+    to_grid:
+    - '6'
+    - K
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-8A_8C
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '8'
+    - A
+    to_grid:
+    - '8'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-19
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.25
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-8A_8C
+- class: IfcBeam
+  tag: GB-8A_8C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '8'
+    - A
+    to_grid:
+    - '8'
+    - C
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-8A_8C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '8'
+    - A
+    to_grid:
+    - '8'
+    - C
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-8E_8H
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '8'
+    - E
+    to_grid:
+    - '8'
+    - H
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-20
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 2.0
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-8E_8H
+- class: IfcBeam
+  tag: GB-8E_8H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '8'
+    - E
+    to_grid:
+    - '8'
+    - H
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-8E_8H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '8'
+    - E
+    to_grid:
+    - '8'
+    - H
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-8H_8K
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '8'
+    - H
+    to_grid:
+    - '8'
+    - K
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-21
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.25
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-8H_8K
+- class: IfcBeam
+  tag: GB-8H_8K
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '8'
+    - H
+    to_grid:
+    - '8'
+    - K
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-8H_8K
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '8'
+    - H
+    to_grid:
+    - '8'
+    - K
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-10C_10D
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '10'
+    - C
+    to_grid:
+    - '10'
+    - D
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-22
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.0
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-10C_10D
+- class: IfcBeam
+  tag: GB-10C_10D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '10'
+    - C
+    to_grid:
+    - '10'
+    - D
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-10C_10D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '10'
+    - C
+    to_grid:
+    - '10'
+    - D
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-10D_10F
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '10'
+    - D
+    to_grid:
+    - '10'
+    - F
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-MASTER_BEDROOM_WALK_IN_CLOSET
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 1.25
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-10D_10F
+- class: IfcBeam
+  tag: GB-10D_10F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '10'
+    - D
+    to_grid:
+    - '10'
+    - F
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-10D_10F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '10'
+    - D
+    to_grid:
+    - '10'
+    - F
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-11D_11F
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '11'
+    - D
+    to_grid:
+    - '11'
+    - F
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-23
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.25
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-11D_11F
+- class: IfcBeam
+  tag: GB-11D_11F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '11'
+    - D
+    to_grid:
+    - '11'
+    - F
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-11D_11F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '11'
+    - D
+    to_grid:
+    - '11'
+    - F
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-11F_11I
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '11'
+    - F
+    to_grid:
+    - '11'
+    - I
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-24
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 2.0
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-11F_11I
+- class: IfcBeam
+  tag: GB-11F_11I
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '11'
+    - F
+    to_grid:
+    - '11'
+    - I
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-11F_11I
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '11'
+    - F
+    to_grid:
+    - '11'
+    - I
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-9F_9I
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '9'
+    - F
+    to_grid:
+    - '9'
+    - I
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-14
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 2.0
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-9F_9I
+- class: IfcBeam
+  tag: GB-9F_9I
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '9'
+    - F
+    to_grid:
+    - '9'
+    - I
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-9F_9I
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '9'
+    - F
+    to_grid:
+    - '9'
+    - I
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-9I_9J
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '9'
+    - I
+    to_grid:
+    - '9'
+    - J
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children: []
+- class: IfcBeam
+  tag: GB-9I_9J
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '9'
+    - I
+    to_grid:
+    - '9'
+    - J
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-9I_9J
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '9'
+    - I
+    to_grid:
+    - '9'
+    - J
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-5B_5C
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '5'
+    - B
+    to_grid:
+    - '5'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-25
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.0
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-5B_5C
+- class: IfcBeam
+  tag: GB-5B_5C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '5'
+    - B
+    to_grid:
+    - '5'
+    - C
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-5B_5C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '5'
+    - B
+    to_grid:
+    - '5'
+    - C
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-4C_4E
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '4'
+    - C
+    to_grid:
+    - '4'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-26
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 2.0
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-4C_4E
+- class: IfcBeam
+  tag: GB-4C_4E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '4'
+    - C
+    to_grid:
+    - '4'
+    - E
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-4C_4E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '4'
+    - C
+    to_grid:
+    - '4'
+    - E
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-2C_2D
+  material: BRICK_MASONRY
+  thickness: 0.15
+  height: 2.8
+  placement:
+    from_grid:
+    - '2'
+    - C
+    to_grid:
+    - '2'
+    - D
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcDoor
+    tag: D-CARPORT_FOYER
+    material: WOOD
+    dimensions:
+      width: 0.9
+      height: 2.0
+    offset_distance: 1.0
+    sill_height: 0.0
+    flipped: false
+    host_wall: WALL-2C_2D
+- class: IfcBeam
+  tag: GB-2C_2D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '2'
+    - C
+    to_grid:
+    - '2'
+    - D
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-2C_2D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '2'
+    - C
+    to_grid:
+    - '2'
+    - D
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-2D_2G
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '2'
+    - D
+    to_grid:
+    - '2'
+    - G
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-27
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 1.5
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-2D_2G
+- class: IfcBeam
+  tag: GB-2D_2G
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '2'
+    - D
+    to_grid:
+    - '2'
+    - G
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-2D_2G
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '2'
+    - D
+    to_grid:
+    - '2'
+    - G
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcWall
+  tag: WALL-1C_1G
+  material: BRICK_MASONRY
+  thickness: 0.2
+  height: 2.8
+  placement:
+    from_grid:
+    - '1'
+    - C
+    to_grid:
+    - '1'
+    - G
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+  children:
+  - class: IfcWindow
+    tag: W-28
+    material: GLASS
+    dimensions:
+      width: 1.2
+      height: 1.2
+    offset_distance: 2.5
+    sill_height: 0.9
+    flipped: false
+    host_wall: WALL-1C_1G
+- class: IfcBeam
+  tag: GB-1C_1G
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '1'
+    - C
+    to_grid:
+    - '1'
+    - G
+    storey: STOREY-1
+    offset_z: 0.0
+    allow_cantilever: false
+- class: IfcBeam
+  tag: B-1C_1G
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.4
+  placement:
+    from_grid:
+    - '1'
+    - C
+    to_grid:
+    - '1'
+    - G
+    storey: STOREY-1
+    offset_z: 2.8
+    allow_cantilever: false
+- class: IfcColumn
+  tag: C-1_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '1'
+    - C
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-1_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '1'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-1_G
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '1'
+    - G
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-1_G
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '1'
+    - G
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-2_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '2'
+    - C
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-2_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '2'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-2_D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '2'
+    - D
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-2_D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '2'
+    - D
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-2_G
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '2'
+    - G
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-2_G
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '2'
+    - G
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-3_B
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '3'
+    - B
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-3_B
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '3'
+    - B
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-3_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '3'
+    - C
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-3_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '3'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-3_D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '3'
+    - D
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-3_D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '3'
+    - D
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-3_E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '3'
+    - E
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-3_E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '3'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-3_H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '3'
+    - H
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-3_H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '3'
+    - H
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-4_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '4'
+    - C
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-4_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '4'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-4_E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '4'
+    - E
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-4_E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '4'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-5_B
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '5'
+    - B
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-5_B
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '5'
+    - B
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-5_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '5'
+    - C
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-5_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '5'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-6_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '6'
+    - C
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-6_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '6'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-6_E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '6'
+    - E
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-6_E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '6'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-6_H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '6'
+    - H
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-6_H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '6'
+    - H
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-6_K
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '6'
+    - K
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-6_K
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '6'
+    - K
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-7_A
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '7'
+    - A
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-7_A
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '7'
+    - A
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-7_B
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '7'
+    - B
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-7_B
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '7'
+    - B
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-7_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '7'
+    - C
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-7_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '7'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-7_E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '7'
+    - E
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-7_E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '7'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-7_F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '7'
+    - F
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-7_F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '7'
+    - F
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-7_J
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '7'
+    - J
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-7_J
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '7'
+    - J
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-8_A
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '8'
+    - A
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-8_A
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '8'
+    - A
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-8_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '8'
+    - C
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-8_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '8'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-8_E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '8'
+    - E
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-8_E
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '8'
+    - E
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-8_H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '8'
+    - H
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-8_H
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '8'
+    - H
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-8_K
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '8'
+    - K
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-8_K
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '8'
+    - K
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-9_F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '9'
+    - F
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-9_F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '9'
+    - F
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-9_I
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '9'
+    - I
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-9_I
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '9'
+    - I
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-9_J
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '9'
+    - J
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-9_J
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '9'
+    - J
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-10_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '10'
+    - C
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-10_C
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '10'
+    - C
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-10_D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '10'
+    - D
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-10_D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '10'
+    - D
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-10_F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '10'
+    - F
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-10_F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '10'
+    - F
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-11_D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '11'
+    - D
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-11_D
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '11'
+    - D
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-11_F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '11'
+    - F
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-11_F
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '11'
+    - F
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcColumn
+  tag: C-11_I
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 0.2
+    depth: 0.2
+  placement:
+    grid:
+    - '11'
+    - I
+    base_storey: STOREY-1
+    top_storey: STOREY-1
+    height: 2.8
+    offset_base:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_top:
+    - 0.0
+    - 0.0
+    - 0.0
+    offset_x: 0.0
+    offset_y: 0.0
+- class: IfcFooting
+  tag: F-11_I
+  material: CONCRETE
+  profile:
+    shape: BOX
+    width: 1.0
+    depth: 1.0
+    thickness: 0.35
+  placement:
+    grid:
+    - '11'
+    - I
+    storey: STOREY-1
+    offset_x: 0.0
+    offset_y: 0.0
+    offset_z: -0.5
+  substructure:
+    lean_concrete: true
+    lean_thickness: 0.05
+    sand_bedding: true
+    sand_thickness: 0.1
+    excavation: true
+    excavation_working_space: 0.14
+- class: IfcSlab
+  tag: SLAB-LIVING_ROOM
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '3'
+      - C
+    - - '7'
+      - C
+    - - '7'
+      - E
+    - - '3'
+      - E
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: LIVING_ROOM
+  name: Living Room (ห้องรับแขก)
+  space_type: LIVING
+  height: 2.8
+  floor_material: GRANITO_60X60
+  floor_thickness: 0.0
+  drop_elevation: 0.0
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '3'
+      - C
+    - - '7'
+      - C
+    - - '7'
+      - E
+    - - '3'
+      - E
+    offset_z: 0.0
+    dimensions:
+    - 5.0
+    - 4.0
+    origin:
+    - 2.0
+    - 2.0
+  dimensions:
+  - 5.0
+  - 4.0
+  origin:
+  - 2.0
+  - 2.0
+  must_connect: []
+  contains:
+  - ref: WORKING_DESK
+    count: 1
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-DINING_ROOM
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '3'
+      - E
+    - - '6'
+      - E
+    - - '6'
+      - H
+    - - '3'
+      - H
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: DINING_ROOM
+  name: Dining Room (ส่วนทานอาหาร)
+  space_type: DINING
+  height: 2.8
+  floor_material: GRANITO_60X60
+  floor_thickness: 0.0
+  drop_elevation: 0.0
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '3'
+      - E
+    - - '6'
+      - E
+    - - '6'
+      - H
+    - - '3'
+      - H
+    offset_z: 0.0
+    touching:
+      target: LIVING_ROOM
+      side: NORTH
+      align: LEFT
+    dimensions:
+    - 4.0
+    - 4.0
+  touching:
+    target: LIVING_ROOM
+    side: NORTH
+    align: LEFT
+  dimensions:
+  - 4.0
+  - 4.0
+  must_connect:
+  - LIVING_ROOM
+  - LIVING_ROOM
+  contains:
+  - ref: DINING_TABLE_6SEAT
+    count: 1
+  design_spec:
+    adjacencies:
+      must_connect:
+      - LIVING_ROOM
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-KITCHEN
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '6'
+      - E
+    - - '8'
+      - E
+    - - '8'
+      - H
+    - - '6'
+      - H
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: KITCHEN
+  name: Kitchen (ห้องครัว)
+  space_type: KITCHEN
+  height: 2.8
+  floor_material: TILES_30X30
+  floor_thickness: 0.0
+  drop_elevation: 0.0
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '6'
+      - E
+    - - '8'
+      - E
+    - - '8'
+      - H
+    - - '6'
+      - H
+    offset_z: 0.0
+    touching:
+      target: DINING_ROOM
+      side: EAST
+      align: BOTTOM
+    dimensions:
+    - 3.5
+    - 4.0
+  touching:
+    target: DINING_ROOM
+    side: EAST
+    align: BOTTOM
+  dimensions:
+  - 3.5
+  - 4.0
+  must_connect:
+  - DINING_ROOM
+  - DINING_ROOM
+  design_spec:
+    adjacencies:
+      must_connect:
+      - DINING_ROOM
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-SERVICE_YARD
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '6'
+      - H
+    - - '8'
+      - H
+    - - '8'
+      - K
+    - - '6'
+      - K
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: SERVICE_YARD
+  name: Service Yard (ลานซักล้าง)
+  space_type: SERVICE
+  height: 2.8
+  floor_material: TILES_30X30
+  floor_thickness: 0.0
+  drop_elevation: 0.0
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '6'
+      - H
+    - - '8'
+      - H
+    - - '8'
+      - K
+    - - '6'
+      - K
+    offset_z: 0.0
+    touching:
+      target: KITCHEN
+      side: NORTH
+      align: LEFT
+    dimensions:
+    - 3.5
+    - 2.5
+  touching:
+    target: KITCHEN
+    side: NORTH
+    align: LEFT
+  dimensions:
+  - 3.5
+  - 2.5
+  must_connect:
+  - KITCHEN
+  - KITCHEN
+  design_spec:
+    adjacencies:
+      must_connect:
+      - KITCHEN
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-MASTER_BEDROOM
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '7'
+      - C
+    - - '10'
+      - C
+    - - '10'
+      - F
+    - - '7'
+      - F
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: MASTER_BEDROOM
+  name: Master Bedroom (ห้องนอนใหญ่)
+  space_type: BEDROOM
+  height: 2.8
+  floor_material: WOOD_PARQUET
+  floor_thickness: 0.0
+  drop_elevation: 0.0
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '7'
+      - C
+    - - '10'
+      - C
+    - - '10'
+      - F
+    - - '7'
+      - F
+    offset_z: 0.0
+    touching:
+      target: LIVING_ROOM
+      side: EAST
+      align: BOTTOM
+    dimensions:
+    - 5.0
+    - 4.5
+  touching:
+    target: LIVING_ROOM
+    side: EAST
+    align: BOTTOM
+  dimensions:
+  - 5.0
+  - 4.5
+  must_connect:
+  - LIVING_ROOM
+  - LIVING_ROOM
+  contains:
+  - ref: BED_KING_6FT
+    count: 1
+  - ref: WARDROBE_2M
+    count: 1
+  design_spec:
+    adjacencies:
+      must_connect:
+      - LIVING_ROOM
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-WALK_IN_CLOSET
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '10'
+      - D
+    - - '11'
+      - D
+    - - '11'
+      - F
+    - - '10'
+      - F
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: WALK_IN_CLOSET
+  name: Walk-in Closet (แต่งตัว)
+  space_type: CLOSET
+  height: 2.8
+  floor_material: WOOD_PARQUET
+  floor_thickness: 0.0
+  drop_elevation: 0.0
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '10'
+      - D
+    - - '11'
+      - D
+    - - '11'
+      - F
+    - - '10'
+      - F
+    offset_z: 0.0
+    touching:
+      target: MASTER_BEDROOM
+      side: EAST
+      align: TOP
+    dimensions:
+    - 2.5
+    - 2.5
+  touching:
+    target: MASTER_BEDROOM
+    side: EAST
+    align: TOP
+  dimensions:
+  - 2.5
+  - 2.5
+  must_connect:
+  - MASTER_BEDROOM
+  - MASTER_BEDROOM
+  design_spec:
+    adjacencies:
+      must_connect:
+      - MASTER_BEDROOM
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-BEDROOM_02
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '7'
+      - F
+    - - '9'
+      - F
+    - - '9'
+      - J
+    - - '7'
+      - J
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: BEDROOM_02
+  name: Bedroom 02 (ห้องนอน 2)
+  space_type: BEDROOM
+  height: 2.8
+  floor_material: WOOD_PARQUET
+  floor_thickness: 0.0
+  drop_elevation: 0.0
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '7'
+      - F
+    - - '9'
+      - F
+    - - '9'
+      - J
+    - - '7'
+      - J
+    offset_z: 0.0
+    touching:
+      target: MASTER_BEDROOM
+      side: NORTH
+      align: LEFT
+    dimensions:
+    - 4.0
+    - 4.5
+  touching:
+    target: MASTER_BEDROOM
+    side: NORTH
+    align: LEFT
+  dimensions:
+  - 4.0
+  - 4.5
+  must_connect:
+  - DINING_ROOM
+  - DINING_ROOM
+  contains:
+  - ref: BED_QUEEN_5FT
+    count: 1
+  - ref: WORKING_DESK
+    count: 1
+  design_spec:
+    adjacencies:
+      must_connect:
+      - DINING_ROOM
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-BEDROOM_03
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '9'
+      - F
+    - - '11'
+      - F
+    - - '11'
+      - I
+    - - '9'
+      - I
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: BEDROOM_03
+  name: Bedroom 03 (ห้องนอน 3)
+  space_type: BEDROOM
+  height: 2.8
+  floor_material: WOOD_PARQUET
+  floor_thickness: 0.0
+  drop_elevation: 0.0
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '9'
+      - F
+    - - '11'
+      - F
+    - - '11'
+      - I
+    - - '9'
+      - I
+    offset_z: 0.0
+    touching:
+      target: BEDROOM_02
+      side: EAST
+      align: BOTTOM
+    dimensions:
+    - 3.5
+    - 4.0
+  touching:
+    target: BEDROOM_02
+    side: EAST
+    align: BOTTOM
+  dimensions:
+  - 3.5
+  - 4.0
+  must_connect:
+  - DINING_ROOM
+  - DINING_ROOM
+  design_spec:
+    adjacencies:
+      must_connect:
+      - DINING_ROOM
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-BATHROOM_MASTER
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '7'
+      - A
+    - - '8'
+      - A
+    - - '8'
+      - C
+    - - '7'
+      - C
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: BATHROOM_MASTER
+  name: Master Bathroom (ห้องน้ำในห้องนอนใหญ่)
+  space_type: BATHROOM
+  height: 2.6
+  floor_material: ANTI_SLIP_TILES
+  floor_thickness: 0.0
+  drop_elevation: -0.1
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '7'
+      - A
+    - - '8'
+      - A
+    - - '8'
+      - C
+    - - '7'
+      - C
+    offset_z: 0.0
+    touching:
+      target: MASTER_BEDROOM
+      side: SOUTH
+      align: LEFT
+    dimensions:
+    - 2.5
+    - 2.5
+  touching:
+    target: MASTER_BEDROOM
+    side: SOUTH
+    align: LEFT
+  dimensions:
+  - 2.5
+  - 2.5
+  must_connect:
+  - MASTER_BEDROOM
+  - MASTER_BEDROOM
+  contains:
+  - ref: TOILET_SET
+    count: 1
+  - ref: SHOWER_ENCLOSURE
+    count: 1
+  design_spec:
+    adjacencies:
+      must_connect:
+      - MASTER_BEDROOM
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-BATHROOM_GUEST
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '3'
+      - B
+    - - '5'
+      - B
+    - - '5'
+      - C
+    - - '3'
+      - C
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: BATHROOM_GUEST
+  name: Guest Bathroom (ห้องน้ำแขก)
+  space_type: BATHROOM
+  height: 2.6
+  floor_material: ANTI_SLIP_TILES
+  floor_thickness: 0.0
+  drop_elevation: -0.1
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '3'
+      - B
+    - - '5'
+      - B
+    - - '5'
+      - C
+    - - '3'
+      - C
+    offset_z: 0.0
+    touching:
+      target: LIVING_ROOM
+      side: SOUTH
+      align: LEFT
+    dimensions:
+    - 2.5
+    - 2.0
+  touching:
+    target: LIVING_ROOM
+    side: SOUTH
+    align: LEFT
+  dimensions:
+  - 2.5
+  - 2.0
+  must_connect:
+  - LIVING_ROOM
+  - LIVING_ROOM
+  contains:
+  - ref: TOILET_SET
+    count: 1
+  design_spec:
+    adjacencies:
+      must_connect:
+      - LIVING_ROOM
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-CORRIDOR
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '4'
+      - C
+    - - '6'
+      - C
+    - - '6'
+      - E
+    - - '4'
+      - E
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: CORRIDOR
+  name: Central Corridor (ทางเดินส่วนกลาง)
+  space_type: CORRIDOR
+  height: 2.8
+  floor_material: GRANITO_60X60
+  floor_thickness: 0.0
+  drop_elevation: 0.0
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '4'
+      - C
+    - - '6'
+      - C
+    - - '6'
+      - E
+    - - '4'
+      - E
+    offset_z: 0.0
+    touching:
+      target: DINING_ROOM
+      side: SOUTH
+      align: RIGHT
+    dimensions:
+    - 2.5
+    - 4.0
+  touching:
+    target: DINING_ROOM
+    side: SOUTH
+    align: RIGHT
+  dimensions:
+  - 2.5
+  - 4.0
+  must_connect:
+  - LIVING_ROOM
+  - DINING_ROOM
+  - BEDROOM_02
+  - LIVING_ROOM
+  - DINING_ROOM
+  - BEDROOM_02
+  design_spec:
+    adjacencies:
+      must_connect:
+      - LIVING_ROOM
+      - DINING_ROOM
+      - BEDROOM_02
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-FOYER
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '2'
+      - C
+    - - '3'
+      - C
+    - - '3'
+      - D
+    - - '2'
+      - D
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: FOYER
+  name: Entrance Foyer (โถงทางเข้า)
+  space_type: FOYER
+  height: 2.8
+  floor_material: GRANITO_60X60
+  floor_thickness: 0.0
+  drop_elevation: 0.0
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '2'
+      - C
+    - - '3'
+      - C
+    - - '3'
+      - D
+    - - '2'
+      - D
+    offset_z: 0.0
+    touching:
+      target: LIVING_ROOM
+      side: WEST
+      align: BOTTOM
+    dimensions:
+    - 2.0
+    - 2.0
+  touching:
+    target: LIVING_ROOM
+    side: WEST
+    align: BOTTOM
+  dimensions:
+  - 2.0
+  - 2.0
+  must_connect:
+  - LIVING_ROOM
+  - LIVING_ROOM
+  design_spec:
+    adjacencies:
+      must_connect:
+      - LIVING_ROOM
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-TERRACE
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '3'
+      - B
+    - - '7'
+      - B
+    - - '7'
+      - C
+    - - '3'
+      - C
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: TERRACE
+  name: Outdoor Terrace (เฉลียงพักผ่อน)
+  space_type: TERRACE
+  height: 2.8
+  floor_material: OUTDOOR_TILES
+  floor_thickness: 0.0
+  drop_elevation: 0.0
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '3'
+      - B
+    - - '7'
+      - B
+    - - '7'
+      - C
+    - - '3'
+      - C
+    offset_z: 0.0
+    touching:
+      target: LIVING_ROOM
+      side: SOUTH
+      align: RIGHT
+    dimensions:
+    - 5.0
+    - 2.0
+  touching:
+    target: LIVING_ROOM
+    side: SOUTH
+    align: RIGHT
+  dimensions:
+  - 5.0
+  - 2.0
+  must_connect:
+  - LIVING_ROOM
+  - LIVING_ROOM
+  design_spec:
+    adjacencies:
+      must_connect:
+      - LIVING_ROOM
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+- class: IfcSlab
+  tag: SLAB-CARPORT
+  material: CONCRETE
+  thickness: 0.12
+  slab_type: SOLID
+  elevation_offset: 0.0
+  placement:
+    boundary:
+    - - '1'
+      - C
+    - - '2'
+      - C
+    - - '2'
+      - G
+    - - '1'
+      - G
+    storey: STOREY-1
+    offset_z: 0.0
+    elevation_offset: 0.0
+- class: IfcSpace
+  tag: CARPORT
+  name: Carport (ที่จอดรถ 2 คัน)
+  space_type: CARPORT
+  height: 2.8
+  floor_material: WASHED_GRAVEL
+  floor_thickness: 0.0
+  drop_elevation: 0.0
+  placement:
+    storey: STOREY-1
+    boundary:
+    - - '1'
+      - C
+    - - '2'
+      - C
+    - - '2'
+      - G
+    - - '1'
+      - G
+    offset_z: 0.0
+    touching:
+      target: FOYER
+      side: WEST
+      align: BOTTOM
+    dimensions:
+    - 5.5
+    - 5.0
+  touching:
+    target: FOYER
+    side: WEST
+    align: BOTTOM
+  dimensions:
+  - 5.5
+  - 5.0
+  must_connect:
+  - FOYER
+  - FOYER
+  design_spec:
+    adjacencies:
+      must_connect:
+      - FOYER
+      forbidden_adjacent: []
+  properties: {}
+  layer: architecture/spaces
+railways: []
+proxies: []
+systems: []
+connections: []
+includes: []
+compliances: []
+variables:
+  BED_KING_6FT:
+    class: IfcTypeProduct
+    dimensions:
+      width: 1.83
+      depth: 1.98
+      height: 0.9
+    clearance:
+      front: 0.6
+      back: 0.0
+      left: 0.6
+      right: 0.6
+  BED_QUEEN_5FT:
+    class: IfcTypeProduct
+    dimensions:
+      width: 1.52
+      depth: 1.98
+      height: 0.9
+    clearance:
+      front: 0.6
+      back: 0.0
+      left: 0.6
+      right: 0.6
+  WARDROBE_2M:
+    class: IfcTypeProduct
+    dimensions:
+      width: 2.0
+      depth: 0.6
+      height: 2.2
+    clearance:
+      front: 0.8
+      back: 0.0
+      left: 0.0
+      right: 0.0
+  WORKING_DESK:
+    class: IfcTypeProduct
+    dimensions:
+      width: 1.2
+      depth: 0.6
+      height: 0.75
+    clearance:
+      front: 0.8
+      back: 0.0
+      left: 0.0
+      right: 0.0
+  TOILET_SET:
+    class: IfcTypeProduct
+    dimensions:
+      width: 0.45
+      depth: 0.7
+      height: 0.75
+    clearance:
+      front: 0.6
+      back: 0.0
+      left: 0.2
+      right: 0.2
+  SHOWER_ENCLOSURE:
+    class: IfcTypeProduct
+    dimensions:
+      width: 0.9
+      depth: 0.9
+      height: 2.0
+    clearance:
+      front: 0.6
+      back: 0.0
+      left: 0.0
+      right: 0.0
+  DINING_TABLE_6SEAT:
+    class: IfcTypeProduct
+    dimensions:
+      width: 1.6
+      depth: 0.9
+      height: 0.75
+    clearance:
+      front: 0.9
+      back: 0.9
+      left: 0.8
+      right: 0.8

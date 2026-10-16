@@ -10237,6 +10237,18 @@
           "default": null,
           "title": "Room Number"
         },
+        "space_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Space Type"
+        },
         "height": {
           "default": 2.8,
           "description": "Clear room height in meters. Anchor: BOTTOM-PERIMETER",
@@ -10269,7 +10281,84 @@
           "type": "number"
         },
         "placement": {
-          "$ref": "#/$defs/SpacePlacement"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SpacePlacement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "touching": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SpaceTouchingSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "dimensions": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dimensions"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Origin"
+        },
+        "must_connect": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Must Connect"
         },
         "contains": {
           "anyOf": [
@@ -10316,8 +10405,7 @@
         }
       },
       "required": [
-        "tag",
-        "placement"
+        "tag"
       ],
       "title": "IfcSpace",
       "type": "object",
@@ -14839,8 +14927,16 @@
     "SpacePlacement": {
       "properties": {
         "storey": {
-          "title": "Storey",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "STOREY-1",
+          "title": "Storey"
         },
         "boundary": {
           "anyOf": [
@@ -14920,12 +15016,107 @@
           "default": 0.0,
           "title": "Offset Z",
           "type": "number"
+        },
+        "touching": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SpaceTouchingSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "dimensions": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dimensions"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Origin"
+        }
+      },
+      "title": "SpacePlacement",
+      "type": "object"
+    },
+    "SpaceTouchingSpec": {
+      "properties": {
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "NORTH",
+            "SOUTH",
+            "EAST",
+            "WEST"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "align": {
+          "anyOf": [
+            {
+              "enum": [
+                "LEFT",
+                "RIGHT",
+                "CENTER",
+                "TOP",
+                "BOTTOM"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "LEFT",
+          "title": "Align"
         }
       },
       "required": [
-        "storey"
+        "target",
+        "side"
       ],
-      "title": "SpacePlacement",
+      "title": "SpaceTouchingSpec",
       "type": "object"
     },
     "SpatialStructure": {

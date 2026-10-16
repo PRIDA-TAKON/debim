@@ -33,6 +33,7 @@ from debim.compliance import check_topological_continuity, detect_mep_structural
 from debim.audit import run_5_layer_audit
 from debim.flight_recorder import record_audit_telemetry
 from debim.viewer import generate_viewer_html, serve_viewer
+from debim.derive import derive_project_from_spaces
 from debim.modular import bundle_manifest, split_manifest
 from debim.spec.registry import SpecRegistryClient
 from debim.docs.exemplar import (
@@ -353,6 +354,47 @@ def cmd_validate(args):
         raise
     except Exception as e:
         console.print(f"[bold red]Validation Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
+def cmd_derive(args):
+    manifest_target = args.manifest or getattr(args, "positional_manifest", None)
+    manifest_path = resolve_default_manifest_path(manifest_target)
+    if not manifest_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest_path}' not found.")
+        sys.exit(1)
+
+    out_path = Path(args.output) if args.output else manifest_path.parent / "derived_project.debim"
+
+    console.print(
+        f"[bold green]Deriving structural & architectural BIM elements from:[/bold green] {manifest_path}"
+    )
+
+    try:
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            raw_data = yaml.safe_load(f)
+
+        derived_manifest = derive_project_from_spaces(raw_data)
+
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        dump_data = derived_manifest.model_dump(by_alias=True, exclude_none=True)
+        with open(out_path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(dump_data, f, allow_unicode=True, sort_keys=False)
+
+        elem_count = len(derived_manifest.elements)
+        console.print(
+            Panel(
+                f"[bold green]debim Derive Auto-Framing Complete![/bold green]\n"
+                f"[bold cyan]Input Floorplan:[/bold cyan] {manifest_path}\n"
+                f"[bold cyan]Emitted Project Manifest:[/bold cyan] {out_path}\n"
+                f"[bold cyan]Elements Derived:[/bold cyan] {elem_count} BIM elements\n"
+                f"[dim]Run 'debim validate {out_path}' or 'debim compile -m {out_path}' to inspect.[/dim]",
+                title="[bold green]debim Auto-Derivation Engine[/bold green]",
+                style="green",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Derivation Error:[/bold red]\n{e}")
         sys.exit(1)
 
 
@@ -2194,6 +2236,13 @@ def build_parser() -> argparse.ArgumentParser:
     bsdd_group.add_argument("--no-bsdd", dest="bsdd", action="store_false", help="Disable bSDD validation")
     p_validate.add_argument("--strict-psets", action="store_true", default=False, help="Fail validation if non-compliant Pset types or values are found")
     p_validate.set_defaults(func=cmd_validate)
+
+    # derive
+    p_derive = subparsers.add_parser("derive", help="Derive complete BIM model from relative touching spaces")
+    p_derive.add_argument("positional_manifest", nargs="?", help="Positional path to floorplan manifest")
+    p_derive.add_argument("-m", "--manifest", help="Path to floorplan manifest")
+    p_derive.add_argument("-o", "--output", help="Output path for emitted project manifest")
+    p_derive.set_defaults(func=cmd_derive)
 
     # audit
     p_audit = subparsers.add_parser("audit", help="Run 5-Layer Architectural & Engineering Audit Matrix")
