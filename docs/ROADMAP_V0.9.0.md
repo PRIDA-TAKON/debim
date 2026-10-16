@@ -84,6 +84,20 @@
 
 ---
 
+### 1.6 ไวยากรณ์ "สเปซวางชนกัน" และเครื่องยนต์ถักโครงสร้างอัตโนมัติ (Touching Spaces & Auto-Derivation Engine `debim derive`)
+* **ปัญหาเดิม:** การบีบให้ AI หรือสถาปนิกต้องคำนวณพิกัดแกน $X, Y$ ลอยๆ สำหรับเสา 30 ต้น คาน 50 ตัว ผนัง 40 ผืน ทำให้บริบทล้นสมอง (Cognitive Overload) และ AI เสี่ยงต่อการเกิด Spatial Drift
+* **ปรัชญาใหม่ (Topological Space-First):** สถาปนิกมองแบบที่ยุ่งเหยิงเป็นเพียง **"ก้อนสเปซที่เอาขอบมาแปะชนกัน"**:
+  * AI ประกาศขนาดห้อง และระบุการวางชนแบบสัมพัทธ์ผ่านไวยากรณ์: `touching: { target: LIVING_ROOM, side: NORTH, align: LEFT }`
+* **เครื่องยนต์ `debim derive` (Auto-Framing):**
+  1. **รอยต่อที่ 2 สเปซชนกัน (Shared Edge):** สั่งสร้างผนังภายใน (`IfcWall`) กั้นห้องอัตโนมัติ
+  2. **ขอบสเปซด้านที่ไม่ชนใคร (Exterior Edge):** สั่งสร้างผนังภายนอก และเจาะหน้าต่างรับแสง-ลม (`IfcWindow`)
+  3. **จุดเชื่อมต่อฟังก์ชัน (`must_connect`):** สั่งเจาะประตู (`IfcDoor`) ตรงกึ่งกลางแนวชน
+  4. **จุดตัดมุมของก้อนสเปซ (Space Vertices):** สั่งปักเสา ค.ส.ล. (`IfcColumn`) รองรับโครงสร้าง
+  5. **แนวใต้ผนังและเสา:** สั่งพาดคานคอดินและคานรับพื้น (`IfcBeam`) ครบวงจร
+  * **ผลลัพธ์:** AI เขียนสเปซเพียง 10-15 บรรทัด `debim derive` จะสร้างโครงสร้าง BIM ทั้งหลัง 150+ ชิ้นงานที่ถูกต้องตามหลักวิศวกรรม 100%
+
+---
+
 ## ภาคที่ 2: ข้อกำหนด Schema และตัวอย่างโค้ด (Schema Specifications & Code Examples)
 
 ### ตัวอย่าง: `project.debim` (การประกาศตัวแปรและการเรียกใช้ใน Space)
@@ -155,6 +169,38 @@ elements:
       min_area: 4.00
 ```
 
+### ตัวอย่าง: การนิยามแบบ "กล่องสเปซวางชนกัน" สำหรับ `debim derive`
+
+```yaml
+# floorplan.debim (สถาปนิก/AI กำหนดแค่กล่องสเปซวางชนกัน)
+spaces:
+  LIVING_ROOM:
+    name: "ห้องรับแขก/นั่งเล่น"
+    dimensions: [5.00, 4.00]
+    origin: [2.00, 2.00]       # วางตามแนวระยะร่นที่ดิน
+
+  DINING_ROOM:
+    name: "ส่วนรับประทานอาหาร"
+    dimensions: [4.00, 4.00]
+    touching:
+      target: LIVING_ROOM
+      side: NORTH              # แปะติดห้องนั่งเล่นทางทิศเหนือ
+      align: LEFT
+    must_connect: [LIVING_ROOM] # เดินทะลุหากันได้
+
+  KITCHEN:
+    name: "ห้องครัว"
+    dimensions: [3.00, 3.50]
+    touching:
+      target: DINING_ROOM
+      side: EAST               # แปะติดห้องทานอาหารทางทิศตะวันออก
+      align: TOP
+    must_connect: [DINING_ROOM]
+
+# รันคำสั่งเดียวเพื่อถักโครงสร้างทั้งหลัง:
+# debim derive -m floorplan.debim -o project.debim
+```
+
 ---
 
 ## ภาคที่ 3: แผนงานการพัฒนา 5 Chained Waves สำหรับ Jules AI
@@ -213,14 +259,16 @@ flowchart TD
 
 ---
 
-### Wave 5: Adjacency-to-Opening Synthesizer & Architectural TDD Benchmark (Final Wave)
+### Wave 5: Touching Spaces Adjacency Syntax & Auto-Derivation Engine (`debim derive`) (Final Wave)
 * **Target Files:**
-  - `src/debim/generator.py` (อัลกอริทึมแปลงแนวชนของ Space ที่มี `must_connect` ให้กลายเป็น `IfcDoor`)
-  - `examples/architectural_tdd_house/` (โมเดล Benchmark บ้านพักอาศัยครบวงจรที่สร้างด้วยวิธี TDD)
+  - `src/debim/schema.py` (เพิ่มไวยากรณ์ `touching: { target, side, align }` ในการนิยามสเปซ)
+  - `src/debim/derive.py` (สร้างเครื่องยนต์แตกโครงสร้าง: รอยชนกลายเป็น `IfcWall`, ช่องต่อกลายเป็น `IfcDoor`, รอยนอกกลายเป็น `IfcWindow`, มุมกลายเป็น `IfcColumn`, ใต้ผนังกลายเป็น `IfcBeam`)
+  - `src/debim/cli.py` (เพิ่มคำสั่ง `debim derive -m floorplan.debim -o project.debim`)
+  - `examples/architectural_tdd_house/` (โมเดล Benchmark บ้านพักอาศัยครบวงจร 250+ Elements ที่สร้างด้วยวิธี Touching Spaces + TDD)
 * **Goals:**
-  - วางตำแหน่งประตูอัตโนมัติจาก Function Diagram และจัดเตรียมโมเดลตัวอย่างมาตรฐาน
-* **Test Suite:** `tests/test_adjacency_doors.py`, `tests/test_architectural_tdd_benchmark.py`
-* **Acceptance Criteria:** ประตูถูกวางตรงรอยต่อของ Space ที่เชื่อมโยงกันอย่างถูกต้อง, โมเดลคอมไพล์ผ่านและรัน `debim test` ผ่าน 100%
+  - ให้ AI และสถาปนิกกำหนดแค่ก้อน Space วางชนกัน แล้วรัน `debim derive` ถักโมเดลโครงสร้างและสถาปัตย์ออกมาทั้งหลัง
+* **Test Suite:** `tests/test_touching_spaces.py`, `tests/test_derive_engine.py`, `tests/test_architectural_tdd_benchmark.py`
+* **Acceptance Criteria:** สเปซที่วางชนกันถูกคอมไพล์เป็นผนัง คาน เสา ประตู หน้าต่าง ได้อย่างถูกต้อง 100%, โมเดลคอมไพล์ผ่านและรัน `debim test` ผ่านฉลุย
 
 ---
 

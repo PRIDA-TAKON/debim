@@ -34,15 +34,15 @@
     "issue_key": "wave_4_architectural_compliance",
     "match_keywords": ["architectural unit testing", "architectural compliance", "adjacency constraints", "ventilation compliance", "debim test"],
     "next_issue": {
-      "title": "feat(workflow): function diagram adjacency-to-opening door generator and architectural TDD showcase",
-      "body": "### Overview\nAs part of debim v0.9.0 Wave 5 (Final Wave), implement automatic door placement between adjacent connected spaces (`must_connect`) and provide a comprehensive 250+ element Test-Driven Architectural Design (TDAD) benchmark showcase.\n\n### Tasks\n1. Create `src/debim/generator.py`: Calculate intersecting wall boundaries between connected spaces (`must_connect`) and automatically synthesize centered `IfcDoor` openings (offset $\\ge 0.10$m from structural columns).\n2. Provide `examples/architectural_tdd_house/`: A full two-storey residential project demonstrating:\n   - Variable catalog with Human Scale furniture & clearances\n   - Functional `IfcSpace` scopes with auto-sizing and design assertions\n   - Pre-flight `debim fit` verification\n   - Passing 100% of architectural unit tests via `debim test`\n3. Add unit tests in `tests/test_adjacency_doors.py` and `tests/test_architectural_tdd_benchmark.py`.\n\n### Acceptance Criteria\n- Doors are placed automatically along shared partition walls between connected spaces.\n- The benchmark project compiles cleanly to IFC4 and passes all architectural unit tests.\n- `pytest tests/` passes 100%.",
+      "title": "feat(derive): touching spaces relative syntax and automated structural derivation engine (debim derive)",
+      "body": "### Overview\nAs part of debim v0.9.0 Wave 5 (Final Wave), enable AI and architects to model by declaring simply how spaces touch each other (`touching: { target, side, align }`) and implement the `debim derive` auto-framing engine that derives walls, doors, windows, columns, and beams automatically from touching space boundaries.\n\n### Tasks\n1. In `src/debim/schema.py`: Support relative space placement via `touching: { target: str, side: Literal['NORTH', 'SOUTH', 'EAST', 'WEST'], align: Optional[Literal['LEFT', 'RIGHT', 'CENTER', 'TOP', 'BOTTOM']] }`.\n2. Create `src/debim/derive.py`:\n   - Shared touching boundary between 2 spaces -> internal `IfcWall`.\n   - Exterior boundary -> exterior `IfcWall` + `IfcWindow`.\n   - `must_connect` spaces -> centered `IfcDoor`.\n   - Touching corner vertices -> `IfcColumn`.\n   - Wall baselines -> `IfcBeam` and `IfcSlab`.\n3. In `src/debim/cli.py`: Expose command `debim derive -m <floorplan.debim> -o <project.debim>`.\n4. Provide `examples/architectural_tdd_house/`: A full 250+ element benchmark project generated from touching spaces passing 100% of architectural unit tests.\n5. Add unit tests in `tests/test_touching_spaces.py`, `tests/test_derive_engine.py`, and `tests/test_architectural_tdd_benchmark.py`.\n\n### Acceptance Criteria\n- `debim derive` converts relative touching spaces into complete structural and architectural BIM elements.\n- The benchmark project compiles cleanly to IFC4 and passes `debim test`.\n- `pytest tests/` passes 100%.",
       "label": "jules"
     }
   },
   {
     "wave": 5,
-    "issue_key": "wave_5_adjacency_doors_and_tdd_benchmark",
-    "match_keywords": ["adjacency-to-opening", "adjacency door", "tdd showcase", "architectural tdd", "tdd benchmark"],
+    "issue_key": "wave_5_touching_spaces_and_derive",
+    "match_keywords": ["touching spaces", "debim derive", "auto-framing", "derive engine", "tdd benchmark"],
     "is_final_wave": true,
     "next_issue": null
   }
