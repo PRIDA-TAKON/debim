@@ -30,6 +30,8 @@ from debim.resolver import resolve_manifest
 from debim.schema import ProjectManifest, load_manifest, export_json_schema
 from debim.loader import resolve_default_manifest_path
 from debim.compliance import check_topological_continuity, detect_mep_structural_clashes
+from debim.audit import run_5_layer_audit
+from debim.flight_recorder import record_audit_telemetry
 from debim.viewer import generate_viewer_html, serve_viewer
 from debim.modular import bundle_manifest, split_manifest
 from debim.spec.registry import SpecRegistryClient
@@ -546,6 +548,82 @@ def cmd_bundle(args):
     else:
         yaml_str = yaml.safe_dump(bundled, sort_keys=False, allow_unicode=True)
         print(yaml_str, end="")
+
+
+def cmd_audit(args):
+    manifest_target = args.manifest or getattr(args, "positional_manifest", None)
+    manifest_path = resolve_default_manifest_path(manifest_target)
+    if not manifest_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest_path}' not found.")
+        sys.exit(1)
+
+    apply_fixes = getattr(args, "fix", False)
+    log_dir = Path(args.log_dir) if getattr(args, "log_dir", None) else Path("dist/audit")
+
+    console.print(
+        Panel(
+            f"[bold cyan]debim 5-Layer Architectural & Engineering Audit Matrix[/bold cyan]\n"
+            f"[dim]Manifest:[/dim] [yellow]{manifest_path}[/yellow] | [dim]Auto-Fix Mode:[/dim] [cyan]{apply_fixes}[/cyan] | [dim]Log Dir:[/dim] [magenta]{log_dir}[/magenta]",
+            title="[bold green]debim Audit Matrix Engine[/bold green]",
+        )
+    )
+
+    try:
+        report = run_5_layer_audit(manifest_path, apply_fixes=apply_fixes)
+        json_p, md_p = record_audit_telemetry(report, log_dir=log_dir)
+
+        # Print Layer Summary Table
+        table = Table(
+            title=f"Audit Summary Report ({report.total_checks} Checks, {report.total_violations} Violations)",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        table.add_column("Layer", justify="center", style="bold yellow")
+        table.add_column("Layer Name", style="white")
+        table.add_column("Checks", justify="right", style="cyan")
+        table.add_column("Violations", justify="right", style="magenta")
+        table.add_column("Status", justify="center")
+
+        for l_num, l_res in sorted(report.layers.items()):
+            status_str = "[bold green]PASS[/bold green]" if l_res.passed else "[bold red]FAIL[/bold red]"
+            table.add_row(
+                str(l_num),
+                l_res.layer_name,
+                str(l_res.checks_count),
+                str(l_res.violations_count),
+                status_str,
+            )
+
+        console.print(table)
+
+        # Print details of violations if any
+        if report.total_violations > 0:
+            console.print("\n[bold red]Detailed Audit Violations & Structured Remediations:[/bold red]")
+            for l_num, l_res in sorted(report.layers.items()):
+                if l_res.violations_count > 0:
+                    for item in l_res.items:
+                        console.print(f"  • [bold red][Layer {l_num} - {item.rule_code}][/bold red] {item.element_class or 'Global'} ({item.element_tag or '-'}): {item.message}")
+                        if item.remediation:
+                            rem = item.remediation
+                            app_tag = "[bold green][APPLIED][/bold green]" if rem.applied else "[bold yellow][PROPOSED][/bold yellow]"
+                            console.print(f"    [dim]↳ Remediation [{rem.fix_action}]: {rem.description} {app_tag}[/dim]")
+
+        summary_msg = (
+            f"[bold cyan]Overall Audit Result:[/bold cyan] {'[bold green]PASSED[/bold green]' if report.passed else '[bold red]VIOLATIONS DETECTED[/bold red]'}\n"
+            f"[bold cyan]Remediations Applied:[/bold cyan] {report.remediations_applied}\n"
+            f"[bold cyan]Telemetry Flight Logs Emitted:[/bold cyan] [green]{json_p}[/green] and [green]{md_p}[/green]\n"
+            f"[dim]Execution time: {report.execution_time_sec:.4f}s[/dim]"
+        )
+        console.print(Panel(summary_msg, title="[bold green]Audit Flight Recorder Snapshot[/bold green]"))
+
+        if not report.passed and not apply_fixes:
+            sys.exit(1)
+
+    except SystemExit:
+        raise
+    except Exception as e:
+        console.print(f"[bold red]Audit Matrix Execution Error:[/bold red]\n{e}")
+        sys.exit(1)
 
 
 def cmd_test(args):
@@ -2116,6 +2194,14 @@ def build_parser() -> argparse.ArgumentParser:
     bsdd_group.add_argument("--no-bsdd", dest="bsdd", action="store_false", help="Disable bSDD validation")
     p_validate.add_argument("--strict-psets", action="store_true", default=False, help="Fail validation if non-compliant Pset types or values are found")
     p_validate.set_defaults(func=cmd_validate)
+
+    # audit
+    p_audit = subparsers.add_parser("audit", help="Run 5-Layer Architectural & Engineering Audit Matrix")
+    p_audit.add_argument("positional_manifest", nargs="?", help="Positional path to project manifest")
+    p_audit.add_argument("-m", "--manifest", help="Path to project manifest")
+    p_audit.add_argument("--fix", action="store_true", help="Apply auto-fix structured remediations")
+    p_audit.add_argument("--log-dir", help="Directory path to export telemetry audit_log.json and audit_report.md")
+    p_audit.set_defaults(func=cmd_audit)
 
     # fit
     p_fit = subparsers.add_parser("fit", help="Run 2D geometric furniture fit solver and clearance check")

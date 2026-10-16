@@ -660,8 +660,10 @@ def solve_manifest_furniture_fit(
         # Explicit placed furniture check
         explicit_placements: List[Dict[str, Any]] = []
         if not items_to_fit:
-            st = r_space.storey.id
-            if st in explicit_furn_by_storey:
+            st = r_space.element.placement.storey if hasattr(r_space, "element") and hasattr(r_space.element, "placement") else getattr(r_space, "storey", None)
+            if isinstance(st, object) and hasattr(st, "id"):
+                st = st.id
+            if st and st in explicit_furn_by_storey:
                 for furn in explicit_furn_by_storey[st]:
                     pos_x, pos_y, _ = furn.placement.position
                     # Check if furniture position is inside space boundary
