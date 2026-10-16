@@ -269,60 +269,66 @@ flowchart TD
 
 ---
 
-### Wave 1: Human Scale Furniture Variable Library & Clearance Envelope Schema
+### Wave 1: Human Scale Furniture Variable Library & Clearance Envelope Schema ✅ [COMPLETED]
+* **Issue:** [#468](https://github.com/PRIDA-TAKON/debim/issues/468) | **PR:** [#469](https://github.com/PRIDA-TAKON/debim/pull/469) (Merged)
 * **Target Files:**
   - `src/debim/schema.py` (เพิ่ม `FurnitureVariable`, `ClearanceEnvelope`, และส่วน `variables:` ใน `ProjectManifest`)
   - `src/debim/loader.py` (รองรับการประกาศและ Resolve ตัวแปรเฟอร์นิเจอร์)
 * **Goals:**
   - ประกาศขนาดกว้าง ยาว สูง และระยะเผื่อใช้งาน (`clearance`) ของเฟอร์นิเจอร์/สุขภัณฑ์มาตรฐาน
-* **Test Suite:** `tests/test_furniture_variables.py`
+* **Test Suite:** `tests/test_furniture_variables.py` (ผ่าน 100%)
 * **Acceptance Criteria:** `ProjectManifest` โหลดและตรวจสอบตัวแปรเฟอร์นิเจอร์ได้ถูกต้อง 100%
 
 ---
 
-### Wave 2: Space Functional Scopes with Variable Consumption & Auto-Sizing
+### Wave 2: Space Functional Scopes with Variable Consumption & Auto-Sizing ✅ [COMPLETED]
+* **Issue:** [#470](https://github.com/PRIDA-TAKON/debim/issues/470) | **PR:** [#471](https://github.com/PRIDA-TAKON/debim/pull/471) (Merged)
 * **Target Files:**
   - `src/debim/schema.py` (เพิ่ม `contains: List[VariableReference]`, `design_spec` ใน `IfcSpace`)
   - `src/debim/resolver.py` (คำนวณ `required_net_area` จากผลรวมเฟอร์นิเจอร์คูณสัมประสิทธิ์สัญจร 1.30)
 * **Goals:**
   - ก้อน `IfcSpace` สามารถรับตัวแปรเฟอร์นิเจอร์และคำนวณพื้นที่เป้าหมายขั้นต่ำได้อัตโนมัติ
-* **Test Suite:** `tests/test_space_functional_scope.py`
+* **Test Suite:** `tests/test_space_functional_scope.py` (ผ่าน 100%)
 * **Acceptance Criteria:** คำนวณ Required Area ของห้องจากตัวแปรตรงตามสูตรสถาปนิก ($+30\%$)
 
 ---
 
-### Wave 3: Pre-Flight 2D Geometric Furniture Fit Solver
+### Wave 3: Pre-Flight 2D Geometric Furniture Fit Solver ✅ [COMPLETED]
+* **Issue:** [#472](https://github.com/PRIDA-TAKON/debim/issues/472) | **PR:** [#473](https://github.com/PRIDA-TAKON/debim/pull/473) (Merged)
 * **Target Files:**
   - `src/debim/solver.py` (สร้างโมดูลคณิตศาสตร์ตรวจสอบการจัดวาง 2D Packing & SAT collision)
   - `src/debim/cli.py` (เพิ่มคำสั่ง `debim fit -m project.debim`)
 * **Goals:**
   - ตรวจสอบทางเรขาคณิตว่าเฟอร์นิเจอร์และระยะใช้งาน สามารถวางลงใน Polygon ของ Space ได้จริงโดยไม่เกยกัน
-* **Test Suite:** `tests/test_furniture_fit_solver.py`
+* **Test Suite:** `tests/test_furniture_fit_solver.py` (ผ่าน 100%)
 * **Acceptance Criteria:** ตรวจจับห้องที่เล็กเกินไปหรือวางเฟอร์นิเจอร์ไม่ลงได้ในเวลา $< 0.01$ วินาที
 
 ---
 
-### Wave 4: Architectural Unit Testing Engine (`debim test` Architectural TDD)
+### Wave 4: 5-Layer Architectural & Engineering Audit Matrix & Flight Recorder (`debim audit`) ✅ [COMPLETED]
+* **Issue:** [#474](https://github.com/PRIDA-TAKON/debim/issues/474) | **PR:** [#475](https://github.com/PRIDA-TAKON/debim/pull/475) (Merged)
 * **Target Files:**
-  - `src/debim/compliance.py` (เพิ่มตัวตรวจเช็ค: Area threshold, Natural ventilation 10%, Bathroom drop, Adjacencies)
-  - `src/debim/cli.py` (ขยายคำสั่ง `debim test` ให้รัน Architectural Design Assertions)
+  - `src/debim/compliance.py` & `src/debim/audit.py` (ระบบตรวจ 5 ชั้น: Legal, Structure Load Path, MEP Clashes, Human Ergonomics, BOQ)
+  - `src/debim/flight_recorder.py` (กล่องดำบันทึก Telemetry `audit_log.json` และรายงาน Markdown สรุปหน้าเดียว `audit_report.md`)
+  - `src/debim/cli.py` (เพิ่มคำสั่ง `debim audit -m project.debim [--fix]`)
 * **Goals:**
-  - เปลี่ยนเงื่อนไขการออกแบบให้เป็น Automated Assertions รายงานผล Fail/Pass ชัดเจน
-* **Test Suite:** `tests/test_architectural_compliance.py`
-* **Acceptance Criteria:** รายงานจุดบกพร่องของแบบ (เช่น ลืมลดระดับพื้นห้องน้ำ หรือช่องเปิดไม่ถึง 10%) ออกมาเป็น Error ละเอียด
+  - เปลี่ยนเงื่อนไขการออกแบบและมาตรฐานวิศวกรรมให้เป็น Automated 5-Layer Assertions พร้อมระบบเสนอแผนแก้ไขและบันทึก Log การตัดสินใจ
+* **Test Suite:** `tests/test_architectural_compliance.py`, `tests/test_audit_matrix.py` (ผ่าน 100%)
+* **Acceptance Criteria:** รายงานจุดบกพร่องของแบบอย่างเป็นระบบ พร้อมแนวทางแก้ไขและการบันทึก Log ครบถ้วน
 
 ---
 
-### Wave 5: Touching Spaces Adjacency Syntax & Auto-Derivation Engine (`debim derive`) (Final Wave)
+### Wave 5: Touching Spaces Adjacency Syntax & Auto-Derivation Engine (`debim derive`) ✅ [COMPLETED]
+* **Issue:** [#476](https://github.com/PRIDA-TAKON/debim/issues/476) | **PR:** [#477](https://github.com/PRIDA-TAKON/debim/pull/477) (Merged)
 * **Target Files:**
   - `src/debim/schema.py` (เพิ่มไวยากรณ์ `touching: { target, side, align }` ในการนิยามสเปซ)
-  - `src/debim/derive.py` (สร้างเครื่องยนต์แตกโครงสร้าง: รอยชนกลายเป็น `IfcWall`, ช่องต่อกลายเป็น `IfcDoor`, รอยนอกกลายเป็น `IfcWindow`, มุมกลายเป็น `IfcColumn`, ใต้ผนังกลายเป็น `IfcBeam`)
+  - `src/debim/derive.py` (เครื่องยนต์แตกโครงสร้าง: รอยชน $\rightarrow$ `IfcWall`, ประตูเชื่อม $\rightarrow$ `IfcDoor`, ผนังภายนอก $\rightarrow$ `IfcWindow`, จุดตัดมุม $\rightarrow$ `IfcColumn`, ใต้ผนัง $\rightarrow$ `IfcBeam`)
   - `src/debim/cli.py` (เพิ่มคำสั่ง `debim derive -m floorplan.debim -o project.debim`)
   - `examples/architectural_tdd_house/` (โมเดล Benchmark บ้านพักอาศัยครบวงจร 250+ Elements ที่สร้างด้วยวิธี Touching Spaces + TDD)
 * **Goals:**
   - ให้ AI และสถาปนิกกำหนดแค่ก้อน Space วางชนกัน แล้วรัน `debim derive` ถักโมเดลโครงสร้างและสถาปัตย์ออกมาทั้งหลัง
-* **Test Suite:** `tests/test_touching_spaces.py`, `tests/test_derive_engine.py`, `tests/test_architectural_tdd_benchmark.py`
-* **Acceptance Criteria:** สเปซที่วางชนกันถูกคอมไพล์เป็นผนัง คาน เสา ประตู หน้าต่าง ได้อย่างถูกต้อง 100%, โมเดลคอมไพล์ผ่านและรัน `debim test` ผ่านฉลุย
+* **Test Suite:** `tests/test_touching_spaces.py`, `tests/test_derive_engine.py`, `tests/test_architectural_tdd_benchmark.py` (ผ่าน 100%)
+* **Acceptance Criteria:** สเปซที่วางชนกันถูกคอมไพล์เป็นผนัง คาน เสา ประตู หน้าต่าง ได้อย่างถูกต้อง 100%, โมเดลคอมไพล์ผ่านและรัน `debim test` / `debim audit` ผ่านฉลุย
 
 ---
 
