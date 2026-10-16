@@ -49,6 +49,7 @@ from debim.schema import (
     load_manifest,
 )
 from debim.solver import solve_manifest_furniture_fit
+from debim.standards import get_regulations
 
 
 # --- Data Models for 5-Layer Audit Matrix ---
@@ -244,13 +245,24 @@ class AuditMatrixEvaluator:
     def evaluate_layer_2(self) -> AuditLayerResult:
         """
         Layer 2: Legal & Life Safety (Thai Building Act MR 55)
+        Hooks into get_regulations('TH') to validate rulesets dynamically:
         - Natural ventilation window opening >= 10% of floor area
         - Bathroom/toilet slab drop <= -0.10m
         - Stair geometry: riser <= 0.20m & tread >= 0.22m
         - Egress corridor clear width >= 1.00m
+        - Door clear width >= 0.80m
         """
         items: List[AuditViolation] = []
         layer_name = "Legal & Life Safety"
+
+        # Dynamically consume Thai building control regulations from debim-standards
+        th_regs = get_regulations("TH")
+        min_vent_ratio = float(th_regs.get("natural_ventilation_ratio", 0.10))
+        max_slab_drop = float(th_regs.get("bathroom_slab_drop_max", -0.10))
+        max_riser = float(th_regs.get("stair_riser_max", 0.20))
+        min_tread = float(th_regs.get("stair_tread_min", 0.22))
+        min_corridor_w = float(th_regs.get("corridor_width_min", 1.00))
+        min_door_w = float(th_regs.get("door_clear_width_min", 0.80))
 
         # Check 1: Thai MR 55 Natural Ventilation >= 10% floor area
         for r_space in self.resolved.spaces:
@@ -284,8 +296,8 @@ class AuditMatrixEvaluator:
                                 window_area += w.width * w.height
 
             vent_ratio = window_area / net_a
-            if vent_ratio < 0.10:
-                req_win_area = net_a * 0.10
+            if vent_ratio < min_vent_ratio:
+                req_win_area = net_a * min_vent_ratio
                 items.append(
                     AuditViolation(
                         layer=2,
@@ -295,7 +307,7 @@ class AuditMatrixEvaluator:
                         severity="ERROR",
                         element_tag=r_space.tag,
                         element_class="IfcSpace",
-                        message=f"Space '{r_space.tag}' natural ventilation opening ({window_area:.2f}m², {vent_ratio*100:.1f}%) is less than Thai MR 55 legal requirement (10.0%, min {req_win_area:.2f}m²).",
+                        message=f"Space '{r_space.tag}' natural ventilation opening ({window_area:.2f}m², {vent_ratio*100:.1f}%) is less than Thai MR 55 legal requirement ({min_vent_ratio*100:.1f}%, min {req_win_area:.2f}m²).",
                         details={"net_floor_area": net_a, "window_area": window_area, "vent_ratio": vent_ratio},
                         remediation=RemediationAction(
                             fix_action="ADD_WINDOW",
@@ -314,7 +326,7 @@ class AuditMatrixEvaluator:
             is_wet_room = any(k in s_name or k in s_tag for k in ["wc", "bath", "toilet", "washroom", "ห้องน้ำ", " shower"])
             if is_wet_room:
                 drop_el = getattr(r_space.element, "drop_elevation", 0.0)
-                if drop_el > -0.10 + 1e-3:
+                if drop_el > max_slab_drop + 1e-3:
                     items.append(
                         AuditViolation(
                             layer=2,
@@ -324,14 +336,14 @@ class AuditMatrixEvaluator:
                             severity="ERROR",
                             element_tag=r_space.tag,
                             element_class="IfcSpace",
-                            message=f"Wet space '{r_space.tag}' slab drop ({drop_el:.2f}m) violates Thai MR 55 waterproof sunken slab drop requirement (<= -0.10m).",
-                            details={"drop_elevation": drop_el, "required_drop": -0.10},
+                            message=f"Wet space '{r_space.tag}' slab drop ({drop_el:.2f}m) violates Thai MR 55 waterproof sunken slab drop requirement (<= {max_slab_drop:.2f}m).",
+                            details={"drop_elevation": drop_el, "required_drop": max_slab_drop},
                             remediation=RemediationAction(
                                 fix_action="LOWER_SLAB_DROP",
                                 target_tag=r_space.tag,
                                 target_class="IfcSpace",
-                                description=f"Set drop_elevation for wet space '{r_space.tag}' to -0.10m",
-                                parameters={"drop_elevation": -0.10},
+                                description=f"Set drop_elevation for wet space '{r_space.tag}' to {max_slab_drop:.2f}m",
+                                parameters={"drop_elevation": max_slab_drop},
                             ),
                         )
                     )
@@ -340,7 +352,7 @@ class AuditMatrixEvaluator:
         for st in self.resolved.stairs:
             riser_h = getattr(st, "riser_height", getattr(st.element, "riser_height", 0.1875))
             tread_d = getattr(st, "tread_depth", getattr(st.element, "tread_depth", 0.25))
-            if riser_h > 0.20 + 1e-3 or tread_d < 0.22 - 1e-3:
+            if riser_h > max_riser + 1e-3 or tread_d < min_tread - 1e-3:
                 items.append(
                     AuditViolation(
                         layer=2,
@@ -350,13 +362,13 @@ class AuditMatrixEvaluator:
                         severity="ERROR",
                         element_tag=st.tag,
                         element_class="IfcStair",
-                        message=f"Stair '{st.tag}' geometry (riser {riser_h:.3f}m, tread {tread_d:.3f}m) violates Thai MR 55 legal limits (riser <= 0.20m, tread >= 0.22m).",
+                        message=f"Stair '{st.tag}' geometry (riser {riser_h:.3f}m, tread {tread_d:.3f}m) violates Thai MR 55 legal limits (riser <= {max_riser:.2f}m, tread >= {min_tread:.2f}m).",
                         details={"riser_height": riser_h, "tread_depth": tread_d},
                         remediation=RemediationAction(
                             fix_action="ADJUST_STAIR",
                             target_tag=st.tag,
                             target_class="IfcStair",
-                            description=f"Adjust stair '{st.tag}' riser <= 0.20m and tread >= 0.22m",
+                            description=f"Adjust stair '{st.tag}' riser <= {max_riser:.2f}m and tread >= {min_tread:.2f}m",
                             parameters={"riser_height": 0.18, "tread_depth": 0.25},
                         ),
                     )
@@ -372,7 +384,7 @@ class AuditMatrixEvaluator:
                 xs = [p[0] for p in pts]
                 ys = [p[1] for p in pts]
                 span_w = min(max(xs) - min(xs), max(ys) - min(ys))
-                if span_w < 1.00 - 1e-2:
+                if span_w < min_corridor_w - 1e-2:
                     items.append(
                         AuditViolation(
                             layer=2,
@@ -382,19 +394,44 @@ class AuditMatrixEvaluator:
                             severity="ERROR",
                             element_tag=r_space.tag,
                             element_class="IfcSpace",
-                            message=f"Egress corridor '{r_space.tag}' clear width ({span_w:.2f}m) is below Thai Building Act minimum width (1.00m).",
-                            details={"corridor_width": span_w, "min_required": 1.00},
+                            message=f"Egress corridor '{r_space.tag}' clear width ({span_w:.2f}m) is below Thai Building Act minimum width ({min_corridor_w:.2f}m).",
+                            details={"corridor_width": span_w, "min_required": min_corridor_w},
                             remediation=RemediationAction(
                                 fix_action="EXPAND_SPACE",
                                 target_tag=r_space.tag,
                                 target_class="IfcSpace",
-                                description=f"Expand egress corridor '{r_space.tag}' clear width to at least 1.00m",
-                                parameters={"min_width": 1.00},
+                                description=f"Expand egress corridor '{r_space.tag}' clear width to at least {min_corridor_w:.2f}m",
+                                parameters={"min_width": min_corridor_w},
                             ),
                         )
                     )
 
-        checks_count = len(self.resolved.spaces) + len(self.resolved.stairs)
+        # Check 5: Door Clear Width >= 0.80m (Thai MR 55)
+        for door in self.resolved.doors:
+            d_w = door.width
+            if d_w < min_door_w - 1e-3:
+                items.append(
+                    AuditViolation(
+                        layer=2,
+                        layer_name=layer_name,
+                        rule_code="LAYER2_DOOR_CLEAR_WIDTH",
+                        passed=False,
+                        severity="ERROR",
+                        element_tag=door.tag,
+                        element_class="IfcDoor",
+                        message=f"Door '{door.tag}' clear width ({d_w:.2f}m) is below Thai Building Act MR 55 minimum clear width ({min_door_w:.2f}m).",
+                        details={"door_width": d_w, "min_required": min_door_w},
+                        remediation=RemediationAction(
+                            fix_action="EXPAND_DOOR",
+                            target_tag=door.tag,
+                            target_class="IfcDoor",
+                            description=f"Expand door '{door.tag}' clear width to at least {min_door_w:.2f}m",
+                            parameters={"min_width": min_door_w},
+                        ),
+                    )
+                )
+
+        checks_count = len(self.resolved.spaces) + len(self.resolved.stairs) + len(self.resolved.doors)
         passed = len(items) == 0
 
         return AuditLayerResult(

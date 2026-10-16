@@ -42,6 +42,7 @@ from debim.docs.exemplar import (
     get_supported_exemplar_classes,
 )
 from debim.docs.thai_specs import get_thai_spec_clause, THAI_SPEC_LIBRARY
+from debim.standards import sync_standards, list_standards
 
 # --- Pure-Python Rich-like formatting helpers ---
 
@@ -1067,7 +1068,8 @@ def cmd_boq(args):
                 item.material_cost = round(item.material_cost * province_mult, 2)
                 item.labor_cost = round(item.labor_cost * province_mult, 2)
 
-        estimate = estimate_cost(project_qto, price_catalog, manifest_obj)
+        use_standards = getattr(args, "standards", False)
+        estimate = estimate_cost(project_qto, price_catalog, manifest_obj, use_standards=use_standards)
         proj_name = manifest_obj.project.name or "โครงการก่อสร้าง"
 
         # Generate Thai Standard BOQ Sheets (ปร.4, ปร.4(พ), ปร.5)
@@ -1130,6 +1132,7 @@ def cmd_boq(args):
             f"[bold cyan]ราคาทุนทางตรง (Direct Cost):[/bold cyan] {pr5.direct_cost:,.2f} THB\n"
             f"[bold yellow]ตัวคูณ Factor F (กรมบัญชีกลาง ว480):[/bold yellow] [bold green]{pr5.factor_f:.4f}[/bold green]\n"
             f"[bold green]ราคากลางรวมค่าก่อสร้าง (Grand Total Construction Cost):[/bold green] [bold green]{pr5.total_construction_cost:,.2f} THB[/bold green]\n"
+            f"[bold magenta]ปริมาณคาร์บอนแฝงรวม (Total Embodied Carbon):[/bold magenta] [bold cyan]{estimate.total_embodied_carbon:,.2f} kgCO2e[/bold cyan]\n"
             f"[dim](รวมภาษีมูลค่าเพิ่ม VAT 7% และ Factor F ตามประกาศกรมบัญชีกลาง ว480)[/dim]"
         )
         if province_name:
@@ -2168,6 +2171,59 @@ def cmd_docs_exemplar(args):
         sys.exit(1)
 
 
+def cmd_standards_sync(args):
+    force = getattr(args, "force", True)
+    console.print(f"[bold cyan]Syncing open standards catalogs from debim-standards (PRIDA-TAKON/debim-standards)...[/bold cyan]")
+    try:
+        results = sync_standards(force=force)
+        sync_table = Table(
+            title="debim-standards Catalog Synchronization Status",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        sync_table.add_column("Catalog Name", style="bold yellow")
+        sync_table.add_column("Status", justify="center")
+
+        for cat, success in results.items():
+            status_str = "[bold green]SYNCED / OK[/bold green]" if success else "[bold red]FAILED[/bold red]"
+            sync_table.add_row(cat, status_str)
+
+        console.print(sync_table)
+        console.print("[bold green]Standards sync complete (~/.debim/standards_cache/).[/bold green]")
+    except Exception as e:
+        console.print(f"[bold red]Error syncing standards:[/bold red] {e}")
+        sys.exit(1)
+
+
+def cmd_standards_list(args):
+    try:
+        info = list_standards()
+        table = Table(
+            title="Available debim Open Standards Catalogs",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        table.add_column("Catalog", style="bold yellow")
+        table.add_column("Items Count", justify="right", style="cyan")
+        table.add_column("Cached", justify="center")
+        table.add_column("Sample Keys", style="dim")
+
+        for cat, details in info.items():
+            cached_str = "[bold green]YES[/bold green]" if details["cached"] else "[dim]NO[/dim]"
+            sample_keys = ", ".join(details["keys"][:5])
+            table.add_row(
+                cat,
+                str(details["count"]),
+                cached_str,
+                sample_keys,
+            )
+
+        console.print(table)
+    except Exception as e:
+        console.print(f"[bold red]Error listing standards:[/bold red] {e}")
+        sys.exit(1)
+
+
 def cmd_docs_export_data(args):
     output_dir = Path(args.output_dir)
     try:
@@ -2328,9 +2384,21 @@ def build_parser() -> argparse.ArgumentParser:
     p_boq.add_argument("-m", "--manifest", help="Path to project manifest")
     p_boq.add_argument("--rules", default="cg-v480", help="Pricing rules standard (e.g. 'cg-v480' for Thai CGD v480)")
     p_boq.add_argument("-p", "--prices", help="Path to price catalog file")
+    p_boq.add_argument("--standards", action="store_true", help="Populate unit pricing and embodied carbon from debim-standards CGD v480 catalog")
     p_boq.add_argument("--province", help="Select provincial price index multiplier")
     p_boq.add_argument("--export-excel", help="Target Excel (.xlsx) file path to export BOQ sheets")
     p_boq.set_defaults(func=cmd_boq)
+
+    # standards
+    p_standards = subparsers.add_parser("standards", help="Manage and sync open standards catalogs (PRIDA-TAKON/debim-standards)")
+    standards_subparsers = p_standards.add_subparsers(dest="standards_subcommand")
+
+    p_std_sync = standards_subparsers.add_parser("sync", help="Prefetch and cache latest standards catalogs")
+    p_std_sync.add_argument("-f", "--force", action="store_true", default=True, help="Force refresh standards cache")
+    p_std_sync.set_defaults(func=cmd_standards_sync)
+
+    p_std_list = standards_subparsers.add_parser("list", help="List available standards catalogs and metrics")
+    p_std_list.set_defaults(func=cmd_standards_list)
 
     # compile
     p_compile = subparsers.add_parser("compile", help="Compile project.yaml to IFC4 format")
@@ -2558,6 +2626,9 @@ def main(args: Optional[List[str]] = None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
     elif parsed_args.subcommand == "docs" and not getattr(parsed_args, "docs_subcommand", None):
+        parser.parse_args([parsed_args.subcommand, "--help"])
+        sys.exit(0)
+    elif parsed_args.subcommand == "standards" and not getattr(parsed_args, "standards_subcommand", None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
 
