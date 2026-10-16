@@ -196,7 +196,7 @@ def main():
     parser = argparse.ArgumentParser(description="Automated Watchdog for Jules PRs & Multi-Step Roadmap Orchestrator")
     parser.add_argument("--interval", type=int, default=300, help="Polling interval in seconds (default: 300s / 5m)")
     parser.add_argument("--once", action="store_true", help="Run once and exit immediately")
-    parser.add_argument("--config", type=str, default="tools/roadmap_v081.json", help="Path to custom roadmap JSON file")
+    parser.add_argument("--config", type=str, default="tools/roadmap_v090.json", help="Path to custom roadmap JSON file")
     parser.add_argument("--cwd", type=str, default=None, help="Working directory for git and gh commands")
     args = parser.parse_args()
 

@@ -1,0 +1,49 @@
+[
+  {
+    "wave": 1,
+    "issue_key": "wave_1_furniture_variable_library",
+    "match_keywords": ["furniture_variable", "clearance_envelope", "furniture variable", "clearance", "human scale"],
+    "next_issue": {
+      "title": "feat(space): programmatic space scope with variable consumption, auto-area calculation, and 30% circulation rule",
+      "body": "### Overview\nAs part of debim v0.9.0 Wave 2, implement programmatic functional scopes in `IfcSpace` allowing spaces to consume declared furniture/equipment variables (`contains: [ref: ...]`), automatically compute minimum required net area using the architectural formula:\n$$\\text{Required Area} = \\left(\\sum \\text{Footprint of Contained Items}\\right) \\times 1.30$$\nand define design specifications for automated architectural unit testing.\n\n### Tasks\n1. In `src/debim/schema.py`: Update `IfcSpace` to support:\n   - `contains: Optional[List[VariableReference]] = None`\n   - `design_spec: Optional[SpaceDesignSpec] = None` with fields: `min_area`, `clear_height`, `natural_ventilation_ratio`, `adjacencies` (must_connect, forbidden_adjacent).\n2. In `src/debim/resolver.py`: Resolve variable references inside spaces, compute bounding areas with clearance envelopes, and calculate `required_net_area` with the 30% intra-room circulation multiplier.\n3. Add unit tests in `tests/test_space_functional_scope.py` verifying automated area calculation from contained items.\n\n### Acceptance Criteria\n- `IfcSpace` correctly consumes variable references and computes required net area.\n- `pytest tests/test_space_functional_scope.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "wave": 2,
+    "issue_key": "wave_2_space_functional_scope",
+    "match_keywords": ["programmatic space", "variable consumption", "auto-area", "circulation rule", "functional scope"],
+    "next_issue": {
+      "title": "feat(solver): fast pre-flight 2D geometric furniture fit solver and non-overlapping clearance checking",
+      "body": "### Overview\nAs part of debim v0.9.0 Wave 3, create a fast pre-flight 2D geometric fit solver that verifies whether all declared furniture envelopes fit inside a space polygon without overlapping or blocking walkways before drafting physical walls and columns.\n\n### Tasks\n1. Create `src/debim/solver.py`: Implement pure-Python / NumPy 2D Bounding Box packing and Separating Axis Theorem (SAT) collision detection for furniture footprints + human activity clearance envelopes.\n2. In `src/debim/cli.py`: Expose command `debim fit -m <project_file>` returning instant Pass/Fail and placement coordinates for each piece of furniture.\n3. Verify walkway path connectivity (minimum 0.60m corridor) between the space entrance and each functional envelope.\n4. Add unit tests in `tests/test_furniture_fit_solver.py`.\n\n### Acceptance Criteria\n- Correctly identifies undersized spaces where furniture envelopes clash or exceed boundaries in < 0.01s.\n- `pytest tests/test_furniture_fit_solver.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "wave": 3,
+    "issue_key": "wave_3_furniture_fit_solver",
+    "match_keywords": ["furniture fit", "pre-flight", "packing", "non-overlapping", "fit solver", "debim fit"],
+    "next_issue": {
+      "title": "feat(compliance): architectural unit testing engine (debim test) for space area, furniture fit, and adjacency constraints",
+      "body": "### Overview\nAs part of debim v0.9.0 Wave 4, turn architectural design criteria and building regulations into automated Unit Test assertions run via `debim test`.\n\n### Tasks\n1. In `src/debim/compliance.py`: Add verification functions for:\n   - Room net area compliance (`space.net_area >= design_spec.min_area`)\n   - Natural ventilation and light compliance (`window_area / space.net_area >= 0.10` according to Thai building law)\n   - Wet area bathroom slab drop compliance (`space.finish.drop_elevation <= -0.10`)\n   - Forbidden negative adjacencies (e.g. restrooms opening into dining spaces, or bedrooms sharing walls with pump rooms)\n2. In `src/debim/cli.py`: Integrate these architectural assertions cleanly into `debim test` output.\n3. Add unit tests in `tests/test_architectural_compliance.py`.\n\n### Acceptance Criteria\n- `debim test` flags design violations with clear, actionable error messages.\n- `pytest tests/test_architectural_compliance.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "wave": 4,
+    "issue_key": "wave_4_architectural_compliance",
+    "match_keywords": ["architectural unit testing", "architectural compliance", "adjacency constraints", "ventilation compliance", "debim test"],
+    "next_issue": {
+      "title": "feat(workflow): function diagram adjacency-to-opening door generator and architectural TDD showcase",
+      "body": "### Overview\nAs part of debim v0.9.0 Wave 5 (Final Wave), implement automatic door placement between adjacent connected spaces (`must_connect`) and provide a comprehensive 250+ element Test-Driven Architectural Design (TDAD) benchmark showcase.\n\n### Tasks\n1. Create `src/debim/generator.py`: Calculate intersecting wall boundaries between connected spaces (`must_connect`) and automatically synthesize centered `IfcDoor` openings (offset $\\ge 0.10$m from structural columns).\n2. Provide `examples/architectural_tdd_house/`: A full two-storey residential project demonstrating:\n   - Variable catalog with Human Scale furniture & clearances\n   - Functional `IfcSpace` scopes with auto-sizing and design assertions\n   - Pre-flight `debim fit` verification\n   - Passing 100% of architectural unit tests via `debim test`\n3. Add unit tests in `tests/test_adjacency_doors.py` and `tests/test_architectural_tdd_benchmark.py`.\n\n### Acceptance Criteria\n- Doors are placed automatically along shared partition walls between connected spaces.\n- The benchmark project compiles cleanly to IFC4 and passes all architectural unit tests.\n- `pytest tests/` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "wave": 5,
+    "issue_key": "wave_5_adjacency_doors_and_tdd_benchmark",
+    "match_keywords": ["adjacency-to-opening", "adjacency door", "tdd showcase", "architectural tdd", "tdd benchmark"],
+    "is_final_wave": true,
+    "next_issue": null
+  }
+]
