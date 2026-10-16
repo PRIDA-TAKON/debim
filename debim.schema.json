@@ -10271,6 +10271,32 @@
         "placement": {
           "$ref": "#/$defs/SpacePlacement"
         },
+        "contains": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/VariableReference"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contains"
+        },
+        "design_spec": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SpaceDesignSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "properties": {
           "type": "object",
           "additionalProperties": true,
@@ -14723,6 +14749,93 @@
       "title": "SlopeStabilizationConfig",
       "type": "object"
     },
+    "SpaceAdjacencySpec": {
+      "properties": {
+        "must_connect": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Must Connect"
+        },
+        "forbidden_adjacent": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Forbidden Adjacent"
+        }
+      },
+      "title": "SpaceAdjacencySpec",
+      "type": "object"
+    },
+    "SpaceDesignSpec": {
+      "properties": {
+        "min_area": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min Area"
+        },
+        "clear_height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clear Height"
+        },
+        "natural_ventilation_ratio": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Natural Ventilation Ratio"
+        },
+        "adjacencies": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SpaceAdjacencySpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "SpaceDesignSpec",
+      "type": "object"
+    },
     "SpacePlacement": {
       "properties": {
         "storey": {
@@ -15674,6 +15787,24 @@
         }
       },
       "title": "Units",
+      "type": "object"
+    },
+    "VariableReference": {
+      "properties": {
+        "ref": {
+          "title": "Ref",
+          "type": "string"
+        },
+        "count": {
+          "default": 1,
+          "title": "Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "ref"
+      ],
+      "title": "VariableReference",
       "type": "object"
     },
     "WallFinishesConfig": {

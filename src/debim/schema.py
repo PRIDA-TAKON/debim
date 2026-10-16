@@ -1157,6 +1157,37 @@ class IfcSlab(BaseModel):
     layer: Optional[str] = None
 
 
+class VariableReference(BaseModel):
+    ref: str
+    count: int = 1
+
+    @model_validator(mode="before")
+    @classmethod
+    def parse_variable_reference(cls, data: Any) -> Any:
+        if isinstance(data, str):
+            return {"ref": data, "count": 1}
+        elif isinstance(data, dict):
+            if "ref" in data:
+                return data
+            if len(data) == 1:
+                k, v = next(iter(data.items()))
+                if isinstance(v, int):
+                    return {"ref": k, "count": v}
+        return data
+
+
+class SpaceAdjacencySpec(BaseModel):
+    must_connect: Optional[List[str]] = Field(default_factory=list)
+    forbidden_adjacent: Optional[List[str]] = Field(default_factory=list)
+
+
+class SpaceDesignSpec(BaseModel):
+    min_area: Optional[float] = None
+    clear_height: Optional[float] = None
+    natural_ventilation_ratio: Optional[float] = None
+    adjacencies: Optional[SpaceAdjacencySpec] = None
+
+
 class SpacePlacement(BaseModel):
     storey: str
     boundary: Optional[List[Tuple[str, str]]] = None  # Grid intersection or grid-offset expression
@@ -1200,6 +1231,8 @@ class IfcSpace(BaseModel):
     floor_thickness: float = Field(default=0.00, description="Architectural floor finish thickness in meters")
     drop_elevation: float = Field(default=0.00, description="Slab drop/depression offset relative to storey finish in meters (e.g. -0.10 for sunken bathroom)")
     placement: SpacePlacement
+    contains: Optional[List[VariableReference]] = None
+    design_spec: Optional[SpaceDesignSpec] = None
     properties: Dict[str, Any] = Field(default_factory=dict)
     layer: Optional[str] = "architecture/spaces"
 
@@ -4198,6 +4231,12 @@ class ProjectManifest(BaseModel):
                         if not _is_valid_grid_ref(gy_str, grid_y_ids):
                             raise ValueError(
                                 f"Element '{elem.tag}' boundary references unknown Y grid '{gy_str}'"
+                            )
+                if elem.contains:
+                    for vref in elem.contains:
+                        if not self.get_variable(vref.ref):
+                            raise ValueError(
+                                f"Space '{elem.tag}' references unknown variable '{vref.ref}'"
                             )
 
             elif isinstance(elem, IfcCurtainWall):
