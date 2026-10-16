@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from debim.qto import ProjectQTO, calculate_qto
 from debim.resolver import ResolvedDoor, ResolvedWindow, ResolvedMember, resolve_manifest
 from debim.schema import ProjectManifest, load_manifest
+from debim.standards import get_material_price
 
 
 class PriceItemStandards(BaseModel):
@@ -766,6 +767,8 @@ class CostLineItem(BaseModel):
     total_material_cost: float
     total_labor_cost: float
     total_amount: float
+    embodied_carbon_unit: float = 0.0  # kgCO2e per unit
+    total_embodied_carbon: float = 0.0 # kgCO2e total
 
 
 class CostEstimate(BaseModel):
@@ -774,6 +777,7 @@ class CostEstimate(BaseModel):
     total_material_cost: float = 0.0
     total_labor_cost: float = 0.0
     grand_total: float = 0.0
+    total_embodied_carbon: float = 0.0
 
     def generate_pr4(self, project_name: str = "โครงการก่อสร้าง") -> PR4Sheet:
         """Generate Thai standard BOQ Sheet ปร.4 (รายการปริมาณงานและราคา)."""
@@ -952,9 +956,11 @@ def estimate_cost(
     qto: ProjectQTO,
     catalog: PriceCatalog,
     manifest: Optional[ProjectManifest] = None,
+    use_standards: bool = False,
 ) -> CostEstimate:
     """
     Calculate cost estimate by matching QTO quantities with price catalog.
+    When use_standards=True, populates unit prices and calculates embodied carbon metrics from debim-standards CGD v480.
     """
     quantities_by_code: Dict[str, float] = {}
 
@@ -1457,18 +1463,31 @@ def estimate_cost(
     line_items: List[CostLineItem] = []
     tot_mat_cost = 0.0
     tot_lab_cost = 0.0
+    tot_carbon = 0.0
 
     for code, item in catalog.items.items():
         qty = quantities_by_code.get(code, 0.0)
         if qty <= 0:
             continue
 
-        mat_cost = qty * item.material_cost
-        lab_cost = qty * item.labor_cost
+        std = get_material_price(code)
+        if use_standards and std:
+            mat_unit_cost = std.material_cost if std.material_cost > 0 else item.material_cost
+            lab_unit_cost = std.labor_cost if std.labor_cost > 0 else item.labor_cost
+            carbon_unit = std.embodied_carbon
+        else:
+            mat_unit_cost = item.material_cost
+            lab_unit_cost = item.labor_cost
+            carbon_unit = std.embodied_carbon if std else 0.0
+
+        mat_cost = qty * mat_unit_cost
+        lab_cost = qty * lab_unit_cost
         tot_amount = mat_cost + lab_cost
+        item_carbon = qty * carbon_unit
 
         tot_mat_cost += mat_cost
         tot_lab_cost += lab_cost
+        tot_carbon += item_carbon
 
         line_items.append(
             CostLineItem(
@@ -1476,11 +1495,13 @@ def estimate_cost(
                 name=item.name,
                 unit=item.unit,
                 quantity=qty,
-                unit_material_cost=item.material_cost,
-                unit_labor_cost=item.labor_cost,
+                unit_material_cost=mat_unit_cost,
+                unit_labor_cost=lab_unit_cost,
                 total_material_cost=mat_cost,
                 total_labor_cost=lab_cost,
                 total_amount=tot_amount,
+                embodied_carbon_unit=carbon_unit,
+                total_embodied_carbon=item_carbon,
             )
         )
 
@@ -1492,4 +1513,5 @@ def estimate_cost(
         total_material_cost=tot_mat_cost,
         total_labor_cost=tot_lab_cost,
         grand_total=grand_total,
+        total_embodied_carbon=tot_carbon,
     )

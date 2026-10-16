@@ -22,6 +22,7 @@ from debim.schema import (
     IfcDoor,
     IfcWall,
 )
+from debim.standards import get_furniture
 
 
 Point2D = Tuple[float, float]
@@ -642,6 +643,11 @@ def solve_manifest_furniture_fit(
             if not v_obj and ref_id in STANDARD_FURNITURE_VARIABLES:
                 v_obj = STANDARD_FURNITURE_VARIABLES[ref_id]
 
+            # Fallback to debim-standards catalog if not found in manifest or standard variables
+            std_furn = None
+            if not v_obj:
+                std_furn = get_furniture(ref_id)
+
             if v_obj:
                 fp = v_obj.get_envelope_footprint()
                 clr = v_obj.clearance.model_dump() if v_obj.clearance else {}
@@ -654,6 +660,24 @@ def solve_manifest_furniture_fit(
                         "total_width": fp["total_width"],
                         "total_depth": fp["total_depth"],
                         "total_area": fp["total_area"],
+                        "clearance": clr,
+                    })
+            elif std_furn:
+                w = std_furn.width
+                d = std_furn.depth
+                clr = std_furn.clearance
+                tot_w = w + clr.get("left", 0.0) + clr.get("right", 0.0)
+                tot_d = d + clr.get("front", 0.0) + clr.get("rear", clr.get("back", 0.0))
+                tot_a = tot_w * tot_d
+                for c_idx in range(cnt):
+                    items_to_fit.append({
+                        "ref": ref_id,
+                        "tag": f"{ref_id}_{c_idx+1}",
+                        "physical_width": w,
+                        "physical_depth": d,
+                        "total_width": tot_w,
+                        "total_depth": tot_d,
+                        "total_area": tot_a,
                         "clearance": clr,
                     })
 
