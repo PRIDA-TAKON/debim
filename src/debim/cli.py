@@ -354,6 +354,75 @@ def cmd_validate(args):
         sys.exit(1)
 
 
+def cmd_fit(args):
+    manifest_target = getattr(args, "manifest", None) or getattr(args, "positional_manifest", None)
+    manifest_path = resolve_default_manifest_path(manifest_target)
+    if not manifest_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest_path}' not found.")
+        sys.exit(1)
+
+    console.print(f"[bold green]Running 2D Furniture Fit Solver on:[/bold green] {manifest_path}")
+
+    try:
+        manifest_obj = load_manifest(manifest_path)
+        space_filter = getattr(args, "space", None)
+
+        from debim.solver import solve_manifest_furniture_fit
+        fit_result = solve_manifest_furniture_fit(manifest_obj, space_tag_filter=space_filter)
+
+        fit_table = Table(
+            title=f"2D Furniture Fit Solver Report ({fit_result.total_solve_time_sec:.4f}s)",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        fit_table.add_column("Space Tag", style="bold yellow")
+        fit_table.add_column("Name", style="white")
+        fit_table.add_column("Net Area (m²)", style="cyan", justify="right")
+        fit_table.add_column("Req Area (m²)", style="magenta", justify="right")
+        fit_table.add_column("Items", style="white", justify="right")
+        fit_table.add_column("Walkway", style="green")
+        fit_table.add_column("Status", style="bold")
+
+        for s_res in fit_result.spaces:
+            status_str = "[bold green]PASS[/bold green]" if s_res.passed else "[bold red]FAIL[/bold red]"
+            walkway_str = "[green]Clear (≥0.60m)[/green]" if s_res.walkway_connected else "[red]Blocked[/red]"
+            fit_table.add_row(
+                s_res.space_tag,
+                s_res.space_name or "-",
+                f"{s_res.net_floor_area:.2f}",
+                f"{s_res.total_required_area:.2f}",
+                str(len(s_res.placements)),
+                walkway_str,
+                status_str,
+            )
+
+        console.print(fit_table)
+
+        for s_res in fit_result.spaces:
+            if s_res.placements:
+                pos_str_list = []
+                for p in s_res.placements:
+                    pos_str_list.append(f"  • {p.ref} ({p.tag or '-'}): x={p.x:.2f}m, y={p.y:.2f}m, rot={p.rotation_deg:.0f}°")
+                console.print(f"[bold cyan]Placed Coordinates for {s_res.space_tag}:[/bold cyan]\n" + "\n".join(pos_str_list))
+
+            if s_res.errors:
+                console.print(f"[bold red]Diagnostics for {s_res.space_tag}:[/bold red]")
+                for err in s_res.errors:
+                    console.print(f"  [red]• {err}[/red]")
+
+        if not fit_result.passed:
+            console.print("\n[bold red]Furniture Fit Check Failed: Undersized spaces, clearance clashes, or blocked walkways detected.[/bold red]")
+            sys.exit(1)
+        else:
+            console.print("\n[bold green]Furniture Fit Check Passed: All furniture envelopes fit without overlaps and walkways clear.[/bold green]")
+
+    except SystemExit:
+        raise
+    except Exception as e:
+        console.print(f"[bold red]Error running fit solver:[/bold red] {e}")
+        sys.exit(1)
+
+
 def cmd_schema(args):
     import json
 
@@ -2047,6 +2116,13 @@ def build_parser() -> argparse.ArgumentParser:
     bsdd_group.add_argument("--no-bsdd", dest="bsdd", action="store_false", help="Disable bSDD validation")
     p_validate.add_argument("--strict-psets", action="store_true", default=False, help="Fail validation if non-compliant Pset types or values are found")
     p_validate.set_defaults(func=cmd_validate)
+
+    # fit
+    p_fit = subparsers.add_parser("fit", help="Run 2D geometric furniture fit solver and clearance check")
+    p_fit.add_argument("positional_manifest", nargs="?", help="Positional path to project manifest")
+    p_fit.add_argument("-m", "--manifest", help="Path to project manifest")
+    p_fit.add_argument("--space", help="Filter fit solver check to specific space tag")
+    p_fit.set_defaults(func=cmd_fit)
 
     # schema
     p_schema = subparsers.add_parser("schema", help="Export debim language specification as JSON Schema")
