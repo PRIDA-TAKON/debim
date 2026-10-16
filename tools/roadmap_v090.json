@@ -2,7 +2,7 @@
   {
     "wave": 1,
     "issue_key": "wave_1_furniture_variable_library",
-    "match_keywords": ["furniture_variable", "clearance_envelope", "furniture variable", "clearance", "human scale"],
+    "match_keywords": ["furniture_variable", "clearance_envelope", "furniture variable", "clearance envelope", "human scale"],
     "next_issue": {
       "title": "feat(space): programmatic space scope with variable consumption, auto-area calculation, and 30% circulation rule",
       "body": "### Overview\nAs part of debim v0.9.0 Wave 2, implement programmatic functional scopes in `IfcSpace` allowing spaces to consume declared furniture/equipment variables (`contains: [ref: ...]`), automatically compute minimum required net area using the architectural formula:\n$$\\text{Required Area} = \\left(\\sum \\text{Footprint of Contained Items}\\right) \\times 1.30$$\nand define design specifications for automated architectural unit testing.\n\n### Tasks\n1. In `src/debim/schema.py`: Update `IfcSpace` to support:\n   - `contains: Optional[List[VariableReference]] = None`\n   - `design_spec: Optional[SpaceDesignSpec] = None` with fields: `min_area`, `clear_height`, `natural_ventilation_ratio`, `adjacencies` (must_connect, forbidden_adjacent).\n2. In `src/debim/resolver.py`: Resolve variable references inside spaces, compute bounding areas with clearance envelopes, and calculate `required_net_area` with the 30% intra-room circulation multiplier.\n3. Add unit tests in `tests/test_space_functional_scope.py` verifying automated area calculation from contained items.\n\n### Acceptance Criteria\n- `IfcSpace` correctly consumes variable references and computes required net area.\n- `pytest tests/test_space_functional_scope.py` passes 100%.",

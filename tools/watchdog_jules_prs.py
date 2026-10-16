@@ -81,43 +81,53 @@ def load_roadmap(config_path: Path):
 
 def trigger_next_roadmap_issue(merged_title, roadmap, cwd=None):
     title_lower = merged_title.lower()
+    best_item = None
+    best_score = 0
+
     for item in roadmap:
-        matched = any(kw.lower() in title_lower for kw in item.get("match_keywords", []))
-        if matched:
-            wave_num = item.get("wave", "?")
-            is_final = item.get("is_final_wave", False)
-            next_issue = item.get("next_issue")
+        matching_kws = [kw for kw in item.get("match_keywords", []) if kw.lower() in title_lower]
+        if matching_kws:
+            score = sum(len(kw) for kw in matching_kws)
+            if score > best_score:
+                best_score = score
+                best_item = item
 
-            # Protection against infinite loops: Check if this was the final wave
-            if is_final or not next_issue:
-                safe_print(f"\n[ROADMAP COMPLETE] Wave {wave_num} was the final wave!")
-                safe_print("All planned roadmap milestones have been successfully merged.")
-                safe_print("No further issues will be created (infinite loop prevented).\n")
-                return True
+    if best_item:
+        item = best_item
+        wave_num = item.get("wave", "?")
+        is_final = item.get("is_final_wave", False)
+        next_issue = item.get("next_issue")
 
-            iss_title = next_issue.get("title", "").strip()
-            iss_body = next_issue.get("body", "").strip()
-            iss_label = next_issue.get("label", "jules")
-
-            # Double check if issue already exists (open OR closed) to prevent duplicates
-            if check_existing_issue(iss_title, cwd=cwd):
-                safe_print(f"[SKIP] Issue '{iss_title}' already exists in GitHub (open or closed). Skipping creation to avoid loop.")
-                return True
-
-            safe_print(f"\n[NEXT WAVE TRIGGERED] Matched Wave {wave_num}! Triggering next issue for Jules:")
-            safe_print(f"Title: {iss_title}")
-            cmd = [
-                "gh", "issue", "create",
-                "--title", iss_title,
-                "--body", iss_body,
-                "--label", iss_label
-            ]
-            res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=cwd)
-            if res.returncode == 0:
-                safe_print(f"Successfully created next issue:\n{res.stdout.strip()}")
-            else:
-                safe_print(f"Failed to create issue:\n{res.stderr.strip()}")
+        # Protection against infinite loops: Check if this was the final wave
+        if is_final or not next_issue:
+            safe_print(f"\n[ROADMAP COMPLETE] Wave {wave_num} was the final wave!")
+            safe_print("All planned roadmap milestones have been successfully merged.")
+            safe_print("No further issues will be created (infinite loop prevented).\n")
             return True
+
+        iss_title = next_issue.get("title", "").strip()
+        iss_body = next_issue.get("body", "").strip()
+        iss_label = next_issue.get("label", "jules")
+
+        # Double check if issue already exists (open OR closed) to prevent duplicates
+        if check_existing_issue(iss_title, cwd=cwd):
+            safe_print(f"[SKIP] Issue '{iss_title}' already exists in GitHub (open or closed). Skipping creation to avoid loop.")
+            return True
+
+        safe_print(f"\n[NEXT WAVE TRIGGERED] Matched Wave {wave_num} (score {best_score})! Triggering next issue for Jules:")
+        safe_print(f"Title: {iss_title}")
+        cmd = [
+            "gh", "issue", "create",
+            "--title", iss_title,
+            "--body", iss_body,
+            "--label", iss_label
+        ]
+        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=cwd)
+        if res.returncode == 0:
+            safe_print(f"Successfully created next issue:\n{res.stdout.strip()}")
+        else:
+            safe_print(f"Failed to create issue:\n{res.stderr.strip()}")
+        return True
 
     safe_print(f"[INFO] No matching next roadmap wave for merged PR: '{merged_title}'")
     return False
