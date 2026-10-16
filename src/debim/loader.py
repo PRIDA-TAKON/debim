@@ -440,6 +440,8 @@ def load_debim_file(
     merged_axes_x = {str(k): float(v) for k, v in (grids_data.get("axes_x", {}) or {}).items()}
     merged_axes_y = {str(k): float(v) for k, v in (grids_data.get("axes_y", {}) or {}).items()}
 
+    merged_variables = dict(data.get("variables", {}) or {})
+
     for pattern in includes:
         if not pattern or not isinstance(pattern, str) or not pattern.strip():
             continue
@@ -499,11 +501,18 @@ def load_debim_file(
                     for k, v in sub_y.items():
                         merged_axes_y[str(k)] = float(v)
 
+            sub_vars = inc_data.get("variables", {}) or {}
+            if isinstance(sub_vars, dict):
+                for vk, vv in sub_vars.items():
+                    if vk not in merged_variables:
+                        merged_variables[vk] = vv
+
     data["materials"] = merged_materials
     data["elements"] = merged_elements
     data["proxies"] = merged_proxies
     data["spatial_structure"] = {"storeys": merged_storeys}
     data["grids"] = {"axes_x": merged_axes_x, "axes_y": merged_axes_y}
+    data["variables"] = merged_variables
 
     if data.get("macro_elements"):
         from debim.modular import expand_macro_elements
@@ -809,3 +818,44 @@ def load_manifest(path: Optional[Union[Path, str]] = None) -> Any:
     if data.get("modules") and data.get("instances"):
         data = expand_module_instances(data)
     return ProjectManifest.model_validate(data)
+
+
+def get_variable(manifest_or_data: Any, var_name: str) -> Any:
+    """Retrieve a FurnitureVariable by name/key from a manifest object, dictionary, or standard built-in presets."""
+    from debim.schema import FurnitureVariable, STANDARD_FURNITURE_VARIABLES, ProjectManifest
+
+    if isinstance(manifest_or_data, ProjectManifest):
+        return manifest_or_data.get_variable(var_name)
+
+    if isinstance(manifest_or_data, dict):
+        vars_dict = manifest_or_data.get("variables", {}) or {}
+        if var_name in vars_dict:
+            raw = vars_dict[var_name]
+            if isinstance(raw, FurnitureVariable):
+                return raw
+            elif isinstance(raw, dict):
+                return FurnitureVariable.model_validate(raw)
+
+    if var_name in STANDARD_FURNITURE_VARIABLES:
+        return STANDARD_FURNITURE_VARIABLES[var_name]
+
+    return None
+
+
+def get_variable_dimensions(manifest_or_data: Any, var_name: str) -> Any:
+    """Retrieve the physical 3D dimensions (width, depth, height) for a furniture variable."""
+    var = get_variable(manifest_or_data, var_name)
+    if var is not None:
+        return var.dimensions
+    return None
+
+
+def get_variable_footprint(manifest_or_data: Any, var_name: str) -> Optional[Dict[str, float]]:
+    """Retrieve the total envelope footprint details (physical + clearance margins) for a furniture variable."""
+    var = get_variable(manifest_or_data, var_name)
+    if var is not None:
+        return var.get_envelope_footprint()
+    return None
+
+
+get_variable_envelope_footprint = get_variable_footprint

@@ -1651,6 +1651,60 @@
       "title": "CircularProfile",
       "type": "object"
     },
+    "ClearanceEnvelope": {
+      "properties": {
+        "front": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.0,
+          "title": "Front"
+        },
+        "back": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.0,
+          "title": "Back"
+        },
+        "left": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.0,
+          "title": "Left"
+        },
+        "right": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.0,
+          "title": "Right"
+        }
+      },
+      "title": "ClearanceEnvelope",
+      "type": "object"
+    },
     "ColumnGrid": {
       "description": "Macro specification for 2D/3D column array generation across grid intersections.",
       "properties": {
@@ -3625,6 +3679,75 @@
         "storey"
       ],
       "title": "FurniturePlacement",
+      "type": "object"
+    },
+    "FurnitureVariable": {
+      "properties": {
+        "class": {
+          "default": "Variable",
+          "enum": [
+            "IfcTypeProduct",
+            "IfcFurnitureType",
+            "Variable"
+          ],
+          "title": "Class",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "dimensions": {
+          "$ref": "#/$defs/Dimensions"
+        },
+        "clearance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ClearanceEnvelope"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Category"
+        }
+      },
+      "required": [
+        "dimensions"
+      ],
+      "title": "FurnitureVariable",
       "type": "object"
     },
     "Grids": {
@@ -16087,6 +16210,21 @@
       },
       "title": "Compliances",
       "type": "array"
+    },
+    "variables": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/FurnitureVariable"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Variables"
     }
   },
   "required": [

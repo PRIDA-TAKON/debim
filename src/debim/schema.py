@@ -835,6 +835,114 @@ class Dimensions(BaseModel):
     height: float
 
 
+class ClearanceEnvelope(BaseModel):
+    front: Optional[float] = 0.0
+    back: Optional[float] = 0.0
+    left: Optional[float] = 0.0
+    right: Optional[float] = 0.0
+
+
+class FurnitureVariable(BaseModel):
+    class_: Literal["IfcTypeProduct", "IfcFurnitureType", "Variable"] = Field(alias="class", default="Variable")
+    tag: Optional[str] = None
+    name: Optional[str] = None
+    dimensions: Dimensions
+    clearance: Optional[ClearanceEnvelope] = None
+    category: Optional[str] = None
+
+    @property
+    def total_width(self) -> float:
+        left = self.clearance.left if self.clearance and self.clearance.left is not None else 0.0
+        right = self.clearance.right if self.clearance and self.clearance.right is not None else 0.0
+        return self.dimensions.width + left + right
+
+    @property
+    def total_depth(self) -> float:
+        d = self.dimensions.depth if self.dimensions.depth is not None else self.dimensions.width
+        front = self.clearance.front if self.clearance and self.clearance.front is not None else 0.0
+        back = self.clearance.back if self.clearance and self.clearance.back is not None else 0.0
+        return d + front + back
+
+    @property
+    def total_height(self) -> float:
+        return self.dimensions.height
+
+    def get_physical_area(self) -> float:
+        d = self.dimensions.depth if self.dimensions.depth is not None else self.dimensions.width
+        return self.dimensions.width * d
+
+    def get_total_area(self) -> float:
+        return self.total_width * self.total_depth
+
+    def get_envelope_footprint(self) -> Dict[str, float]:
+        d = self.dimensions.depth if self.dimensions.depth is not None else self.dimensions.width
+        return {
+            "physical_width": self.dimensions.width,
+            "physical_depth": d,
+            "physical_height": self.dimensions.height,
+            "total_width": self.total_width,
+            "total_depth": self.total_depth,
+            "total_height": self.total_height,
+            "physical_area": self.get_physical_area(),
+            "total_area": self.get_total_area(),
+        }
+
+
+VariableDefinition = FurnitureVariable
+
+
+STANDARD_FURNITURE_VARIABLES: Dict[str, FurnitureVariable] = {
+    "BED_KING_6FT": FurnitureVariable(
+        name="King Bed 6ft",
+        dimensions=Dimensions(width=1.83, depth=1.98, height=0.90),
+        clearance=ClearanceEnvelope(front=0.60, left=0.60, right=0.60, back=0.00),
+        category="bedroom",
+    ),
+    "BED_QUEEN_5FT": FurnitureVariable(
+        name="Queen Bed 5ft",
+        dimensions=Dimensions(width=1.52, depth=1.98, height=0.90),
+        clearance=ClearanceEnvelope(front=0.60, left=0.60, right=0.60, back=0.00),
+        category="bedroom",
+    ),
+    "WARDROBE_2M": FurnitureVariable(
+        name="Wardrobe 2m",
+        dimensions=Dimensions(width=2.00, depth=0.60, height=2.20),
+        clearance=ClearanceEnvelope(front=0.80, left=0.00, right=0.00, back=0.00),
+        category="bedroom",
+    ),
+    "WORKING_DESK": FurnitureVariable(
+        name="Working Desk",
+        dimensions=Dimensions(width=1.20, depth=0.60, height=0.75),
+        clearance=ClearanceEnvelope(front=0.80, left=0.00, right=0.00, back=0.00),
+        category="office",
+    ),
+    "TOILET_STANDARD": FurnitureVariable(
+        name="Standard Toilet",
+        dimensions=Dimensions(width=0.45, depth=0.70, height=0.75),
+        clearance=ClearanceEnvelope(front=0.60, left=0.20, right=0.20, back=0.00),
+        category="bathroom",
+    ),
+    "SHOWER_ENCLOSURE": FurnitureVariable(
+        name="Shower Enclosure",
+        dimensions=Dimensions(width=0.90, depth=0.90, height=2.00),
+        clearance=ClearanceEnvelope(front=0.60, left=0.00, right=0.00, back=0.00),
+        category="bathroom",
+    ),
+    "DINING_TABLE_6SEAT": FurnitureVariable(
+        name="Dining Table 6-Seat",
+        dimensions=Dimensions(width=1.60, depth=0.90, height=0.75),
+        clearance=ClearanceEnvelope(front=0.90, back=0.90, left=0.80, right=0.80),
+        category="kitchen",
+    ),
+    "CAR_SEDAN": FurnitureVariable(
+        name="Sedan Car",
+        dimensions=Dimensions(width=1.80, depth=4.80, height=1.50),
+        clearance=ClearanceEnvelope(front=0.50, back=0.50, left=0.60, right=0.60),
+        category="parking",
+    ),
+}
+
+
 class IfcDoor(BaseModel):
     class_: Literal["IfcDoor"] = Field(alias="class", default="IfcDoor")
     tag: str
@@ -3796,8 +3904,16 @@ class ProjectManifest(BaseModel):
     includes: List[str] = Field(default_factory=list)
     site: Optional[SiteBoundary] = None
     compliances: List[ComplianceRule] = Field(default_factory=list)
+    variables: Optional[Dict[str, FurnitureVariable]] = None
 
     _modules_expanded: bool = PrivateAttr(default=False)
+
+    def get_variable(self, name_or_tag: str) -> Optional[FurnitureVariable]:
+        if self.variables and name_or_tag in self.variables:
+            return self.variables[name_or_tag]
+        if name_or_tag in STANDARD_FURNITURE_VARIABLES:
+            return STANDARD_FURNITURE_VARIABLES[name_or_tag]
+        return None
 
     @model_validator(mode="before")
     @classmethod
