@@ -114,6 +114,32 @@ When working on any GitHub Issue or Pull Request:
 
 ---
 
+## 🏛️ Architectural Thinking & Modeling Sequence (The Architect's Two Hemispheres)
+
+When tasked with creating, generating, or modifying building floor plans and models, agents MUST follow the two-phase architectural methodology detailed in `docs/ARCHITECTURAL_WORKFLOW.md`:
+
+### Phase 1: Spatial Thinking & Programming (Before Drafting)
+1. **Human Scale + 30% Circulation:** Compute room net areas by summing furniture/sanitary ware footprints and adding 30% intra-room circulation:
+   $$\text{Area} = \left(\sum \text{Furniture Footprints}\right) \times 1.30$$
+2. **Function Diagram & Adjacency:** Determine room-to-room connectivity and negative adjacencies (e.g. restrooms must not open directly into dining spaces; master bedrooms must not share walls with pump/mechanical rooms).
+3. **Volumetric Spaces (`IfcSpace`):** Model invisible functional spaces. Add +30% overall circulation for hallways, corridors, and stairs.
+4. **Site Boundaries & Stacking:** Comply with Thai building regulations (setbacks: 0.50m blind wall, 2.00m openings; OSR $\ge 30\%$; FAR). When ground floor coverage is exhausted, stack spaces vertically into upper storeys (Storey 1: Public/Semi-private, Storey 2: Private).
+5. **MEP Coordination Hierarchy:**
+   $$\textbf{MEP relocates first} \longrightarrow \textbf{Structure adapts second} \longrightarrow \textbf{Architectural Space & Clear Height are preserved}$$
+
+### Phase 2: Drafting & BIM Modeling Sequence
+1. **Schematic Layout:** Arrange functional spaces (`IfcSpace`).
+2. **Columns (`IfcColumn`):** Place columns at regular structural spans (3.00m - 5.00m).
+3. **Grid Axes (`grids`):** Establish reference grid lines through column centerlines.
+4. **Framing (`IfcBeam`, `IfcSlab`):** Place beams, tie beams, and slabs floor-by-floor.
+5. **Roof (`IfcRoof`):** Crown the structure with hip/gable roofs.
+6. **Walls & Openings (`IfcWall`, `IfcDoor`, `IfcWindow`):** Place partitions. Place doors where `IfcSpace` entities connect in the Function Diagram.
+7. **Verification & Error Detection:**
+   - **Furniture Fit:** If Human Scale furniture cannot be accommodated or circulation path is $< 0.60$m, the layout is invalid.
+   - **Adjacency Violation:** Verify no prohibited adjoining rooms.
+
+---
+
 ## 📋 CLI Specification
 
 The CLI tool exposes the binary command `debim`:

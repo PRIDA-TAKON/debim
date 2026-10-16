@@ -38,6 +38,24 @@ In air-gapped Virtual Machines (VMs) without internet connection or external pac
 
 ---
 
+## 🏛️ Architectural Thinking & Modeling Sequence (The Architect's SOP)
+
+Agents designing floor plans or modeling buildings must strictly follow the architectural workflow detailed in `references/architectural_workflow.md` (and `docs/ARCHITECTURAL_WORKFLOW.md`):
+
+1. **Phase 1: Spatial Thinking & Programming (Before Drafting):**
+   - **Human Scale + 30% Intra-room Circulation:** Calculate room net areas from furniture/sanitary fixtures footprints:
+     $$\text{Area} = \left(\sum \text{Furniture Footprints}\right) \times 1.30$$
+   - **Function Diagram & Adjacency:** Map connections (Living $\leftrightarrow$ Dining $\leftrightarrow$ Kitchen) and negative adjacencies (restrooms away from dining; quiet bedrooms away from mechanical/pump rooms).
+   - **Volumetric 3D Spaces (`IfcSpace`):** Define functional volumes. Add **+30% overall circulation** for corridors and stairs.
+   - **Site Boundaries & Stacking:** Comply with Thai building laws (setbacks, OSR $\ge 30\%$, FAR). Stack overflow functions onto upper storeys (Storey 1: Public, Storey 2: Private).
+   - **MEP Coordination Priority:**
+     $$\textbf{MEP relocates first} \longrightarrow \textbf{Structure adapts second} \longrightarrow \textbf{Architectural Space & Clear Height are preserved}$$
+
+2. **Phase 2: Drafting Sequence:**
+   `Schematic Spaces (IfcSpace)` $\rightarrow$ `Columns (IfcColumn)` $\rightarrow$ `Grid Axes (grids)` $\rightarrow$ `Beams & Slabs (IfcBeam, IfcSlab)` $\rightarrow$ `Roof (IfcRoof)` $\rightarrow$ `Walls & Openings (IfcWall, IfcDoor, IfcWindow based on Space adjacency)` $\rightarrow$ `Verification by Furniture Fit`.
+
+---
+
 ## 📐 Coordinate & Bounding Rules (Immutable Standards)
 
 ### 1. Right-Handed Coordinate System

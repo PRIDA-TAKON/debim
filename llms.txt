@@ -31,6 +31,31 @@ Instead, follow this deterministic Building-as-Code workflow:
 
 ---
 
+## 📐 Architectural Design & Modeling Sequence (The Architect's Two Hemispheres)
+When tasked with architectural design, floor planning, or building creation, AI agents MUST follow the authentic architectural two-phase methodology (Documented in detail in `docs/ARCHITECTURAL_WORKFLOW.md`):
+
+### Phase 1: Spatial Thinking & Programming (Before Drafting)
+1. **Human Scale & Furniture Sizing:** Calculate room net areas by summing furniture/sanitary fixtures footprints from Human Scale standards and adding **+30% intra-room circulation**:
+   $$\text{Room Area} = \left(\sum \text{Furniture Footprints}\right) \times 1.30$$
+2. **Function Diagram & Adjacency:** Establish positive connections (Kitchen $\leftrightarrow$ Dining $\leftrightarrow$ Living) and negative adjacencies (Restrooms must not open directly into dining; bedrooms must not share walls with noisy pump/mechanical rooms).
+3. **Volumetric 3D Spaces (`IfcSpace`):** Envision spaces as 3D functional volumes. Add **+30% overall circulation** for corridors, stairs, and halls.
+4. **Site Boundaries & Zoning Stacking:** Respect setbacks (0.50m blind wall, 2.00m openings), Open Space Ratio (OSR $\ge 30\%$), and FAR. When footprint exceeds permissible ground coverage, stack functions into upper storeys (Public/Semi-private on FL1, Private on FL2).
+5. **MEP Coordination Hierarchy:**
+   $$\textbf{MEP relocates first} \longrightarrow \textbf{Structure adapts second} \longrightarrow \textbf{Architectural Space & Clear Height are preserved}$$
+
+### Phase 2: Drafting & BIM Modeling Sequence
+1. **Schematic Layout:** Arrange functional spaces (`IfcSpace`).
+2. **Columns (`IfcColumn`):** Place main structural columns at 3.00m - 5.00m structural spans.
+3. **Grid Axes (`grids`):** Establish reference grid lines intersecting column centerlines.
+4. **Framing (`IfcBeam`, `IfcSlab`):** Place ground beams, floor beams, and monolithic slabs storey-by-storey.
+5. **Roof (`IfcRoof`):** Crown the building with procedural hip/gable geometry.
+6. **Walls & Openings (`IfcWall`, `IfcDoor`, `IfcWindow`):** Place walls along partitions. Position doors where `IfcSpace` entities connect in the Function Diagram.
+7. **Verification & Error Detection:**
+   - Verify by Furniture Fit: If standard Human Scale furniture cannot be placed or circulation drops below 0.60m, the room dimensions are flawed.
+   - Verify by Adjacency: Flag any forbidden adjacent spaces immediately.
+
+---
+
 ## 📦 Package Distribution & Ecosystem Architecture
 
 ### 🏛️ Core Engine (Built-in, Zero-Dependency)
