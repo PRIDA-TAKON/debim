@@ -817,6 +817,9 @@ def load_manifest(path: Optional[Union[Path, str]] = None) -> Any:
         data = expand_macro_elements(data)
     if data.get("modules") and data.get("instances"):
         data = expand_module_instances(data)
+    if "spaces" in data and ("grids" not in data or "spatial_structure" not in data):
+        from debim.derive import derive_project_from_spaces
+        return derive_project_from_spaces(data)
     return ProjectManifest.model_validate(data)
 
 
