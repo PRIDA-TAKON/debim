@@ -242,6 +242,89 @@ def _get_embedded_css() -> str:
     return "/* Fallback Sheet CSS */"
 
 
+STANDARD_ARCHITECTURAL_SCALES: List[int] = [50, 75, 100]
+
+
+def select_architectural_scale(
+    model_width_m: float,
+    model_height_m: float,
+    viewport_width_mm: float,
+    viewport_height_mm: float,
+    annotation_margin_mm: float = 60.0,
+    allowed_scales: Optional[List[int]] = None,
+) -> int:
+    """
+    Select the optimal standard architectural scale (1:50, 1:75, 1:100, etc.)
+    that fits the building bounds plus annotation margins within the printable viewport.
+    """
+    scales = allowed_scales or STANDARD_ARCHITECTURAL_SCALES
+    avail_w_mm = max(10.0, viewport_width_mm - annotation_margin_mm)
+    avail_h_mm = max(10.0, viewport_height_mm - annotation_margin_mm)
+
+    for s in sorted(scales):
+        needed_w_mm = model_width_m * (1000.0 / float(s))
+        needed_h_mm = model_height_m * (1000.0 / float(s))
+        if needed_w_mm <= avail_w_mm and needed_h_mm <= avail_h_mm:
+            return s
+
+    return max(scales)
+
+
+class ViewportTransform(BaseModel):
+    """Result of floating viewport transformation calculation."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    scale: int
+    transformer: 'CoordinateTransformer'
+    model_bounds: Tuple[float, float, float, float]  # min_x, min_y, max_x, max_y
+    model_center: Tuple[float, float]
+    viewport_center: Tuple[float, float]
+    viewport_dimensions_mm: Tuple[float, float]
+
+
+def calculate_viewport_transform(
+    model_bounds: Tuple[float, float, float, float],
+    drawing_center_mm: Tuple[float, float],
+    drawing_size_mm: Tuple[float, float],
+    scale: Optional[int] = None,
+    annotation_margin_mm: float = 60.0,
+) -> ViewportTransform:
+    """
+    Calculate model-to-paper viewport transformation centered on building bounds,
+    using exact standard architectural scale (1:50, 1:75, 1:100).
+    """
+    min_x, min_y, max_x, max_y = model_bounds
+    model_w_m = max_x - min_x
+    model_h_m = max_y - min_y
+    model_cx = (min_x + max_x) / 2.0
+    model_cy = (min_y + max_y) / 2.0
+
+    dw_mm, dh_mm = drawing_size_mm
+    dcx_mm, dcy_mm = drawing_center_mm
+
+    if scale is None or scale <= 0:
+        chosen_scale = select_architectural_scale(
+            model_w_m, model_h_m, dw_mm, dh_mm, annotation_margin_mm=annotation_margin_mm
+        )
+    else:
+        chosen_scale = scale
+
+    transformer = CoordinateTransformer(
+        model_center=(model_cx, model_cy),
+        viewport_center=(dcx_mm, dcy_mm),
+        scale=chosen_scale,
+    )
+
+    return ViewportTransform(
+        scale=chosen_scale,
+        transformer=transformer,
+        model_bounds=model_bounds,
+        model_center=(model_cx, model_cy),
+        viewport_center=(dcx_mm, dcy_mm),
+        viewport_dimensions_mm=drawing_size_mm,
+    )
+
+
 class CoordinateTransformer:
     """Maps 2D BIM model coordinates (meters) to paper coordinates (millimeters)."""
 
@@ -495,32 +578,32 @@ class SheetRenderer:
                     )
 
         # 9. Render Grid Lines & Bubbles (.grid-line, .grid-bubble, .grid-text)
+        x_grids = [g for g in cut_result.grid_lines if g.axis == "X" and "-" not in g.id]
+        y_grids = [g for g in cut_result.grid_lines if g.axis == "Y" and "-" not in g.id]
+
+        all_model_x = [g.position for g in x_grids] or [min_x, max_x]
+        all_model_y = [g.position for g in y_grids] or [min_y, max_y]
+
+        min_gx, max_gx = min(all_model_x), max(all_model_x)
+        min_gy, max_gy = min(all_model_y), max(all_model_y)
+
+        # Annotative Paper Offsets for 3-Tier Dimensions & Grid Bubbles
+        dim1_offset_mm = 8.0    # Tier 1 (Inner): Openings & Wall Offsets
+        dim2_offset_mm = 16.0   # Tier 2 (Middle): Grid-to-Grid Bay Distances
+        dim3_offset_mm = 24.0   # Tier 3 (Outer): Overall Building Dimensions
+        bubble_offset_mm = 32.0 # Automated Grid Bubbles
+        ext_other_mm = 8.0      # Offset for opposite sides
+        bubble_r_mm = 3.6       # Grid bubble radius
+
         if cfg.visibility.show_grid:
-            svg_lines.append('    <!-- Grid Lines & Bubbles -->')
+            svg_lines.append('    <!-- Grid Lines & Automated Bubbles -->')
 
-            # Annotative Paper Offsets (mm on paper space)
-            dim1_offset_mm = 8.0    # Bay/Grid dimension offset from building envelope
-            dim2_offset_mm = 15.0   # Overall envelope dimension offset from building envelope
-            bubble_offset_mm = 23.0 # Grid bubble offset from building envelope
-            ext_other_mm = 8.0      # Offset for sides without dimensions
-            bubble_r_mm = 3.6       # Grid bubble radius (diameter 7.2mm)
-
-            x_grids = [g for g in cut_result.grid_lines if g.axis == "X" and "-" not in g.id]
-            y_grids = [g for g in cut_result.grid_lines if g.axis == "Y" and "-" not in g.id]
-
-            all_model_x = [g.position for g in x_grids] or [min_x, max_x]
-            all_model_y = [g.position for g in y_grids] or [min_y, max_y]
-
-            min_gx, max_gx = min(all_model_x), max(all_model_x)
-            min_gy, max_gy = min(all_model_y), max(all_model_y)
-
-            # Model coordinate extents derived from constant paper offsets
             y_top_m = max_gy + transformer.mm_to_model(bubble_offset_mm)
             y_bot_m = min_gy - transformer.mm_to_model(ext_other_mm)
             x_left_m = min_gx - transformer.mm_to_model(bubble_offset_mm)
             x_right_m = max_gx + transformer.mm_to_model(ext_other_mm)
 
-            # Draw X Grids (Vertical lines)
+            # Draw X Grids (Vertical lines & Bubbles)
             for g in x_grids:
                 p_top = transformer.to_paper(g.position, y_top_m)
                 p_bot = transformer.to_paper(g.position, y_bot_m)
@@ -543,7 +626,7 @@ class SheetRenderer:
                     f'    <text x="{p_bot[0]}" y="{p_bot[1]}" class="grid-text">{g.id}</text>'
                 )
 
-            # Draw Y Grids (Horizontal lines)
+            # Draw Y Grids (Horizontal lines & Bubbles)
             for g in y_grids:
                 p_left = transformer.to_paper(x_left_m, g.position)
                 p_right = transformer.to_paper(x_right_m, g.position)
@@ -566,35 +649,50 @@ class SheetRenderer:
                     f'    <text x="{p_right[0]}" y="{p_right[1]}" class="grid-text">{g.id}</text>'
                 )
 
-        # 10. Render Automatic Dimensions (.dimension-line, .dimension-text, .text-mask)
+        # 10. Render Automated 3-Tier Dimensions (.dimension-line, .dimension-text, .text-mask)
         if cfg.visibility.show_dimensions and cfg.visibility.show_grid:
-            svg_lines.append('    <!-- Automatic Dimensions -->')
+            svg_lines.append('    <!-- Automated 3-Tier Dimensions -->')
 
             x_grids_sorted = sorted([g for g in cut_result.grid_lines if g.axis == "X" and "-" not in g.id], key=lambda g: g.position)
             y_grids_sorted = sorted([g for g in cut_result.grid_lines if g.axis == "Y" and "-" not in g.id], key=lambda g: g.position)
 
             tick_len_mm = 1.8
 
-            # X-Axis Dimension Strings (above building, between roof and top bubbles)
-            if len(x_grids_sorted) >= 2:
-                dim_y_m = max_gy + transformer.mm_to_model(dim1_offset_mm)
-                dim_y_p = transformer.to_paper(0, dim_y_m)[1]
+            # Extract Tier 1 (Inner) break points along X axis (openings & wall offsets)
+            x_tier1_set = set(g.position for g in x_grids_sorted)
+            for ce in cut_result.cut_elements:
+                if ce.geometry is not None:
+                    gx0, gy0, gx1, gy1 = ce.geometry.bounds
+                    if min_gx - 0.5 <= gx0 <= max_gx + 0.5:
+                        x_tier1_set.add(round(gx0, 4))
+                    if min_gx - 0.5 <= gx1 <= max_gx + 0.5:
+                        x_tier1_set.add(round(gx1, 4))
 
-                for i in range(len(x_grids_sorted) - 1):
-                    g1, g2 = x_grids_sorted[i], x_grids_sorted[i + 1]
-                    p1 = transformer.to_paper(g1.position, dim_y_m)
-                    p2 = transformer.to_paper(g2.position, dim_y_m)
-                    dist_m = abs(g2.position - g1.position)
+            sorted_t1_x = sorted(list(x_tier1_set))
+            merged_t1_x = []
+            for x_val in sorted_t1_x:
+                if not merged_t1_x or abs(x_val - merged_t1_x[-1]) >= 0.05:
+                    merged_t1_x.append(x_val)
+
+            # X-Axis Tier 1 (Inner): Openings & Wall offsets
+            if len(merged_t1_x) >= 2:
+                dim_t1_y_m = max_gy + transformer.mm_to_model(dim1_offset_mm)
+                dim_t1_y_p = transformer.to_paper(0, dim_t1_y_m)[1]
+
+                for i in range(len(merged_t1_x) - 1):
+                    x1_m, x2_m = merged_t1_x[i], merged_t1_x[i + 1]
+                    p1 = transformer.to_paper(x1_m, dim_t1_y_m)
+                    p2 = transformer.to_paper(x2_m, dim_t1_y_m)
+                    dist_m = abs(x2_m - x1_m)
 
                     svg_lines.append(
-                        f'    <line x1="{p1[0]}" y1="{dim_y_p}" x2="{p2[0]}" y2="{dim_y_p}" class="dimension-line" />'
+                        f'    <line x1="{p1[0]}" y1="{dim_t1_y_p}" x2="{p2[0]}" y2="{dim_t1_y_p}" class="dimension-line" data-tier="1" />'
                     )
-
                     svg_lines.append(
-                        f'    <line x1="{p1[0] - tick_len_mm/2}" y1="{dim_y_p + tick_len_mm/2}" x2="{p1[0] + tick_len_mm/2}" y2="{dim_y_p - tick_len_mm/2}" class="dimension-tick" />'
+                        f'    <line x1="{p1[0] - tick_len_mm/2}" y1="{dim_t1_y_p + tick_len_mm/2}" x2="{p1[0] + tick_len_mm/2}" y2="{dim_t1_y_p - tick_len_mm/2}" class="dimension-tick" />'
                     )
                     svg_lines.append(
-                        f'    <line x1="{p2[0] - tick_len_mm/2}" y1="{dim_y_p + tick_len_mm/2}" x2="{p2[0] + tick_len_mm/2}" y2="{dim_y_p - tick_len_mm/2}" class="dimension-tick" />'
+                        f'    <line x1="{p2[0] - tick_len_mm/2}" y1="{dim_t1_y_p + tick_len_mm/2}" x2="{p2[0] + tick_len_mm/2}" y2="{dim_t1_y_p - tick_len_mm/2}" class="dimension-tick" />'
                     )
 
                     mid_x = (p1[0] + p2[0]) / 2.0
@@ -603,28 +701,61 @@ class SheetRenderer:
                     text_h_mm = 2.4
 
                     svg_lines.append(
-                        f'    <rect x="{mid_x - text_w_mm/2:.2f}" y="{dim_y_p - text_h_mm/2:.2f}" width="{text_w_mm:.2f}" height="{text_h_mm:.2f}" class="text-mask" />'
+                        f'    <rect x="{mid_x - text_w_mm/2:.2f}" y="{dim_t1_y_p - text_h_mm/2:.2f}" width="{text_w_mm:.2f}" height="{text_h_mm:.2f}" class="text-mask" />'
                     )
                     svg_lines.append(
-                        f'    <text x="{mid_x:.2f}" y="{dim_y_p:.2f}" class="dimension-text">{val_str}</text>'
+                        f'    <text x="{mid_x:.2f}" y="{dim_t1_y_p:.2f}" class="dimension-text" data-tier="1">{val_str}</text>'
                     )
 
-                # Overall Envelope Dimension (further above bay dims)
-                dim_overall_y_m = max_gy + transformer.mm_to_model(dim2_offset_mm)
-                dim_overall_y_p = transformer.to_paper(0, dim_overall_y_m)[1]
+            # X-Axis Tier 2 (Middle): Grid-to-Grid column distances
+            if len(x_grids_sorted) >= 2:
+                dim_t2_y_m = max_gy + transformer.mm_to_model(dim2_offset_mm)
+                dim_t2_y_p = transformer.to_paper(0, dim_t2_y_m)[1]
 
-                p_start = transformer.to_paper(x_grids_sorted[0].position, dim_overall_y_m)
-                p_end = transformer.to_paper(x_grids_sorted[-1].position, dim_overall_y_m)
+                for i in range(len(x_grids_sorted) - 1):
+                    g1, g2 = x_grids_sorted[i], x_grids_sorted[i + 1]
+                    p1 = transformer.to_paper(g1.position, dim_t2_y_m)
+                    p2 = transformer.to_paper(g2.position, dim_t2_y_m)
+                    dist_m = abs(g2.position - g1.position)
+
+                    svg_lines.append(
+                        f'    <line x1="{p1[0]}" y1="{dim_t2_y_p}" x2="{p2[0]}" y2="{dim_t2_y_p}" class="dimension-line" data-tier="2" />'
+                    )
+                    svg_lines.append(
+                        f'    <line x1="{p1[0] - tick_len_mm/2}" y1="{dim_t2_y_p + tick_len_mm/2}" x2="{p1[0] + tick_len_mm/2}" y2="{dim_t2_y_p - tick_len_mm/2}" class="dimension-tick" />'
+                    )
+                    svg_lines.append(
+                        f'    <line x1="{p2[0] - tick_len_mm/2}" y1="{dim_t2_y_p + tick_len_mm/2}" x2="{p2[0] + tick_len_mm/2}" y2="{dim_t2_y_p - tick_len_mm/2}" class="dimension-tick" />'
+                    )
+
+                    mid_x = (p1[0] + p2[0]) / 2.0
+                    val_str = f"{dist_m:.2f}"
+                    text_w_mm = len(val_str) * 1.5 + 2.0
+                    text_h_mm = 2.4
+
+                    svg_lines.append(
+                        f'    <rect x="{mid_x - text_w_mm/2:.2f}" y="{dim_t2_y_p - text_h_mm/2:.2f}" width="{text_w_mm:.2f}" height="{text_h_mm:.2f}" class="text-mask" />'
+                    )
+                    svg_lines.append(
+                        f'    <text x="{mid_x:.2f}" y="{dim_t2_y_p:.2f}" class="dimension-text" data-tier="2">{val_str}</text>'
+                    )
+
+                # X-Axis Tier 3 (Outer): Total building width
+                dim_t3_y_m = max_gy + transformer.mm_to_model(dim3_offset_mm)
+                dim_t3_y_p = transformer.to_paper(0, dim_t3_y_m)[1]
+
+                p_start = transformer.to_paper(x_grids_sorted[0].position, dim_t3_y_m)
+                p_end = transformer.to_paper(x_grids_sorted[-1].position, dim_t3_y_m)
                 total_dist_m = abs(x_grids_sorted[-1].position - x_grids_sorted[0].position)
 
                 svg_lines.append(
-                    f'    <line x1="{p_start[0]}" y1="{dim_overall_y_p}" x2="{p_end[0]}" y2="{dim_overall_y_p}" class="dimension-line" />'
+                    f'    <line x1="{p_start[0]}" y1="{dim_t3_y_p}" x2="{p_end[0]}" y2="{dim_t3_y_p}" class="dimension-line" data-tier="3" />'
                 )
                 svg_lines.append(
-                    f'    <line x1="{p_start[0] - tick_len_mm/2}" y1="{dim_overall_y_p + tick_len_mm/2}" x2="{p_start[0] + tick_len_mm/2}" y2="{dim_overall_y_p - tick_len_mm/2}" class="dimension-tick" />'
+                    f'    <line x1="{p_start[0] - tick_len_mm/2}" y1="{dim_t3_y_p + tick_len_mm/2}" x2="{p_start[0] + tick_len_mm/2}" y2="{dim_t3_y_p - tick_len_mm/2}" class="dimension-tick" />'
                 )
                 svg_lines.append(
-                    f'    <line x1="{p_end[0] - tick_len_mm/2}" y1="{dim_overall_y_p + tick_len_mm/2}" x2="{p_end[0] + tick_len_mm/2}" y2="{dim_overall_y_p - tick_len_mm/2}" class="dimension-tick" />'
+                    f'    <line x1="{p_end[0] - tick_len_mm/2}" y1="{dim_t3_y_p + tick_len_mm/2}" x2="{p_end[0] + tick_len_mm/2}" y2="{dim_t3_y_p - tick_len_mm/2}" class="dimension-tick" />'
                 )
 
                 mid_x_overall = (p_start[0] + p_end[0]) / 2.0
@@ -632,31 +763,47 @@ class SheetRenderer:
                 text_w_overall = len(val_overall_str) * 1.5 + 2.0
 
                 svg_lines.append(
-                    f'    <rect x="{mid_x_overall - text_w_overall/2:.2f}" y="{dim_overall_y_p - text_h_mm/2:.2f}" width="{text_w_overall:.2f}" height="{text_h_mm:.2f}" class="text-mask" />'
+                    f'    <rect x="{mid_x_overall - text_w_overall/2:.2f}" y="{dim_t3_y_p - text_h_mm/2:.2f}" width="{text_w_overall:.2f}" height="{text_h_mm:.2f}" class="text-mask" />'
                 )
                 svg_lines.append(
-                    f'    <text x="{mid_x_overall:.2f}" y="{dim_overall_y_p:.2f}" class="dimension-text">{val_overall_str}</text>'
+                    f'    <text x="{mid_x_overall:.2f}" y="{dim_t3_y_p:.2f}" class="dimension-text" data-tier="3">{val_overall_str}</text>'
                 )
 
-            # Y-Axis Dimension Strings (left of building, between wall and left bubbles)
-            if len(y_grids_sorted) >= 2:
-                dim_x_m = min_gx - transformer.mm_to_model(dim1_offset_mm)
-                dim_x_p = transformer.to_paper(dim_x_m, 0)[0]
+            # Extract Tier 1 (Inner) break points along Y axis (openings & wall offsets)
+            y_tier1_set = set(g.position for g in y_grids_sorted)
+            for ce in cut_result.cut_elements:
+                if ce.geometry is not None:
+                    gx0, gy0, gx1, gy1 = ce.geometry.bounds
+                    if min_gy - 0.5 <= gy0 <= max_gy + 0.5:
+                        y_tier1_set.add(round(gy0, 4))
+                    if min_gy - 0.5 <= gy1 <= max_gy + 0.5:
+                        y_tier1_set.add(round(gy1, 4))
 
-                for i in range(len(y_grids_sorted) - 1):
-                    g1, g2 = y_grids_sorted[i], y_grids_sorted[i + 1]
-                    p1 = transformer.to_paper(dim_x_m, g1.position)
-                    p2 = transformer.to_paper(dim_x_m, g2.position)
-                    dist_m = abs(g2.position - g1.position)
+            sorted_t1_y = sorted(list(y_tier1_set))
+            merged_t1_y = []
+            for y_val in sorted_t1_y:
+                if not merged_t1_y or abs(y_val - merged_t1_y[-1]) >= 0.05:
+                    merged_t1_y.append(y_val)
+
+            # Y-Axis Tier 1 (Inner): Openings & Wall offsets
+            if len(merged_t1_y) >= 2:
+                dim_t1_x_m = min_gx - transformer.mm_to_model(dim1_offset_mm)
+                dim_t1_x_p = transformer.to_paper(dim_t1_x_m, 0)[0]
+
+                for i in range(len(merged_t1_y) - 1):
+                    y1_m, y2_m = merged_t1_y[i], merged_t1_y[i + 1]
+                    p1 = transformer.to_paper(dim_t1_x_m, y1_m)
+                    p2 = transformer.to_paper(dim_t1_x_m, y2_m)
+                    dist_m = abs(y2_m - y1_m)
 
                     svg_lines.append(
-                        f'    <line x1="{dim_x_p}" y1="{p1[1]}" x2="{dim_x_p}" y2="{p2[1]}" class="dimension-line" />'
+                        f'    <line x1="{dim_t1_x_p}" y1="{p1[1]}" x2="{dim_t1_x_p}" y2="{p2[1]}" class="dimension-line" data-tier="1" />'
                     )
                     svg_lines.append(
-                        f'    <line x1="{dim_x_p - tick_len_mm/2}" y1="{p1[1] + tick_len_mm/2}" x2="{dim_x_p + tick_len_mm/2}" y2="{p1[1] - tick_len_mm/2}" class="dimension-tick" />'
+                        f'    <line x1="{dim_t1_x_p - tick_len_mm/2}" y1="{p1[1] + tick_len_mm/2}" x2="{dim_t1_x_p + tick_len_mm/2}" y2="{p1[1] - tick_len_mm/2}" class="dimension-tick" />'
                     )
                     svg_lines.append(
-                        f'    <line x1="{dim_x_p - tick_len_mm/2}" y1="{p2[1] + tick_len_mm/2}" x2="{dim_x_p + tick_len_mm/2}" y2="{p2[1] - tick_len_mm/2}" class="dimension-tick" />'
+                        f'    <line x1="{dim_t1_x_p - tick_len_mm/2}" y1="{p2[1] + tick_len_mm/2}" x2="{dim_t1_x_p + tick_len_mm/2}" y2="{p2[1] - tick_len_mm/2}" class="dimension-tick" />'
                     )
 
                     mid_y = (p1[1] + p2[1]) / 2.0
@@ -665,28 +812,61 @@ class SheetRenderer:
                     text_h_mm = 2.4
 
                     svg_lines.append(
-                        f'    <rect x="{dim_x_p - text_w_mm/2:.2f}" y="{mid_y - text_h_mm/2:.2f}" width="{text_w_mm:.2f}" height="{text_h_mm:.2f}" class="text-mask" transform="rotate(-90, {dim_x_p:.2f}, {mid_y:.2f})" />'
+                        f'    <rect x="{dim_t1_x_p - text_w_mm/2:.2f}" y="{mid_y - text_h_mm/2:.2f}" width="{text_w_mm:.2f}" height="{text_h_mm:.2f}" class="text-mask" transform="rotate(-90, {dim_t1_x_p:.2f}, {mid_y:.2f})" />'
                     )
                     svg_lines.append(
-                        f'    <text x="{dim_x_p:.2f}" y="{mid_y:.2f}" class="dimension-text" transform="rotate(-90, {dim_x_p:.2f}, {mid_y:.2f})">{val_str}</text>'
+                        f'    <text x="{dim_t1_x_p:.2f}" y="{mid_y:.2f}" class="dimension-text" data-tier="1" transform="rotate(-90, {dim_t1_x_p:.2f}, {mid_y:.2f})">{val_str}</text>'
                     )
 
-                # Overall Y Envelope Dimension
-                dim_overall_x_m = min_gx - transformer.mm_to_model(dim2_offset_mm)
-                dim_overall_x_p = transformer.to_paper(dim_overall_x_m, 0)[0]
+            # Y-Axis Tier 2 (Middle): Grid-to-Grid column distances
+            if len(y_grids_sorted) >= 2:
+                dim_t2_x_m = min_gx - transformer.mm_to_model(dim2_offset_mm)
+                dim_t2_x_p = transformer.to_paper(dim_t2_x_m, 0)[0]
 
-                p_start_y = transformer.to_paper(dim_overall_x_m, y_grids_sorted[0].position)
-                p_end_y = transformer.to_paper(dim_overall_x_m, y_grids_sorted[-1].position)
+                for i in range(len(y_grids_sorted) - 1):
+                    g1, g2 = y_grids_sorted[i], y_grids_sorted[i + 1]
+                    p1 = transformer.to_paper(dim_t2_x_m, g1.position)
+                    p2 = transformer.to_paper(dim_t2_x_m, g2.position)
+                    dist_m = abs(g2.position - g1.position)
+
+                    svg_lines.append(
+                        f'    <line x1="{dim_t2_x_p}" y1="{p1[1]}" x2="{dim_t2_x_p}" y2="{p2[1]}" class="dimension-line" data-tier="2" />'
+                    )
+                    svg_lines.append(
+                        f'    <line x1="{dim_t2_x_p - tick_len_mm/2}" y1="{p1[1] + tick_len_mm/2}" x2="{dim_t2_x_p + tick_len_mm/2}" y2="{p1[1] - tick_len_mm/2}" class="dimension-tick" />'
+                    )
+                    svg_lines.append(
+                        f'    <line x1="{dim_t2_x_p - tick_len_mm/2}" y1="{p2[1] + tick_len_mm/2}" x2="{dim_t2_x_p + tick_len_mm/2}" y2="{p2[1] - tick_len_mm/2}" class="dimension-tick" />'
+                    )
+
+                    mid_y = (p1[1] + p2[1]) / 2.0
+                    val_str = f"{dist_m:.2f}"
+                    text_w_mm = len(val_str) * 1.5 + 2.0
+                    text_h_mm = 2.4
+
+                    svg_lines.append(
+                        f'    <rect x="{dim_t2_x_p - text_w_mm/2:.2f}" y="{mid_y - text_h_mm/2:.2f}" width="{text_w_mm:.2f}" height="{text_h_mm:.2f}" class="text-mask" transform="rotate(-90, {dim_t2_x_p:.2f}, {mid_y:.2f})" />'
+                    )
+                    svg_lines.append(
+                        f'    <text x="{dim_t2_x_p:.2f}" y="{mid_y:.2f}" class="dimension-text" data-tier="2" transform="rotate(-90, {dim_t2_x_p:.2f}, {mid_y:.2f})">{val_str}</text>'
+                    )
+
+                # Y-Axis Tier 3 (Outer): Total building length
+                dim_t3_x_m = min_gx - transformer.mm_to_model(dim3_offset_mm)
+                dim_t3_x_p = transformer.to_paper(dim_t3_x_m, 0)[0]
+
+                p_start_y = transformer.to_paper(dim_t3_x_m, y_grids_sorted[0].position)
+                p_end_y = transformer.to_paper(dim_t3_x_m, y_grids_sorted[-1].position)
                 total_y_dist = abs(y_grids_sorted[-1].position - y_grids_sorted[0].position)
 
                 svg_lines.append(
-                    f'    <line x1="{dim_overall_x_p}" y1="{p_start_y[1]}" x2="{dim_overall_x_p}" y2="{p_end_y[1]}" class="dimension-line" />'
+                    f'    <line x1="{dim_t3_x_p}" y1="{p_start_y[1]}" x2="{dim_t3_x_p}" y2="{p_end_y[1]}" class="dimension-line" data-tier="3" />'
                 )
                 svg_lines.append(
-                    f'    <line x1="{dim_overall_x_p - tick_len_mm/2}" y1="{p_start_y[1] + tick_len_mm/2}" x2="{dim_overall_x_p + tick_len_mm/2}" y2="{p_start_y[1] - tick_len_mm/2}" class="dimension-tick" />'
+                    f'    <line x1="{dim_t3_x_p - tick_len_mm/2}" y1="{p_start_y[1] + tick_len_mm/2}" x2="{dim_t3_x_p + tick_len_mm/2}" y2="{p_start_y[1] - tick_len_mm/2}" class="dimension-tick" />'
                 )
                 svg_lines.append(
-                    f'    <line x1="{dim_overall_x_p - tick_len_mm/2}" y1="{p_end_y[1] + tick_len_mm/2}" x2="{dim_overall_x_p + tick_len_mm/2}" y2="{p_end_y[1] - tick_len_mm/2}" class="dimension-tick" />'
+                    f'    <line x1="{dim_t3_x_p - tick_len_mm/2}" y1="{p_end_y[1] + tick_len_mm/2}" x2="{dim_t3_x_p + tick_len_mm/2}" y2="{p_end_y[1] - tick_len_mm/2}" class="dimension-tick" />'
                 )
 
                 mid_y_overall = (p_start_y[1] + p_end_y[1]) / 2.0
@@ -694,10 +874,10 @@ class SheetRenderer:
                 text_w_y_overall = len(val_y_overall_str) * 1.5 + 2.0
 
                 svg_lines.append(
-                    f'    <rect x="{dim_overall_x_p - text_w_y_overall/2:.2f}" y="{mid_y_overall - text_h_mm/2:.2f}" width="{text_w_y_overall:.2f}" height="{text_h_mm:.2f}" class="text-mask" transform="rotate(-90, {dim_overall_x_p:.2f}, {mid_y_overall:.2f})" />'
+                    f'    <rect x="{dim_t3_x_p - text_w_y_overall/2:.2f}" y="{mid_y_overall - text_h_mm/2:.2f}" width="{text_w_y_overall:.2f}" height="{text_h_mm:.2f}" class="text-mask" transform="rotate(-90, {dim_t3_x_p:.2f}, {mid_y_overall:.2f})" />'
                 )
                 svg_lines.append(
-                    f'    <text x="{dim_overall_x_p:.2f}" y="{mid_y_overall:.2f}" class="dimension-text" transform="rotate(-90, {dim_overall_x_p:.2f}, {mid_y_overall:.2f})">{val_y_overall_str}</text>'
+                    f'    <text x="{dim_t3_x_p:.2f}" y="{mid_y_overall:.2f}" class="dimension-text" data-tier="3" transform="rotate(-90, {dim_t3_x_p:.2f}, {mid_y_overall:.2f})">{val_y_overall_str}</text>'
                 )
 
         # 11. Section Callouts on Floor Plan
@@ -739,20 +919,56 @@ class SheetRenderer:
             svg_lines.append(f'    <text x="{sec_b_p2[0]}" y="{sec_b_p2[1] + 2.2}" class="section-callout-text" style="font-size: 1.6px;">A-302</text>')
             svg_lines.append(f'    <polygon points="{sec_b_p2[0] + 4.2},{sec_b_p2[1]} {sec_b_p2[0] + 7.0},{sec_b_p2[1] - 2.0} {sec_b_p2[0] + 7.0},{sec_b_p2[1] + 2.0}" class="section-callout-arrow" />')
 
-        # 12. Render Room Tags / Labels (.room-tag, .text-mask)
+        # 12. Render Room Centroid Level Tags (e.g. FL.1 +0.00)
         if cfg.visibility.show_room_tags:
-            svg_lines.append('    <!-- Room Tags / Storey Label -->')
-            tag_p = transformer.to_paper(model_cx, model_cy)
-            room_label = cut_result.storey_name or cut_result.storey_id
-            text_w = len(room_label) * 2.4 + 4.0
-            text_h = 4.5
+            svg_lines.append('    <!-- Room Centroid Level Tags -->')
 
-            svg_lines.append(
-                f'    <rect x="{tag_p[0] - text_w/2:.2f}" y="{tag_p[1] - text_h/2:.2f}" width="{text_w:.2f}" height="{text_h:.2f}" class="text-mask" />'
-            )
-            svg_lines.append(
-                f'    <text x="{tag_p[0]:.2f}" y="{tag_p[1]:.2f}" class="room-tag">{room_label}</text>'
-            )
+            import re
+            m_s = re.search(r"\d+", cut_result.storey_id or "") or re.search(r"\d+", cut_result.storey_name or "")
+            s_num = m_s.group(0) if m_s else "1"
+            elev_val = cut_result.storey_elevation
+            elev_str = f"+{elev_val:.2f}" if elev_val >= 0.0 else f"{elev_val:.2f}"
+            level_tag_str = f"FL.{s_num} {elev_str}"
+
+            storey_spaces = [
+                sp for sp in getattr(self.resolved, "spaces", [])
+                if sp.element and getattr(sp.element.placement, "storey", None) == cut_result.storey_id
+            ]
+            if not storey_spaces:
+                storey_spaces = getattr(self.resolved, "spaces", [])
+
+            if storey_spaces:
+                for sp in storey_spaces:
+                    cx, cy = sp.center[0], sp.center[1]
+                    p_center = transformer.to_paper(cx, cy)
+                    r_name = (sp.name or sp.tag).upper()
+
+                    w_mm = max(len(r_name), len(level_tag_str)) * 1.8 + 4.0
+                    h_mm = 7.0
+                    svg_lines.append(
+                        f'    <rect x="{p_center[0] - w_mm/2:.2f}" y="{p_center[1] - h_mm/2:.2f}" width="{w_mm:.2f}" height="{h_mm:.2f}" class="text-mask" />'
+                    )
+                    svg_lines.append(
+                        f'    <text x="{p_center[0]:.2f}" y="{p_center[1] - 1.2:.2f}" class="room-tag">{r_name}</text>'
+                    )
+                    svg_lines.append(
+                        f'    <text x="{p_center[0]:.2f}" y="{p_center[1] + 2.2:.2f}" class="dimension-text">{level_tag_str}</text>'
+                    )
+            else:
+                tag_p = transformer.to_paper(model_cx, model_cy)
+                r_name = (cut_result.storey_name or cut_result.storey_id).upper()
+                w_mm = max(len(r_name), len(level_tag_str)) * 1.8 + 4.0
+                h_mm = 7.0
+
+                svg_lines.append(
+                    f'    <rect x="{tag_p[0] - w_mm/2:.2f}" y="{tag_p[1] - h_mm/2:.2f}" width="{w_mm:.2f}" height="{h_mm:.2f}" class="text-mask" />'
+                )
+                svg_lines.append(
+                    f'    <text x="{tag_p[0]:.2f}" y="{tag_p[1] - 1.2:.2f}" class="room-tag">{r_name}</text>'
+                )
+                svg_lines.append(
+                    f'    <text x="{tag_p[0]:.2f}" y="{tag_p[1] + 2.2:.2f}" class="dimension-text">{level_tag_str}</text>'
+                )
 
         svg_lines.append('  </g> <!-- End drawing-viewport -->')
 
