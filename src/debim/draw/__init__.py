@@ -54,6 +54,19 @@ from debim.draw.structural_details import (
     render_structural_detail_card_svg,
     render_structural_details_schedule_svg,
 )
+from debim.draw.mep_diagrams import (
+    CircuitScheduleItem,
+    ElectricalSLDData,
+    SanitationRiserData,
+    WaterSupplyRiserItem,
+    WasteRiserItem,
+    extract_electrical_diagram_data,
+    extract_sanitation_diagram_data,
+    render_electrical_sheet_svg,
+    render_electrical_sld_svg,
+    render_sanitation_riser_svg,
+    render_sanitation_sheet_svg,
+)
 from debim.draw.section import (
     SectionCutElement,
     SectionCutPlaneResult,
@@ -116,4 +129,15 @@ __all__ = [
     "render_footing_detail_svg",
     "render_structural_detail_card_svg",
     "render_structural_details_schedule_svg",
+    "CircuitScheduleItem",
+    "ElectricalSLDData",
+    "WaterSupplyRiserItem",
+    "WasteRiserItem",
+    "SanitationRiserData",
+    "extract_electrical_diagram_data",
+    "extract_sanitation_diagram_data",
+    "render_electrical_sld_svg",
+    "render_sanitation_riser_svg",
+    "render_electrical_sheet_svg",
+    "render_sanitation_sheet_svg",
 ]

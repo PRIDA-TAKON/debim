@@ -161,6 +161,12 @@ class SheetConfig(BaseModel):
                 return "SCHEDULE"
             if v_upper in ("STRUCTURAL_DETAILS", "STRUCTURAL_SCHEDULE", "STRUCTURAL_DETAIL"):
                 return "STRUCTURAL_DETAILS"
+            if v_upper in ("ELECTRICAL_DIAGRAM", "SINGLE_LINE_DIAGRAM", "EE_DIAGRAM", "EE-101"):
+                return "ELECTRICAL_DIAGRAM"
+            if v_upper in ("SANITATION_DIAGRAM", "RISER_DIAGRAM", "PLUMBING_DIAGRAM", "SN_DIAGRAM", "SN-101"):
+                return "SANITATION_DIAGRAM"
+            if v_upper in ("MEP_DIAGRAM", "MEP_SCHEMATIC"):
+                return "ELECTRICAL_DIAGRAM"
         return str(v).upper() if v else "FLOOR_PLAN"
 
     @field_validator("crop", mode="before")
@@ -408,9 +414,11 @@ class SheetRenderer:
         manifest = self.resolved.manifest
         proj = manifest.project
 
-        # Determine if this is a section view or schedule view
+        # Determine if this is a section view, schedule view, or MEP diagram view
         is_schedule_sheet = (cfg.view_type == "SCHEDULE") or cfg.id.startswith("A-4")
         is_structural_schedule = (cfg.view_type == "STRUCTURAL_DETAILS") or cfg.id.startswith("S-2") or cfg.id.startswith("S-201")
+        is_electrical_sheet = (cfg.view_type == "ELECTRICAL_DIAGRAM") or cfg.id.startswith("EE-") or cfg.id == "EE-101"
+        is_sanitation_sheet = (cfg.view_type == "SANITATION_DIAGRAM") or cfg.id.startswith("SN-") or cfg.id == "SN-101"
         is_section_sheet = (cfg.view_type == "section") or cfg.id.startswith("A-3")
 
         v_type = str(cfg.view_type).upper()
@@ -420,6 +428,12 @@ class SheetRenderer:
         elif v_type == "STRUCTURAL_DETAILS" or is_structural_schedule:
             from debim.draw.structural_details import render_structural_details_schedule_svg
             return render_structural_details_schedule_svg(self.resolved, cfg)
+        elif v_type == "ELECTRICAL_DIAGRAM" or is_electrical_sheet:
+            from debim.draw.mep_diagrams import render_electrical_sheet_svg
+            return render_electrical_sheet_svg(self.resolved, cfg)
+        elif v_type == "SANITATION_DIAGRAM" or is_sanitation_sheet:
+            from debim.draw.mep_diagrams import render_sanitation_sheet_svg
+            return render_sanitation_sheet_svg(self.resolved, cfg)
         elif v_type == "ELEVATION":
             return self._render_elevation_svg()
         elif is_section_sheet:
