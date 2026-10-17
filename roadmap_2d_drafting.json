@@ -34,6 +34,14 @@
   {
     "match_keywords": ["mep", "electrical", "single line", "plumbing", "sanitation", "riser diagram", "septic"],
     "next_issue": {
+      "title": "feat(draw): automated Drawing Sheet Index generator for multi-discipline drawing sets (A, S, EE, SN)",
+      "body": "### Overview\nImplement an automated Drawing Index / Sheet List generator (ตัวสร้างสารบัญแบบอัตโนมัติ) across all disciplines to eliminate manual table typing and out-of-sync sheet lists.\n\n### Tasks\n1. **Sheet Discovery & Aggregation:**\n   - Discover all generated sheets across Architectural (`A-xxx`), Structural (`S-xxx`), Electrical (`EE-xxx`), and Sanitation (`SN-xxx`).\n   - Compile tabular index columns: Sheet Number (`เลขที่แบบ`), Sheet Title (`ชื่อแบบ`), Scale (`มาตราส่วน`), Revision (`ครั้งที่แก้ไข`), Remarks (`หมายเหตุ`).\n2. **Cover & Index Sheets Generation:**\n   - Generate discipline-specific index sheets: `A-001` (Architectural Index), `S-001` (Structural Index), `EE-001` (Electrical Index), `SN-001` (Sanitation Index).\n   - Support Master Index sheet `G-001` (สารบัญแบบรวมทั้งโครงการ) with total sheet count summary (e.g. \"รวมแบบทั้งชุด 48 แผ่น\").\n3. **Dynamic Auto-Sync:**\n   - When any floor, detail, or sheet is added, renamed, or renumbered, re-running `debim draw` instantly regenerates all index tables with zero manual retyping.\n4. **Tests:**\n   - Add unit tests in `tests/test_draw_sheet_index.py`.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["sheet index", "drawing index", "สารบัญแบบ", "sheet list", "g-001", "a-001", "index table"],
+    "next_issue": {
       "title": "feat(draw): reusable DXF blocks and standard CAD layer segregation (A-WALL, S-COLS, A-DOOR, S-BEAM)",
       "body": "### Overview\nOrganize 2D drafting entities into reusable DXF Blocks (`BLOCK` & `INSERT`) with strict AIA/ISO layer conventions.\n\n### Tasks\n1. Generate reusable 2D blocks for doors (`D1`, `D2`), windows (`W1`, `W2`), sanitary fixtures, column sections (`C1`), and grid bubbles.\n2. Assign entities to standard layers with distinct colors and line weights (`A-WALL`, `S-COLS`, `S-BEAM`, `A-DOOR`, `A-GLAZ`, `DIM-ANNO`, `GRID-ANNO`).\n3. Ensure DXF output opens cleanly in CadCraft and AutoCAD with full `BLOCK` hierarchy.\n4. Add tests in `tests/test_draw_dxf_blocks.py`.",
       "label": "jules"
@@ -43,7 +51,7 @@
     "match_keywords": ["dxf blocks", "cad layer", "layers", "block", "insert", "aia layer"],
     "next_issue": {
       "title": "feat(cli): add debim draw --layout --batch-pdf command for multi-sheet blueprint plotting",
-      "body": "### Overview\nAdd CLI command `debim draw` supporting automated multi-sheet batch plotting to PDF.\n\n### Tasks\n1. Add `debim draw` CLI subcommand with options:\n   - `--layout <A3|A2|A1>`\n   - `--scale <1:100|1:50>`\n   - `--batch-pdf <output.pdf>`: Consolidated multi-page PDF containing all floor plans, roof plan, structural beam layouts, elevations, door/window schedules, RC details, and MEP diagrams.\n2. Ensure changing project/engineer metadata in manifest regenerates all 100+ sheets with one command.\n3. Provide clean vector output ready for PdfCraft digital signatures and stamping.\n4. Add CLI end-to-end tests in `tests/test_cli_draw.py`.",
+      "body": "### Overview\nAdd CLI command `debim draw` supporting automated multi-sheet batch plotting to PDF.\n\n### Tasks\n1. Add `debim draw` CLI subcommand with options:\n   - `--layout <A3|A2|A1>`\n   - `--scale <1:100|1:50>`\n   - `--batch-pdf <output.pdf>`: Consolidated multi-page PDF containing Cover & Sheet Index, all floor plans, roof plan, structural beam layouts, elevations, door/window schedules, RC details, and MEP diagrams.\n2. Ensure changing project/engineer metadata in manifest regenerates all 100+ sheets with one command.\n3. Provide clean vector output ready for PdfCraft digital signatures and stamping.\n4. Add CLI end-to-end tests in `tests/test_cli_draw.py`.",
       "label": "jules"
     }
   }
