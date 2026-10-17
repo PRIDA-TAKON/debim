@@ -55,16 +55,16 @@ def test_dxf_export_farnsworth(tmp_path: Path):
     entities = list(msp)
     assert len(entities) > 0
 
-    # Column solid hatch check on S-COLS
-    cols_hatches = [e for e in entities if e.dxftype() == "HATCH" and e.dxf.layer == "S-COLS"]
-    assert len(cols_hatches) > 0
+    # Column block reference check on S-COLS
+    cols_inserts = [e for e in entities if e.dxftype() == "INSERT" and e.dxf.layer == "S-COLS"]
+    assert len(cols_inserts) > 0
 
     # Wall lines on A-WALL
     wall_polys = [e for e in entities if e.dxf.layer == "A-WALL"]
     assert len(wall_polys) > 0
 
-    # Grid lines & text on A-GRID
-    grid_lines = [e for e in entities if e.dxf.layer == "A-GRID"]
+    # Grid centerlines on A-GRID / GRID-ANNO
+    grid_lines = [e for e in entities if e.dxf.layer in ("A-GRID", "GRID-ANNO")]
     assert len(grid_lines) > 0
 
 
@@ -149,13 +149,13 @@ elements:
     msp = doc.modelspace()
     entities = list(msp)
 
-    # Check Window lines on A-WIND
-    wind_elems = [e for e in entities if e.dxf.layer == "A-WIND"]
+    # Check Window block references on A-GLAZ
+    wind_elems = [e for e in entities if e.dxftype() == "INSERT" and e.dxf.layer == "A-GLAZ"]
     assert len(wind_elems) > 0
 
-    # Check Door arc on A-DOOR
-    door_arcs = [e for e in entities if e.dxftype() == "ARC" and e.dxf.layer == "A-DOOR"]
-    assert len(door_arcs) > 0
+    # Check Door block references on A-DOOR
+    door_inserts = [e for e in entities if e.dxftype() == "INSERT" and e.dxf.layer == "A-DOOR"]
+    assert len(door_inserts) > 0
 
     # Check Dimension lines and text on A-DIMS
     dim_texts = [e for e in entities if e.dxftype() == "TEXT" and e.dxf.layer == "A-DIMS"]
