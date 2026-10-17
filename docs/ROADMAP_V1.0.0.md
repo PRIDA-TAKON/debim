@@ -24,16 +24,16 @@
 
 ---
 
-## 2. สี่เสาหลักทางเทคนิคของ debim v1.0.0 (Core Technical Pillars)
+## 2. ห้าเสาหลักทางเทคนิคของ debim v1.0.0 (Core Technical Pillars)
 
 ```
-                            [debim v1.0.0 Pillars]
-                                      │
-     ┌──────────────────┬─────────────┴─────────────┬──────────────────┐
-     ▼                  ▼                           ▼                  ▼
-1. Pure Algorithmic  2. Tessellation &        3. Directrix Swept    4. Live Standards
-   Surface Lofts        Hexagonal Panels         Spine Columns         Ecosystem
-   (Macro Equations)    (Micro Voronoi Mesh)     (Curved Geometry)     (debim-standards)
+                                    [debim v1.0.0 Pillars]
+                                              │
+     ┌──────────────────┬─────────────┼─────────────┬──────────────────┬──────────────────┐
+     ▼                  ▼             ▼             ▼                  ▼                  ▼
+1. Pure Algorithmic  2. Tessellation &  3. Directrix Swept    4. Live Standards  5. Open-Source Ecosystem
+   Surface Lofts        Hexagonal Panels   Spine Columns         Ecosystem          Interoperability
+   (Macro Equations)    (Micro Voronoi)    (Curved Geometry)     (debim-standards)  (CadCraft/Bonsai/PdfCraft)
 ```
 
 ---
@@ -76,6 +76,33 @@
 
 ---
 
+### Pillar 5: Open-Source Ecosystem Interoperability (CadCraft + Bonsai BIM + IngeTrazo + PdfCraft)
+ขจัดปัญหา Vendor Lock-in และการแปลงไฟล์แล้วข้อมูลเพี้ยน ด้วยการเชื่อมต่อกับซอฟต์แวร์ Open Source ชั้นนำแบบ Native เพื่อส่งงานต่อไปยังขั้นตอนเขียนแบบ 2D, ประสานงานโมเดล 3D, ตกแต่งด้วย Direct Modeling, และรวมเล่มเอกสารได้อย่างไร้รอยต่อ (Lossless Data & Geometry Roundtrip):
+
+* **1. 2D Drafting & Details — CadCraft Integration & Auto-Drafting Engine (Rust Engine):**
+  - **Reusable DXF Blocks (`BLOCK` & `INSERT`):** ชิ้นส่วนสถาปัตยกรรมที่เกิดขึ้นซ้ำ เช่น ประตู (`D1`, `D2`), หน้าต่าง (`W1`, `W2`), สุขภัณฑ์ (`WC`, `BASIN`), สัญลักษณ์ Grid Bubble, และหน้าตัดเสา (`C1`) จะถูกคอมไพล์เป็น **Native DXF Blocks** แล้ววางตำแหน่งด้วย `INSERT` (ไม่แตกกระจายเป็น Loose Polylines) ทำให้ช่างเขียนแบบสามารถแก้ไขหน้าตาบล็อกเพียงครั้งเดียวใน CadCraft หรือ AutoCAD (ผ่านคำสั่ง `BEDIT`) แล้วตัวสัญลักษณ์จะอัปเดตเปลี่ยนหน้าตาทั้งโปรเจกต์ในทุกแผ่นแบบทันที 100%!
+  - **Automated Multi-Discipline XREF Decoupling:** รองรับการสร้างไฟล์อ้างอิงภายนอก (External Reference / XREF Overlay) อัตโนมัติ โดย debim จะคอมไพล์แยกไฟล์แม่แบบสถาปัตยกรรม (`xref/A_PLAN_L01.dxf`) และสร้างไฟล์งานระบบไฟฟ้า (`E_PLAN_L01.dxf`), สุขาภิบาล (`M_PLAN_L01.dxf`) ที่ผูก XREF สถาปัตย์ไว้เป็น Background อัตโนมัติ เมื่อสถาปนิกขยับผนังในโค้ด `.debim` วิศวกรระบบไฟฟ้าที่เปิดแบบใน CadCraft จะเห็นผนังขยับตามทันที 100% โดยไม่ต้อง Copy-Paste แปลนใหม่
+  - **Auto 3-Tier Dimensioning:** คำนวณและวางเส้นบอกระยะอัตโนมัติ 3 ชั้นรอบอาคาร (ชั้นใน: ช่องเปิดประตู-หน้าต่าง, ชั้นกลาง: ศูนย์กลางเสากริด, ชั้นนอก: ระยะมิติรวมอาคาร) โดยที่ดราฟต์แมนไม่ต้องคลิกเมาส์จับมุมเอง
+  - **Smart Room Centroid & Level Tags:** วางชื่อห้อง, ขนาดพื้นที่ (`ตร.ม.`), และสัญลักษณ์ระดับพื้น (`FL.1 +0.10 ม.`) กลางพื้นที่ใช้งานอัตโนมัติ
+  - **Ready-to-Plot Paper Space Layouts & Viewports (A3/A2):** debim จะจัดหน้ากระดาษใน Paper Space (Layout Tabs เช่น `A-101`, `A-102`, `S-101`) ไว้ให้แบบ 1:1 โดยอัตโนมัติ ประกอบด้วย **Title Block (กรอบแบบสากลและตารางชื่อแบบ)**, ล็อคมาตราส่วนจริง (`Scale 1:100` / `1:50`), และเปิด **Floating Viewport (`VIEWPORT`)** ล็อคตำแหน่งกึ่งกลางอาคารไว้เรียบร้อย ช่างเขียนแบบหรือผู้ใช้งานใน CadCraft และ AutoCAD เพียงแค่สลับมาแท็บ Layout แล้วกด `Ctrl + P` (Plot to PDF) ได้ทันที 100% โดยไม่ต้องมานั่งตีกรอบหรือตั้งค่าสเกลเองทีละแผ่น!
+  - **DXF Layout & Viewports:** ส่งออกเส้น 2D Floor Plans, Sections, Elevations และ Detail Drawings ในฟอร์แมต DXF R12–2018 ที่จัดแบ่งเลเยอร์มาตรฐาน (`A-WALL`, `A-DOOR`, `A-FLOR`, `S-COLS`) รองรับ Paper Space Layout / Floating Viewports ของ CadCraft โดยตรง
+  - **Annotation & Dimension Continuity:** ค่าพิกัด, เส้น Grid, และเส้นบอกระยะไม่เคลื่อน ข้อมูลหัวกระดาษ (Title Block) และมาตราส่วนคงที่ 100%
+* **2. 3D BIM Authoring & Coordination — Bonsai BIM (BlenderBIM) Native Bridge:**
+  - **Direct IFC Data Graph:** ทั้ง debim และ Bonsai ขับเคลื่อนด้วย `IfcOpenShell` เหมือนกัน ทำให้เปิดไฟล์ IFC4 / IFC4.3 ของ debim ได้โดยตรงโดยไม่ต้องผ่านการ Convert เป็น proprietary schema
+  - **Zero Geometry & Parameter Drift:** รักษา GUIDs, Spatial Tree (`IfcProject` ➔ `IfcSite` ➔ `IfcBuilding` ➔ `IfcBuildingStorey`), Property Sets (`Pset_MR55`, `Pset_CGD480`), Materials, และ Quantities ครบถ้วน 100%
+  - **Extreme Mesh Performance:** รองรับการเปิดและจัดการโมเดล Algorithmic Facade ระดับ 16,000 แผ่นรังผึ้ง (`IfcTriangulatedFaceSet`) บน 3D Viewport ได้อย่างลื่นไหลที่ 60 FPS
+* **3. Intuitive Direct Modeling — IngeTrazo Official Extension (`debim-ingetrazo`):**
+  - **Python-to-Python Native Architecture:** IngeTrazo มี Plugin API เป็น **Pure Python** ตรงกับ debim โดยสมบูรณ์ ไม่ต้องผ่านภาษาตัวกลาง (ต่างจาก SketchUp ที่ต้องพึ่งพา Ruby)
+  - **Native Extension Plugin (`debim_tool.py`):** ติดตั้งในโฟลเดอร์ Plugins ของ IngeTrazo เพิ่มเมนู `Extensions > debim > Import / Sync .debim` สถาปนิกสามารถเปิดไฟล์ `.debim` หรือรันคอมไพล์แล้วสร้างระนาบ Solid, Component, และ BIM Tags บน Viewport ของ IngeTrazo ทันที
+  - **Interactive Push/Pull & Live Feedback:** สถาปนิกสามารถใช้เครื่องมือ Push/Pull, Move, Offset ดั้งเดิมที่ถนัดเพื่อปรับแต่งพื้นที่หรืออินทีเรีย แล้วส่งกลับมาอัปเดตมิติพารามิเตอร์ในโค้ด `.debim` (Bi-directional Concept)
+  - **Official Extensions Hub Submission:** เผยแพร่ขึ้นสู่แคตตาล็อกกลางของ IngeTrazo (`ingelibre/ingetrazo-extensions`) ให้ผู้ใช้งานทั่วโลกติดตั้งได้ในคลิกเดียว
+* **4. PDF & Permit Document Workbench — PdfCraft Integration (Rust Engine):**
+  - **Automated Blueprint Bookbinder:** ระบบคำสั่งเชื่อมต่อเพื่อรวมแผ่นแบบพิมพ์เขียว 2D (Arch/Struc/MEP) เข้ากับเล่ม BOQ และรายงานตรวจกฎหมาย (MR 55 Compliance Report) ออกมาเป็นเล่มเอกสารขออนุญาตก่อสร้าง PDF ชุดสมบูรณ์
+  - **Digital Signatures & Professional Stamping Hand-off:** ยกภาระการเซ็นชื่อรับรองแบบและประทับตรายางอิเล็กทรอนิกส์ (Digital Signatures, Wet Signatures, & Professional Stamp) ให้เป็นหน้าที่ของ **PdfCraft** โดย debim จะรับหน้าที่เพียงสร้างช่องลงลายมือชื่อกำกับชื่อ-สกุลและเลขที่ใบอนุญาตประกอบวิชาชีพไว้ใน Title Block อย่างถูกต้อง ช่วยลดภาระการพัฒนาใน debim Core ให้กระชับ คลีน และไม่บวม (Zero Bloat)
+  - **Lossless Vector & Precision Printing:** รักษาเวกเตอร์เส้น ลายเส้น และตัวอักษรให้อยู่ในสถานะ Pure Vector โดยไม่มีการลดทอนความละเอียดหรือเกิดปัญหาฟอนต์ภาษาไทยเพี้ยน
+
+---
+
 ## 3. แผนงานการพัฒนา (Implementation Roadmap Waves)
 
 | Wave | เป้าหมายหลัก (Milestone) | รายละเอียดทางเทคนิค (Deliverables) | Flagship Test Case |
@@ -84,7 +111,8 @@
 | **Wave 2** | **Parametric Surface & Loft Engine** | ฟังก์ชันสมการคณิตศาสตร์ `math:` ใน Manifest, การคำนวณ Loft สเปซระหว่าง Storeys | Hyperbolic Cooling Tower / Loft Volume |
 | **Wave 3** | **3D Curved Spine Columns** | เสาและคานโค้งตามเส้น 3D Splines, การคอมไพล์ `IfcColumn` ตามแนว Directrix | 28 Curved Tubular Steel Columns |
 | **Wave 4** | **Conformal Hexagonal Tessellation** | อัลกอริทึมแบ่งแผ่นรังผึ้ง Voronoi/Hexagonal บนพื้นผิวโค้ง, คอมไพล์ `IfcTriangulatedFaceSet` | 16,000 Hexagonal Aluminum Panels |
-| **Wave 5** | **Museo Soumaya Milestone (v1.0.0 GA)** | คอมไพล์โมเดลสถาปัตยกรรม Museo Soumaya ครบวงจร 100%, ทดสอบ 3D Web Viewer & IFC4 Validation | **Museo Soumaya Benchmark Project** |
+| **Wave 5** | **Open Ecosystem & Auto-Drafting** | Bridge ส่งออกงานสู่ **CadCraft** (DXF Blocks & 3-Tier Dimensions), **Bonsai BIM** (Lossless IFC4), **IngeTrazo** (Python Extension), และ **PdfCraft** (Permit Bookbinder) | Zero-Loss Roundtrip Suite Test |
+| **Wave 6** | **Museo Soumaya Milestone (v1.0.0 GA)** | คอมไพล์โมเดลสถาปัตยกรรม Museo Soumaya ครบวงจร 100%, ทดสอบ 3D Web Viewer & IFC4 Validation | **Museo Soumaya Benchmark Project** |
 
 ---
 
@@ -132,6 +160,23 @@ facade:
       joint_gap: 0.02          # 20mm floating reveal gap
       material: "ALUMINUM_ANODIZED_SILVER"
       ifc_representation: "IfcTriangulatedFaceSet"
+```
+
+### คำสั่ง CLI สำหรับ Open-Source Toolchain Workflow (Lossless Roundtrip):
+
+```bash
+# 1. ส่งออกเส้นแบบ 2D ไปเขียนแบบต่อใน CadCraft (DXF พร้อม Paper Space Layouts & Layers)
+debim export --target cadcraft --input model.debim --out ./drawings/cadcraft/
+
+# 2. คอมไพล์โมเดล 3D แบบ Lossless สำหรับเปิดและทำงานต่อใน Bonsai BIM (BlenderBIM)
+debim export --target bonsai --input model.debim --out ./models/soumaya_bonsai.ifc --verify-lossless
+
+# 3. ส่งออกโมเดลตรงสู่ IngeTrazo หรือติดตั้ง Extension สำหรับ Live Sync (Direct Push/Pull)
+debim export --target ingetrazo --input model.debim --out ./models/project.skp
+debim extension install --target ingetrazo   # ติดตั้ง debim-ingetrazo Python Extension อัตโนมัติ
+
+# 4. รวบรวมแผ่นแบบพิมพ์เขียว, เล่ม BOQ, และรายงานผลตรวจ MR 55 เข้าเล่ม PDF ผ่าน PdfCraft
+debim publish --binder pdfcraft --manifest model.debim --out ./output/soumaya_permit_package.pdf
 ```
 
 ---

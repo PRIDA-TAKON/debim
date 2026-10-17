@@ -1,0 +1,50 @@
+[
+  {
+    "match_keywords": ["title block", "paper space", "layout", "a3", "metadata", "issue 1", "draw", "480"],
+    "next_issue": {
+      "title": "feat(draw): automated floating viewports and 3-tier dimensioning on floor plans",
+      "body": "### Overview\nImplement automated architectural dimensioning and model-to-paper floating viewports centered on building bounds.\n\n### Tasks\n1. Calculate model-to-paper viewport transformation with exact standard architectural scales (1:50, 1:75, 1:100).\n2. Implement Auto 3-Tier Dimensioning on building perimeter:\n   - Tier 1 (Inner): Openings (doors/windows) and wall offsets.\n   - Tier 2 (Middle): Grid-to-grid column distances.\n   - Tier 3 (Outer): Total building width and length.\n3. Place automated Grid bubbles (A, B, C / 1, 2, 3) and room centroid level tags (`FL.1 +0.00`).\n4. Add unit tests in `tests/test_draw_dimensions.py`.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["viewport", "floating viewport", "dimensioning", "dimensions", "3-tier", "grid bubbles"],
+    "next_issue": {
+      "title": "feat(draw): architectural Door and Window Elevation Schedules and Hardware Specifications",
+      "body": "### Overview\nGenerate standard architectural Door & Window schedules (แบบขยายประตู-หน้าต่าง) with 2D elevations, opening dimensions, and hardware specification tables.\n\n### Tasks\n1. **Elevation Vector Rendering:**\n   - Render 2D elevation views for each door type (`D1`, `D2`, `D3`) and window type (`W1`, `W2`, `W3`) showing frame, swing direction dashed lines, and glass panes.\n2. **Hardware & Material Schedule Table:**\n   - Dimensions: clear opening width x height ($W \\times H$), sill height.\n   - Frame material (e.g. powder-coated aluminum, hardwood).\n   - Panel/glazing specification (e.g. 6mm green tinted float glass, solid core wood).\n   - Hardware accessories list: stainless steel hinges, lever handle locksets, flush bolts, and door closers.\n   - Automated quantity take-off count per type from building manifest.\n3. **Layout Integration:**\n   - Fit schedule and detail elevations onto standard A3 Paper Space drawing sheet (`A-401`).\n4. **Tests:**\n   - Add unit tests in `tests/test_draw_door_window_schedule.py`.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["door", "window", "hardware", "schedule", "d1", "w1", "elevation schedule"],
+    "next_issue": {
+      "title": "feat(draw): structural RC Beam, Column, and Footing Detail Schedules with rebar arrangement",
+      "body": "### Overview\nGenerate standard reinforced concrete structural detail sheets (แบบขยายโครงสร้าง คสล.) showing cross-sections and rebar arrangements for beams, columns, and footings.\n\n### Tasks\n1. **Beam Cross-Sections (แบบขยายหน้าตัดคาน):**\n   - Cross-section dimensions ($B \\times D$, e.g. $0.20 \\times 0.40\\text{ m}$ for `DB1`).\n   - Main rebar callout (e.g. 2-DB12 top, 2-DB12 bottom) and stirrup ties (`RB9@0.15 m`) with clear concrete covering.\n2. **Column Sections (แบบขยายหน้าตัดเสา):**\n   - Rectangular and circular column sections (e.g. $0.40 \\times 0.40\\text{ m}$ for `C1`).\n   - Longitudinal rebar (e.g. 4-DB16 / 8-DB16) with tie stirrups.\n3. **Footing Details (แบบขยายฐานราก):**\n   - Spread footings (`F1` $1.00 \\times 1.00 \\times 0.30\\text{ m}$) and pile caps.\n   - Bottom reinforcement mat (`DB12@0.15 m` both ways), compacted sand (10cm), and lean concrete (5cm).\n4. **Layout Integration:**\n   - Auto-arrange structural detail sections into standard A3 structural sheet (`S-201`).\n5. **Tests:**\n   - Add unit tests in `tests/test_draw_structural_details.py`.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["beam", "column", "footing", "rebar", "คสล", "หน้าตัด", "stirrup", "db1"],
+    "next_issue": {
+      "title": "feat(draw): MEP Electrical Single Line Diagram and Plumbing Sanitation Riser Diagrams",
+      "body": "### Overview\nGenerate schematic diagrams for building MEP systems (งานระบบอาคาร): Electrical Single Line Diagram and Sanitation Riser Diagram.\n\n### Tasks\n1. **Electrical Single Line Diagram (ไดอะแกรมไฟฟ้า):**\n   - Power meter / incoming supply $\\rightarrow$ Main Distribution Board (MDB) / Consumer Unit.\n   - Main breaker rating, sub-breakers, and branch circuit schedule (lighting, receptacles, air-con, water heater).\n2. **Sanitation & Plumbing Riser Diagram (ไดอะแกรมสุขาภิบาล):**\n   - Cold water supply riser: Main meter $\\rightarrow$ underground/ground water tank $\\rightarrow$ booster pump $\\rightarrow$ fixture branch feeds.\n   - Soil, waste, and vent pipe schematic: Soil/waste fixtures $\\rightarrow$ vertical stacks $\\rightarrow$ Septic Tank $\\rightarrow$ grease trap $\\rightarrow$ public storm drain.\n3. **Layout Integration:**\n   - Place diagrams neatly onto standard A3 MEP drawing sheet (`EE-101`, `SN-101`).\n4. **Tests:**\n   - Add unit tests in `tests/test_draw_mep_diagrams.py`.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["mep", "electrical", "single line", "plumbing", "sanitation", "riser diagram", "septic"],
+    "next_issue": {
+      "title": "feat(draw): reusable DXF blocks and standard CAD layer segregation (A-WALL, S-COLS, A-DOOR, S-BEAM)",
+      "body": "### Overview\nOrganize 2D drafting entities into reusable DXF Blocks (`BLOCK` & `INSERT`) with strict AIA/ISO layer conventions.\n\n### Tasks\n1. Generate reusable 2D blocks for doors (`D1`, `D2`), windows (`W1`, `W2`), sanitary fixtures, column sections (`C1`), and grid bubbles.\n2. Assign entities to standard layers with distinct colors and line weights (`A-WALL`, `S-COLS`, `S-BEAM`, `A-DOOR`, `A-GLAZ`, `DIM-ANNO`, `GRID-ANNO`).\n3. Ensure DXF output opens cleanly in CadCraft and AutoCAD with full `BLOCK` hierarchy.\n4. Add tests in `tests/test_draw_dxf_blocks.py`.",
+      "label": "jules"
+    }
+  },
+  {
+    "match_keywords": ["dxf blocks", "cad layer", "layers", "block", "insert", "aia layer"],
+    "next_issue": {
+      "title": "feat(cli): add debim draw --layout --batch-pdf command for multi-sheet blueprint plotting",
+      "body": "### Overview\nAdd CLI command `debim draw` supporting automated multi-sheet batch plotting to PDF.\n\n### Tasks\n1. Add `debim draw` CLI subcommand with options:\n   - `--layout <A3|A2|A1>`\n   - `--scale <1:100|1:50>`\n   - `--batch-pdf <output.pdf>`: Consolidated multi-page PDF containing all floor plans, roof plan, structural beam layouts, elevations, door/window schedules, RC details, and MEP diagrams.\n2. Ensure changing project/engineer metadata in manifest regenerates all 100+ sheets with one command.\n3. Provide clean vector output ready for PdfCraft digital signatures and stamping.\n4. Add CLI end-to-end tests in `tests/test_cli_draw.py`.",
+      "label": "jules"
+    }
+  }
+]
