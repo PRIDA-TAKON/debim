@@ -35,6 +35,14 @@ from debim.draw.renderer import (
     render_sheet,
     render_sheet_set,
 )
+from debim.draw.schedule import (
+    HardwareSpec,
+    OpeningScheduleItem,
+    extract_opening_schedule,
+    render_2d_opening_elevation_svg,
+    render_opening_schedule_svg,
+    render_schedule_card_svg,
+)
 from debim.draw.section import (
     SectionCutElement,
     SectionCutPlaneResult,
@@ -82,4 +90,10 @@ __all__ = [
     "export_paper_space_layout_dxf",
     "generate_2d_viewer_html",
     "export_2d_viewer",
+    "HardwareSpec",
+    "OpeningScheduleItem",
+    "extract_opening_schedule",
+    "render_2d_opening_elevation_svg",
+    "render_schedule_card_svg",
+    "render_opening_schedule_svg",
 ]

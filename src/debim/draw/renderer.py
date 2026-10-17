@@ -157,7 +157,9 @@ class SheetConfig(BaseModel):
                 return "SECTION"
             if v_upper in ("ELEVATION",):
                 return "ELEVATION"
-        return str(v).upper() if v else "FLOOR_PLAN" 
+            if v_upper in ("SCHEDULE", "DOOR_WINDOW_SCHEDULE", "DOOR_SCHEDULE", "WINDOW_SCHEDULE"):
+                return "SCHEDULE"
+        return str(v).upper() if v else "FLOOR_PLAN"
 
     @field_validator("crop", mode="before")
     @classmethod
@@ -404,11 +406,15 @@ class SheetRenderer:
         manifest = self.resolved.manifest
         proj = manifest.project
 
-        # Determine if this is a section view
+        # Determine if this is a section view or schedule view
+        is_schedule_sheet = (cfg.view_type == "SCHEDULE") or cfg.id.startswith("A-4")
         is_section_sheet = (cfg.view_type == "section") or cfg.id.startswith("A-3")
 
         v_type = str(cfg.view_type).upper()
-        if v_type == "ELEVATION":
+        if v_type == "SCHEDULE" or is_schedule_sheet:
+            from debim.draw.schedule import render_opening_schedule_svg
+            return render_opening_schedule_svg(self.resolved, cfg)
+        elif v_type == "ELEVATION":
             return self._render_elevation_svg()
         elif is_section_sheet:
             return self._render_section_svg()
