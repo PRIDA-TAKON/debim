@@ -1,6 +1,6 @@
 [
   {
-    "match_keywords": ["title block", "paper space", "layout", "a3", "metadata", "issue 1", "draw", "480"],
+    "match_keywords": ["title block", "paper space", "layout", "a3", "metadata", "issue 1", "480"],
     "next_issue": {
       "title": "feat(draw): automated floating viewports and 3-tier dimensioning on floor plans",
       "body": "### Overview\nImplement automated architectural dimensioning and model-to-paper floating viewports centered on building bounds.\n\n### Tasks\n1. Calculate model-to-paper viewport transformation with exact standard architectural scales (1:50, 1:75, 1:100).\n2. Implement Auto 3-Tier Dimensioning on building perimeter:\n   - Tier 1 (Inner): Openings (doors/windows) and wall offsets.\n   - Tier 2 (Middle): Grid-to-grid column distances.\n   - Tier 3 (Outer): Total building width and length.\n3. Place automated Grid bubbles (A, B, C / 1, 2, 3) and room centroid level tags (`FL.1 +0.00`).\n4. Add unit tests in `tests/test_draw_dimensions.py`.",
