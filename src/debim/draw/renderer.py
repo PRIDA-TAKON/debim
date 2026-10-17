@@ -159,6 +159,8 @@ class SheetConfig(BaseModel):
                 return "ELEVATION"
             if v_upper in ("SCHEDULE", "DOOR_WINDOW_SCHEDULE", "DOOR_SCHEDULE", "WINDOW_SCHEDULE"):
                 return "SCHEDULE"
+            if v_upper in ("STRUCTURAL_DETAILS", "STRUCTURAL_SCHEDULE", "STRUCTURAL_DETAIL"):
+                return "STRUCTURAL_DETAILS"
         return str(v).upper() if v else "FLOOR_PLAN"
 
     @field_validator("crop", mode="before")
@@ -408,12 +410,16 @@ class SheetRenderer:
 
         # Determine if this is a section view or schedule view
         is_schedule_sheet = (cfg.view_type == "SCHEDULE") or cfg.id.startswith("A-4")
+        is_structural_schedule = (cfg.view_type == "STRUCTURAL_DETAILS") or cfg.id.startswith("S-2") or cfg.id.startswith("S-201")
         is_section_sheet = (cfg.view_type == "section") or cfg.id.startswith("A-3")
 
         v_type = str(cfg.view_type).upper()
         if v_type == "SCHEDULE" or is_schedule_sheet:
             from debim.draw.schedule import render_opening_schedule_svg
             return render_opening_schedule_svg(self.resolved, cfg)
+        elif v_type == "STRUCTURAL_DETAILS" or is_structural_schedule:
+            from debim.draw.structural_details import render_structural_details_schedule_svg
+            return render_structural_details_schedule_svg(self.resolved, cfg)
         elif v_type == "ELEVATION":
             return self._render_elevation_svg()
         elif is_section_sheet:

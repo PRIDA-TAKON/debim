@@ -43,6 +43,17 @@ from debim.draw.schedule import (
     render_opening_schedule_svg,
     render_schedule_card_svg,
 )
+from debim.draw.structural_details import (
+    BeamDetailItem,
+    ColumnDetailItem,
+    FootingDetailItem,
+    extract_structural_details,
+    render_beam_section_svg,
+    render_column_section_svg,
+    render_footing_detail_svg,
+    render_structural_detail_card_svg,
+    render_structural_details_schedule_svg,
+)
 from debim.draw.section import (
     SectionCutElement,
     SectionCutPlaneResult,
@@ -96,4 +107,13 @@ __all__ = [
     "render_2d_opening_elevation_svg",
     "render_schedule_card_svg",
     "render_opening_schedule_svg",
+    "BeamDetailItem",
+    "ColumnDetailItem",
+    "FootingDetailItem",
+    "extract_structural_details",
+    "render_beam_section_svg",
+    "render_column_section_svg",
+    "render_footing_detail_svg",
+    "render_structural_detail_card_svg",
+    "render_structural_details_schedule_svg",
 ]
