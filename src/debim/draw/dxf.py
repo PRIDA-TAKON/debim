@@ -17,8 +17,8 @@ from debim.draw.projection import (
     ProjectionElement,
     slice_storey,
 )
-from debim.resolver import ResolvedManifest
-from debim.schema import ProjectManifest
+from debim.resolver import ResolvedManifest, resolve_manifest
+from debim.schema import ProjectManifest, load_manifest
 
 
 def _setup_dxf_layers_and_styles(doc: Drawing) -> None:
@@ -55,7 +55,7 @@ def _setup_dxf_layers_and_styles(doc: Drawing) -> None:
 
 
 def export_2d_dxf(
-    manifest_or_resolved: Union[ProjectManifest, ResolvedManifest],
+    manifest_or_resolved: Union[ProjectManifest, ResolvedManifest, Path, str],
     output_path: Union[str, Path],
     storey_id: Optional[str] = None,
     cut_offset_z: float = 1.20,
@@ -66,7 +66,7 @@ def export_2d_dxf(
 
     Parameters:
     -----------
-    manifest_or_resolved : ProjectManifest or ResolvedManifest
+    manifest_or_resolved : ProjectManifest or ResolvedManifest or Path or str
         Input BIM project model.
     output_path : str or Path
         Target filepath for exported .dxf file.
@@ -84,20 +84,25 @@ def export_2d_dxf(
     output_file = Path(output_path)
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
+    if isinstance(manifest_or_resolved, (str, Path)):
+        manifest_path = Path(manifest_or_resolved)
+        manifest_obj = load_manifest(manifest_path)
+        resolved_manifest = resolve_manifest(manifest_obj)
+    elif isinstance(manifest_or_resolved, ProjectManifest):
+        resolved_manifest = resolve_manifest(manifest_or_resolved)
+    else:
+        resolved_manifest = manifest_or_resolved
+
     # Determine target storey if not provided
     if storey_id is None:
-        if isinstance(manifest_or_resolved, ProjectManifest):
-            storeys = manifest_or_resolved.spatial_structure.storeys
-        else:
-            storeys = manifest_or_resolved.manifest.spatial_structure.storeys
-
+        storeys = resolved_manifest.manifest.spatial_structure.storeys
         if not storeys:
             raise ValueError("No storeys found in project manifest.")
         storey_id = storeys[0].id
 
     # Compute 2D Section Slice
     cut_plane: CutPlaneResult = slice_storey(
-        manifest_or_resolved, storey_id=storey_id, cut_offset_z=cut_offset_z
+        resolved_manifest, storey_id=storey_id, cut_offset_z=cut_offset_z
     )
 
     # Unit scaling factor (BIM internal coordinates are in meters)

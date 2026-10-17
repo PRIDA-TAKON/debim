@@ -67,6 +67,14 @@ class SheetIndexItem(BaseModel):
     revision: str = "01"
 
 
+class SignatureBoxConfig(BaseModel):
+    """Signature / Stamp box area configuration."""
+    enabled: bool = True
+    title: str = "PROFESSIONAL STAMP & SIGNATURE"
+    subtext: str = "Digital Signature & Seal Area"
+    height_mm: float = 22.0
+
+
 class TitleBlockField(BaseModel):
     """Custom professional or metadata field for Title Block."""
     label: str
@@ -83,6 +91,8 @@ class TitleBlockConfig(BaseModel):
     fields: List[TitleBlockField] = Field(default_factory=list)
     show_sheet_index: bool = True
     show_notes: bool = True
+    show_signature_box: bool = True
+    signature_box: SignatureBoxConfig = Field(default_factory=SignatureBoxConfig)
 
 
 class CropBox(BaseModel):
@@ -112,11 +122,18 @@ class SheetConfig(BaseModel):
     crop: Optional[Union[CropBox, Dict[str, float], Tuple[float, float, float, float], List[float]]] = None
     visibility: VisibilityFilter = Field(default_factory=VisibilityFilter)
     margin_mm: float = 10.0
+    margin_left_mm: Optional[float] = None
+    margin_top_mm: Optional[float] = None
+    margin_right_mm: Optional[float] = None
+    margin_bottom_mm: Optional[float] = None
+    binding_margin_enabled: bool = True
+    binding_margin_mm: float = 20.0
     project_name: Optional[str] = None
     client_name: str = "N/A"
     architect_name: str = "debim Engine"
     date: Optional[str] = None
     revision: str = "01"
+    total_sheets: Optional[int] = None
     title_block: TitleBlockConfig = Field(default_factory=TitleBlockConfig)
     sheet_index: List[SheetIndexItem] = Field(default_factory=list)
 
@@ -187,6 +204,16 @@ class SheetConfig(BaseModel):
             return (min(base_w, base_h), max(base_w, base_h))
         else:
             return (max(base_w, base_h), min(base_w, base_h))
+
+    def get_margins_mm(self) -> Tuple[float, float, float, float]:
+        """Get (left, top, right, bottom) margins in millimeters."""
+        left = self.margin_left_mm
+        if left is None:
+            left = self.binding_margin_mm if self.binding_margin_enabled else self.margin_mm
+        top = self.margin_top_mm if self.margin_top_mm is not None else self.margin_mm
+        right = self.margin_right_mm if self.margin_right_mm is not None else self.margin_mm
+        bottom = self.margin_bottom_mm if self.margin_bottom_mm is not None else self.margin_mm
+        return (left, top, right, bottom)
 
 
 def load_sheet_config(path_or_data: Union[Path, str, dict, SheetConfig]) -> SheetConfig:
@@ -328,13 +355,13 @@ class SheetRenderer:
 
         # 3. Determine Paper Dimensions & Layout Geometry (mm)
         paper_w, paper_h = cfg.get_paper_dimensions_mm()
-        margin = cfg.margin_mm
+        m_left, m_top, m_right, m_bottom = cfg.get_margins_mm()
 
         # Layout Areas:
-        printable_x = margin
-        printable_y = margin
-        printable_w = paper_w - 2 * margin
-        printable_h = paper_h - 2 * margin
+        printable_x = m_left
+        printable_y = m_top
+        printable_w = paper_w - m_left - m_right
+        printable_h = paper_h - m_top - m_bottom
 
         # Title Block & Drawing Area Calculations
         tb_enabled = cfg.visibility.show_title_block and cfg.title_block.enabled
@@ -406,6 +433,10 @@ class SheetRenderer:
         # Project Name
         proj_name = cfg.project_name or proj.name
         date_str = cfg.date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        arch_name = cfg.architect_name if cfg.architect_name != "debim Engine" else (proj.architect_name or "debim Engine")
+        eng_name = proj.engineer_name or ""
+        eng_lic = proj.engineer_license or ""
+        eng_role = proj.engineer_role or "วิศวกรโครงสร้าง"
 
         # 5. Build SVG Elements
         embedded_css = _get_embedded_css()
@@ -866,9 +897,20 @@ class SheetRenderer:
                 )
                 curr_y += 3.0
 
+                # Format sheet label with total sheets if available
+                sheet_label = cfg.id
+                if cfg.total_sheets and cfg.total_sheets > 0:
+                    current_idx = 1
+                    if cfg.sheet_index:
+                        for idx, s in enumerate(cfg.sheet_index, 1):
+                            if s.sheet_no == cfg.id:
+                                current_idx = idx
+                                break
+                    sheet_label = f"{cfg.id} ({current_idx}/{cfg.total_sheets})"
+
                 # Details Grid: Sheet No, Scale, Date, Rev, Client, Architect
                 details = [
-                    ("SHEET NO. / เลขที่แบบ", cfg.id),
+                    ("SHEET NO. / เลขที่แบบ", sheet_label),
                     ("SCALE / มาตราส่วน", f"1:{cfg.scale}"),
                     ("DATE / วันที่", date_str),
                     ("REVISION / แก้ไขครั้งที่", cfg.revision),
@@ -890,13 +932,22 @@ class SheetRenderer:
                     )
                     curr_y += 2.5
 
+                # Auto-populate title block fields from manifest project if not overridden
+                effective_fields = list(cfg.title_block.fields)
+                if not effective_fields:
+                    if eng_name:
+                        val_str = f"{eng_name} ({eng_lic})" if eng_lic else eng_name
+                        effective_fields.append(TitleBlockField(label=eng_role, value=val_str))
+                    if proj.architect_name and proj.architect_license:
+                        effective_fields.append(TitleBlockField(label="สถาปนิกโครงการ", value=f"{proj.architect_name} ({proj.architect_license})"))
+
                 # Professional Certification / Custom Fields
-                if cfg.title_block.fields:
+                if effective_fields:
                     svg_lines.append(
                         f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">PROFESSIONAL CERTIFICATION / คณะผู้จัดทำ</text>'
                     )
                     curr_y += 3.5
-                    for field in cfg.title_block.fields:
+                    for field in effective_fields:
                         if curr_y > title_h - 45.0:
                             break
                         svg_lines.append(
@@ -978,13 +1029,26 @@ class SheetRenderer:
                         f'    <text x="5.0" y="{curr_y:.1f}" class="sheet-index-cell">3. VERIFY ALL DIMS ON SITE / ตรวจขนาดจริงหน้างาน</text>'
                     )
                     curr_y += 4.5
+
+                # Clean Signature & Stamp Box Area for PdfCraft digital signing
+                if cfg.title_block.show_signature_box and cfg.title_block.signature_box.enabled and curr_y < title_h - 25.0:
+                    sig_box = cfg.title_block.signature_box
                     svg_lines.append(
                         f'    <line x1="0" y1="{curr_y:.1f}" x2="{title_w:.1f}" y2="{curr_y:.1f}" class="title-block-divider" />'
                     )
                     curr_y += 3.0
                     svg_lines.append(
-                        f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">PROFESSIONAL STAMP &amp; SIGNATURE</text>'
+                        f'    <text x="5.0" y="{curr_y:.1f}" class="title-block-label">{sig_box.title}</text>'
                     )
+                    curr_y += 3.0
+                    box_h = sig_box.height_mm
+                    svg_lines.append(
+                        f'    <rect x="5.0" y="{curr_y:.1f}" width="{title_w - 10.0:.1f}" height="{box_h:.1f}" fill="none" stroke="#94a3b8" stroke-dasharray="2 2" stroke-width="0.3" class="signature-box" />'
+                    )
+                    svg_lines.append(
+                        f'    <text x="{title_w / 2.0:.1f}" y="{curr_y + box_h / 2.0 + 1.0:.1f}" text-anchor="middle" class="title-block-subtext" fill="#94a3b8">{sig_box.subtext}</text>'
+                    )
+                    curr_y += box_h + 3.0
 
                 # Footer debim Engine Tag
                 svg_lines.append(
@@ -1008,12 +1072,12 @@ class SheetRenderer:
         )
 
         paper_w, paper_h = cfg.get_paper_dimensions_mm()
-        margin = cfg.margin_mm
+        m_left, m_top, m_right, m_bottom = cfg.get_margins_mm()
 
-        printable_x = margin
-        printable_y = margin
-        printable_w = paper_w - 2 * margin
-        printable_h = paper_h - 2 * margin
+        printable_x = m_left
+        printable_y = m_top
+        printable_w = paper_w - m_left - m_right
+        printable_h = paper_h - m_top - m_bottom
 
         title_block_width = 75.0 if printable_w >= 300.0 else 55.0
         if cfg.visibility.show_title_block:
@@ -1265,12 +1329,12 @@ class SheetRenderer:
         )
 
         paper_w, paper_h = cfg.get_paper_dimensions_mm()
-        margin = cfg.margin_mm
+        m_left, m_top, m_right, m_bottom = cfg.get_margins_mm()
 
-        printable_x = margin
-        printable_y = margin
-        printable_w = paper_w - 2 * margin
-        printable_h = paper_h - 2 * margin
+        printable_x = m_left
+        printable_y = m_top
+        printable_w = paper_w - m_left - m_right
+        printable_h = paper_h - m_top - m_bottom
 
         title_block_width = 75.0 if printable_w >= 300.0 else 55.0
         if cfg.visibility.show_title_block:
@@ -1528,10 +1592,13 @@ def render_sheet_set(
         for cfg in configs
     ]
 
+    total_count = len(configs)
     results = []
     for cfg in configs:
         if not cfg.sheet_index:
             cfg.sheet_index = sheet_index_items
+        if cfg.total_sheets is None:
+            cfg.total_sheets = total_count
         renderer = SheetRenderer(resolved, cfg)
         svg_str = renderer.render_svg()
         results.append((cfg, svg_str))
