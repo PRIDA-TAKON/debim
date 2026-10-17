@@ -202,6 +202,29 @@ svg:not(#measurement-layer) {
   dominant-baseline: text-before-edge;
 }
 
+/* Door & Window Schedule & Hardware Specification Styling */
+.schedule-card {
+  font-family: 'Sarabun', 'Prompt', sans-serif;
+}
+
+.opening-type-tag {
+  font-family: 'Prompt', 'Sarabun', sans-serif;
+  font-size: 3.8px;
+  font-weight: 700;
+  fill: #0f172a;
+}
+
+.opening-frame {
+  fill: #f1f5f9;
+  stroke: #0f172a;
+  stroke-width: 0.8px;
+}
+
+.opening-panel {
+  stroke: #334155;
+  stroke-width: 0.5px;
+}
+
 .title-block-subtext {
   fill: #555555;
   font-family: 'Sarabun', 'Prompt', sans-serif;
