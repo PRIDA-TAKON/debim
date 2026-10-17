@@ -3,6 +3,13 @@
 """
 
 from debim.draw.dxf import export_2d_dxf
+from debim.draw.index import (
+    DrawingIndexItem,
+    discover_and_aggregate_sheets,
+    generate_default_project_sheets,
+    infer_discipline,
+    render_sheet_index_svg,
+)
 from debim.draw.layout import (
     export_paper_space_layout_dxf,
     export_paper_space_layout_set,
@@ -140,4 +147,9 @@ __all__ = [
     "render_sanitation_riser_svg",
     "render_electrical_sheet_svg",
     "render_sanitation_sheet_svg",
+    "DrawingIndexItem",
+    "infer_discipline",
+    "generate_default_project_sheets",
+    "discover_and_aggregate_sheets",
+    "render_sheet_index_svg",
 ]

@@ -167,6 +167,8 @@ class SheetConfig(BaseModel):
                 return "SANITATION_DIAGRAM"
             if v_upper in ("MEP_DIAGRAM", "MEP_SCHEMATIC"):
                 return "ELECTRICAL_DIAGRAM"
+            if v_upper in ("INDEX", "SHEET_INDEX", "COVER_INDEX", "COVER", "G-001", "A-001", "S-001", "EE-001", "SN-001"):
+                return "INDEX"
         return str(v).upper() if v else "FLOOR_PLAN"
 
     @field_validator("crop", mode="before")
@@ -414,15 +416,19 @@ class SheetRenderer:
         manifest = self.resolved.manifest
         proj = manifest.project
 
-        # Determine if this is a section view, schedule view, or MEP diagram view
+        # Determine if this is a section view, schedule view, MEP diagram view, or index sheet
+        is_index_sheet = (cfg.view_type == "INDEX") or cfg.id in ("G-001", "A-001", "S-001", "EE-001", "SN-001")
         is_schedule_sheet = (cfg.view_type == "SCHEDULE") or cfg.id.startswith("A-4")
         is_structural_schedule = (cfg.view_type == "STRUCTURAL_DETAILS") or cfg.id.startswith("S-2") or cfg.id.startswith("S-201")
-        is_electrical_sheet = (cfg.view_type == "ELECTRICAL_DIAGRAM") or cfg.id.startswith("EE-") or cfg.id == "EE-101"
-        is_sanitation_sheet = (cfg.view_type == "SANITATION_DIAGRAM") or cfg.id.startswith("SN-") or cfg.id == "SN-101"
+        is_electrical_sheet = (cfg.view_type == "ELECTRICAL_DIAGRAM") or (cfg.id.startswith("EE-") and cfg.id != "EE-001") or cfg.id == "EE-101"
+        is_sanitation_sheet = (cfg.view_type == "SANITATION_DIAGRAM") or (cfg.id.startswith("SN-") and cfg.id != "SN-001") or cfg.id == "SN-101"
         is_section_sheet = (cfg.view_type == "section") or cfg.id.startswith("A-3")
 
         v_type = str(cfg.view_type).upper()
-        if v_type == "SCHEDULE" or is_schedule_sheet:
+        if v_type == "INDEX" or is_index_sheet:
+            from debim.draw.index import render_sheet_index_svg
+            return render_sheet_index_svg(self.resolved, cfg)
+        elif v_type == "SCHEDULE" or is_schedule_sheet:
             from debim.draw.schedule import render_opening_schedule_svg
             return render_opening_schedule_svg(self.resolved, cfg)
         elif v_type == "STRUCTURAL_DETAILS" or is_structural_schedule:
@@ -1824,23 +1830,23 @@ def render_sheet_set(
         for item in sheets_dir_or_configs:
             configs.append(load_sheet_config(item))
 
+    from debim.draw.index import discover_and_aggregate_sheets
+
+    discovered_items, total_count = discover_and_aggregate_sheets(resolved, configs)
     sheet_index_items = [
         SheetIndexItem(
-            sheet_no=cfg.id,
-            title=cfg.title,
-            scale=f"1:{cfg.scale}",
-            revision=cfg.revision,
+            sheet_no=item.sheet_no,
+            title=item.title,
+            scale=item.scale,
+            revision=item.revision,
         )
-        for cfg in configs
+        for item in discovered_items
     ]
 
-    total_count = len(configs)
     results = []
     for cfg in configs:
-        if not cfg.sheet_index:
-            cfg.sheet_index = sheet_index_items
-        if cfg.total_sheets is None:
-            cfg.total_sheets = total_count
+        cfg.sheet_index = sheet_index_items
+        cfg.total_sheets = total_count
         renderer = SheetRenderer(resolved, cfg)
         svg_str = renderer.render_svg()
         results.append((cfg, svg_str))
