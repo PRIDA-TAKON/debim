@@ -28,14 +28,29 @@ class Units(BaseModel):
     volume: str = "CUBIC_METER"
 
 
+class RevisionEntry(BaseModel):
+    no: str
+    date: str
+    description: str
+    by: Optional[str] = None
+
+
 class ProjectInfo(BaseModel):
     model_config = ConfigDict(extra="allow")
     id: str
     name: str
+    building_name: Optional[str] = None
     description: Optional[str] = None
+    site_location: Optional[str] = None
     organization: Optional[str] = None
     author: Optional[str] = None
     approved_by: Optional[str] = None
+    architect_name: Optional[str] = None
+    architect_license: Optional[str] = None
+    engineer_name: Optional[str] = None
+    engineer_license: Optional[str] = None
+    engineer_role: Optional[str] = None
+    revisions: List[RevisionEntry] = Field(default_factory=list)
     units: Units = Field(default_factory=Units)
 
 

@@ -12809,6 +12809,18 @@
           "title": "Name",
           "type": "string"
         },
+        "building_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Building Name"
+        },
         "description": {
           "anyOf": [
             {
@@ -12820,6 +12832,18 @@
           ],
           "default": null,
           "title": "Description"
+        },
+        "site_location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Site Location"
         },
         "organization": {
           "anyOf": [
@@ -12856,6 +12880,73 @@
           ],
           "default": null,
           "title": "Approved By"
+        },
+        "architect_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Architect Name"
+        },
+        "architect_license": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Architect License"
+        },
+        "engineer_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Engineer Name"
+        },
+        "engineer_license": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Engineer License"
+        },
+        "engineer_role": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Engineer Role"
+        },
+        "revisions": {
+          "items": {
+            "$ref": "#/$defs/RevisionEntry"
+          },
+          "title": "Revisions",
+          "type": "array"
         },
         "units": {
           "$ref": "#/$defs/Units"
@@ -13932,6 +14023,41 @@
         }
       },
       "title": "RetainingWallReinforcement",
+      "type": "object"
+    },
+    "RevisionEntry": {
+      "properties": {
+        "no": {
+          "title": "No",
+          "type": "string"
+        },
+        "date": {
+          "title": "Date",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "By"
+        }
+      },
+      "required": [
+        "no",
+        "date",
+        "description"
+      ],
+      "title": "RevisionEntry",
       "type": "object"
     },
     "RevolvedAreaSolid": {

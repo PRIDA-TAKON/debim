@@ -83,13 +83,13 @@ def test_horizontal_bottom_title_block_rendering(project_manifest_path):
     svg_str = renderer.render_svg()
 
     # Verify horizontal bottom title block container and positioning
-    # A3 Landscape = 420mm x 297mm. Margin = 10mm.
-    # Printable area: x=10, y=10, w=400, h=277.
+    # A3 Landscape = 420mm x 297mm. Binding Margin Left = 20mm, Other Margins = 10mm.
+    # Printable area: x=20, y=10, w=390, h=277.
     # Title block height = 36mm.
     # title_y = 10 + 277 - 36 = 251.0
     assert 'id="title-block"' in svg_str
-    assert 'transform="translate(10.0, 251.0)"' in svg_str
-    assert 'width="400.0" height="36.0"' in svg_str
+    assert 'transform="translate(20.0, 251.0)"' in svg_str
+    assert 'width="390.0" height="36.0"' in svg_str
 
     # Verify custom fields content in SVG
     assert "สถาปนิกโครงการ" in svg_str

@@ -3,6 +3,11 @@
 """
 
 from debim.draw.dxf import export_2d_dxf
+from debim.draw.layout import (
+    export_paper_space_layout_dxf,
+    export_paper_space_layout_set,
+    export_paper_space_layout_svg,
+)
 from debim.draw.elevation import (
     ElevationDirection,
     ElevationElement,
@@ -72,6 +77,9 @@ __all__ = [
     "render_sheet",
     "render_sheet_set",
     "export_2d_dxf",
+    "export_paper_space_layout_svg",
+    "export_paper_space_layout_set",
+    "export_paper_space_layout_dxf",
     "generate_2d_viewer_html",
     "export_2d_viewer",
 ]
