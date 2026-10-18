@@ -3750,6 +3750,98 @@
       "title": "FurnitureVariable",
       "type": "object"
     },
+    "GeometryRules": {
+      "properties": {
+        "type": {
+          "enum": [
+            "HYPERBOLIC_LOFT",
+            "CYLINDRICAL_LOFT",
+            "CONICAL_LOFT"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "base_radii": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Base Radii",
+          "type": "array"
+        },
+        "waist_radii": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Waist Radii"
+        },
+        "roof_radii": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Roof Radii",
+          "type": "array"
+        },
+        "cantilever_offset": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cantilever Offset"
+        }
+      },
+      "required": [
+        "type",
+        "base_radii",
+        "roof_radii"
+      ],
+      "title": "GeometryRules",
+      "type": "object"
+    },
     "Grids": {
       "properties": {
         "axes_x": {
@@ -16507,6 +16599,17 @@
       },
       "title": "Elements",
       "type": "array"
+    },
+    "geometry_rules": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/GeometryRules"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "modules": {
       "anyOf": [

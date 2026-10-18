@@ -3897,7 +3897,7 @@ def _is_valid_grid_ref(val_str: str, grid_ids: set) -> bool:
     s = str(val_str).strip()
     if s in grid_ids:
         return True
-    base_name = re.split(r"[\+\-\*\/]", s)[0].strip()
+    base_name = re.split(r"[\+\-\*\/]", s.lstrip("+-"))[0].strip()
     if base_name in grid_ids:
         return True
     if "." in base_name:
@@ -3996,6 +3996,14 @@ class BeamBay(BaseModel):
         return v
 
 
+class GeometryRules(BaseModel):
+    type: Literal["HYPERBOLIC_LOFT", "CYLINDRICAL_LOFT", "CONICAL_LOFT"]
+    base_radii: Tuple[float, float]
+    waist_radii: Optional[Tuple[float, float]] = None
+    roof_radii: Tuple[float, float]
+    cantilever_offset: Optional[Tuple[float, float]] = None
+
+
 class ProjectManifest(BaseModel):
     schema_version: str = Field(alias="schema", default="IFC4-Minimal")
     project: ProjectInfo
@@ -4003,6 +4011,7 @@ class ProjectManifest(BaseModel):
     grids: Grids
     materials: List[Material]
     elements: List[Element] = Field(default_factory=list)
+    geometry_rules: Optional[GeometryRules] = None
     modules: Optional[List[ModuleDefinition]] = None
     instances: Optional[List[InstanceConfig]] = None
     macro_elements: Optional[List[Union[ColumnGrid, BeamBay, Dict[str, Any]]]] = None
