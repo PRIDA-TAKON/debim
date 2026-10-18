@@ -1599,6 +1599,67 @@ def cmd_scaffold_element(args):
             sys.exit(1)
 
 
+def cmd_draw_batch_pdf(args):
+    manifest_target = getattr(args, "manifest", None) or getattr(args, "positional_manifest", None)
+    manifest = resolve_default_manifest_path(manifest_target)
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        sys.exit(1)
+
+    out_pdf = Path(args.batch_pdf) if getattr(args, "batch_pdf", None) else (
+        Path(args.output) if getattr(args, "output", None) else Path("dist/blueprints.pdf")
+    )
+
+    layout_str = (getattr(args, "layout", None) or "A3").upper().strip()
+    scale_str = str(getattr(args, "scale", None) or "1:100").strip()
+    sheets_dir = getattr(args, "sheets", None)
+
+    console.print(
+        f"[bold green]Plotting Multi-Sheet Blueprint Package to PDF:[/bold green] {manifest} -> [cyan]{out_pdf}[/cyan]\n"
+        f"[dim](Layout: {layout_str}, Scale: {scale_str}, Custom Sheets: {sheets_dir or 'Auto-Generated Complete Set'})[/dim]"
+    )
+
+    try:
+        from debim.draw import export_batch_pdf, generate_default_sheet_configs
+
+        out_path = export_batch_pdf(
+            manifest_or_resolved=manifest,
+            output_path=out_pdf,
+            sheets_dir_or_configs=sheets_dir,
+            paper_size=layout_str,
+            scale=scale_str,
+        )
+
+        file_size = out_path.stat().st_size
+        manifest_obj = load_manifest(manifest)
+        proj = manifest_obj.project
+        eng_info = f"{proj.engineer_name} ({proj.engineer_license})" if proj.engineer_name else "N/A"
+        arch_info = f"{proj.architect_name} ({proj.architect_license})" if proj.architect_name else "debim Engine"
+
+        configs = generate_default_sheet_configs(manifest, paper_size=layout_str, scale=scale_str)
+        sheet_count = len(configs)
+
+        console.print(
+            Panel(
+                f"[bold green]Multi-Sheet Blueprint Batch PDF Plotting Complete![/bold green]\n"
+                f"[bold cyan]Output PDF File:[/bold cyan] {out_path} ({file_size:,} bytes)\n"
+                f"[bold cyan]Total Sheets Plotted:[/bold cyan] {sheet_count} pages\n"
+                f"[bold cyan]Paper Space Layout:[/bold cyan] {layout_str} Landscape\n"
+                f"[bold cyan]Plot Scale:[/bold cyan] {scale_str}\n"
+                f"[bold cyan]Project Title:[/bold cyan] {proj.name}\n"
+                f"[bold cyan]Lead Architect:[/bold cyan] {arch_info}\n"
+                f"[bold cyan]Structural Engineer:[/bold cyan] {eng_info}\n"
+                f"[bold green]PdfCraft Hand-off Ready:[/bold green] Vector SVG layout with digital signature & stamp area\n"
+                f"[dim]Includes Cover & Sheet Index, Floor Plans, Roof Plan, Beam Layouts, Elevations, Sections, Schedules, RC Details & MEP Diagrams.[/dim]",
+                title="[bold green]debim Blueprint Batch Plotter Engine[/bold green]",
+                style="green",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Batch PDF Plotting Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
 def cmd_draw_view(args):
     manifest = resolve_default_manifest_path(args.manifest)
     output = Path(args.output)
@@ -2454,7 +2515,26 @@ def build_parser() -> argparse.ArgumentParser:
 
     # draw
     p_draw = subparsers.add_parser("draw", help="2D Architectural Blueprint & CAD export commands")
+    p_draw.add_argument("positional_manifest", nargs="?", help="Positional path to project manifest")
+    p_draw.add_argument("-m", "--manifest", help="Path to project manifest")
+    p_draw.add_argument("--layout", default="A3", help="Paper space size layout ('A3', 'A2', 'A1', 'A0', 'A4')")
+    p_draw.add_argument("--scale", default="1:100", help="Standard drawing scale ratio e.g. '1:100' or '1:50'")
+    p_draw.add_argument("--batch-pdf", help="Target output PDF file path for multi-sheet blueprint plotting")
+    p_draw.add_argument("--sheets", help="Directory containing custom sheet configs or single sheet file")
+    p_draw.add_argument("-o", "--output", help="Output file path destination")
+    p_draw.set_defaults(func=cmd_draw_batch_pdf)
+
     draw_subparsers = p_draw.add_subparsers(dest="draw_subcommand")
+
+    p_draw_batch = draw_subparsers.add_parser("batch-pdf", help="Batch plot consolidated multi-sheet vector PDF blueprints")
+    p_draw_batch.add_argument("positional_manifest", nargs="?", help="Positional path to project manifest")
+    p_draw_batch.add_argument("-m", "--manifest", help="Path to project manifest")
+    p_draw_batch.add_argument("--layout", default="A3", help="Paper space size layout ('A3', 'A2', 'A1', 'A0', 'A4')")
+    p_draw_batch.add_argument("--scale", default="1:100", help="Standard drawing scale ratio e.g. '1:100' or '1:50'")
+    p_draw_batch.add_argument("-o", "--output", dest="batch_pdf", default="dist/blueprints.pdf", help="Output PDF file path")
+    p_draw_batch.add_argument("--batch-pdf", help="Alias for output PDF file path")
+    p_draw_batch.add_argument("--sheets", help="Directory containing custom sheet configs")
+    p_draw_batch.set_defaults(func=cmd_draw_batch_pdf)
 
     p_draw_view = draw_subparsers.add_parser("view", help="Generate standalone interactive 2D HTML blueprint viewer")
     p_draw_view.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
@@ -2620,8 +2700,7 @@ def main(args: Optional[List[str]] = None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
     elif parsed_args.subcommand == "draw" and not getattr(parsed_args, "draw_subcommand", None):
-        parser.parse_args([parsed_args.subcommand, "--help"])
-        sys.exit(0)
+        pass
     elif parsed_args.subcommand == "spec" and not getattr(parsed_args, "spec_subcommand", None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)

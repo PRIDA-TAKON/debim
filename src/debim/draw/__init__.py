@@ -11,9 +11,11 @@ from debim.draw.index import (
     render_sheet_index_svg,
 )
 from debim.draw.layout import (
+    export_batch_pdf,
     export_paper_space_layout_dxf,
     export_paper_space_layout_set,
     export_paper_space_layout_svg,
+    generate_default_sheet_configs,
 )
 from debim.draw.elevation import (
     ElevationDirection,
@@ -119,6 +121,8 @@ __all__ = [
     "export_paper_space_layout_svg",
     "export_paper_space_layout_set",
     "export_paper_space_layout_dxf",
+    "generate_default_sheet_configs",
+    "export_batch_pdf",
     "generate_2d_viewer_html",
     "export_2d_viewer",
     "HardwareSpec",
