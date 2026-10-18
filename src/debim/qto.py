@@ -785,6 +785,9 @@ class ProjectQTO(BaseModel):
     total_hvac_air_volume: float = 0.0
     total_floor_finish_area: float = 0.0
     total_floor_finish_volume: float = 0.0
+    # Loft Macro-Geometry Totals
+    total_loft_enclosure_surface_area: float = 0.0
+    total_loft_slab_area: float = 0.0
 
 
     def get_element(self, tag: str) -> Optional[ElementQTO]:
@@ -2710,6 +2713,8 @@ def calculate_qto(
     total_hvac_air_volume = 0.0
     total_floor_finish_area = 0.0
     total_floor_finish_volume = 0.0
+    total_loft_enclosure_surf_area = 0.0
+    total_loft_slab_area_val = 0.0
 
     # Build material category lookup
     material_categories = {
@@ -2995,6 +3000,11 @@ def calculate_qto(
             total_floor_finish_area += eqto.space.floor_finish_area
             total_floor_finish_volume += eqto.space.floor_finish_volume
 
+        if eqto.tag.startswith("WALL-LOFT-") or "LOFT" in eqto.tag and eqto.element_class == "IfcWall":
+            total_loft_enclosure_surf_area += getattr(elem, "length", 0.0) * getattr(elem, "height", 0.0)
+        elif eqto.tag.startswith("SLAB-LOFT-") or "LOFT" in eqto.tag and eqto.element_class == "IfcSlab":
+            total_loft_slab_area_val += getattr(elem, "area", 0.0)
+
     return ProjectQTO(
         elements=qto_elements,
         total_concrete_volume=total_conc_vol,
@@ -3113,4 +3123,6 @@ def calculate_qto(
         total_hvac_air_volume=total_hvac_air_volume,
         total_floor_finish_area=total_floor_finish_area,
         total_floor_finish_volume=total_floor_finish_volume,
+        total_loft_enclosure_surface_area=total_loft_enclosure_surf_area,
+        total_loft_slab_area=total_loft_slab_area_val,
     )

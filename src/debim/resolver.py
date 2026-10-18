@@ -7293,6 +7293,19 @@ class SpatialResolver:
         )
 
     def resolve(self) -> ResolvedManifest:
+        if self.manifest.geometry_rules is not None:
+            from debim.geometry.loft import generate_loft_storey_elements
+            loft_slabs, loft_walls = generate_loft_storey_elements(self.manifest)
+            existing_tags = {e.tag for e in self.manifest.elements}
+            for ls in loft_slabs:
+                if ls.tag not in existing_tags:
+                    self.manifest.elements.append(ls)
+                    existing_tags.add(ls.tag)
+            for lw in loft_walls:
+                if lw.tag not in existing_tags:
+                    self.manifest.elements.append(lw)
+                    existing_tags.add(lw.tag)
+
         resolved_manifest = ResolvedManifest(manifest=self.manifest)
 
         # Top-level standalone doors / windows mapped by host_wall
