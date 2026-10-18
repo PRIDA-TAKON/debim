@@ -17,11 +17,11 @@
         <!-- Sidebar Navigation -->
         <div id="sidebar">
             <div class="sidebar-header">
-                <div class="brand">debim Class Encyclopedia</div>
-                <div class="brand-subtitle">Interactive 6D BIM Class Directory</div>
+                <div class="brand" id="brand-title">debim Class Encyclopedia</div>
+                <div class="brand-subtitle" id="brand-subtitle">Interactive 6D BIM Class Directory</div>
                 <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #e2e8f0;">
                     <a href="farnsworth.html" target="_blank" style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; color: #0f172a; font-size: 0.78rem; text-decoration: none; transition: all 0.15s ease;">
-                        <span style="font-weight: 600;">Farnsworth House</span>
+                        <span style="font-weight: 600;" id="sidebar-showcase-title">Farnsworth House</span>
                         <span style="color: #0284c7; font-size: 0.72rem; font-weight: 600;">3D Live ↗</span>
                     </a>
                 </div>
@@ -46,10 +46,16 @@
                         <span class="badge-discipline" id="badge-discipline">Structure</span>
                         <span class="badge-schema" id="badge-schema">IFC4</span>
                     </div>
-                    <div class="active-class-desc" id="title-th-name">เสาคอนกรีตเสริมเหล็ก / เสาเหล็ก (Structural Column)</div>
+                    <div class="active-class-desc" id="title-localized-name">เสาคอนกรีตเสริมเหล็ก / เสาเหล็ก (Structural Column)</div>
                     <div class="active-class-desc" id="title-desc">องค์อาคารโครงสร้างรองรับและถ่ายน้ำหนักบรรทุกตามหลักวิศวกรรมโครงสร้าง</div>
                 </div>
-                <div>
+                <div class="header-actions">
+                    <!-- Bilingual Language Switcher -->
+                    <div class="lang-switcher">
+                        <button class="lang-btn active" id="lang-btn-th" onclick="setLanguage('th')">🇹🇭 ภาษาไทย</button>
+                        <button class="lang-btn" id="lang-btn-en" onclick="setLanguage('en')">🇬🇧 English</button>
+                    </div>
+
                     <a href="farnsworth.html" id="btn-showcase-farnsworth" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; color: #0f172a; font-size: 0.82rem; font-weight: 600; text-decoration: none; transition: all 0.15s ease;">
                         <span>🏛️</span>
                         <span id="btn-showcase-label">ดูโครงการบ้านตัวอย่าง (Farnsworth House)</span>
@@ -60,11 +66,11 @@
 
             <!-- Tab Navigation Bar -->
             <div class="tab-bar">
-                <button class="tab-btn active" onclick="switchTab('3d')">🎮 3D Viewport</button>
-                <button class="tab-btn" onclick="switchTab('2d')">📐 2D Blueprint Cut</button>
-                <button class="tab-btn" onclick="switchTab('rosetta')">🗿 Rosetta Stone (.debim vs IFC)</button>
-                <button class="tab-btn" onclick="switchTab('boq')">📊 BOQ & QTO Takeoff</button>
-                <button class="tab-btn" onclick="switchTab('specs')">📜 Thai Specifications</button>
+                <button class="tab-btn active" id="tab-btn-3d" onclick="switchTab('3d')">🎮 3D Viewport / มุมมอง 3 มิติ</button>
+                <button class="tab-btn" id="tab-btn-2d" onclick="switchTab('2d')">📐 2D Blueprint Cut / รูปตัดแบบ 2 มิติ</button>
+                <button class="tab-btn" id="tab-btn-rosetta" onclick="switchTab('rosetta')">🗿 Rosetta Stone (.debim vs IFC) / แปลงโครงสร้างโค้ด</button>
+                <button class="tab-btn" id="tab-btn-boq" onclick="switchTab('boq')">📊 BOQ & QTO Takeoff / บัญชีแสดงปริมาณวัสดุและราคา</button>
+                <button class="tab-btn" id="tab-btn-specs" onclick="switchTab('specs')">📜 Specifications / รายการประกอบแบบและมาตรฐาน</button>
             </div>
 
             <!-- Content Area Viewports -->
@@ -228,19 +234,19 @@
                     </div>
                 </div>
 
-                <!-- Thai Specifications Tab -->
+                <!-- Specifications Tab -->
                 <div class="tab-view" id="tab-specs">
                     <div class="specs-container">
                         <div class="spec-section">
-                            <div class="spec-title">1. ข้อกำหนดทั่วไปและวัสดุ (General & Material Specifications)</div>
+                            <div class="spec-title" id="spec-title-mat">1. ข้อกำหนดทั่วไปและวัสดุ (General & Material Specifications)</div>
                             <div class="spec-body" id="spec-mat">ข้อกำหนดวัสดุ</div>
                         </div>
                         <div class="spec-section">
-                            <div class="spec-title">2. ข้อกำหนดการฝีมือและการติดตั้ง (Workmanship & Installation)</div>
+                            <div class="spec-title" id="spec-title-work">2. ข้อกำหนดการฝีมือและการติดตั้ง (Workmanship & Installation)</div>
                             <div class="spec-body" id="spec-work">ข้อกำหนดการติดตั้ง</div>
                         </div>
                         <div class="spec-section">
-                            <div class="spec-title">3. ข้อกำหนดการทดสอบและตรวจรับ (Testing & Quality Inspection)</div>
+                            <div class="spec-title" id="spec-title-test">3. ข้อกำหนดการทดสอบและตรวจรับ (Testing & Quality Inspection)</div>
                             <div class="spec-body" id="spec-test">ข้อกำหนดการทดสอบ</div>
                         </div>
                     </div>
@@ -255,6 +261,7 @@
         // Injected Class Directory Data
         const classesData = __CLASS_DIRECTORY_JSON__;
 
+        let currentLang = 'th';
         let activeClassIndex = 0;
         let scene, camera, renderer, controls;
         let currentMesh = null;
@@ -272,13 +279,62 @@
         let transformMode = false;
         let currentBaseSample3D = null;
 
+        // UI Translation Strings
+        const I18N = {
+            th: {
+                tab3d: "🎮 มุมมอง 3 มิติ (3D Viewport)",
+                tab2d: "📐 รูปตัดแบบ 2 มิติ (2D Blueprint Cut)",
+                tabRosetta: "🗿 แปลงโครงสร้างโค้ด (.debim vs IFC)",
+                tabBoq: "📊 บัญชีแสดงปริมาณวัสดุและราคา (BOQ & QTO)",
+                tabSpecs: "📜 รายการประกอบแบบและมาตรฐาน (Specifications)",
+                showcaseLabel: "ดูโครงการบ้านตัวอย่าง (Farnsworth House)",
+                showcaseLabelClass: (cls) => `ดู <strong>${cls}</strong> ในบ้านตัวอย่าง Farnsworth House`,
+                searchPlaceholder: "ค้นหา เช่น Column, Wall, เสา, ผนัง...",
+                boqHeaders: ["รหัสรายการ", "รายการพิจารณา", "สูตรคำนวณ", "ปริมาณ", "หน่วย", "ค่าวัสดุ (บาท)", "ค่าแรง (บาท)", "รวมเงิน (บาท)"],
+                boqTotal: "รวมเงินทั้งสิ้น (บาท):",
+                specMatTitle: "1. ข้อกำหนดทั่วไปและมาตรฐานวัสดุ (General & Material Specifications)",
+                specWorkTitle: "2. ข้อกำหนดการทำงานและการติดตั้ง (Workmanship & Installation)",
+                specTestTitle: "3. ข้อกำหนดการทดสอบและตรวจรับ (Testing & Quality Inspection)",
+                noData: "ไม่มีข้อมูล",
+            },
+            en: {
+                tab3d: "🎮 3D Viewport",
+                tab2d: "📐 2D Blueprint Cut",
+                tabRosetta: "🗿 Rosetta Stone (.debim vs IFC)",
+                tabBoq: "📊 BOQ & QTO Takeoff",
+                tabSpecs: "📜 Specifications",
+                showcaseLabel: "View Sample Project (Farnsworth House)",
+                showcaseLabelClass: (cls) => `View <strong>${cls}</strong> in Farnsworth House`,
+                searchPlaceholder: "Search e.g. Column, Wall...",
+                boqHeaders: ["Item Code", "Description", "Takeoff Formula", "Quantity", "Unit", "Mat Rate (THB)", "Labor Rate (THB)", "Total Amount (THB)"],
+                boqTotal: "Grand Total Amount (THB):",
+                specMatTitle: "1. General & Material Specifications",
+                specWorkTitle: "2. Workmanship & Installation Requirements",
+                specTestTitle: "3. Testing & Quality Inspection Standards",
+                noData: "No specification data available",
+            }
+        };
+
         // Init App
         function init() {
+            // Restore saved language preference from localStorage
+            try {
+                const savedLang = localStorage.getItem('debim_lang');
+                if (savedLang === 'en' || savedLang === 'th') {
+                    currentLang = savedLang;
+                }
+            } catch (e) {}
+
             renderNavList(classesData);
             init3DScene();
 
-            // Read URL parameters (?class=... & tab=...)
+            // Read URL parameters (?class=... & tab=... & lang=...)
             const urlParams = new URLSearchParams(window.location.search);
+            const urlLang = urlParams.get('lang');
+            if (urlLang === 'en' || urlLang === 'th') {
+                currentLang = urlLang;
+            }
+
             const targetClass = urlParams.get('class');
             let initialIndex = 0;
             if (targetClass) {
@@ -288,6 +344,7 @@
                 }
             }
 
+            setLanguage(currentLang, false);
             selectClass(initialIndex);
 
             const targetTab = urlParams.get('tab');
@@ -296,6 +353,63 @@
             }
 
             window.addEventListener('resize', onWindowResize);
+        }
+
+        // Language Switcher Handler
+        function setLanguage(lang, triggerSelect = true) {
+            if (lang !== 'th' && lang !== 'en') return;
+            currentLang = lang;
+
+            try {
+                localStorage.setItem('debim_lang', currentLang);
+            } catch (e) {}
+
+            // Toggle language switcher button states
+            const btnTh = document.getElementById('lang-btn-th');
+            const btnEn = document.getElementById('lang-btn-en');
+            if (btnTh) btnTh.classList.toggle('active', currentLang === 'th');
+            if (btnEn) btnEn.classList.toggle('active', currentLang === 'en');
+
+            const t = I18N[currentLang];
+
+            // Localize Tabs
+            const t3d = document.getElementById('tab-btn-3d');
+            const t2d = document.getElementById('tab-btn-2d');
+            const tRosetta = document.getElementById('tab-btn-rosetta');
+            const tBoq = document.getElementById('tab-btn-boq');
+            const tSpecs = document.getElementById('tab-btn-specs');
+
+            if (t3d) t3d.textContent = t.tab3d;
+            if (t2d) t2d.textContent = t.tab2d;
+            if (tRosetta) tRosetta.textContent = t.tabRosetta;
+            if (tBoq) tBoq.textContent = t.tabBoq;
+            if (tSpecs) tSpecs.textContent = t.tabSpecs;
+
+            // Localize Search Placeholder
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) searchInput.placeholder = t.searchPlaceholder;
+
+            // Localize Spec Titles
+            const smMat = document.getElementById('spec-title-mat');
+            const smWork = document.getElementById('spec-title-work');
+            const smTest = document.getElementById('spec-title-test');
+            if (smMat) smMat.textContent = t.specMatTitle;
+            if (smWork) smWork.textContent = t.specWorkTitle;
+            if (smTest) smTest.textContent = t.specTestTitle;
+
+            // Re-render sidebar nav list with localized names
+            renderNavList(classesData);
+
+            if (triggerSelect) {
+                selectClass(activeClassIndex);
+            }
+
+            // Sync URL query param
+            try {
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('lang', currentLang);
+                window.history.replaceState({}, '', currentUrl.toString());
+            } catch (e) {}
         }
 
         // Group Classes by Discipline and Render Left Navigation Sidebar
@@ -341,9 +455,11 @@
                     itemEl.className = `class-item ${idx === activeClassIndex ? 'active' : ''}`;
                     itemEl.dataset.index = idx;
                     itemEl.onclick = () => selectClass(idx);
+
+                    const localizedSub = currentLang === 'en' ? (item.name_en || item.name_th) : item.name_th;
                     itemEl.innerHTML = `
                         <div class="class-name">${item.class_name}</div>
-                        <div class="class-th-name">${item.name_th}</div>
+                        <div class="class-th-name">${localizedSub}</div>
                     `;
                     itemsContainer.appendChild(itemEl);
                 });
@@ -404,10 +520,14 @@
                 el.classList.toggle('active', parseInt(el.dataset.index) === index);
             });
 
+            const localizedTitle = currentLang === 'en' ? (item.name_en || item.name_th) : item.name_th;
+            const localizedDesc = currentLang === 'en' ? (item.description_en || item.description) : (item.description_th || item.description);
+
             // Header info
             document.getElementById('title-class').textContent = item.class_name;
-            document.getElementById('title-th-name').textContent = item.name_th;
-            document.getElementById('title-desc').textContent = item.description;
+            const localizedNameEl = document.getElementById('title-localized-name') || document.getElementById('title-th-name');
+            if (localizedNameEl) localizedNameEl.textContent = localizedTitle;
+            document.getElementById('title-desc').textContent = localizedDesc;
             document.getElementById('badge-discipline').textContent = item.discipline;
             document.getElementById('badge-schema').textContent = item.schema_version;
 
@@ -425,11 +545,12 @@
             // BOQ Table
             renderBOQTable(item.qto_boq || []);
 
-            // Thai Specs
-            const specs = item.thai_specs || {};
-            document.getElementById('spec-mat').textContent = specs.materials || 'ไม่มีข้อมูล';
-            document.getElementById('spec-work').textContent = specs.workmanship || 'ไม่มีข้อมูล';
-            document.getElementById('spec-test').textContent = specs.testing || 'ไม่มีข้อมูล';
+            // Specifications
+            const specs = (currentLang === 'en' && item.english_specs) ? item.english_specs : (item.thai_specs || {});
+            const noDataMsg = I18N[currentLang].noData;
+            document.getElementById('spec-mat').textContent = specs.materials || noDataMsg;
+            document.getElementById('spec-work').textContent = specs.workmanship || noDataMsg;
+            document.getElementById('spec-test').textContent = specs.testing || noDataMsg;
 
             // 3D Model
             currentBaseSample3D = item.sample_3d ? JSON.parse(JSON.stringify(item.sample_3d)) : null;
@@ -469,7 +590,15 @@
         // Render BOQ Table
         function renderBOQTable(boqItems) {
             const tbody = document.getElementById('boq-tbody');
+            if (!tbody) return;
             tbody.innerHTML = '';
+
+            // Localize table headers dynamically
+            const t = I18N[currentLang];
+            const thead = tbody.closest('table')?.querySelector('thead tr');
+            if (thead && t.boqHeaders) {
+                thead.innerHTML = t.boqHeaders.map(h => `<th>${h}</th>`).join('');
+            }
 
             let grandTotal = 0;
             boqItems.forEach(row => {
@@ -478,10 +607,12 @@
                 const total = matTot + labTot;
                 grandTotal += total;
 
+                const nameVal = currentLang === 'en' ? (row.name_en || row.name) : (row.name_th || row.name);
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="font-family:'JetBrains Mono',monospace; color:#0284c7; font-weight:600;">${row.code}</td>
-                    <td style="font-weight:600; color:#0f172a;">${row.name}</td>
+                    <td style="font-weight:600; color:#0f172a;">${nameVal}</td>
                     <td style="color:#64748b; font-size:0.80rem;">${row.formula}</td>
                     <td>${row.quantity.toFixed(2)}</td>
                     <td>${row.unit}</td>
@@ -496,7 +627,7 @@
                 const totalTr = document.createElement('tr');
                 totalTr.style.background = '#f0f9ff';
                 totalTr.innerHTML = `
-                    <td colspan="7" style="text-align:right; font-weight:700; color:#0369a1;">Total Amount (THB):</td>
+                    <td colspan="7" style="text-align:right; font-weight:700; color:#0369a1;">${t.boqTotal}</td>
                     <td style="font-size:1.0rem; font-weight:700; color:#15803d;">฿${grandTotal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
                 `;
                 tbody.appendChild(totalTr);

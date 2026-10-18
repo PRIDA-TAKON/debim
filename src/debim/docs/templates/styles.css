@@ -210,6 +210,48 @@
             justify-content: space-between;
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Language Switcher Button Group */
+        .lang-switcher {
+            display: inline-flex;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: #64748b;
+            padding: 5px 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .lang-btn:hover {
+            color: #0f172a;
+        }
+
+        .lang-btn.active {
+            background: #ffffff;
+            color: #0284c7;
+            font-weight: 700;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
         .active-title-group {
             display: flex;
             align-items: center;
