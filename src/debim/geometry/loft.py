@@ -8,11 +8,14 @@ from typing import List, Optional, Tuple
 import numpy as np
 
 from debim.schema import (
+    BeamPlacement,
     BoxProfile,
     CircleHollowProfile,
     ColumnPlacement,
     GeometryRules,
+    IfcBeam,
     IfcColumn,
+    IfcMember,
     IfcSlab,
     IfcWall,
     ProjectManifest,
@@ -335,3 +338,176 @@ def generate_curved_spine_columns(
             columns.append(col)
 
     return columns
+
+
+def generate_loft_ring_beams(
+    manifest: ProjectManifest,
+) -> List[IfcBeam]:
+    """
+    Generates horizontal steel ring beams tying the curved perimeter columns together
+    at each storey floor level (such as the 18" horizontal steel tubes of Museo Soumaya).
+    """
+    if manifest.geometry_rules is None or manifest.structures is None:
+        return []
+    if manifest.structures.column_generator is None:
+        return []
+
+    rules = manifest.geometry_rules
+    gen = manifest.structures.column_generator
+    storeys = manifest.spatial_structure.storeys
+    if not storeys:
+        return []
+
+    sorted_storeys = sorted(storeys, key=lambda s: s.elevation)
+    top_storey = sorted_storeys[-1]
+    total_height = top_storey.elevation + top_storey.height
+
+    count = gen.count
+    if count <= 0:
+        return []
+
+    # Ring beam profile (e.g. CHS 450x16)
+    ring_prof = CircleHollowProfile(
+        shape="CIRCLE_HOLLOW",
+        diameter=0.45,
+        wall_thickness=0.016,
+    )
+
+    mat_id = gen.material or "STEEL"
+    if manifest.materials:
+        mat_ids = [m.id for m in manifest.materials]
+        if mat_id not in mat_ids:
+            steel_mats = [m.id for m in manifest.materials if (m.category or "").lower() in ("steel", "metal")]
+            mat_id = steel_mats[0] if steel_mats else mat_ids[0]
+
+    u_angles = [2.0 * math.pi * k / count for k in range(count)]
+    beams: List[IfcBeam] = []
+
+    for storey in sorted_storeys:
+        z_floor = storey.elevation
+
+        for k in range(count):
+            k_next = (k + 1) % count
+            u1 = u_angles[k]
+            u2 = u_angles[k_next]
+
+            pt1 = evaluate_loft_point(rules, u1, z_floor, total_height)
+            pt2 = evaluate_loft_point(rules, u2, z_floor, total_height)
+
+            tag = f"BEAM-RING-{storey.id}-{k+1}"
+            beam = IfcBeam(
+                tag=tag,
+                material=mat_id,
+                profile=ring_prof,
+                placement=BeamPlacement(
+                    from_grid=(f"{pt1[0]:.4f}", f"{pt1[1]:.4f}"),
+                    to_grid=(f"{pt2[0]:.4f}", f"{pt2[1]:.4f}"),
+                    storey=storey.id,
+                    offset_z=0.0,
+                ),
+                layer="S-BEAM-RING",
+            )
+            beams.append(beam)
+
+    return beams
+
+
+def generate_roof_crown_structure(
+    manifest: ProjectManifest,
+) -> Tuple[List[IfcBeam], List[IfcBeam]]:
+    """
+    Generates the roof crown compression ring and radial spokes/structural beams
+    supporting the expansive cantilever and daylight skylight of Museo Soumaya.
+    """
+    if manifest.geometry_rules is None or manifest.structures is None:
+        return [], []
+    if manifest.structures.column_generator is None:
+        return [], []
+
+    rules = manifest.geometry_rules
+    gen = manifest.structures.column_generator
+    storeys = manifest.spatial_structure.storeys
+    if not storeys:
+        return [], []
+
+    sorted_storeys = sorted(storeys, key=lambda s: s.elevation)
+    top_storey = sorted_storeys[-1]
+    roof_z = top_storey.elevation + top_storey.height
+    total_height = roof_z
+
+    count = gen.count
+    if count <= 0:
+        return [], []
+
+    mat_id = gen.material or "STEEL"
+    if manifest.materials:
+        mat_ids = [m.id for m in manifest.materials]
+        if mat_id not in mat_ids:
+            steel_mats = [m.id for m in manifest.materials if (m.category or "").lower() in ("steel", "metal")]
+            mat_id = steel_mats[0] if steel_mats else mat_ids[0]
+
+    roof_prof = CircleHollowProfile(
+        shape="CIRCLE_HOLLOW",
+        diameter=0.50,
+        wall_thickness=0.02,
+    )
+
+    u_angles = [2.0 * math.pi * k / count for k in range(count)]
+
+    # Compute outer crown points
+    outer_pts = [evaluate_loft_point(rules, u, roof_z, total_height) for u in u_angles]
+
+    # Center of crown
+    cx = sum(p[0] for p in outer_pts) / count
+    cy = sum(p[1] for p in outer_pts) / count
+
+    # Inner compression ring points (around central skylight, ~30% radius of outer)
+    skylight_ratio = 0.30
+    inner_pts = [
+        (cx + skylight_ratio * (p[0] - cx), cy + skylight_ratio * (p[1] - cy))
+        for p in outer_pts
+    ]
+
+    radial_beams: List[IfcBeam] = []
+    compression_beams: List[IfcBeam] = []
+
+    # 1. Radial spokes connecting column heads to compression ring
+    for k in range(count):
+        p_out = outer_pts[k]
+        p_in = inner_pts[k]
+
+        radial_beam = IfcBeam(
+            tag=f"ROOF-TRUSS-SPOKE-{k+1}",
+            material=mat_id,
+            profile=roof_prof,
+            placement=BeamPlacement(
+                from_grid=(f"{p_out[0]:.4f}", f"{p_out[1]:.4f}"),
+                to_grid=(f"{p_in[0]:.4f}", f"{p_in[1]:.4f}"),
+                storey=top_storey.id,
+                offset_z=top_storey.height,
+            ),
+            layer="S-ROOF-TRUSS",
+        )
+        radial_beams.append(radial_beam)
+
+    # 2. Inner compression ring around skylight
+    for k in range(count):
+        k_next = (k + 1) % count
+        p1 = inner_pts[k]
+        p2 = inner_pts[k_next]
+
+        comp_beam = IfcBeam(
+            tag=f"ROOF-COMPRESSION-RING-{k+1}",
+            material=mat_id,
+            profile=roof_prof,
+            placement=BeamPlacement(
+                from_grid=(f"{p1[0]:.4f}", f"{p1[1]:.4f}"),
+                to_grid=(f"{p2[0]:.4f}", f"{p2[1]:.4f}"),
+                storey=top_storey.id,
+                offset_z=top_storey.height,
+            ),
+            layer="S-ROOF-RING",
+        )
+        compression_beams.append(comp_beam)
+
+    return radial_beams, compression_beams

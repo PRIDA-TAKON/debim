@@ -7313,6 +7313,19 @@ class SpatialResolver:
                     self.manifest.elements.append(cc)
                     existing_tags.add(cc.tag)
 
+            from debim.geometry.loft import generate_loft_ring_beams, generate_roof_crown_structure
+            ring_beams = generate_loft_ring_beams(self.manifest)
+            for rb in ring_beams:
+                if rb.tag not in existing_tags:
+                    self.manifest.elements.append(rb)
+                    existing_tags.add(rb.tag)
+
+            radial_spokes, comp_rings = generate_roof_crown_structure(self.manifest)
+            for r_beam in (radial_spokes + comp_rings):
+                if r_beam.tag not in existing_tags:
+                    self.manifest.elements.append(r_beam)
+                    existing_tags.add(r_beam.tag)
+
         facade_tess = None
         if self.manifest.facade and self.manifest.facade.envelope_skin and self.manifest.geometry_rules:
             from debim.geometry.tessellation import generate_facade_tessellation
