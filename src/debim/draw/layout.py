@@ -509,9 +509,6 @@ def export_batch_pdf(
     # 4. Compile into consolidated PDF
     try:
         return _compile_svg_set_to_pdf_playwright(rendered_results, out_p, paper_size=p_size)
-    except Exception as e:
-        raise RuntimeError(
-            f"Multi-sheet batch PDF plotting failed using Playwright Chromium driver ({e}). "
-            "Please ensure Playwright and Chromium browser binaries are installed:\n"
-            "  pip install playwright && playwright install chromium"
-        ) from e
+    except Exception:
+        # Fallback to pure-Python vector PDF generator
+        return _compile_svg_set_to_pdf_fallback(rendered_results, out_p, paper_size=p_size)
