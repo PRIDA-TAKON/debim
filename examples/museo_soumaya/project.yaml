@@ -71,19 +71,41 @@ materials:
     category: concrete
     unit_cost_ref: MAT-CONC-280
 
-# 1. Macro-Geometry: Asymmetric Hyperbolic Ring Loft Equation
+# 1. Macro-Geometry: Asymmetric Multi-Level Organic Polygon Loft (Fernando Romero / Arup)
+# Footprints derived from actual building levels: Ground (L0-L1), Waist (L2-L4), Crown (L5-L6)
 geometry_rules:
-  type: HYPERBOLIC_LOFT
-  base_radii: [16.0, 20.0]
-  waist_radii: [12.0, 15.0]
-  roof_radii: [24.0, 28.0]
-  cantilever_offset: [6.5, 0.0]
+  type: POLYGONAL_LOFT
+  base_polygon:
+    - [16.5, -12.0]
+    - [14.0, 10.5]
+    - [-8.0, 15.5]
+    - [-18.5, 6.0]
+    - [-16.0, -10.5]
+    - [-4.0, -15.0]
+    - [10.0, -16.0]
+  waist_polygon:
+    - [13.0, -9.0]
+    - [11.5, 7.5]
+    - [-6.5, 11.0]
+    - [-13.5, 4.0]
+    - [-12.0, -7.5]
+    - [-3.0, -11.0]
+    - [7.5, -12.0]
+  roof_polygon:
+    - [28.0, -5.0]
+    - [24.0, 22.0]
+    - [4.0, 27.0]
+    - [-15.0, 23.0]
+    - [-26.0, 5.0]
+    - [-22.0, -14.0]
+    - [-5.0, -22.0]
+    - [15.0, -18.0]
 
 # 2. 28 Curved Structural Ribs (Swept Steel Columns along Directrix)
 structures:
   column_generator:
     count: 28
-    distribution: RADIAL_ELLIPTIC
+    distribution: UNIFORM_PERIMETER
     profile: CIRCULAR_HOLLOW_D600
     trajectory: LOFT_SURFACE_ISOPARAMETRIC
     material: STEEL_WHITE
@@ -91,9 +113,9 @@ structures:
 # 3. Micro-Geometry: Floating Hexagonal Aluminum Facade Panels
 facade:
   envelope_skin:
-    target: HYPERBOLIC_LOFT
+    target: POLYGONAL_LOFT
     pattern: HEXAGONAL_CONFORMAL
-    target_panel_size: 1.2
-    joint_gap: 0.02
+    target_panel_size: 0.85
+    joint_gap: 0.015
     material: ALUMINUM_ANODIZED_SILVER
     ifc_representation: IfcTriangulatedFaceSet

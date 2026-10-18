@@ -8,7 +8,7 @@ import math
 from typing import Dict, List, Literal, Optional, Tuple, Any
 import numpy as np
 
-from debim.geometry.loft import evaluate_loft_boundary, evaluate_loft_radii
+from debim.geometry.loft import evaluate_loft_boundary, evaluate_loft_point, evaluate_loft_radii
 from debim.schema import FacadeEnvelopeSkin, GeometryRules, ProjectManifest
 
 
@@ -112,40 +112,23 @@ def _evaluate_surface_point_and_frame(
     Computes 3D surface point P(u, z) and local orthonormal tangent frame (T_u, T_z, Normal).
     """
     H = max(total_height, 1e-6)
-    t = max(0.0, min(1.0, z / H))
 
-    a_z, b_z = evaluate_loft_radii(rules, z, total_height)
-    if rules.cantilever_offset is not None:
-        cx_top, cy_top = float(rules.cantilever_offset[0]), float(rules.cantilever_offset[1])
-        cx_z = t * cx_top
-        cy_z = t * cy_top
-    else:
-        cx_z, cy_z = 0.0, 0.0
-
-    p_center = np.array([cx_z + a_z * math.cos(u), cy_z + b_z * math.sin(u), z], dtype=float)
+    x0, y0 = evaluate_loft_point(rules, u, z, total_height)
+    p_center = np.array([x0, y0, z], dtype=float)
 
     # Compute numerical partial derivatives for tangent directions
     du = 1e-4
     dz = 1e-4
 
     # P(u + du, z)
-    p_u_plus = np.array([
-        cx_z + a_z * math.cos(u + du),
-        cy_z + b_z * math.sin(u + du),
-        z
-    ], dtype=float)
+    x_u, y_u = evaluate_loft_point(rules, u + du, z, total_height)
+    p_u_plus = np.array([x_u, y_u, z], dtype=float)
 
     # P(u, z + dz)
-    a_z_dz, b_z_dz = evaluate_loft_radii(rules, min(z + dz, total_height), total_height)
-    t_dz = max(0.0, min(1.0, (z + dz) / H))
-    cx_z_dz = t_dz * cx_top if rules.cantilever_offset else 0.0
-    cy_z_dz = t_dz * cy_top if rules.cantilever_offset else 0.0
-
-    p_z_plus = np.array([
-        cx_z_dz + a_z_dz * math.cos(u),
-        cy_z_dz + b_z_dz * math.sin(u),
-        z + dz
-    ], dtype=float)
+    z_plus = min(z + dz, total_height)
+    actual_dz = z_plus - z if z_plus > z else 1e-4
+    x_z, y_z = evaluate_loft_point(rules, u, z_plus, total_height)
+    p_z_plus = np.array([x_z, y_z, z_plus], dtype=float)
 
     tan_u = (p_u_plus - p_center) / du
     norm_tu = np.linalg.norm(tan_u)
@@ -154,7 +137,7 @@ def _evaluate_surface_point_and_frame(
     else:
         u1 = np.array([1.0, 0.0, 0.0])
 
-    tan_z = (p_z_plus - p_center) / dz
+    tan_z = (p_z_plus - p_center) / actual_dz
     norm_tz = np.linalg.norm(tan_z)
     if norm_tz > 1e-9:
         tz_unit = tan_z / norm_tz
@@ -213,9 +196,10 @@ def generate_facade_tessellation(
     w_flat = math.sqrt(3.0) * r_outer
     v_step = 1.5 * r_outer
 
-    # Average perimeter calculation
-    a_mid, b_mid = evaluate_loft_radii(rules, total_height / 2.0, total_height)
-    p_avg = math.pi * (3.0 * (a_mid + b_mid) - math.sqrt((3.0 * a_mid + b_mid) * (a_mid + 3.0 * b_mid)))
+    # Average perimeter calculation via boundary sampling
+    mid_boundary = evaluate_loft_boundary(rules, total_height / 2.0, total_height, n_points=64)
+    mid_diffs = np.diff(np.vstack([mid_boundary, mid_boundary[0]]), axis=0)
+    p_avg = float(np.sum(np.linalg.norm(mid_diffs, axis=1)))
     p_avg = max(p_avg, 1.0)
 
     n_u = max(6, int(round(p_avg / w_flat)))

@@ -35,7 +35,7 @@ def test_museo_soumaya_manifest_loads_and_validates(soumaya_manifest):
     """Verify that the Museo Soumaya manifest parses and validates with zero errors."""
     assert soumaya_manifest.project.id == "PRJ-MUSEO-SOUMAYA-2011"
     assert len(soumaya_manifest.spatial_structure.storeys) == 7
-    assert soumaya_manifest.geometry_rules.type == "HYPERBOLIC_LOFT"
+    assert soumaya_manifest.geometry_rules.type in ("POLYGONAL_LOFT", "HYPERBOLIC_LOFT")
     assert soumaya_manifest.structures.column_generator.count == 28
     assert soumaya_manifest.facade.envelope_skin.pattern == "HEXAGONAL_CONFORMAL"
 

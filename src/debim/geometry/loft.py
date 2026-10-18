@@ -36,6 +36,9 @@ def evaluate_loft_radii(
     H = max(total_height, 1e-6)
     t = max(0.0, min(1.0, z / H))
 
+    if rules.base_radii is None or rules.roof_radii is None:
+        return 15.0, 15.0
+
     a_base, b_base = float(rules.base_radii[0]), float(rules.base_radii[1])
     a_roof, b_roof = float(rules.roof_radii[0]), float(rules.roof_radii[1])
 
@@ -56,9 +59,6 @@ def evaluate_loft_radii(
             b_waist = 0.8 * (b_base + b_roof) / 2.0
 
         # Lagrange quadratic polynomial interpolation through t=0 (base), t=0.5 (waist), t=1.0 (roof)
-        # L0(t) = 2*(t-0.5)*(t-1.0)
-        # L1(t) = -4*t*(t-1.0)
-        # L2(t) = 2*t*(t-0.5)
         l0 = 2.0 * (t - 0.5) * (t - 1.0)
         l1 = -4.0 * t * (t - 1.0)
         l2 = 2.0 * t * (t - 0.5)
@@ -70,6 +70,78 @@ def evaluate_loft_radii(
     return a_base, b_base
 
 
+def _resample_closed_polygon(pts: np.ndarray, n_points: int) -> np.ndarray:
+    """Resamples a closed 2D polygon into n_points equidistant points along its perimeter."""
+    if len(pts) < 3:
+        return pts
+    # Close polygon
+    pts_closed = np.vstack([pts, pts[0]])
+    diffs = np.diff(pts_closed, axis=0)
+    seg_lens = np.linalg.norm(diffs, axis=1)
+    cum_dist = np.insert(np.cumsum(seg_lens), 0, 0.0)
+    total_len = cum_dist[-1]
+    if total_len < 1e-6:
+        return np.repeat(pts[:1], n_points, axis=0)
+
+    target_dists = np.linspace(0.0, total_len, n_points, endpoint=False)
+    new_x = np.interp(target_dists, cum_dist, pts_closed[:, 0])
+    new_y = np.interp(target_dists, cum_dist, pts_closed[:, 1])
+    return np.column_stack((new_x, new_y))
+
+
+def evaluate_loft_point(
+    rules: GeometryRules,
+    u: float,
+    z: float,
+    total_height: float,
+) -> Tuple[float, float]:
+    """
+    Evaluates 2D cross-sectional boundary point (x, y) at normalized azimuth parameter u in [0, 2pi)
+    and height z for any loft type including POLYGONAL_LOFT.
+    """
+    H = max(total_height, 1e-6)
+    t = max(0.0, min(1.0, z / H))
+
+    if rules.type == "POLYGONAL_LOFT" and (rules.base_polygon is not None and rules.roof_polygon is not None):
+        # Continuous interpolation between polygon stages
+        p_base = np.array(rules.base_polygon, dtype=float)
+        p_roof = np.array(rules.roof_polygon, dtype=float)
+        p_waist = np.array(rules.waist_polygon, dtype=float) if rules.waist_polygon is not None else None
+
+        # Resample all control polygons to high resolution (128 points)
+        N_RES = 128
+        b_res = _resample_closed_polygon(p_base, N_RES)
+        r_res = _resample_closed_polygon(p_roof, N_RES)
+        if p_waist is not None:
+            w_res = _resample_closed_polygon(p_waist, N_RES)
+            l0 = 2.0 * (t - 0.5) * (t - 1.0)
+            l1 = -4.0 * t * (t - 1.0)
+            l2 = 2.0 * t * (t - 0.5)
+            poly_t = l0 * b_res + l1 * w_res + l2 * r_res
+        else:
+            poly_t = (1.0 - t) * b_res + t * r_res
+
+        # Map u in [0, 2pi) to index in poly_t
+        u_norm = (u % (2.0 * math.pi)) / (2.0 * math.pi)
+        idx_float = u_norm * N_RES
+        i0 = int(math.floor(idx_float)) % N_RES
+        i1 = (i0 + 1) % N_RES
+        frac = idx_float - math.floor(idx_float)
+        pt = (1.0 - frac) * poly_t[i0] + frac * poly_t[i1]
+        return float(pt[0]), float(pt[1])
+
+    # Elliptical lofts (HYPERBOLIC, CYLINDRICAL, CONICAL)
+    a_z, b_z = evaluate_loft_radii(rules, z, total_height)
+    if rules.cantilever_offset is not None:
+        cx_top, cy_top = float(rules.cantilever_offset[0]), float(rules.cantilever_offset[1])
+        cx_z = t * cx_top
+        cy_z = t * cy_top
+    else:
+        cx_z, cy_z = 0.0, 0.0
+
+    return cx_z + a_z * math.cos(u), cy_z + b_z * math.sin(u)
+
+
 def evaluate_loft_boundary(
     rules: GeometryRules,
     z: float,
@@ -78,31 +150,11 @@ def evaluate_loft_boundary(
 ) -> np.ndarray:
     """
     Evaluates 2D cross-sectional boundary polygon points P(u, z) at height z.
-
-    Formula:
-      P(u, z) = C(z) + [a(z) * cos(u), b(z) * sin(u)]
-    where C(z) is the cantilever center offset at height z.
-
     Returns Nx2 numpy array of [x, y] coordinates.
     """
-    H = max(total_height, 1e-6)
-    t = max(0.0, min(1.0, z / H))
-
-    a_z, b_z = evaluate_loft_radii(rules, z, total_height)
-
-    # Cantilever lean offset C(z)
-    if rules.cantilever_offset is not None:
-        cx_top, cy_top = float(rules.cantilever_offset[0]), float(rules.cantilever_offset[1])
-        cx_z = t * cx_top
-        cy_z = t * cy_top
-    else:
-        cx_z, cy_z = 0.0, 0.0
-
-    u = np.linspace(0.0, 2.0 * np.pi, n_points, endpoint=False)
-    x = cx_z + a_z * np.cos(u)
-    y = cy_z + b_z * np.sin(u)
-
-    return np.column_stack((x, y))
+    u_vals = np.linspace(0.0, 2.0 * np.pi, n_points, endpoint=False)
+    pts = [evaluate_loft_point(rules, u, z, total_height) for u in u_vals]
+    return np.array(pts, dtype=float)
 
 
 def generate_loft_storey_elements(
@@ -258,20 +310,10 @@ def generate_curved_spine_columns(
             z2 = z1 + storey.height
 
             # Evaluate (x1, y1) at base of storey
-            a_z1, b_z1 = evaluate_loft_radii(rules, z1, total_height)
-            t1 = max(0.0, min(1.0, z1 / max(total_height, 1e-6)))
-            cx1 = t1 * float(rules.cantilever_offset[0]) if rules.cantilever_offset else 0.0
-            cy1 = t1 * float(rules.cantilever_offset[1]) if rules.cantilever_offset else 0.0
-            x1 = cx1 + a_z1 * math.cos(u)
-            y1 = cy1 + b_z1 * math.sin(u)
+            x1, y1 = evaluate_loft_point(rules, u, z1, total_height)
 
             # Evaluate (x2, y2) at top of storey
-            a_z2, b_z2 = evaluate_loft_radii(rules, z2, total_height)
-            t2 = max(0.0, min(1.0, z2 / max(total_height, 1e-6)))
-            cx2 = t2 * float(rules.cantilever_offset[0]) if rules.cantilever_offset else 0.0
-            cy2 = t2 * float(rules.cantilever_offset[1]) if rules.cantilever_offset else 0.0
-            x2 = cx2 + a_z2 * math.cos(u)
-            y2 = cy2 + b_z2 * math.sin(u)
+            x2, y2 = evaluate_loft_point(rules, u, z2, total_height)
 
             top_st_id = sorted_storeys[s_idx + 1].id if s_idx + 1 < len(sorted_storeys) else storey.id
 

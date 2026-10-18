@@ -3999,11 +3999,15 @@ class BeamBay(BaseModel):
 
 
 class GeometryRules(BaseModel):
-    type: Literal["HYPERBOLIC_LOFT", "CYLINDRICAL_LOFT", "CONICAL_LOFT"]
-    base_radii: Tuple[float, float]
+    type: Literal["HYPERBOLIC_LOFT", "CYLINDRICAL_LOFT", "CONICAL_LOFT", "POLYGONAL_LOFT"]
+    base_radii: Optional[Tuple[float, float]] = None
     waist_radii: Optional[Tuple[float, float]] = None
-    roof_radii: Tuple[float, float]
+    roof_radii: Optional[Tuple[float, float]] = None
     cantilever_offset: Optional[Tuple[float, float]] = None
+    storey_profiles: Optional[Dict[str, List[Tuple[float, float]]]] = None
+    base_polygon: Optional[List[Tuple[float, float]]] = None
+    waist_polygon: Optional[List[Tuple[float, float]]] = None
+    roof_polygon: Optional[List[Tuple[float, float]]] = None
 
 
 class ColumnGenerator(BaseModel):
