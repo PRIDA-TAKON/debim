@@ -4,10 +4,10 @@ description: Deterministic BOQ generation, Quantitative Take-Off (QTO), and Decl
 ---
 
 # debim Skill — Deterministic BOQ & Declarative BIM Engine
-**Version:** 0.8.0 (The Engineering Productivity & High-Fidelity Release)  
-**Specification:** debim Standard Spatial & Declarative Language Specification v0.8.0
+**Version:** 1.0.0 (The Pure Algorithmic Architecture & Organic BIM Release)  
+**Specification:** debim Standard Spatial & Declarative Language Specification v1.0.0
 
-This skill empowers AI agents to generate professional, deterministic **Bills of Quantities (BOQ)**, calculate structural material quantities (**QTO**), and compile international standard **IFC4 BIM models** from architectural descriptions or sketches without hallucinating numbers.
+This skill empowers AI agents to generate professional, deterministic **Bills of Quantities (BOQ)**, calculate structural material quantities (**QTO**), model **complex organic & algorithmic freeform architectures (lofts, swept columns, diagrid bracing, hexagonal facades)**, and compile international standard **IFC4 BIM models** from architectural descriptions or sketches without hallucinating numbers.
 
 ---
 
@@ -457,6 +457,45 @@ elements:
       offset_y: 0.00
       base_storey: FL1
       top_storey: FL2
+```
+
+### 10. The Pure Algorithmic Architecture Engine & Organic Lofts (v1.0.0 GA)
+When tasked with modeling double-curved landmark buildings (e.g. Museo Soumaya, Guggenheim, twist towers, or organic amphitheaters):
+```yaml
+# 1. Macro-Geometry: Asymmetric Multi-Level Organic Polygon Loft
+geometry_rules:
+  type: POLYGONAL_LOFT # or HYPERBOLIC_LOFT / CYLINDRICAL_LOFT / CONICAL_LOFT
+  base_polygon:
+    - [-26.84, -3.92]
+    - [35.19, -3.92]
+    - [-0.06, 31.96]
+  waist_polygon:
+    - [-16.34, -3.35]
+    - [14.40, -3.35]
+    - [-2.17, 16.61]
+  roof_polygon:
+    - [-16.59, -3.15]
+    - [20.93, -3.15]
+    - [1.34, 21.21]
+
+# 2. Swept Curved Columns, Diagrid X-Bracing, & Compression Rings
+structures:
+  column_generator:
+    count: 28
+    distribution: UNIFORM_PERIMETER
+    profile: CIRCULAR_HOLLOW_D600
+    trajectory: LOFT_SURFACE_ISOPARAMETRIC
+    material: STEEL_WHITE
+
+# 3. Conformal Hexagonal Facade Panels
+facade:
+  envelope_skin:
+    target: POLYGONAL_LOFT
+    pattern: HEXAGONAL_CONFORMAL # or VORONOI_CENTROIDAL
+    target_panel_size: 0.85
+    joint_gap: 0.015
+    material: ALUMINUM_ANODIZED_SILVER
+    ifc_representation: IfcTriangulatedFaceSet
 ```
 
 ---

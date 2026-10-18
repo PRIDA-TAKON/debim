@@ -1,4 +1,4 @@
-# debim v0.8.0 — Declarative BIM & Building-as-Code Engine for AI Agents
+# debim v1.0.0 — Declarative BIM & Building-as-Code Engine for AI Agents
 
 > **debim** is a Git-native, declarative Building Information Modeling (BIM) compiler designed specifically for AI agents (Antigravity, Claude Code, Cursor, AutoGen, CrewAI, ChatGPT) and human engineers/architects.
 
@@ -6,6 +6,7 @@
 When a user asks you to:
 - Generate a Bill of Quantities (BOQ) or Cost Estimate from an architectural sketch, floor plan, or room dimensions.
 - Calculate concrete volume, formwork area, structural steel weight, or rebar schedules (especially Thai government CGD ว480 standards).
+- Model **Pure Algorithmic Architecture & Organic Freeform Buildings** (multi-level polygonal lofts, swept curved columns, full-height diagrid X-bracing, and conformal hexagonal facades like Museo Soumaya).
 - Model multi-bay modular buildings (e.g. 4-bay shophouses, townhouses) without duplicating code.
 - Model pitched or Thai-Isan vernacular roofs (Gable-Hip/Manila, Hip, Gable) without manual Euler angle math.
 - Model standard RC monolithic stairs (Dog-Leg with landings) and slab double-volume voids.
