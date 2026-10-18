@@ -4015,6 +4015,19 @@ class ColumnGenerator(BaseModel):
     layer: Optional[str] = "S-COLS"
 
 
+class FacadeEnvelopeSkin(BaseModel):
+    target: str
+    pattern: Literal["HEXAGONAL_CONFORMAL", "VORONOI_CENTROIDAL"] = "HEXAGONAL_CONFORMAL"
+    target_panel_size: float = 0.55
+    joint_gap: float = 0.02
+    material: str = "ALUMINUM_ANODIZED_SILVER"
+    ifc_representation: Literal["IfcTriangulatedFaceSet", "IfcMappedItem"] = "IfcTriangulatedFaceSet"
+
+
+class FacadeConfig(BaseModel):
+    envelope_skin: Optional[FacadeEnvelopeSkin] = None
+
+
 class StructuresConfig(BaseModel):
     column_generator: Optional[ColumnGenerator] = None
 
@@ -4028,6 +4041,7 @@ class ProjectManifest(BaseModel):
     elements: List[Element] = Field(default_factory=list)
     geometry_rules: Optional[GeometryRules] = None
     structures: Optional[StructuresConfig] = None
+    facade: Optional[FacadeConfig] = None
     modules: Optional[List[ModuleDefinition]] = None
     instances: Optional[List[InstanceConfig]] = None
     macro_elements: Optional[List[Union[ColumnGrid, BeamBay, Dict[str, Any]]]] = None

@@ -2207,6 +2207,78 @@ class StepSerializer:
             if st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
 
+        # 5.15 Facade Envelope Skin Tessellation
+        facade_tess = getattr(resolved, "facade_tessellation", None)
+        if facade_tess is None and hasattr(resolved, "manifest") and resolved.manifest:
+            if resolved.manifest.facade and resolved.manifest.facade.envelope_skin and resolved.manifest.geometry_rules:
+                from debim.geometry.tessellation import generate_facade_tessellation
+                facade_tess = generate_facade_tessellation(resolved.manifest)
+
+        if facade_tess and facade_tess.panels:
+            first_st_id = list(storey_pl_refs.keys())[0] if storey_pl_refs else None
+            st_pl_ref = storey_pl_refs.get(first_st_id) if first_st_id else None
+
+            cw_pt = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+            cw_axis = self.create_entity("IfcAxis2Placement3D", cw_pt, None, None)
+            cw_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, cw_axis)
+
+            if facade_tess.ifc_representation == "IfcMappedItem":
+                r_outer = facade_tess.target_panel_size / 2.0
+                r_panel = max(r_outer - facade_tess.joint_gap / 2.0, 0.01)
+                master_verts = []
+                for k in range(6):
+                    angle_k = math.pi / 6.0 + k * (math.pi / 3.0)
+                    master_verts.append((r_panel * math.cos(angle_k), r_panel * math.sin(angle_k), 0.0))
+                master_faces = [(1, 2, 3), (1, 3, 4), (1, 4, 5), (1, 5, 6)]
+
+                pt_list_ref = self.create_entity("IfcCartesianPointList3D", master_verts)
+                tfs_ref = self.create_entity("IfcTriangulatedFaceSet", pt_list_ref, None, ".F.", master_faces)
+                master_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "Tessellation", [tfs_ref])
+
+                origin_pt = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                origin_axis = self.create_entity("IfcAxis2Placement3D", origin_pt, None, None)
+                rep_map = self.create_entity("IfcRepresentationMap", origin_axis, master_rep)
+
+                mapped_item_refs = []
+                for panel in facade_tess.panels:
+                    cx, cy, cz = panel.center
+                    ux, uy, uz = panel.tangent_u
+                    vx, vy, vz = panel.tangent_v
+                    nx, ny, nz = panel.normal
+
+                    loc_pt = self.create_entity("IfcCartesianPoint", (cx, cy, cz))
+                    u_dir = self.create_entity("IfcDirection", (ux, uy, uz))
+                    v_dir = self.create_entity("IfcDirection", (vx, vy, vz))
+                    n_dir = self.create_entity("IfcDirection", (nx, ny, nz))
+
+                    transform_op = self.create_entity("IfcCartesianTransformationOperator3D", u_dir, v_dir, loc_pt, 1.0, n_dir)
+                    mapped_item = self.create_entity("IfcMappedItem", rep_map, transform_op)
+                    mapped_item_refs.append(mapped_item)
+
+                skin_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "MappedRepresentation", mapped_item_refs)
+            else:
+                combined_pts, combined_indices = facade_tess.get_combined_tessellation_mesh()
+                pt_list_ref = self.create_entity("IfcCartesianPointList3D", combined_pts)
+                tfs_ref = self.create_entity("IfcTriangulatedFaceSet", pt_list_ref, None, ".F.", combined_indices)
+                skin_rep = self.create_entity("IfcShapeRepresentation", body_context_ref, "Body", "Tessellation", [tfs_ref])
+
+            prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [skin_rep])
+            cw_ref = self.create_entity(
+                "IfcCurtainWall",
+                generate_ifc_guid(),
+                None,
+                "FACADE-ENVELOPE-SKIN",
+                None,
+                None,
+                cw_pl,
+                prod_shape_ref,
+                None,
+                ".USERDEFINED.",
+            )
+            element_tag_refs["FACADE-ENVELOPE-SKIN"] = cw_ref
+            if first_st_id and first_st_id in storey_elements:
+                storey_elements[first_st_id].append(cw_ref)
+
         # 5.2 Plates
         for plate in resolved.plates:
             st_id = plate.element.placement.storey
@@ -3918,6 +3990,83 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         )
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
         ifcopenshell.api.run("geometry.assign_representation", model, product=cw_obj, representation=rep)
+
+    # 5.15 Facade Envelope Skin Tessellation
+    facade_tess = getattr(resolved, "facade_tessellation", None)
+    if facade_tess is None and hasattr(resolved, "manifest") and resolved.manifest:
+        if resolved.manifest.facade and resolved.manifest.facade.envelope_skin and resolved.manifest.geometry_rules:
+            from debim.geometry.tessellation import generate_facade_tessellation
+            facade_tess = generate_facade_tessellation(resolved.manifest)
+
+    if facade_tess and facade_tess.panels:
+        facade_cw = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class="IfcCurtainWall",
+            name="FACADE-ENVELOPE-SKIN",
+            predefined_type="USERDEFINED",
+        )
+        if storey_products:
+            first_st = list(storey_products.keys())[0]
+            storey_products[first_st].append(facade_cw)
+
+        if facade_tess.ifc_representation == "IfcMappedItem":
+            r_outer = facade_tess.target_panel_size / 2.0
+            r_panel = max(r_outer - facade_tess.joint_gap / 2.0, 0.01)
+            master_verts = []
+            for k in range(6):
+                angle_k = math.pi / 6.0 + k * (math.pi / 3.0)
+                master_verts.append([r_panel * math.cos(angle_k), r_panel * math.sin(angle_k), 0.0])
+            master_faces = [[1, 2, 3], [1, 3, 4], [1, 4, 5], [1, 5, 6]]
+
+            local_pts = model.createIfcCartesianPointList3D(master_verts)
+            master_tfs = model.createIfcTriangulatedFaceSet(Coordinates=local_pts, CoordIndex=master_faces, Closed=False)
+            master_rep = model.createIfcShapeRepresentation(
+                ContextOfItems=body_context,
+                RepresentationIdentifier="Body",
+                RepresentationType="Tessellation",
+                Items=[master_tfs],
+            )
+            origin_pt = model.createIfcCartesianPoint((0.0, 0.0, 0.0))
+            origin_axis = model.createIfcAxis2Placement3D(Location=origin_pt)
+            rep_map = model.createIfcRepresentationMap(MappingOrigin=origin_axis, MappedRepresentation=master_rep)
+
+            mapped_items = []
+            for panel in facade_tess.panels:
+                cx, cy, cz = panel.center
+                ux, uy, uz = panel.tangent_u
+                vx, vy, vz = panel.tangent_v
+                nx, ny, nz = panel.normal
+
+                loc_pt = model.createIfcCartesianPoint((cx, cy, cz))
+                transform_op = model.createIfcCartesianTransformationOperator3D(
+                    Axis1=model.createIfcDirection((ux, uy, uz)),
+                    Axis2=model.createIfcDirection((vx, vy, vz)),
+                    LocalOrigin=loc_pt,
+                    Scale=1.0,
+                    Axis3=model.createIfcDirection((nx, ny, nz)),
+                )
+                mapped_item = model.createIfcMappedItem(MappingSource=rep_map, MappingTarget=transform_op)
+                mapped_items.append(mapped_item)
+
+            skin_rep = model.createIfcShapeRepresentation(
+                ContextOfItems=body_context,
+                RepresentationIdentifier="Body",
+                RepresentationType="MappedRepresentation",
+                Items=mapped_items,
+            )
+            ifcopenshell.api.run("geometry.assign_representation", model, product=facade_cw, representation=skin_rep)
+        else:
+            combined_pts, combined_indices = facade_tess.get_combined_tessellation_mesh()
+            pt_list = model.createIfcCartesianPointList3D(combined_pts)
+            face_set = model.createIfcTriangulatedFaceSet(Coordinates=pt_list, CoordIndex=combined_indices, Closed=False)
+            skin_rep = model.createIfcShapeRepresentation(
+                ContextOfItems=body_context,
+                RepresentationIdentifier="Body",
+                RepresentationType="Tessellation",
+                Items=[face_set],
+            )
+            ifcopenshell.api.run("geometry.assign_representation", model, product=facade_cw, representation=skin_rep)
 
     # 5.2 Plates
     for plate in resolved.plates:

@@ -3412,6 +3412,69 @@
       "title": "EnergyConversionPlacement",
       "type": "object"
     },
+    "FacadeConfig": {
+      "properties": {
+        "envelope_skin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FacadeEnvelopeSkin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "FacadeConfig",
+      "type": "object"
+    },
+    "FacadeEnvelopeSkin": {
+      "properties": {
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "pattern": {
+          "default": "HEXAGONAL_CONFORMAL",
+          "enum": [
+            "HEXAGONAL_CONFORMAL",
+            "VORONOI_CENTROIDAL"
+          ],
+          "title": "Pattern",
+          "type": "string"
+        },
+        "target_panel_size": {
+          "default": 0.55,
+          "title": "Target Panel Size",
+          "type": "number"
+        },
+        "joint_gap": {
+          "default": 0.02,
+          "title": "Joint Gap",
+          "type": "number"
+        },
+        "material": {
+          "default": "ALUMINUM_ANODIZED_SILVER",
+          "title": "Material",
+          "type": "string"
+        },
+        "ifc_representation": {
+          "default": "IfcTriangulatedFaceSet",
+          "enum": [
+            "IfcTriangulatedFaceSet",
+            "IfcMappedItem"
+          ],
+          "title": "Ifc Representation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target"
+      ],
+      "title": "FacadeEnvelopeSkin",
+      "type": "object"
+    },
     "FlowMovingPlacement": {
       "properties": {
         "storey": {
@@ -16761,6 +16824,17 @@
       "anyOf": [
         {
           "$ref": "#/$defs/StructuresConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "facade": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FacadeConfig"
         },
         {
           "type": "null"
