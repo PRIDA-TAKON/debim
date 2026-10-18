@@ -1,0 +1,39 @@
+[
+  {
+    "wave": 1,
+    "issue_key": "wave_1_algorithmic_lofts_macro_geometry",
+    "match_keywords": ["algorithmic loft", "macro-geometry", "hyperbolic loft", "geometry_rules", "loft engine"],
+    "next_issue": {
+      "title": "feat(structures): 3D directrix spine & swept curved columns (IfcSectionedSpine)",
+      "body": "### Overview\nAs part of debim v1.0.0 Wave 2 (\"The Pure Algorithmic Architecture\"), implement 3D curved structural ribs/columns following 3D spline directrix trajectories (such as the 28 curved steel columns of Museo Soumaya) that travel along the outer hyperbolic loft boundary.\n\n### Tasks\n1. In `src/debim/schema.py`: Support `structures.column_generator`:\n   - `count: int` (e.g. 28 columns)\n   - `distribution: Literal['RADIAL_ELLIPTIC', 'UNIFORM_PERIMETER']`\n   - `profile: str` (e.g. 'CIRCULAR_HOLLOW_D600')\n   - `trajectory: Literal['LOFT_SURFACE_ISOPARAMETRIC', 'DIRECTRIX_SPLINE']`\n2. In `src/debim/compiler.py`:\n   - Generate curved 3D column trajectories interpolating loft surface points at each storey.\n   - Compile columns to IFC4 as segmented `IfcColumn` chains or `IfcSectionedSpine` geometry preserving structural continuity and connectivity to floor beams.\n3. In `src/debim/qto.py`: Calculate total curved structural steel linear meters and weight based on the 3D arc lengths.\n4. In `src/debim/viewer.py`: Render smooth 3D curved columns in WebGL viewer.\n5. Unit tests in `tests/test_curved_spine_columns.py`.\n\n### Acceptance Criteria\n- Compiles 28 curved structural columns smoothly wrapped around hyperbolic lofts.\n- Accurate QTO linear meter and steel tonnage calculation.\n- `pytest tests/test_curved_spine_columns.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "wave": 2,
+    "issue_key": "wave_2_curved_spine_columns",
+    "match_keywords": ["curved column", "directrix spine", "swept column", "IfcSectionedSpine", "column generator"],
+    "next_issue": {
+      "title": "feat(facade): conformal hexagonal tessellation & high-performance IfcTriangulatedFaceSet export",
+      "body": "### Overview\nAs part of debim v1.0.0 Wave 3 (\"The Pure Algorithmic Architecture\"), implement algorithmic surface discretization of double-curved facade lofts into thousands of hexagonal panels (Centroidal Voronoi / Hexagonal Tessellation like Museo Soumaya's 16,000 aluminum tiles) with ultra-lightweight IFC4 export.\n\n### Tasks\n1. In `src/debim/geometry/tessellation.py`: Implement conformal hexagonal grid generation on parametric loft surfaces:\n   - `target_panel_size: float` (e.g. 0.55m diameter)\n   - `joint_gap: float` (e.g. 0.02m reveal gap)\n   - Fast UV-to-3D projection with constant planar hex tiles.\n2. In `src/debim/compiler.py`: Compile tens of thousands of panels efficiently without memory bloat using:\n   - Grouped `IfcCurtainWall` containing indexed `IfcTriangulatedFaceSet`.\n   - Or instanced `IfcMappedItem` geometry to keep IFC file size under 5 MB for 16,000 panels.\n3. In `src/debim/viewer.py`: Implement Three.js InstancedMesh rendering for 60 FPS real-time rendering in browser.\n4. In `src/debim/qto.py`: Calculate panel counts, total facade surface area, and anodized aluminum BOQ quantities.\n5. Unit tests in `tests/test_hexagonal_tessellation.py`.\n\n### Acceptance Criteria\n- Discretizes double-curved loft surface into hexagonal cladding tiles with uniform gaps.\n- Compiles to lightweight IFC4 and renders smoothly in WebGL.\n- `pytest tests/test_hexagonal_tessellation.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "wave": 3,
+    "issue_key": "wave_3_conformal_hexagonal_tessellation",
+    "match_keywords": ["hexagonal tessellation", "voronoi", "tessellation", "IfcTriangulatedFaceSet", "facade panels"],
+    "next_issue": {
+      "title": "feat(benchmark): flagship Museo Soumaya benchmark project (examples/museo_soumaya/) & v1.0.0 GA validation",
+      "body": "### Overview\nAs the crowning milestone of debim v1.0.0 Wave 4 (Final Milestone), integrate the entire Pure Algorithmic Architecture stack into the official flagship showcase: **Museo Soumaya** (Fernando Romero / Arup, Mexico City) — 7-storey asymmetric hyperbolic loft, 28 curved columns, and ~16,000 hexagonal aluminum panels, with live standards sync.\n\n### Tasks\n1. Author `examples/museo_soumaya/project.yaml` using the debim v1.0.0 algorithmic syntax.\n2. Connect live standards (`PRIDA-TAKON/debim-standards`) for CGD v480 pricing, aluminum facade rates, and embodied carbon.\n3. Provide end-to-end integration tests in `tests/test_museo_soumaya_benchmark.py`:\n   - `debim validate examples/museo_soumaya/project.yaml` passes.\n   - `debim qto examples/museo_soumaya/project.yaml` calculates correct surface area and steel tonnage.\n   - `debim compile examples/museo_soumaya/project.yaml -o dist/soumaya.ifc` completes in < 10 seconds.\n   - `debim view examples/museo_soumaya/project.yaml -e dist/soumaya.html` exports interactive 3D WebGL viewer.\n4. Update documentation with visual preview in `docs/examples/museo_soumaya.md`.\n\n### Acceptance Criteria\n- Complete end-to-end execution of Museo Soumaya benchmark passes without errors.\n- IFC4 model validates successfully under BuildingSMART standards.\n- `pytest tests/test_museo_soumaya_benchmark.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "wave": 4,
+    "issue_key": "wave_4_museo_soumaya_benchmark",
+    "match_keywords": ["museo soumaya", "soumaya benchmark", "flagship benchmark", "v1.0.0 ga"],
+    "is_final_wave": true,
+    "next_issue": null
+  }
+]
