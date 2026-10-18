@@ -1705,6 +1705,135 @@
       "title": "ClearanceEnvelope",
       "type": "object"
     },
+    "ColumnGenerator": {
+      "properties": {
+        "count": {
+          "default": 28,
+          "title": "Count",
+          "type": "integer"
+        },
+        "distribution": {
+          "default": "RADIAL_ELLIPTIC",
+          "enum": [
+            "RADIAL_ELLIPTIC",
+            "UNIFORM_PERIMETER"
+          ],
+          "title": "Distribution",
+          "type": "string"
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "discriminator": {
+                "mapping": {
+                  "ARBITRARY": "#/$defs/ArbitraryProfile",
+                  "ARBITRARY_CLOSED": "#/$defs/ArbitraryProfile",
+                  "ARBITRARY_WITH_VOIDS": "#/$defs/ArbitraryProfile",
+                  "BOX": "#/$defs/BoxProfile",
+                  "BOX_HOLLOW": "#/$defs/RectangleHollowProfile",
+                  "C": "#/$defs/UShapeProfile",
+                  "CHS": "#/$defs/CircleHollowProfile",
+                  "CIRCLE_HOLLOW": "#/$defs/CircleHollowProfile",
+                  "CIRCULAR": "#/$defs/CircularProfile",
+                  "CSHAPE": "#/$defs/UShapeProfile",
+                  "ELLIPSE": "#/$defs/EllipseProfile",
+                  "H": "#/$defs/IShapeProfile",
+                  "I": "#/$defs/IShapeProfile",
+                  "ISHAPE": "#/$defs/IShapeProfile",
+                  "L": "#/$defs/LShapeProfile",
+                  "LSHAPE": "#/$defs/LShapeProfile",
+                  "PIPE_HOLLOW": "#/$defs/CircleHollowProfile",
+                  "POLYGON": "#/$defs/ArbitraryProfile",
+                  "RECTANGLE_HOLLOW": "#/$defs/RectangleHollowProfile",
+                  "RHS": "#/$defs/RectangleHollowProfile",
+                  "T": "#/$defs/TShapeProfile",
+                  "TSHAPE": "#/$defs/TShapeProfile",
+                  "U": "#/$defs/UShapeProfile",
+                  "USHAPE": "#/$defs/UShapeProfile"
+                },
+                "propertyName": "shape"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/BoxProfile"
+                },
+                {
+                  "$ref": "#/$defs/CircularProfile"
+                },
+                {
+                  "$ref": "#/$defs/EllipseProfile"
+                },
+                {
+                  "$ref": "#/$defs/IShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/LShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/UShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/TShapeProfile"
+                },
+                {
+                  "$ref": "#/$defs/RectangleHollowProfile"
+                },
+                {
+                  "$ref": "#/$defs/CircleHollowProfile"
+                },
+                {
+                  "$ref": "#/$defs/ArbitraryProfile"
+                }
+              ]
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          ],
+          "default": "CIRCULAR_HOLLOW_D600",
+          "title": "Profile"
+        },
+        "trajectory": {
+          "default": "LOFT_SURFACE_ISOPARAMETRIC",
+          "enum": [
+            "LOFT_SURFACE_ISOPARAMETRIC",
+            "DIRECTRIX_SPLINE"
+          ],
+          "title": "Trajectory",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "S-COLS",
+          "title": "Layer"
+        }
+      },
+      "title": "ColumnGenerator",
+      "type": "object"
+    },
     "ColumnGrid": {
       "description": "Macro specification for 2D/3D column array generation across grid intersections.",
       "properties": {
@@ -15826,6 +15955,23 @@
       "title": "Storey",
       "type": "object"
     },
+    "StructuresConfig": {
+      "properties": {
+        "column_generator": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ColumnGenerator"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "StructuresConfig",
+      "type": "object"
+    },
     "SweptDiskSolid": {
       "properties": {
         "type": {
@@ -16604,6 +16750,17 @@
       "anyOf": [
         {
           "$ref": "#/$defs/GeometryRules"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "structures": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StructuresConfig"
         },
         {
           "type": "null"

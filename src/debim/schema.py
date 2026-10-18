@@ -222,10 +222,12 @@ def parse_steel_section_spec(section: str) -> dict:
             "wall_thickness": t / 1000.0,
         }
 
-    # CHS / Pipe: e.g. CHS114.3X4.5 or PIPE100X4
-    m = re.match(r"^(?:CHS|PIPE)?([0-9.]+)[X*]([0-9.]+)$", s)
+    # CHS / Pipe / Circular Hollow: e.g. CHS114.3X4.5, PIPE100X4, CIRCULAR_HOLLOW_D600, D600
+    s_clean = s.replace("_", "")
+    m = re.match(r"^(?:CHS|PIPE|CIRCULARHOLLOWD|CIRCULARHOLLOW|D)?([0-9.]+)(?:[X*]([0-9.]+))?$", s_clean)
     if m:
-        dia, t = map(float, m.groups())
+        dia = float(m.group(1))
+        t = float(m.group(2)) if m.group(2) else 20.0
         return {
             "diameter": dia / 1000.0,
             "radius": dia / 2000.0,
@@ -4004,6 +4006,19 @@ class GeometryRules(BaseModel):
     cantilever_offset: Optional[Tuple[float, float]] = None
 
 
+class ColumnGenerator(BaseModel):
+    count: int = 28
+    distribution: Literal["RADIAL_ELLIPTIC", "UNIFORM_PERIMETER"] = "RADIAL_ELLIPTIC"
+    profile: Union[str, Profile, Dict[str, Any]] = "CIRCULAR_HOLLOW_D600"
+    trajectory: Literal["LOFT_SURFACE_ISOPARAMETRIC", "DIRECTRIX_SPLINE"] = "LOFT_SURFACE_ISOPARAMETRIC"
+    material: Optional[str] = None
+    layer: Optional[str] = "S-COLS"
+
+
+class StructuresConfig(BaseModel):
+    column_generator: Optional[ColumnGenerator] = None
+
+
 class ProjectManifest(BaseModel):
     schema_version: str = Field(alias="schema", default="IFC4-Minimal")
     project: ProjectInfo
@@ -4012,6 +4027,7 @@ class ProjectManifest(BaseModel):
     materials: List[Material]
     elements: List[Element] = Field(default_factory=list)
     geometry_rules: Optional[GeometryRules] = None
+    structures: Optional[StructuresConfig] = None
     modules: Optional[List[ModuleDefinition]] = None
     instances: Optional[List[InstanceConfig]] = None
     macro_elements: Optional[List[Union[ColumnGrid, BeamBay, Dict[str, Any]]]] = None

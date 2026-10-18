@@ -7294,7 +7294,7 @@ class SpatialResolver:
 
     def resolve(self) -> ResolvedManifest:
         if self.manifest.geometry_rules is not None:
-            from debim.geometry.loft import generate_loft_storey_elements
+            from debim.geometry.loft import generate_curved_spine_columns, generate_loft_storey_elements
             loft_slabs, loft_walls = generate_loft_storey_elements(self.manifest)
             existing_tags = {e.tag for e in self.manifest.elements}
             for ls in loft_slabs:
@@ -7305,6 +7305,12 @@ class SpatialResolver:
                 if lw.tag not in existing_tags:
                     self.manifest.elements.append(lw)
                     existing_tags.add(lw.tag)
+
+            curved_cols = generate_curved_spine_columns(self.manifest)
+            for cc in curved_cols:
+                if cc.tag not in existing_tags:
+                    self.manifest.elements.append(cc)
+                    existing_tags.add(cc.tag)
 
         resolved_manifest = ResolvedManifest(manifest=self.manifest)
 

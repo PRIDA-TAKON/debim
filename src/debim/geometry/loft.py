@@ -7,7 +7,19 @@ import math
 from typing import List, Optional, Tuple
 import numpy as np
 
-from debim.schema import GeometryRules, IfcSlab, IfcWall, ProjectManifest, SlabPlacement, WallPlacement
+from debim.schema import (
+    BoxProfile,
+    CircleHollowProfile,
+    ColumnPlacement,
+    GeometryRules,
+    IfcColumn,
+    IfcSlab,
+    IfcWall,
+    ProjectManifest,
+    SlabPlacement,
+    WallPlacement,
+    parse_steel_section_spec,
+)
 
 
 def evaluate_loft_radii(
@@ -169,3 +181,115 @@ def generate_loft_storey_elements(
             walls.append(wall)
 
     return slabs, walls
+
+
+def generate_curved_spine_columns(
+    manifest: ProjectManifest,
+) -> List[IfcColumn]:
+    """
+    Generates 3D curved structural ribs/columns following 3D spline directrix
+    trajectories (such as the 28 curved columns of Museo Soumaya) travelling along
+    the outer hyperbolic loft boundary across storeys.
+    """
+    if manifest.geometry_rules is None or manifest.structures is None:
+        return []
+    if manifest.structures.column_generator is None:
+        return []
+
+    rules = manifest.geometry_rules
+    gen = manifest.structures.column_generator
+    storeys = manifest.spatial_structure.storeys
+    if not storeys:
+        return []
+
+    sorted_storeys = sorted(storeys, key=lambda s: s.elevation)
+    top_storey = sorted_storeys[-1]
+    total_height = top_storey.elevation + top_storey.height
+
+    count = gen.count
+    if count <= 0:
+        return []
+
+    # Parse profile
+    prof_raw = gen.profile
+    if isinstance(prof_raw, str):
+        parsed_sec = parse_steel_section_spec(prof_raw)
+        if "diameter" in parsed_sec and "wall_thickness" in parsed_sec:
+            prof_obj = CircleHollowProfile(
+                shape="CIRCLE_HOLLOW",
+                diameter=parsed_sec["diameter"],
+                wall_thickness=parsed_sec["wall_thickness"],
+            )
+        elif "width" in parsed_sec and "depth" in parsed_sec:
+            prof_obj = BoxProfile(
+                shape="BOX",
+                width=parsed_sec["width"],
+                depth=parsed_sec["depth"],
+            )
+        else:
+            prof_obj = CircleHollowProfile(
+                shape="CIRCLE_HOLLOW",
+                diameter=0.60,
+                wall_thickness=0.02,
+            )
+    elif isinstance(prof_raw, dict):
+        prof_obj = prof_raw
+    else:
+        prof_obj = prof_raw
+
+    # Determine material (prefer steel if available)
+    mat_id = gen.material or "STEEL"
+    if manifest.materials:
+        mat_ids = [m.id for m in manifest.materials]
+        if mat_id not in mat_ids:
+            steel_mats = [m.id for m in manifest.materials if (m.category or "").lower() in ("steel", "metal")]
+            mat_id = steel_mats[0] if steel_mats else mat_ids[0]
+
+    # Angles for each column
+    u_angles = [2.0 * math.pi * k / count for k in range(count)]
+
+    columns: List[IfcColumn] = []
+
+    # For each column index k
+    for k, u in enumerate(u_angles):
+        # Generate continuous curved spine segments across each storey
+        for s_idx, storey in enumerate(sorted_storeys):
+            z1 = storey.elevation
+            z2 = z1 + storey.height
+
+            # Evaluate (x1, y1) at base of storey
+            a_z1, b_z1 = evaluate_loft_radii(rules, z1, total_height)
+            t1 = max(0.0, min(1.0, z1 / max(total_height, 1e-6)))
+            cx1 = t1 * float(rules.cantilever_offset[0]) if rules.cantilever_offset else 0.0
+            cy1 = t1 * float(rules.cantilever_offset[1]) if rules.cantilever_offset else 0.0
+            x1 = cx1 + a_z1 * math.cos(u)
+            y1 = cy1 + b_z1 * math.sin(u)
+
+            # Evaluate (x2, y2) at top of storey
+            a_z2, b_z2 = evaluate_loft_radii(rules, z2, total_height)
+            t2 = max(0.0, min(1.0, z2 / max(total_height, 1e-6)))
+            cx2 = t2 * float(rules.cantilever_offset[0]) if rules.cantilever_offset else 0.0
+            cy2 = t2 * float(rules.cantilever_offset[1]) if rules.cantilever_offset else 0.0
+            x2 = cx2 + a_z2 * math.cos(u)
+            y2 = cy2 + b_z2 * math.sin(u)
+
+            top_st_id = sorted_storeys[s_idx + 1].id if s_idx + 1 < len(sorted_storeys) else storey.id
+
+            col = IfcColumn(
+                tag=f"COL-CURVED-{k+1}-{storey.id}",
+                material=mat_id,
+                profile=prof_obj,
+                placement=ColumnPlacement(
+                    grid=(f"{x1:.4f}", f"{y1:.4f}"),
+                    top_grid=(f"{x2:.4f}", f"{y2:.4f}"),
+                    base_storey=storey.id,
+                    top_storey=top_st_id,
+                    base_elevation=z1,
+                    top_elevation=z2,
+                    height=storey.height,
+                ),
+                layer=gen.layer or "S-COLS",
+            )
+            columns.append(col)
+
+    return columns
