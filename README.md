@@ -85,6 +85,8 @@ Your agent will inspect the repository, install the dependencies, and verify eve
 
 ## 🔌 Model Context Protocol (MCP) Server
 
+[![Start MCP server over stdio on AI Agents Listing](https://aiagentslisting.com/start-mcp-server-over-stdio/badge.svg?claim=f00d0960b82d5893768a8a2b8596df32)](https://aiagentslisting.com/mcp/start-mcp-server-over-stdio)
+
 `debim` natively implements the official **[Model Context Protocol (MCP)](https://modelcontextprotocol.io/)** via `FastMCP` (Python SDK). It provides LLMs and AI Agents (such as Claude Desktop, Cursor, Cline, Windsurf, Devin, and Antigravity) with deterministic tools to model, inspect, calculate, compile, and visualize buildings directly via function calling.
 
 ### Connecting to Claude Desktop / Cursor / Cline
