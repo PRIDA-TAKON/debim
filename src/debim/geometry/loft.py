@@ -443,6 +443,107 @@ def generate_loft_ring_beams(
     return beams
 
 
+def generate_loft_diagrid_braces(
+    manifest: ProjectManifest,
+) -> List[IfcColumn]:
+    """
+    Generates diagonal cross braces (X-bracing / Diagrid) between adjacent curved columns
+    on each storey level, resisting lateral wind and seismic forces as engineered by Arup.
+    """
+    if manifest.geometry_rules is None or manifest.structures is None:
+        return []
+    if manifest.structures.column_generator is None:
+        return []
+
+    rules = manifest.geometry_rules
+    gen = manifest.structures.column_generator
+    storeys = manifest.spatial_structure.storeys
+    if not storeys:
+        return []
+
+    sorted_storeys = sorted(storeys, key=lambda s: s.elevation)
+    top_storey = sorted_storeys[-1]
+    total_height = top_storey.elevation + top_storey.height
+
+    count = gen.count
+    if count <= 0:
+        return []
+
+    brace_prof = CircleHollowProfile(
+        shape="CIRCLE_HOLLOW",
+        diameter=0.35,
+        wall_thickness=0.014,
+    )
+
+    mat_id = gen.material or "STEEL"
+    if manifest.materials:
+        mat_ids = [m.id for m in manifest.materials]
+        if mat_id not in mat_ids:
+            steel_mats = [m.id for m in manifest.materials if (m.category or "").lower() in ("steel", "metal")]
+            mat_id = steel_mats[0] if steel_mats else mat_ids[0]
+
+    u_angles = [2.0 * math.pi * k / count for k in range(count)]
+    braces: List[IfcColumn] = []
+
+    for s_idx, storey in enumerate(sorted_storeys):
+        z1 = storey.elevation
+        z2 = z1 + storey.height
+        top_st_id = sorted_storeys[s_idx + 1].id if s_idx + 1 < len(sorted_storeys) else storey.id
+
+        for k in range(count):
+            k_next = (k + 1) % count
+            u_k = u_angles[k]
+            u_next = u_angles[k_next]
+
+            # 4 Corner points of this bay
+            # Bottom-left: (x1_k, y1_k) at z1
+            x1_k, y1_k = evaluate_loft_point(rules, u_k, z1, total_height)
+            # Bottom-right: (x1_next, y1_next) at z1
+            x1_next, y1_next = evaluate_loft_point(rules, u_next, z1, total_height)
+            # Top-left: (x2_k, y2_k) at z2
+            x2_k, y2_k = evaluate_loft_point(rules, u_k, z2, total_height)
+            # Top-right: (x2_next, y2_next) at z2
+            x2_next, y2_next = evaluate_loft_point(rules, u_next, z2, total_height)
+
+            # Diagonal 1: (Bottom-left to Top-right)
+            b1 = IfcColumn(
+                tag=f"BRACE-DIAG-1-{storey.id}-{k+1}",
+                material=mat_id,
+                profile=brace_prof,
+                placement=ColumnPlacement(
+                    grid=(f"{x1_k:.4f}", f"{y1_k:.4f}"),
+                    top_grid=(f"{x2_next:.4f}", f"{y2_next:.4f}"),
+                    base_storey=storey.id,
+                    top_storey=top_st_id,
+                    base_elevation=z1,
+                    top_elevation=z2,
+                    height=storey.height,
+                ),
+                layer="S-BRACING",
+            )
+            braces.append(b1)
+
+            # Diagonal 2: (Bottom-right to Top-left)
+            b2 = IfcColumn(
+                tag=f"BRACE-DIAG-2-{storey.id}-{k+1}",
+                material=mat_id,
+                profile=brace_prof,
+                placement=ColumnPlacement(
+                    grid=(f"{x1_next:.4f}", f"{y1_next:.4f}"),
+                    top_grid=(f"{x2_k:.4f}", f"{y2_k:.4f}"),
+                    base_storey=storey.id,
+                    top_storey=top_st_id,
+                    base_elevation=z1,
+                    top_elevation=z2,
+                    height=storey.height,
+                ),
+                layer="S-BRACING",
+            )
+            braces.append(b2)
+
+    return braces
+
+
 def generate_roof_crown_structure(
     manifest: ProjectManifest,
 ) -> Tuple[List[IfcBeam], List[IfcBeam]]:
@@ -501,8 +602,29 @@ def generate_roof_crown_structure(
 
     radial_beams: List[IfcBeam] = []
     compression_beams: List[IfcBeam] = []
+    outer_roof_ring_beams: List[IfcBeam] = []
 
-    # 1. Radial spokes connecting column heads to compression ring
+    # 1. Outer perimeter ring tying column heads together at roof level
+    for k in range(count):
+        k_next = (k + 1) % count
+        p1 = outer_pts[k]
+        p2 = outer_pts[k_next]
+
+        outer_beam = IfcBeam(
+            tag=f"ROOF-OUTER-RING-{k+1}",
+            material=mat_id,
+            profile=roof_prof,
+            placement=BeamPlacement(
+                from_grid=(f"{p1[0]:.4f}", f"{p1[1]:.4f}"),
+                to_grid=(f"{p2[0]:.4f}", f"{p2[1]:.4f}"),
+                storey=top_storey.id,
+                offset_z=top_storey.height,
+            ),
+            layer="S-ROOF-RING",
+        )
+        outer_roof_ring_beams.append(outer_beam)
+
+    # 2. Radial spokes connecting column heads to compression ring
     for k in range(count):
         p_out = outer_pts[k]
         p_in = inner_pts[k]
@@ -521,7 +643,7 @@ def generate_roof_crown_structure(
         )
         radial_beams.append(radial_beam)
 
-    # 2. Inner compression ring around skylight
+    # 3. Inner compression ring around skylight
     for k in range(count):
         k_next = (k + 1) % count
         p1 = inner_pts[k]
@@ -541,4 +663,4 @@ def generate_roof_crown_structure(
         )
         compression_beams.append(comp_beam)
 
-    return radial_beams, compression_beams
+    return radial_beams, compression_beams + outer_roof_ring_beams

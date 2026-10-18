@@ -7313,12 +7313,18 @@ class SpatialResolver:
                     self.manifest.elements.append(cc)
                     existing_tags.add(cc.tag)
 
-            from debim.geometry.loft import generate_loft_ring_beams, generate_roof_crown_structure
+            from debim.geometry.loft import generate_loft_diagrid_braces, generate_loft_ring_beams, generate_roof_crown_structure
             ring_beams = generate_loft_ring_beams(self.manifest)
             for rb in ring_beams:
                 if rb.tag not in existing_tags:
                     self.manifest.elements.append(rb)
                     existing_tags.add(rb.tag)
+
+            diag_braces = generate_loft_diagrid_braces(self.manifest)
+            for db in diag_braces:
+                if db.tag not in existing_tags:
+                    self.manifest.elements.append(db)
+                    existing_tags.add(db.tag)
 
             radial_spokes, comp_rings = generate_roof_crown_structure(self.manifest)
             for r_beam in (radial_spokes + comp_rings):
