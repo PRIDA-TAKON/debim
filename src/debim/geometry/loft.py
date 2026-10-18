@@ -73,18 +73,49 @@ def evaluate_loft_radii(
     return a_base, b_base
 
 
+def _chaikin_smooth_closed_polygon(pts: np.ndarray, iterations: int = 3) -> np.ndarray:
+    """
+    Applies Chaikin's corner cutting algorithm to smooth sharp polygon corners
+    into broad, continuous organic fillet curves.
+    """
+    if len(pts) < 3 or iterations <= 0:
+        return pts
+
+    current = pts
+    for _ in range(iterations):
+        smoothed = []
+        n = len(current)
+        for i in range(n):
+            p0 = current[i]
+            p1 = current[(i + 1) % n]
+            # Cut corner at 25% and 75%
+            q = 0.75 * p0 + 0.25 * p1
+            r = 0.25 * p0 + 0.75 * p1
+            smoothed.append(q)
+            smoothed.append(r)
+        current = np.array(smoothed)
+    return current
+
+
 def _resample_closed_polygon(pts: np.ndarray, n_points: int) -> np.ndarray:
-    """Resamples a closed 2D polygon into n_points equidistant points along its perimeter."""
+    """
+    Smooths and resamples a closed 2D polygon into n_points equidistant points along its perimeter,
+    generating smooth rounded corners (large corner radius fillets).
+    """
     if len(pts) < 3:
         return pts
+
+    # Apply corner smoothing to round off sharp polygon vertices
+    smooth_pts = _chaikin_smooth_closed_polygon(pts, iterations=3)
+
     # Close polygon
-    pts_closed = np.vstack([pts, pts[0]])
+    pts_closed = np.vstack([smooth_pts, smooth_pts[0]])
     diffs = np.diff(pts_closed, axis=0)
     seg_lens = np.linalg.norm(diffs, axis=1)
     cum_dist = np.insert(np.cumsum(seg_lens), 0, 0.0)
     total_len = cum_dist[-1]
     if total_len < 1e-6:
-        return np.repeat(pts[:1], n_points, axis=0)
+        return np.repeat(smooth_pts[:1], n_points, axis=0)
 
     target_dists = np.linspace(0.0, total_len, n_points, endpoint=False)
     new_x = np.interp(target_dists, cum_dist, pts_closed[:, 0])
