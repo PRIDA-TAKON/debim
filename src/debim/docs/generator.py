@@ -51,6 +51,129 @@ def _get_discipline(class_name: str) -> str:
     return "MEP"
 
 
+def _get_english_title(class_name: str, discipline: str) -> str:
+    """Generate descriptive English title for an IFC entity class (buildingSMART standard)."""
+    titles = {
+        # Structure
+        "IfcColumn": "Structural Column (RC / Steel Column)",
+        "IfcColumnStandardCase": "Standard Column (TIS / AISC Standard)",
+        "IfcBeam": "Structural Beam (RC / Steel Beam)",
+        "IfcBeamStandardCase": "Standard Beam (TIS / AISC Standard)",
+        "IfcSlab": "Floor Slab (RC Slab / Precast Plank)",
+        "IfcSlabStandardCase": "Standard Concrete Slab",
+        "IfcSlabElementedCase": "Elemented Composite Slab",
+        "IfcFooting": "Foundation Footing",
+        "IfcPile": "Foundation Pile",
+        "IfcPlate": "Structural Steel Plate",
+        "IfcPlateStandardCase": "Standard Steel Plate",
+        "IfcMember": "Structural Framing Member / Truss",
+        "IfcMemberStandardCase": "Standard Framing Member",
+        "IfcReinforcingBar": "Concrete Reinforcing Rebar",
+        "IfcReinforcingElement": "Reinforcing Element Component",
+        "IfcReinforcingMesh": "Reinforcing Steel Wire Mesh",
+        "IfcTendon": "Prestressing Tendon",
+        "IfcTendonAnchor": "Prestressing Tendon Anchor",
+        "IfcVibrationIsolator": "Structural Vibration Isolator",
+        "IfcDiscreteAccessory": "Structural Insert & Embedded Fitting",
+        "IfcMechanicalFastener": "High-Strength Structural Bolt & Fastener",
+        "IfcFastener": "Structural Fastener Device",
+
+        # Architecture
+        "IfcWall": "Architectural Wall Assembly",
+        "IfcWallStandardCase": "Standard Masonry / Concrete Wall",
+        "IfcWallElementedCase": "Elemented Prefabricated Wall Panel",
+        "IfcDoor": "Door Assembly & Hardware",
+        "IfcDoorStandardCase": "Standard Door Leaf & Frame",
+        "IfcWindow": "Window Assembly & Glazing",
+        "IfcWindowStandardCase": "Standard Window Assembly",
+        "IfcRoof": "Roof Structure & Covering Assembly",
+        "IfcCurtainWall": "Curtain Wall Glazing System",
+        "IfcCovering": "Finishes, Cladding & Ceiling Systems",
+        "IfcStair": "Staircase Assembly",
+        "IfcStairFlight": "Stair Flight / Run",
+        "IfcRamp": "Accessibility Ramp Assembly",
+        "IfcRampFlight": "Ramp Flight",
+        "IfcRailing": "Railing Guard & Handrail",
+        "IfcFurniture": "Furniture & FF&E Equipment",
+        "IfcFurnishingElement": "Interior Furnishing Element",
+        "IfcSystemFurnitureElement": "Office Modular System Furniture",
+        "IfcChimney": "Chimney & Vent Stack Structure",
+        "IfcShadingDevice": "Architectural Sun Shading Louver",
+        "IfcBuildingElementPart": "Building Component Part",
+        "IfcBuildingElementProxy": "Generic Building Element Proxy",
+        "IfcElementAssembly": "Prefabricated Element Assembly",
+        "IfcTransportElement": "Vertical Transport (Elevator / Escalator)",
+
+        # MEP
+        "IfcPipeSegment": "Plumbing & Piping Segment",
+        "IfcPipeFitting": "Pipe Fitting & Coupling",
+        "IfcDuctSegment": "HVAC Air Duct Segment",
+        "IfcDuctFitting": "Duct Fitting & Elbow",
+        "IfcDuctSilencer": "HVAC Duct Acoustic Silencer",
+        "IfcAirTerminal": "Air Terminal (Supply / Return Diffuser)",
+        "IfcAirTerminalBox": "VAV Air Terminal Box",
+        "IfcAirToAirHeatRecovery": "Heat Recovery Equipment",
+        "IfcSanitaryTerminal": "Sanitary Plumbing Fixture",
+        "IfcWasteTerminal": "Floor Drain & Waste Terminal",
+        "IfcLightFixture": "Lighting Fixture & Luminaire",
+        "IfcLamp": "Lamp Source & LED Driver",
+        "IfcOutlet": "Power Socket Outlet & Switch",
+        "IfcSwitchingDevice": "Lighting Switch Control",
+        "IfcDistributionBoard": "Electrical Distribution Panel",
+        "IfcElectricDistributionBoard": "Main Electrical Panel (MDB / DB)",
+        "IfcCableCarrierSegment": "Cable Tray & Ladder Segment",
+        "IfcCableCarrierFitting": "Cable Tray Fitting",
+        "IfcCableSegment": "Electric Cable & Wiring",
+        "IfcCableFitting": "Cable Joint Box & Fitting",
+        "IfcDamper": "Air Volume & Fire Damper",
+        "IfcFlowController": "Fluid Flow Controller",
+        "IfcUnitaryEquipment": "Unitary Split AC Equipment",
+        "IfcPump": "Water Pump & Circulator",
+        "IfcBoiler": "Hot Water Boiler Unit",
+        "IfcChiller": "Air Conditioning Water Chiller",
+        "IfcFan": "Ventilation & Fresh Air Fan",
+        "IfcTank": "Water Storage Tank",
+        "IfcValve": "Plumbing & HVAC Control Valve",
+        "IfcSensor": "Sensing & Detection Device",
+        "IfcAlarm": "Alarm & Alert Signaling Device",
+        "IfcFlowMeter": "Flow Measurement Meter",
+        "IfcFlowInstrument": "Flow / Pressure / Temp Gauge",
+        "IfcActuator": "Valve / Damper Motorized Actuator",
+        "IfcInterceptor": "Grease & Oil Interceptor Tank",
+        "IfcHumidifier": "Air Humidifier Equipment",
+        "IfcTransformer": "Power Step-Down Transformer",
+        "IfcElectricGenerator": "Emergency Electric Generator",
+        "IfcElectricMotor": "Electric Drive Motor",
+
+        # Civil
+        "IfcAlignment": "Civil Alignment Corridor",
+        "IfcRoad": "Road Structure & Pavement Layers",
+        "IfcBridge": "Bridge Structure",
+        "IfcBridgePart": "Bridge Component (Girder / Pier)",
+        "IfcRailway": "Railway Infrastructure",
+        "IfcRailwayPart": "Railway Substructure Part",
+        "IfcTrackElement": "Railway Track & Concrete Sleeper",
+        "IfcCivilElement": "Civil Infrastructure Element",
+        "IfcEarthworksElement": "Earthworks Cut & Fill",
+        "IfcEarthworksCut": "Grading Cut Section",
+        "IfcEarthworksFill": "Compacted Fill Section",
+        "IfcGeotechnicalStratum": "Geotechnical Soil Stratum",
+        "IfcSoil": "Soil Material Mass",
+        "IfcRetainingWall": "RC Retaining Wall",
+        "IfcGeographicElement": "Topographic & Landscape Element",
+        "IfcMarineFacility": "Port & Marine Facility",
+        "IfcMarinePart": "Breakwater & Quayside Part",
+        "IfcMooringDevice": "Mooring Bollard & Cleat",
+        "IfcNavigationElement": "Navigational Aid & Buoy",
+        "IfcBearing": "Bridge Structural Bearing Pad",
+    }
+    if class_name in titles:
+        return titles[class_name]
+
+    clean_cls = class_name.replace("Ifc", "")
+    return f"{clean_cls} ({discipline} Component)"
+
+
 def _get_thai_title(class_name: str, discipline: str) -> str:
     """Generate descriptive Thai title for an IFC entity class."""
     titles = {
@@ -172,6 +295,19 @@ def _get_thai_title(class_name: str, discipline: str) -> str:
 
     clean_cls = class_name.replace("Ifc", "")
     return f"{clean_cls} ({discipline} Component)"
+
+
+def _get_english_description(class_name: str, discipline: str) -> str:
+    """Generate concise functional description in English (buildingSMART definition)."""
+    clean_cls = class_name.replace("Ifc", "")
+    if discipline == "Structure":
+        return f"Structural {clean_cls} member designed to carry and transfer loads in compliance with engineering standards."
+    elif discipline == "Architecture":
+        return f"Architectural {clean_cls} element defining spatial boundaries, space utilization, and enclosure aesthetics."
+    elif discipline == "Civil":
+        return f"Civil infrastructure {clean_cls} entity supporting transportation networks, earthworks, and geotechnical systems."
+    else:
+        return f"MEP engineering {clean_cls} component providing mechanical, electrical, or plumbing services."
 
 
 def _get_description(class_name: str, discipline: str) -> str:
@@ -372,7 +508,7 @@ def _generate_2d_svg(class_name: str, discipline: str) -> str:
 
 
 def _generate_qto_boq(class_name: str, discipline: str) -> List[Dict[str, Any]]:
-    """Generate realistic takeoff line items with Thai unit rates and formulas."""
+    """Generate realistic takeoff line items with Thai/English unit rates and formulas."""
     clean_cls = class_name.replace("Ifc", "")
     code_prefix = clean_cls.upper()[:4]
 
@@ -381,6 +517,8 @@ def _generate_qto_boq(class_name: str, discipline: str) -> List[Dict[str, Any]]:
             {
                 "code": f"{code_prefix}-CONC",
                 "name": f"คอนกรีตโครงสร้าง {clean_cls} 280 ksc",
+                "name_th": f"คอนกรีตโครงสร้าง {clean_cls} 280 ksc",
+                "name_en": f"Structural Concrete {clean_cls} 280 ksc",
                 "formula": "Volume Calculation = 1.00 unit",
                 "unit": "m3",
                 "quantity": 1.0,
@@ -390,6 +528,8 @@ def _generate_qto_boq(class_name: str, discipline: str) -> List[Dict[str, Any]]:
             {
                 "code": f"{code_prefix}-FORM",
                 "name": f"ไม้แบบโครงสร้าง {clean_cls} (Formwork)",
+                "name_th": f"ไม้แบบโครงสร้าง {clean_cls} (Formwork)",
+                "name_en": f"Formwork for {clean_cls}",
                 "formula": "Formwork Area = 4.00 m2",
                 "unit": "m2",
                 "quantity": 4.0,
@@ -402,6 +542,8 @@ def _generate_qto_boq(class_name: str, discipline: str) -> List[Dict[str, Any]]:
             {
                 "code": f"{code_prefix}-MAT",
                 "name": f"งานประกอบและติดตั้ง {clean_cls}",
+                "name_th": f"งานประกอบและติดตั้ง {clean_cls}",
+                "name_en": f"Supply & Installation of {clean_cls}",
                 "formula": "Area / Piece Count = 1.00 unit",
                 "unit": "m2" if "Wall" in class_name or "Slab" in class_name else "set",
                 "quantity": 1.0,
@@ -414,6 +556,8 @@ def _generate_qto_boq(class_name: str, discipline: str) -> List[Dict[str, Any]]:
             {
                 "code": f"{code_prefix}-CIV",
                 "name": f"งานก่อสร้างโยธา {clean_cls}",
+                "name_th": f"งานก่อสร้างโยธา {clean_cls}",
+                "name_en": f"Civil Construction for {clean_cls}",
                 "formula": "Length / Area = 10.0 m",
                 "unit": "m",
                 "quantity": 10.0,
@@ -426,7 +570,9 @@ def _generate_qto_boq(class_name: str, discipline: str) -> List[Dict[str, Any]]:
             {
                 "code": f"{code_prefix}-MEP",
                 "name": f"งานติดตั้งอุปกรณ์ {clean_cls} พร้อมอุปกรณ์ประกอบ",
-                "formula": "1.00 ชุด",
+                "name_th": f"งานติดตั้งอุปกรณ์ {clean_cls} พร้อมอุปกรณ์ประกอบ",
+                "name_en": f"Installation of {clean_cls} & Accessories",
+                "formula": "1.00 ชุด / set",
                 "unit": "set",
                 "quantity": 1.0,
                 "mat_rate": 1500.0,
@@ -469,21 +615,35 @@ def _synthesize_class_entry(class_name: str, registry: SchemaEntityRegistry) -> 
     clean_cls = class_name.replace("Ifc", "")
     ifc_step = f"#{1001}=IFCPRODUCTDEFINITIONSHAPE($,$,(#{1002}));\n#{1002}=IFCSHAPEREPRESENTATION(#{1003},'Body','SweptSolid',(#{1004}));\n#{1005}={class_name.upper()}('1aB2$cCd3E4f5G6h7I8j9K',#101,'{clean_cls}-01','Exemplar {clean_cls}',$,#103,#1001,$);"
 
-    # Dimension 6: Thai Specifications Clause
+    # Dimension 6: Thai & English Specifications Clause
     spec_clause = get_thai_spec_clause(class_name)
     thai_specs = {
         "materials": spec_clause.material_standards,
         "workmanship": spec_clause.workmanship_requirements,
         "testing": spec_clause.testing_inspection,
     }
+    english_specs = {
+        "title": spec_clause.masterformat_title_en or spec_clause.masterformat_title,
+        "materials": spec_clause.material_standards_en or spec_clause.material_standards,
+        "workmanship": spec_clause.workmanship_requirements_en or spec_clause.workmanship_requirements,
+        "testing": spec_clause.testing_inspection_en or spec_clause.testing_inspection,
+    }
+
+    name_th = _get_thai_title(class_name, discipline)
+    name_en = _get_english_title(class_name, discipline)
+    desc_th = _get_description(class_name, discipline)
+    desc_en = _get_english_description(class_name, discipline)
 
     return {
         "id": class_name,
         "class_name": class_name,
-        "name_th": _get_thai_title(class_name, discipline),
+        "name_th": name_th,
+        "name_en": name_en,
         "discipline": discipline,
         "schema_version": schema_ver,
-        "description": _get_description(class_name, discipline),
+        "description": desc_th,
+        "description_th": desc_th,
+        "description_en": desc_en,
         "predefined_types": predefined_types,
         "bsdd_psets": bsdd_psets,
         "debim_yaml": debim_yaml,
@@ -492,6 +652,9 @@ def _synthesize_class_entry(class_name: str, registry: SchemaEntityRegistry) -> 
         "sample_3d": _generate_3d_payload(class_name, discipline),
         "sample_2d_svg": _generate_2d_svg(class_name, discipline),
         "thai_specs": thai_specs,
+        "english_specs": english_specs,
+        "specs_th": thai_specs,
+        "specs_en": english_specs,
     }
 
 

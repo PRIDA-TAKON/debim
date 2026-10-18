@@ -53,6 +53,96 @@ def test_class_directory_disciplines():
     assert "Civil" in disciplines
 
 
+def test_bilingual_data_payload_fields():
+    """Test that synthesized catalog data items contain both Thai and English fields."""
+    first_item = DEFAULT_CLASS_DIRECTORY_DATA[0]
+
+    # Titles and Descriptions
+    assert "name_th" in first_item and isinstance(first_item["name_th"], str) and len(first_item["name_th"]) > 0
+    assert "name_en" in first_item and isinstance(first_item["name_en"], str) and len(first_item["name_en"]) > 0
+    assert "description_th" in first_item and isinstance(first_item["description_th"], str) and len(first_item["description_th"]) > 0
+    assert "description_en" in first_item and isinstance(first_item["description_en"], str) and len(first_item["description_en"]) > 0
+
+    # BOQ Line Items Localization
+    boq_items = first_item.get("qto_boq", [])
+    assert len(boq_items) > 0
+    assert "name_th" in boq_items[0] and len(boq_items[0]["name_th"]) > 0
+    assert "name_en" in boq_items[0] and len(boq_items[0]["name_en"]) > 0
+
+    # Specification Clauses
+    assert "thai_specs" in first_item and "materials" in first_item["thai_specs"]
+    assert "english_specs" in first_item and "materials" in first_item["english_specs"]
+    assert "specs_th" in first_item and "specs_en" in first_item
+
+
+def test_language_switcher_ui_elements_in_html():
+    """Test that generated standalone HTML includes the bilingual language switcher buttons and JS handlers."""
+    html_str = generate_class_directory_html()
+
+    # Switcher container & buttons
+    assert 'class="lang-switcher"' in html_str
+    assert 'id="lang-btn-th"' in html_str
+    assert 'id="lang-btn-en"' in html_str
+
+    # JS Localization engine & state
+    assert "setLanguage" in html_str
+    assert "localStorage.getItem('debim_lang')" in html_str
+    assert "localStorage.setItem('debim_lang'" in html_str
+    assert "I18N" in html_str
+    assert "name_en" in html_str
+    assert "specs_en" in html_str
+
+
+def test_docs_viewer_playwright_language_switch(tmp_path):
+    """Test Playwright interaction switching language from TH to EN and asserting localized text updates."""
+    import pytest
+    playwright = pytest.importorskip("playwright")
+    from playwright.sync_api import sync_playwright
+
+    html_file = tmp_path / "directory.html"
+    export_class_directory(html_file)
+
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(f"file://{html_file.resolve()}")
+            page.wait_for_function("typeof classesData !== 'undefined'")
+
+            # Select class IfcColumn explicitly
+            page.evaluate("""() => {
+                const idx = classesData.findIndex(c => c.class_name === 'IfcColumn');
+                selectClass(idx !== -1 ? idx : 0);
+            }""")
+
+            # Default language TH
+            initial_lang = page.evaluate("currentLang")
+            assert initial_lang == "th"
+
+            # Click EN language switcher button
+            page.click("#lang-btn-en")
+
+            # Verify currentLang changed to 'en'
+            active_lang = page.evaluate("currentLang")
+            assert active_lang == "en"
+
+            # Check localized title and description
+            title_text = page.inner_text("#title-localized-name")
+            desc_text = page.inner_text("#title-desc")
+            assert "Structural Column" in title_text or "Column" in title_text
+            assert "Structural" in desc_text or "member" in desc_text
+
+            # Check localStorage persistence
+            saved_pref = page.evaluate("localStorage.getItem('debim_lang')")
+            assert saved_pref == "en"
+
+            browser.close()
+    except Exception as e:
+        if "Executable doesn't exist" in str(e) or "playwright install" in str(e):
+            pytest.skip(f"Browser binary missing: {e}")
+        raise e
+
+
 def test_class_directory_6_dimension_viewer_features():
     """Test that generated HTML contains all 6-dimension viewer features."""
     html_str = generate_class_directory_html()
