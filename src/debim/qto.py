@@ -788,6 +788,10 @@ class ProjectQTO(BaseModel):
     # Loft Macro-Geometry Totals
     total_loft_enclosure_surface_area: float = 0.0
     total_loft_slab_area: float = 0.0
+    # Facade Discretization Totals
+    total_facade_panels_count: int = 0
+    total_facade_skin_area_sqm: float = 0.0
+    total_aluminum_facade_weight_kg: float = 0.0
 
 
     def get_element(self, tag: str) -> Optional[ElementQTO]:
@@ -2715,6 +2719,20 @@ def calculate_qto(
     total_floor_finish_volume = 0.0
     total_loft_enclosure_surf_area = 0.0
     total_loft_slab_area_val = 0.0
+    facade_panels_cnt = 0
+    facade_skin_area = 0.0
+    aluminum_facade_wt = 0.0
+
+    facade_tess = getattr(resolved, "facade_tessellation", None)
+    if facade_tess is None and hasattr(resolved, "manifest") and resolved.manifest:
+        if resolved.manifest.facade and resolved.manifest.facade.envelope_skin and resolved.manifest.geometry_rules:
+            from debim.geometry.tessellation import generate_facade_tessellation
+            facade_tess = generate_facade_tessellation(resolved.manifest)
+
+    if facade_tess:
+        facade_panels_cnt = facade_tess.total_panel_count
+        facade_skin_area = facade_tess.total_surface_area
+        aluminum_facade_wt = facade_skin_area * 8.10
 
     # Build material category lookup
     material_categories = {
@@ -3125,4 +3143,7 @@ def calculate_qto(
         total_floor_finish_volume=total_floor_finish_volume,
         total_loft_enclosure_surface_area=total_loft_enclosure_surf_area,
         total_loft_slab_area=total_loft_slab_area_val,
+        total_facade_panels_count=facade_panels_cnt,
+        total_facade_skin_area_sqm=facade_skin_area,
+        total_aluminum_facade_weight_kg=aluminum_facade_wt,
     )

@@ -1704,6 +1704,7 @@ class ResolvedManifest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     manifest: ProjectManifest
+    facade_tessellation: Optional[Any] = None
     footings: List[ResolvedFooting] = []
     columns: List[ResolvedColumn] = []
     beams: List[ResolvedBeam] = []
@@ -7312,7 +7313,12 @@ class SpatialResolver:
                     self.manifest.elements.append(cc)
                     existing_tags.add(cc.tag)
 
-        resolved_manifest = ResolvedManifest(manifest=self.manifest)
+        facade_tess = None
+        if self.manifest.facade and self.manifest.facade.envelope_skin and self.manifest.geometry_rules:
+            from debim.geometry.tessellation import generate_facade_tessellation
+            facade_tess = generate_facade_tessellation(self.manifest)
+
+        resolved_manifest = ResolvedManifest(manifest=self.manifest, facade_tessellation=facade_tess)
 
         # Top-level standalone doors / windows mapped by host_wall
         standalone_openings_by_wall: Dict[str, List[Union[IfcDoor, IfcWindow]]] = {}

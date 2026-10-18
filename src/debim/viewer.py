@@ -2574,6 +2574,23 @@ def generate_viewer_html(
             "layer": p_layer,
             "properties": p_props,
         })
+    facade_tess = getattr(resolved, "facade_tessellation", None)
+    if facade_tess is None and hasattr(resolved, "manifest") and resolved.manifest:
+        if resolved.manifest.facade and resolved.manifest.facade.envelope_skin and resolved.manifest.geometry_rules:
+            from debim.geometry.tessellation import generate_facade_tessellation
+            facade_tess = generate_facade_tessellation(resolved.manifest)
+
+    facade_data = None
+    if facade_tess and facade_tess.panels:
+        facade_data = {
+            "target_panel_size": facade_tess.target_panel_size,
+            "joint_gap": facade_tess.joint_gap,
+            "material": facade_tess.material,
+            "pattern": facade_tess.pattern,
+            "panel_count": facade_tess.total_panel_count,
+            "panels": [p.to_dict() for p in facade_tess.panels],
+        }
+
     scene_json = json.dumps({
         "project": {
             "id": proj.id,
@@ -2585,6 +2602,7 @@ def generate_viewer_html(
         "elements": elements_data,
         "ports": ports_data,
         "topology_connections": topology_conns,
+        "facade": facade_data,
     }, indent=2, ensure_ascii=False)
 
     html_content = f"""<!DOCTYPE html>
@@ -4072,6 +4090,57 @@ def generate_viewer_html(
                 flowGroup.add(line);
             }});
             scene.add(flowGroup);
+        }}
+
+        // Render Facade Envelope Skin Hexagonal Panels via InstancedMesh / Tessellation
+        if (sceneData.facade && sceneData.facade.panels && sceneData.facade.panels.length > 0) {{
+            const facadeGroup = new THREE.Group();
+            const panelCount = sceneData.facade.panels.length;
+            const rOuter = (sceneData.facade.target_panel_size || 0.55) / 2.0;
+            const rPanel = Math.max(rOuter - (sceneData.facade.joint_gap || 0.02) / 2.0, 0.01);
+
+            const hexShape = new THREE.Shape();
+            for (let k = 0; k < 6; k++) {{
+                const angle = Math.PI / 6.0 + k * (Math.PI / 3.0);
+                const x = rPanel * Math.cos(angle);
+                const y = rPanel * Math.sin(angle);
+                if (k === 0) hexShape.moveTo(x, y);
+                else hexShape.lineTo(x, y);
+            }}
+            hexShape.closePath();
+
+            const hexGeom = new THREE.ShapeGeometry(hexShape);
+            const hexMat = new THREE.MeshStandardMaterial({{
+                color: 0xd1d5db,
+                metalness: 0.85,
+                roughness: 0.25,
+                side: THREE.DoubleSide
+            }});
+
+            const instancedMesh = new THREE.InstancedMesh(hexGeom, hexMat, panelCount);
+            instancedMesh.userData = {{
+                tag: "FACADE-ENVELOPE-SKIN",
+                class: "IfcCurtainWall",
+                layer: "architecture/facades/curtain_walls",
+                material: sceneData.facade.material || "ALUMINUM_ANODIZED_SILVER",
+                panels_count: panelCount
+            }};
+
+            const dummy = new THREE.Object3D();
+            sceneData.facade.panels.forEach((p, idx) => {{
+                dummy.position.set(p.center[0], p.center[1], p.center[2]);
+                const normal = new THREE.Vector3(p.normal[0], p.normal[1], p.normal[2]);
+                const defaultNormal = new THREE.Vector3(0, 0, 1);
+                const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultNormal, normal);
+                dummy.quaternion.copy(quaternion);
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(idx, dummy.matrix);
+            }});
+            instancedMesh.instanceMatrix.needsUpdate = true;
+
+            facadeGroup.add(instancedMesh);
+            scene.add(facadeGroup);
+            pickableObjects.push(instancedMesh);
         }}
 
         buildLayerTree();
