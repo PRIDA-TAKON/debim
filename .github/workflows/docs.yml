@@ -9,6 +9,7 @@ on:
       - 'src/debim/schema_registry.py'
       - 'src/debim/schema.py'
       - 'src/debim/cli.py'
+      - 'src/debim/docs/**'
       - '.github/workflows/docs.yml'
   pull_request:
     branches:
@@ -18,6 +19,7 @@ on:
       - 'src/debim/schema_registry.py'
       - 'src/debim/schema.py'
       - 'src/debim/cli.py'
+      - 'src/debim/docs/**'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
