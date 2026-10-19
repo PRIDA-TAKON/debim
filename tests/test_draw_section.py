@@ -23,7 +23,7 @@ from debim.draw import (
 )
 from debim.schema import ProjectManifest, load_manifest
 
-FARNSWORTH_PATH = Path("examples/farnsworth_house/project.yaml")
+FARNSWORTH_PATH = Path("examples/farnsworth_house/project.debim")
 THAI_HOUSE_PATH = Path("tests/fixtures/contemporary_thai_house/project.yaml")
 
 

@@ -223,9 +223,9 @@ def test_cli_split_and_bundle(tmp_path: Path):
 
 def test_split_bundle_farnsworth_roundtrip(tmp_path: Path):
     """Verify roundtrip decomposition and bundling of standard Farnsworth House example."""
-    farnsworth_src = Path("examples/farnsworth_house/project.yaml")
+    farnsworth_src = Path("examples/farnsworth_house/project.debim")
     if not farnsworth_src.exists():
-        pytest.skip("examples/farnsworth_house/project.yaml not found")
+        pytest.skip("examples/farnsworth_house/project.debim not found")
 
     orig_manifest = load_manifest(farnsworth_src)
     orig_qto = calculate_qto(orig_manifest)

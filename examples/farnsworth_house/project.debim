@@ -2,12 +2,12 @@
 # ==============================================================================
 # Model: Farnsworth House (1951) - Plano, Illinois
 # Original Architect: Ludwig Mies van der Rohe (National Historic Landmark)
-# Format: Official debim Language File (.debim) v0.6.0
+# Format: Official debim Language File (.debim) v1.0.0
 # Workflow: Autonomous architectural research -> Declarative .debim -> OpenBIM IFC4
 # ==============================================================================
 
 schema: "IFC4-Minimal"
-version: "0.6.0"
+version: "1.0.0"
 
 project:
   id: "PRJ-MIES-FARNSWORTH-1951"

@@ -95,7 +95,7 @@ def test_benchmark_vqa_mock_eval(tmp_output_dir: Path):
     img_dir = tmp_output_dir / "vqa_images"
 
     generate_vqa_dataset(
-        manifest_path="examples/farnsworth_house/project.yaml",
+        manifest_path="examples/farnsworth_house/project.debim",
         output_dataset_path=ds_json_path,
         output_image_dir=img_dir,
     )
@@ -230,7 +230,7 @@ def test_vqa_cli_integration(tmp_output_dir: Path):
             "draw",
             "generate-vqa",
             "-m",
-            "examples/farnsworth_house/project.yaml",
+            "examples/farnsworth_house/project.debim",
             "-o",
             str(ds_json_path),
             "--image-dir",

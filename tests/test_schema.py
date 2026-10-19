@@ -431,7 +431,7 @@ def test_export_json_schema_enrichment():
 
 
 def test_validate_example_models():
-    farnsworth = load_manifest("examples/farnsworth_house/project.yaml")
+    farnsworth = load_manifest("examples/farnsworth_house/project.debim")
     assert "FARNSWORTH" in farnsworth.project.id
 
     house = load_manifest("house.debim")

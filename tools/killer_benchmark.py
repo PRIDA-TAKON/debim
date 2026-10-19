@@ -117,7 +117,7 @@ def run_benchmarks():
     ))
 
     projects = [
-        ("Farnsworth House (1951)", Path("examples/farnsworth_house/project.yaml"), Path("examples/farnsworth_house/prices.yaml")),
+        ("Farnsworth House (1951)", Path("examples/farnsworth_house/project.debim"), Path("examples/farnsworth_house/prices.yaml")),
         ("Townhouse Feasibility", Path("tests/fixtures/townhouse/project.yaml"), None),
     ]
 

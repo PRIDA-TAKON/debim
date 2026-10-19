@@ -78,7 +78,7 @@ def test_diff_files(tmp_path: Path):
 def test_diff_git_revision():
     # Use HEAD vs working tree on git repo
     prices_path = Path("examples/farnsworth_house/prices.yaml")
-    res = runner.invoke(app, ["diff", "HEAD:examples/farnsworth_house/project.yaml", "examples/farnsworth_house/project.yaml", "-p", str(prices_path)])
+    res = runner.invoke(app, ["diff", "HEAD:examples/farnsworth_house/project.debim", "examples/farnsworth_house/project.debim", "-p", str(prices_path)])
     assert res.exit_code == 0
     assert "Comparing BIM Revisions:" in res.output
     assert "Diff Summary" in res.output

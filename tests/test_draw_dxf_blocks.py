@@ -10,7 +10,7 @@ import ezdxf
 from debim.draw import export_2d_dxf
 from debim.schema import ProjectManifest, load_manifest
 
-FARNSWORTH_PATH = Path("examples/farnsworth_house/project.yaml")
+FARNSWORTH_PATH = Path("examples/farnsworth_house/project.debim")
 
 
 def test_dxf_layers_and_block_definitions(tmp_path: Path):

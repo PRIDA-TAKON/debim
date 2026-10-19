@@ -43,12 +43,12 @@
       </td>
     </tr>
   </table>
-  <sub>🏛️ <i>Showcase: Ludwig Mies van der Rohe's iconic <b>Farnsworth House (1951)</b> — compiled from declarative YAML (<a href="examples/farnsworth_house/project.yaml">examples/farnsworth_house/project.yaml</a>) into standard IFC4 and rendered in real-time in a lightweight 3D web viewer.</i></sub>
+  <sub>🏛️ <i>Showcase: Ludwig Mies van der Rohe's iconic <b>Farnsworth House (1951)</b> — compiled from declarative .debim (<a href="examples/farnsworth_house/project.debim">examples/farnsworth_house/project.debim</a>) into standard IFC4 and rendered in real-time in a lightweight 3D web viewer.</i></sub>
 </p>
 
 > [!TIP]
 > **🤖 Authored 100% by AI Agent (Antigravity powered by Gemini 3.8 Flash):**  
-> This iconic architectural masterpiece was **not coded by hand line-by-line!** Instead, an **autonomous AI Coding Agent (Google Antigravity powered by Gemini 3.8 Flash)** researched historical blueprints, structural grids, and architectural dimensions of the Farnsworth House, synthesized the declarative YAML specification (`project.yaml`), computed material quantities (QTO), and compiled standard IFC4 building models in seconds — proving that **humans don't need to manually code YAML when assisted by AI agents!**
+> This iconic architectural masterpiece was **not coded by hand line-by-line!** Instead, an **autonomous AI Coding Agent (Google Antigravity powered by Gemini 3.8 Flash)** researched historical blueprints, structural grids, and architectural dimensions of the Farnsworth House, synthesized the declarative .debim specification (`project.debim`), computed material quantities (QTO), and compiled standard IFC4 building models in seconds — proving that **humans don't need to manually code YAML when assisted by AI agents!**
 
 ---
 
@@ -255,38 +255,38 @@ cd debim
 pip install -e ".[all,dev]"
 ```
 
-### 2. Basic Commands (v0.8.0)
+### 2. Basic Commands (v1.0.0)
 
 ```bash
 # Initialize a new project
 debim init my-project
 
 # Validate schema syntax, structural continuity & bounding-box clash detection
-debim validate -m examples/farnsworth_house/project.yaml
+debim validate -m examples/farnsworth_house/project.debim
 
 # Run automated building code compliance checks (pytest)
 debim test
 
 # Calculate Quantitative Take-Off (Concrete m3, formwork m2, rebar kg)
-debim qto -m examples/farnsworth_house/project.yaml
+debim qto -m examples/farnsworth_house/project.debim
 
 # Generate official Thai Government BOQ (CGD ว480 with Factor F & steel density)
 debim boq --rules cg-v480 --province nakhon_ratchasima -m project.debim -o dist/boq_v480.csv
 
 # Generate project-scoped price template with international classifications
-debim cost template -m examples/farnsworth_house/project.yaml -o prices.template.yaml
+debim cost template -m examples/farnsworth_house/project.debim -o prices.template.yaml
 
 # Estimate project budget & export commercial BOQ to CSV
-debim cost -m examples/farnsworth_house/project.yaml -p examples/farnsworth_house/prices.yaml -o dist/boq.csv
+debim cost -m examples/farnsworth_house/project.debim -p examples/farnsworth_house/prices.yaml -o dist/boq.csv
 
 # Scaffold a new BIM element class boilerplate
 debim scaffold element IfcRailing
 
 # Preview 3D model in your browser (Three.js with Hierarchical Layer Explorer)
-debim view -m examples/farnsworth_house/project.yaml
+debim view -m examples/farnsworth_house/project.debim
 
 # Compile declarative YAML to standard IFC4 building model
-debim compile -m examples/farnsworth_house/project.yaml -o dist/farnsworth_house.ifc
+debim compile -m examples/farnsworth_house/project.debim -o dist/farnsworth_house.ifc
 
 # Launch Model Context Protocol (MCP) server over stdio
 debim mcp

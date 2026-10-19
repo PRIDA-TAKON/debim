@@ -16,7 +16,7 @@ def prompt(cmd: str):
     console.print(p)
 
 console.print()
-prompt("debim validate -m examples/farnsworth_house/project.yaml")
+prompt("debim validate -m examples/farnsworth_house/project.debim")
 
 # Validation summary
 v_table = Table(title="[bold cyan]debim Validation Engine (Deterministic IFC4 Rules)[/bold cyan]", box=None)
@@ -31,7 +31,7 @@ v_table.add_row("Glass Facades", "Floor-to-ceiling curtain wall alignment", "[bo
 console.print(Panel(v_table, border_style="green", title="[bold green]Model Integrity: 100% Validated[/bold green]"))
 
 console.print()
-prompt("debim qto -m examples/farnsworth_house/project.yaml")
+prompt("debim qto -m examples/farnsworth_house/project.debim")
 
 # QTO Table
 qto_table = Table(title="Quantitative Take-Off (QTO) Summary", show_header=True, header_style="bold magenta")
@@ -61,7 +61,7 @@ totals_panel = Panel(
 console.print(totals_panel)
 
 console.print()
-prompt("debim compile -m examples/farnsworth_house/project.yaml -o dist/farnsworth_house.ifc")
+prompt("debim compile -m examples/farnsworth_house/project.debim -o dist/farnsworth_house.ifc")
 console.print("[bold green]✓[/bold green] IFC4 Standard Compilation Successful: [bold white]dist/farnsworth_house.ifc[/bold white] (4.8 KB)")
 console.print("[bold green]✓[/bold green] Building-as-Code Compression Ratio: [bold cyan]92.4% reduction[/bold cyan] vs standard CAD")
 

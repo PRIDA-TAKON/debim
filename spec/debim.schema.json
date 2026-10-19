@@ -3948,24 +3948,33 @@
           "enum": [
             "HYPERBOLIC_LOFT",
             "CYLINDRICAL_LOFT",
-            "CONICAL_LOFT"
+            "CONICAL_LOFT",
+            "POLYGONAL_LOFT"
           ],
           "title": "Type",
           "type": "string"
         },
         "base_radii": {
-          "maxItems": 2,
-          "minItems": 2,
-          "prefixItems": [
+          "anyOf": [
             {
-              "type": "number"
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
             },
             {
-              "type": "number"
+              "type": "null"
             }
           ],
-          "title": "Base Radii",
-          "type": "array"
+          "default": null,
+          "title": "Base Radii"
         },
         "waist_radii": {
           "anyOf": [
@@ -3990,18 +3999,26 @@
           "title": "Waist Radii"
         },
         "roof_radii": {
-          "maxItems": 2,
-          "minItems": 2,
-          "prefixItems": [
+          "anyOf": [
             {
-              "type": "number"
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
             },
             {
-              "type": "number"
+              "type": "null"
             }
           ],
-          "title": "Roof Radii",
-          "type": "array"
+          "default": null,
+          "title": "Roof Radii"
         },
         "cantilever_offset": {
           "anyOf": [
@@ -4024,12 +4041,113 @@
           ],
           "default": null,
           "title": "Cantilever Offset"
+        },
+        "storey_profiles": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "items": {
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "prefixItems": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey Profiles"
+        },
+        "base_polygon": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Polygon"
+        },
+        "waist_polygon": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Waist Polygon"
+        },
+        "roof_polygon": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roof Polygon"
         }
       },
       "required": [
-        "type",
-        "base_radii",
-        "roof_radii"
+        "type"
       ],
       "title": "GeometryRules",
       "type": "object"

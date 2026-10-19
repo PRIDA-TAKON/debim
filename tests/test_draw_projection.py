@@ -17,7 +17,7 @@ from debim.draw import (
 )
 from debim.schema import ProjectManifest, load_manifest
 
-FARNSWORTH_PATH = Path("examples/farnsworth_house/project.yaml")
+FARNSWORTH_PATH = Path("examples/farnsworth_house/project.debim")
 
 
 def test_farnsworth_house_slice():

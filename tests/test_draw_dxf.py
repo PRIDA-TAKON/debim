@@ -12,7 +12,7 @@ from debim.cli import app
 from debim.draw import export_2d_dxf
 from debim.schema import ProjectManifest, load_manifest
 
-FARNSWORTH_PATH = Path("examples/farnsworth_house/project.yaml")
+FARNSWORTH_PATH = Path("examples/farnsworth_house/project.debim")
 runner = CliRunner()
 
 

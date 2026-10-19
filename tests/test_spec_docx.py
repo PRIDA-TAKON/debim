@@ -63,7 +63,7 @@ def test_markdown_to_docx_conversion(tmp_path: Path):
 
 
 def test_spec_book_save_docx(tmp_path: Path):
-    project_yaml = Path("examples/farnsworth_house/project.yaml")
+    project_yaml = Path("examples/farnsworth_house/project.debim")
     specs_yaml = Path("examples/farnsworth_house/specs.yaml")
 
     book = build_specification_book(
