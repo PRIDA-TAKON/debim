@@ -143,3 +143,89 @@ def test_qto_net_wall_opening_deduction_inline_and_host_wall():
     assert qto.total_wall_masonry_area == pytest.approx(26.5)
     assert qto.total_wall_plaster_area == pytest.approx(53.0)
     assert qto.total_openings_area == pytest.approx(2.0 + 1.5)
+
+
+def test_viewer_glass_wall_and_steel_profiles():
+    """Verify viewer renders glass walls with transparency and extracts realistic steel profile dimensions."""
+    from debim.schema import (
+        CircleHollowProfile,
+        ColumnPlacement,
+        IShapeProfile,
+        IfcColumn,
+        LShapeProfile,
+        RectangleHollowProfile,
+        UShapeProfile,
+    )
+
+    manifest = ProjectManifest(
+        project={"id": "PROJ-GLASS-STEEL-TEST", "name": "Glass & Steel Viewer Test"},
+        spatial_structure=SpatialStructure(
+            storeys=[Storey(id="FL1", name="Floor 1", elevation=0.00, height=3.50)]
+        ),
+        grids=Grids(
+            axes_x={"1": 0.0, "2": 5.0},
+            axes_y={"A": 0.0, "B": 5.0},
+        ),
+        materials=[
+            Material(id="MAT_GLASS", name="Glass Partition", category="glass", unit_cost_ref="MAT-GLASS"),
+            Material(id="STEEL_SS400", name="Steel SS400", category="structural_steel", unit_cost_ref="MAT-STEEL"),
+        ],
+        elements=[
+            IfcWall(
+                tag="W-GLASS-01",
+                material="MAT_GLASS",
+                placement=WallPlacement(from_grid=("1", "A"), to_grid=("2", "A"), storey="FL1"),
+                thickness=0.10,
+                height=3.0,
+            ),
+            IfcColumn(
+                tag="COL-STEEL-I",
+                material="STEEL_SS400",
+                profile=IShapeProfile(
+                    overall_depth=0.20,
+                    overall_width=0.20,
+                    web_thickness=0.008,
+                    flange_thickness=0.012,
+                ),
+                placement=ColumnPlacement(grid=("1", "A"), base_storey="FL1", height=3.5),
+            ),
+            IfcColumn(
+                tag="COL-STEEL-RHS",
+                material="STEEL_SS400",
+                profile=RectangleHollowProfile(
+                    width=0.15,
+                    depth=0.10,
+                    wall_thickness=0.0045,
+                ),
+                placement=ColumnPlacement(grid=("2", "A"), base_storey="FL1", height=3.5),
+            ),
+            IfcColumn(
+                tag="COL-STEEL-CHS",
+                material="STEEL_SS400",
+                profile=CircleHollowProfile(
+                    diameter=0.1143,
+                    wall_thickness=0.0045,
+                ),
+                placement=ColumnPlacement(grid=("1", "B"), base_storey="FL1", height=3.5),
+            ),
+        ],
+    )
+
+    html = generate_viewer_html(manifest)
+
+    # 1. Verify Glass Wall Transparency & Color
+    assert '"tag": "W-GLASS-01"' in html
+    assert '"transparent": true' in html
+    assert '"opacity": 0.35' in html
+    assert '"color": "#00FFFF"' in html
+
+    # 2. Verify Steel Column Profile Dimensions Payload
+    assert '"shape": "ISHAPE"' in html
+    assert '"web_thickness": 0.008' in html
+    assert '"flange_thickness": 0.012' in html
+
+    assert '"shape": "RHS"' in html
+    assert '"wall_thickness": 0.0045' in html
+
+    assert '"shape": "CHS"' in html
+    assert '"diameter": 0.1143' in html
