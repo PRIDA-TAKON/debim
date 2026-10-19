@@ -107,6 +107,13 @@ def _get_element_storey(resolved_obj: Any) -> Optional[str]:
 
 
 def extract_profile_viewer_dim(prof: Any, length_or_height: float, is_column: bool = True) -> Dict[str, Any]:
+    if prof is None:
+        return {
+            "shape": "BOX",
+            ("height" if is_column else "length"): length_or_height,
+            "width": 0.3,
+            "depth": 0.3,
+        }
     shape = getattr(prof, "shape", "BOX")
     len_key = "height" if is_column else "length"
     dim: Dict[str, Any] = {
@@ -116,44 +123,44 @@ def extract_profile_viewer_dim(prof: Any, length_or_height: float, is_column: bo
         "depth": getattr(prof, "depth", 0.3),
     }
     if shape == "CIRCULAR":
-        dim["radius"] = prof.radius
-        dim["diameter"] = prof.diameter
+        dim["radius"] = getattr(prof, "radius", getattr(prof, "diameter", 0.3) / 2.0)
+        dim["diameter"] = getattr(prof, "diameter", dim["radius"] * 2.0)
     elif shape == "ELLIPSE":
-        dim["semi_major_axis"] = prof.semi_major_axis
-        dim["semi_minor_axis"] = prof.semi_minor_axis
+        dim["semi_major_axis"] = getattr(prof, "semi_major_axis", 0.15)
+        dim["semi_minor_axis"] = getattr(prof, "semi_minor_axis", 0.10)
     elif shape in ("ISHAPE", "I", "H"):
-        dim["overall_width"] = prof.overall_width
-        dim["overall_depth"] = prof.overall_depth
-        dim["web_thickness"] = prof.web_thickness
-        dim["flange_thickness"] = prof.flange_thickness
-        dim["width"] = prof.overall_width
-        dim["depth"] = prof.overall_depth
+        dim["overall_width"] = getattr(prof, "overall_width", getattr(prof, "width", 0.2))
+        dim["overall_depth"] = getattr(prof, "overall_depth", getattr(prof, "depth", 0.2))
+        dim["web_thickness"] = getattr(prof, "web_thickness", 0.008)
+        dim["flange_thickness"] = getattr(prof, "flange_thickness", 0.012)
+        dim["width"] = dim["overall_width"]
+        dim["depth"] = dim["overall_depth"]
     elif shape in ("LSHAPE", "L"):
-        dim["width"] = prof.width
-        dim["depth"] = prof.depth
-        dim["thickness"] = prof.thickness
+        dim["width"] = getattr(prof, "width", 0.05)
+        dim["depth"] = getattr(prof, "depth", 0.05)
+        dim["thickness"] = getattr(prof, "thickness", 0.005)
     elif shape in ("USHAPE", "U", "CSHAPE", "C"):
-        dim["flange_width"] = prof.flange_width
-        dim["depth"] = prof.depth
-        dim["web_thickness"] = prof.web_thickness
-        dim["flange_thickness"] = prof.flange_thickness
-        dim["width"] = prof.flange_width
+        dim["flange_width"] = getattr(prof, "flange_width", getattr(prof, "width", 0.075))
+        dim["depth"] = getattr(prof, "depth", 0.15)
+        dim["web_thickness"] = getattr(prof, "web_thickness", 0.0065)
+        dim["flange_thickness"] = getattr(prof, "flange_thickness", 0.01)
+        dim["width"] = dim["flange_width"]
     elif shape in ("TSHAPE", "T"):
-        dim["flange_width"] = prof.flange_width
-        dim["depth"] = prof.depth
-        dim["web_thickness"] = prof.web_thickness
-        dim["flange_thickness"] = prof.flange_thickness
-        dim["width"] = prof.flange_width
+        dim["flange_width"] = getattr(prof, "flange_width", getattr(prof, "width", 0.15))
+        dim["depth"] = getattr(prof, "depth", 0.15)
+        dim["web_thickness"] = getattr(prof, "web_thickness", 0.006)
+        dim["flange_thickness"] = getattr(prof, "flange_thickness", 0.009)
+        dim["width"] = dim["flange_width"]
     elif shape in ("RHS", "RECTANGLE_HOLLOW", "BOX_HOLLOW"):
-        dim["width"] = prof.width
-        dim["depth"] = prof.depth
-        dim["wall_thickness"] = prof.wall_thickness
+        dim["width"] = getattr(prof, "width", 0.10)
+        dim["depth"] = getattr(prof, "depth", 0.05)
+        dim["wall_thickness"] = getattr(prof, "wall_thickness", getattr(prof, "thickness", 0.0032))
     elif shape in ("CHS", "CIRCLE_HOLLOW", "PIPE_HOLLOW"):
-        dim["radius"] = prof.radius
-        dim["diameter"] = prof.diameter
-        dim["wall_thickness"] = prof.wall_thickness
-        dim["width"] = prof.diameter
-        dim["depth"] = prof.diameter
+        dim["radius"] = getattr(prof, "radius", getattr(prof, "diameter", 0.10) / 2.0)
+        dim["diameter"] = getattr(prof, "diameter", dim["radius"] * 2.0)
+        dim["wall_thickness"] = getattr(prof, "wall_thickness", getattr(prof, "thickness", 0.0032))
+        dim["width"] = dim["diameter"]
+        dim["depth"] = dim["diameter"]
     elif shape in ("ARBITRARY", "ARBITRARY_CLOSED", "POLYGON", "ARBITRARY_WITH_VOIDS"):
         dim["points"] = getattr(prof, "outer_curve", None) or getattr(prof, "points", None) or []
         dim["voids"] = getattr(prof, "inner_curves", None) or getattr(prof, "voids", None) or []
@@ -543,7 +550,11 @@ def generate_viewer_html(
         cy = (wall.start_point[1] + wall.end_point[1]) / 2.0
         cz = wall.start_point[2] + wall.height / 2.0
 
-        elements_data.append({
+        mat_str = str(wall.element.material or "").lower()
+        tag_str = str(wall.tag or "").lower()
+        is_glass = "glass" in mat_str or "glass" in tag_str or "กระจก" in mat_str or "กระจก" in tag_str
+
+        wall_dict = {
             "tag": wall.tag,
             "class": "IfcWall",
             "material": wall.element.material,
@@ -554,10 +565,15 @@ def generate_viewer_html(
                 "thickness": wall.thickness,
                 "height": wall.height,
             },
-            "color": "#D3D3D3",
+            "color": "#00FFFF" if is_glass else "#D3D3D3",
             "layer": wall.layer,
             "storey": st,
-        })
+        }
+        if is_glass:
+            wall_dict["transparent"] = True
+            wall_dict["opacity"] = 0.35
+
+        elements_data.append(wall_dict)
 
         for child in wall.children:
             ch_st = _get_element_storey(child) or st
@@ -3234,13 +3250,36 @@ def generate_viewer_html(
             let geometry;
             const dim = data.dimensions || {{ width: 1, depth: 1, height: 1 }};
             if (data.class === "IfcColumn") {{
-                if (dim.shape === "CIRCULAR" || dim.shape === "CHS") {{
+                if (dim.shape === "CIRCULAR") {{
                     geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.height, 32);
                     geometry.rotateX(Math.PI / 2);
+                }} else if (dim.shape === "CHS" || dim.shape === "CIRCLE_HOLLOW" || dim.shape === "PIPE_HOLLOW") {{
+                    const r = dim.radius || (dim.diameter ? dim.diameter / 2) || 0.05;
+                    const t = dim.wall_thickness || 0.0032;
+                    const s = new THREE.Shape();
+                    s.absarc(0, 0, r, 0, Math.PI * 2, false);
+                    if (t > 0 && t < r) {{
+                        const hole = new THREE.Path();
+                        hole.absarc(0, 0, r - t, 0, Math.PI * 2, true);
+                        s.holes.push(hole);
+                    }}
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.height, bevelEnabled: false, curveSegments: 32 }});
+                    geometry.center();
                 }} else if (dim.shape === "ELLIPSE") {{
                     geometry = new THREE.CylinderGeometry(1, 1, dim.height, 32);
                     geometry.rotateX(Math.PI / 2);
                     geometry.scale(dim.semi_major_axis, dim.semi_minor_axis, 1);
+                }} else if (dim.shape === "RHS" || dim.shape === "SHS" || dim.shape === "RECTANGLE_HOLLOW" || dim.shape === "BOX_HOLLOW") {{
+                    const d = dim.depth || 0.10, w = dim.width || 0.05, t = dim.wall_thickness || dim.thickness || 0.0032;
+                    const s = new THREE.Shape();
+                    s.moveTo(-w/2, -d/2); s.lineTo(w/2, -d/2); s.lineTo(w/2, d/2); s.lineTo(-w/2, d/2); s.closePath();
+                    if (t > 0 && t < Math.min(w, d) / 2) {{
+                        const hole = new THREE.Path();
+                        hole.moveTo(-w/2 + t, -d/2 + t); hole.lineTo(w/2 - t, -d/2 + t); hole.lineTo(w/2 - t, d/2 - t); hole.lineTo(-w/2 + t, d/2 - t); hole.closePath();
+                        s.holes.push(hole);
+                    }}
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.height, bevelEnabled: false }});
+                    geometry.center();
                 }} else if (dim.shape === "ISHAPE" || dim.shape === "I" || dim.shape === "H") {{
                     const w = dim.overall_width || dim.width || 0.2;
                     const d = dim.overall_depth || dim.depth || 0.2;
@@ -3314,9 +3353,22 @@ def generate_viewer_html(
                     geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
                 }}
             }} else if (data.class === "IfcBeam" || data.class === "IfcRoofFraming" || data.class === "IfcFasciaBoard") {{
-                if (dim.shape === "CIRCULAR" || dim.shape === "CHS") {{
+                if (dim.shape === "CIRCULAR") {{
                     geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
+                }} else if (dim.shape === "CHS" || dim.shape === "CIRCLE_HOLLOW" || dim.shape === "PIPE_HOLLOW") {{
+                    const r = dim.radius || (dim.diameter ? dim.diameter / 2) || 0.05;
+                    const t = dim.wall_thickness || 0.0032;
+                    const s = new THREE.Shape();
+                    s.absarc(0, 0, r, 0, Math.PI * 2, false);
+                    if (t > 0 && t < r) {{
+                        const hole = new THREE.Path();
+                        hole.absarc(0, 0, r - t, 0, Math.PI * 2, true);
+                        s.holes.push(hole);
+                    }}
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false, curveSegments: 32 }});
+                    geometry.center();
+                    geometry.rotateY(Math.PI / 2);
                 }} else if (dim.shape === "ELLIPSE") {{
                     geometry = new THREE.CylinderGeometry(1, 1, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
