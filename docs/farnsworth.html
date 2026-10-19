@@ -1002,9 +1002,11 @@
         "thickness": 0.05,
         "height": 2.85
       },
-      "color": "#D3D3D3",
+      "color": "#00FFFF",
       "layer": "architecture/walls",
-      "storey": "Main_Floor"
+      "storey": "Main_Floor",
+      "transparent": true,
+      "opacity": 0.35
     },
     {
       "tag": "GLASS-NORTH",
@@ -1025,9 +1027,11 @@
         "thickness": 0.05,
         "height": 2.85
       },
-      "color": "#D3D3D3",
+      "color": "#00FFFF",
       "layer": "architecture/walls",
-      "storey": "Main_Floor"
+      "storey": "Main_Floor",
+      "transparent": true,
+      "opacity": 0.35
     },
     {
       "tag": "GLASS-WEST",
@@ -1048,9 +1052,11 @@
         "thickness": 0.05,
         "height": 2.85
       },
-      "color": "#D3D3D3",
+      "color": "#00FFFF",
       "layer": "architecture/walls",
-      "storey": "Main_Floor"
+      "storey": "Main_Floor",
+      "transparent": true,
+      "opacity": 0.35
     },
     {
       "tag": "GLASS-EAST",
@@ -1071,9 +1077,11 @@
         "thickness": 0.05,
         "height": 2.85
       },
-      "color": "#D3D3D3",
+      "color": "#00FFFF",
       "layer": "architecture/walls",
-      "storey": "Main_Floor"
+      "storey": "Main_Floor",
+      "transparent": true,
+      "opacity": 0.35
     }
   ],
   "ports": [],
@@ -1363,13 +1371,36 @@
             let geometry;
             const dim = data.dimensions || { width: 1, depth: 1, height: 1 };
             if (data.class === "IfcColumn") {
-                if (dim.shape === "CIRCULAR" || dim.shape === "CHS") {
+                if (dim.shape === "CIRCULAR") {
                     geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.height, 32);
                     geometry.rotateX(Math.PI / 2);
+                } else if (dim.shape === "CHS" || dim.shape === "CIRCLE_HOLLOW" || dim.shape === "PIPE_HOLLOW") {
+                    const r = dim.radius || (dim.diameter ? dim.diameter / 2) || 0.05;
+                    const t = dim.wall_thickness || 0.0032;
+                    const s = new THREE.Shape();
+                    s.absarc(0, 0, r, 0, Math.PI * 2, false);
+                    if (t > 0 && t < r) {
+                        const hole = new THREE.Path();
+                        hole.absarc(0, 0, r - t, 0, Math.PI * 2, true);
+                        s.holes.push(hole);
+                    }
+                    geometry = new THREE.ExtrudeGeometry(s, { depth: dim.height, bevelEnabled: false, curveSegments: 32 });
+                    geometry.center();
                 } else if (dim.shape === "ELLIPSE") {
                     geometry = new THREE.CylinderGeometry(1, 1, dim.height, 32);
                     geometry.rotateX(Math.PI / 2);
                     geometry.scale(dim.semi_major_axis, dim.semi_minor_axis, 1);
+                } else if (dim.shape === "RHS" || dim.shape === "SHS" || dim.shape === "RECTANGLE_HOLLOW" || dim.shape === "BOX_HOLLOW") {
+                    const d = dim.depth || 0.10, w = dim.width || 0.05, t = dim.wall_thickness || dim.thickness || 0.0032;
+                    const s = new THREE.Shape();
+                    s.moveTo(-w/2, -d/2); s.lineTo(w/2, -d/2); s.lineTo(w/2, d/2); s.lineTo(-w/2, d/2); s.closePath();
+                    if (t > 0 && t < Math.min(w, d) / 2) {
+                        const hole = new THREE.Path();
+                        hole.moveTo(-w/2 + t, -d/2 + t); hole.lineTo(w/2 - t, -d/2 + t); hole.lineTo(w/2 - t, d/2 - t); hole.lineTo(-w/2 + t, d/2 - t); hole.closePath();
+                        s.holes.push(hole);
+                    }
+                    geometry = new THREE.ExtrudeGeometry(s, { depth: dim.height, bevelEnabled: false });
+                    geometry.center();
                 } else if (dim.shape === "ISHAPE" || dim.shape === "I" || dim.shape === "H") {
                     const w = dim.overall_width || dim.width || 0.2;
                     const d = dim.overall_depth || dim.depth || 0.2;
@@ -1443,9 +1474,22 @@
                     geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
                 }
             } else if (data.class === "IfcBeam" || data.class === "IfcRoofFraming" || data.class === "IfcFasciaBoard") {
-                if (dim.shape === "CIRCULAR" || dim.shape === "CHS") {
+                if (dim.shape === "CIRCULAR") {
                     geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
+                } else if (dim.shape === "CHS" || dim.shape === "CIRCLE_HOLLOW" || dim.shape === "PIPE_HOLLOW") {
+                    const r = dim.radius || (dim.diameter ? dim.diameter / 2) || 0.05;
+                    const t = dim.wall_thickness || 0.0032;
+                    const s = new THREE.Shape();
+                    s.absarc(0, 0, r, 0, Math.PI * 2, false);
+                    if (t > 0 && t < r) {
+                        const hole = new THREE.Path();
+                        hole.absarc(0, 0, r - t, 0, Math.PI * 2, true);
+                        s.holes.push(hole);
+                    }
+                    geometry = new THREE.ExtrudeGeometry(s, { depth: dim.length, bevelEnabled: false, curveSegments: 32 });
+                    geometry.center();
+                    geometry.rotateY(Math.PI / 2);
                 } else if (dim.shape === "ELLIPSE") {
                     geometry = new THREE.CylinderGeometry(1, 1, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
