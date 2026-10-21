@@ -1350,6 +1350,7 @@ class ResolvedAlignment(BaseModel):
     frames_3d: List[Dict[str, Any]] = Field(default_factory=list)
     swept_solids: List[Dict[str, Any]] = Field(default_factory=list)
     layer: str = "civil/infrastructure/alignment"
+    sweeper: Optional[Any] = None
 
 
 class ResolvedRoad(BaseModel):
@@ -6086,6 +6087,7 @@ class SpatialResolver:
             frames_3d=frames,
             swept_solids=swept_solids,
             layer=derive_default_layer(align),
+            sweeper=sweeper,
         )
 
     def resolve_road(self, road: IfcRoad) -> ResolvedRoad:
