@@ -3019,6 +3019,32 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         parent=context,
     )
 
+    # GIS-BIM Geo-Referencing (IfcProjectedCRS & IfcMapConversion)
+    crs_cfg = getattr(project_info, "crs", None) or getattr(manifest, "crs", None)
+    if crs_cfg:
+        try:
+            proj_crs = model.createIfcProjectedCRS(
+                Name=f"EPSG:{crs_cfg.epsg}",
+                Description=crs_cfg.name or f"EPSG:{crs_cfg.epsg}",
+                GeodeticDatum=crs_cfg.geodetic_datum or "WGS 84",
+                MapProjection="UTM",
+                MapZone=str(crs_cfg.epsg % 100) if 32601 <= crs_cfg.epsg <= 32660 else None,
+                MapUnit=model.by_type("IfcSIUnit")[0] if model.by_type("IfcSIUnit") else None,
+            )
+            rot_rad = math.radians(float(crs_cfg.rotation))
+            model.createIfcMapConversion(
+                SourceCRS=context,
+                TargetCRS=proj_crs,
+                Eastings=float(crs_cfg.easting),
+                Northings=float(crs_cfg.northing),
+                OrthogonalHeight=float(crs_cfg.elevation),
+                XAxisAbscissa=math.cos(rot_rad),
+                XAxisOrdinate=math.sin(rot_rad),
+                Scale=float(crs_cfg.scale),
+            )
+        except Exception as ex:
+            logger.warning(f"Could not create IfcMapConversion: {ex}")
+
     # Site & Building
     site = ifcopenshell.api.run(
         "root.create_entity", model, ifc_class="IfcSite", name="Default Site"
@@ -4343,6 +4369,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         if st_id and st_id in storey_products:
             storey_products[st_id].append(align_obj)
 
+    road_objs: Dict[str, Any] = {}
     for road in resolved.roads:
         try:
             road_obj = ifcopenshell.api.run(
@@ -4366,6 +4393,7 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             st_id = road.element.placement.storey
             if st_id and st_id in storey_products:
                 storey_products[st_id].append(road_obj)
+        road_objs[road.tag] = road_obj
 
     bridge_objs: Dict[str, Any] = {}
     for bridge in resolved.bridges:
@@ -4832,6 +4860,58 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         )
         rep = model.createIfcShapeRepresentation(body_context, "Body", "SweptSolid", [solid])
         ifcopenshell.api.run("geometry.assign_representation", model, product=br_obj, representation=rep)
+
+    for fp in getattr(resolved, "facility_parts", []) or []:
+        ptype = (fp.predefined_type or "ROADWAY").upper()
+        valid_ptypes = {
+            "ROADWAY", "SIDEWALK", "INTERSECTION", "JUNCTION", "PARKING",
+            "PAVEMENT", "SHOULDER", "MEDIAN", "ISLAND", "SUPERSTRUCTURE",
+            "SUBSTRUCTURE", "TRACK", "USERDEFINED", "NOTDEFINED"
+        }
+        actual_ptype = ptype if ptype in valid_ptypes else "USERDEFINED"
+        try:
+            fp_obj = ifcopenshell.api.run(
+                "root.create_entity",
+                model,
+                ifc_class="IfcFacilityPart",
+                name=fp.tag,
+                predefined_type=actual_ptype,
+            )
+        except Exception:
+            try:
+                fp_obj = ifcopenshell.api.run(
+                    "root.create_entity",
+                    model,
+                    ifc_class="IfcBuildingElementProxy",
+                    name=fp.tag,
+                )
+                fp_obj.ObjectType = f"IfcFacilityPart.{actual_ptype}"
+            except Exception:
+                fp_obj = model.create_entity("IfcFacilityPart", Name=fp.tag)
+
+        parent_tag = getattr(fp, "facility", None)
+        parent_obj = None
+        if parent_tag:
+            if parent_tag in road_objs:
+                parent_obj = road_objs[parent_tag]
+            elif parent_tag in bridge_objs:
+                parent_obj = bridge_objs[parent_tag]
+        if not parent_obj and road_objs:
+            parent_obj = list(road_objs.values())[0]
+
+        relating_obj = parent_obj if parent_obj else site
+        try:
+            ifcopenshell.api.run("aggregate.assign_object", model, products=[fp_obj], relating_object=relating_obj)
+        except Exception:
+            pass
+
+        px, py, pz = getattr(fp, "position", (0.0, 0.0, 0.0))
+        rot = getattr(fp, "rotation_angle", 0.0)
+        mat = _build_transform_matrix((px, py, pz), (0.0, 0.0, rot))
+        try:
+            ifcopenshell.api.run("geometry.edit_object_placement", model, product=fp_obj, matrix=mat)
+        except Exception:
+            pass
 
     for da in getattr(resolved, "discrete_accessories", []) or []:
         try:

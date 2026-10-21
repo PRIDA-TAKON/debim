@@ -35,6 +35,18 @@ class RevisionEntry(BaseModel):
     by: Optional[str] = None
 
 
+class CRSConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    epsg: int = 32647
+    name: Optional[str] = "WGS 84 / UTM zone 47N"
+    geodetic_datum: Optional[str] = "WGS 84"
+    easting: float = 0.0
+    northing: float = 0.0
+    elevation: float = 0.0
+    rotation: float = 0.0  # degrees clockwise from Grid North
+    scale: float = 1.0
+
+
 class ProjectInfo(BaseModel):
     model_config = ConfigDict(extra="allow")
     id: str
@@ -52,6 +64,7 @@ class ProjectInfo(BaseModel):
     engineer_role: Optional[str] = None
     revisions: List[RevisionEntry] = Field(default_factory=list)
     units: Units = Field(default_factory=Units)
+    crs: Optional[CRSConfig] = None
 
 
 class Storey(BaseModel):
@@ -3091,6 +3104,56 @@ class IfcBridgePart(BaseModel):
         return self.part_height
 
 
+FacilityPartType = Literal[
+    "ROADWAY", "SIDEWALK", "INTERSECTION", "JUNCTION", "PARKING",
+    "PAVEMENT", "SHOULDER", "MEDIAN", "ISLAND", "SUPERSTRUCTURE",
+    "SUBSTRUCTURE", "TRACK", "USERDEFINED", "NOTDEFINED"
+]
+
+
+class FacilityPartPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    alignment: Optional[str] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    elevation: Optional[float] = None
+    boundary: Optional[List[Tuple[float, float]]] = None
+    points: Optional[List[Tuple[float, float, float]]] = None
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcFacilityPart(BaseModel):
+    class_: Literal["IfcFacilityPart"] = Field(alias="class", default="IfcFacilityPart")
+    tag: str
+    name: Optional[str] = None
+    facility: Optional[str] = None
+    predefined_type: FacilityPartType = "ROADWAY"
+    description: Optional[str] = None
+    placement: Optional[FacilityPartPlacement] = None
+    layer: Optional[str] = None
+
+
+class IfcRoadPart(BaseModel):
+    class_: Literal["IfcRoadPart"] = Field(alias="class", default="IfcRoadPart")
+    tag: str
+    name: Optional[str] = None
+    facility: Optional[str] = None
+    predefined_type: FacilityPartType = "ROADWAY"
+    description: Optional[str] = None
+    placement: Optional[FacilityPartPlacement] = None
+    layer: Optional[str] = None
+
+
 class DiscreteAccessoryPlacement(BaseModel):
     storey: Optional[str] = None
     grid: Optional[Tuple[str, str]] = None
@@ -3767,7 +3830,8 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcDiscreteAccessory", "IfcMarineFacility",
     "IfcMarinePart", "IfcMooringDevice", "IfcNavigationElement", "IfcDistributionFlowElement",
     "IfcFurniture", "IfcFurnishingElement", "IfcChimney", "IfcEnergyConversionDevice",
-    "IfcFlowMovingDevice", "IfcCustomElement", "IfcBuildingElementProxy"
+    "IfcFlowMovingDevice", "IfcCustomElement", "IfcBuildingElementProxy",
+    "IfcFacilityPart", "IfcRoadPart"
 }
 
 
@@ -3845,6 +3909,8 @@ Element = Annotated[
         Annotated[IfcEnergyConversionDevice, Tag("IfcEnergyConversionDevice")],
         Annotated[IfcFlowMovingDevice, Tag("IfcFlowMovingDevice")],
         Annotated[IfcCustomElement, Tag("IfcCustomElement")],
+        Annotated[IfcFacilityPart, Tag("IfcFacilityPart")],
+        Annotated[IfcRoadPart, Tag("IfcRoadPart")],
         Annotated[IfcBuildingElementProxy, Tag("IfcBuildingElementProxy")],
     ],
     Discriminator(element_discriminator),
@@ -4046,6 +4112,8 @@ class ProjectManifest(BaseModel):
     geometry_rules: Optional[GeometryRules] = None
     structures: Optional[StructuresConfig] = None
     facade: Optional[FacadeConfig] = None
+    crs: Optional[CRSConfig] = None
+    facility_parts: List[Union[IfcFacilityPart, IfcRoadPart]] = Field(default_factory=list)
     modules: Optional[List[ModuleDefinition]] = None
     instances: Optional[List[InstanceConfig]] = None
     macro_elements: Optional[List[Union[ColumnGrid, BeamBay, Dict[str, Any]]]] = None

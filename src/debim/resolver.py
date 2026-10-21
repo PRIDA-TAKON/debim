@@ -66,6 +66,8 @@ from debim.schema import (
     IfcRamp,
     IfcRetainingWall,
     IfcRoad,
+    IfcFacilityPart,
+    IfcRoadPart,
     IfcRoof,
     IfcSanitaryTerminal,
     IfcSlab,
@@ -1640,6 +1642,20 @@ class ResolvedDistributionFlowElement(BaseModel):
         return (dx, dy, dz)
 
 
+class ResolvedFacilityPart(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: Any
+    predefined_type: str = "ROADWAY"
+    facility: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    rotation_angle: float = 0.0
+    layer: str = "civil/facility_part"
+
+
 ResolvedElement = Union[
     ResolvedColumn,
     ResolvedBeam,
@@ -1743,6 +1759,7 @@ class ResolvedManifest(BaseModel):
     alignments: List[ResolvedAlignment] = []
     roads: List[ResolvedRoad] = []
     bridges: List[ResolvedBridge] = []
+    facility_parts: List[ResolvedFacilityPart] = []
     railways: List[ResolvedRailway] = []
     railway_parts: List[ResolvedRailwayPart] = []
     track_elements: List[ResolvedTrackElement] = []
@@ -7542,6 +7559,10 @@ class SpatialResolver:
                 r_road = self.resolve_road(elem)
                 resolved_manifest.roads.append(r_road)
                 resolved_manifest.elements.append(r_road)
+            elif isinstance(elem, (IfcFacilityPart, IfcRoadPart)):
+                r_fp = self.resolve_facility_part(elem)
+                resolved_manifest.facility_parts.append(r_fp)
+                resolved_manifest.elements.append(r_fp)
             elif isinstance(elem, IfcBridge):
                 r_bridge = self.resolve_bridge(elem)
                 resolved_manifest.bridges.append(r_bridge)
@@ -7634,6 +7655,11 @@ class SpatialResolver:
             resolved_manifest.proxies.append(r_proxy)
             resolved_manifest.elements.append(r_proxy)
 
+        for fp_elem in getattr(self.manifest, "facility_parts", []) or []:
+            r_fp = self.resolve_facility_part(fp_elem)
+            resolved_manifest.facility_parts.append(r_fp)
+            resolved_manifest.elements.append(r_fp)
+
         # Resolve ports for all elements and proxies
         all_resolved_ports: List[ResolvedPort] = []
         all_manifest_elems = list(self.manifest.elements) + list(self.manifest.proxies)
@@ -7662,6 +7688,27 @@ class SpatialResolver:
         resolved_manifest.topology_graph = self._build_topology_graph(all_resolved_ports)
 
         return resolved_manifest
+
+    def resolve_facility_part(self, elem: Any) -> ResolvedFacilityPart:
+        pos = (0.0, 0.0, 0.0)
+        rot = 0.0
+        placement = getattr(elem, "placement", None)
+        if placement:
+            pos = (
+                float(getattr(placement, "offset_x", 0.0)),
+                float(getattr(placement, "offset_y", 0.0)),
+                float(getattr(placement, "offset_z", 0.0)),
+            )
+        return ResolvedFacilityPart(
+            tag=elem.tag,
+            element=elem,
+            predefined_type=getattr(elem, "predefined_type", "ROADWAY"),
+            facility=getattr(elem, "facility", None),
+            name=getattr(elem, "name", None) or elem.tag,
+            description=getattr(elem, "description", None),
+            position=pos,
+            rotation_angle=rot,
+        )
 
     def resolve_proxy(self, proxy: IfcBuildingElementProxy) -> ResolvedProxy:
         storey_id = proxy.placement.storey
