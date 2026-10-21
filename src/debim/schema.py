@@ -2186,10 +2186,16 @@ class PipePlacement(BaseModel):
         return v
 
 
+PipeSegmentType = Literal[
+    "CULVERT", "GUTTER", "RIGIDSEGMENT", "FLEXIBLESEGMENT", "USERDEFINED", "NOTDEFINED"
+]
+
+
 class IfcPipeSegment(BaseModel):
     class_: Literal["IfcPipeSegment"] = Field(alias="class", default="IfcPipeSegment")
     tag: str
     system_type: PipeSystemType = "COLD_WATER"
+    predefined_type: Optional[PipeSegmentType] = None
     material: Optional[str] = None
     nominal_diameter: float = 0.020  # Nominal diameter in meters (e.g. 0.020 for 3/4", 0.100 for 4")
     placement: PipePlacement
@@ -3458,6 +3464,152 @@ class IfcNavigationElement(BaseModel):
     layer: Optional[str] = None
 
 
+PavementType = Literal["FLEXIBLE", "RIGID", "USERDEFINED", "NOTDEFINED"]
+KerbType = Literal["KERB", "BORDER", "FLUSH", "RAISED", "USERDEFINED", "NOTDEFINED"]
+ImpactProtectionType = Literal["CRASHCUSHION", "FENDER", "BUMPER", "USERDEFINED", "NOTDEFINED"]
+DistributionChamberElementType = Literal["MANHOLE", "INSPECTIONCHAMBER", "INSPECTIONPIT", "SUMP", "TRENCH", "USERDEFINED", "NOTDEFINED"]
+
+
+class PavementPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    alignment: Optional[str] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    boundary: Optional[List[Tuple[float, float]]] = None
+    boundary_grid: Optional[List[Tuple[str, str]]] = None
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+    @field_validator("boundary_grid", mode="before")
+    @classmethod
+    def convert_boundary_grid_to_str(cls, v):
+        if isinstance(v, list):
+            return [tuple(str(x) for x in pt) if isinstance(pt, (list, tuple)) else pt for pt in v]
+        return v
+
+
+class IfcPavement(BaseModel):
+    class_: Literal["IfcPavement"] = Field(alias="class", default="IfcPavement")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = None
+    predefined_type: PavementType = "FLEXIBLE"
+    thickness: float = 0.10             # Total pavement layer thickness (m)
+    width: Optional[float] = None       # Pavement width (m)
+    length: Optional[float] = None      # Pavement length (m)
+    area: Optional[float] = None        # Pavement surface area (m2)
+    volume: Optional[float] = None      # Pavement total volume (m3)
+    placement: PavementPlacement = Field(default_factory=PavementPlacement)
+    layer: Optional[str] = None
+
+
+class KerbPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    alignment: Optional[str] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    points: Optional[List[Tuple[float, float, float]]] = None
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcKerb(BaseModel):
+    class_: Literal["IfcKerb"] = Field(alias="class", default="IfcKerb")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = None
+    predefined_type: KerbType = "KERB"
+    width: float = 0.15                 # Kerb cross-section width (m)
+    height: float = 0.30                # Kerb cross-section height (m)
+    length: Optional[float] = None      # Kerb length along road edge (m)
+    placement: KerbPlacement = Field(default_factory=KerbPlacement)
+    layer: Optional[str] = None
+
+
+class ImpactProtectionPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    from_grid: Optional[Tuple[str, str]] = None
+    to_grid: Optional[Tuple[str, str]] = None
+    alignment: Optional[str] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    points: Optional[List[Tuple[float, float, float]]] = None
+
+    @field_validator("grid", "from_grid", "to_grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcImpactProtectionDevice(BaseModel):
+    class_: Literal["IfcImpactProtectionDevice"] = Field(alias="class", default="IfcImpactProtectionDevice")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = None
+    predefined_type: ImpactProtectionType = "CRASHCUSHION"
+    width: float = 0.20                 # Barrier width (m)
+    height: float = 0.80                # Barrier height (m)
+    length: Optional[float] = None      # Barrier length (m)
+    placement: ImpactProtectionPlacement = Field(default_factory=ImpactProtectionPlacement)
+    layer: Optional[str] = None
+
+
+class DistributionChamberPlacement(BaseModel):
+    storey: Optional[str] = None
+    grid: Optional[Tuple[str, str]] = None
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    offset_z: float = 0.0
+    position: Optional[Tuple[float, float, float]] = None
+
+    @field_validator("grid", mode="before")
+    @classmethod
+    def convert_grid_items_to_str(cls, v):
+        if isinstance(v, (list, tuple)):
+            return tuple(str(x) for x in v)
+        return v
+
+
+class IfcDistributionChamberElement(BaseModel):
+    class_: Literal["IfcDistributionChamberElement", "IfcDistributionChamber"] = Field(alias="class", default="IfcDistributionChamberElement")
+    tag: str
+    name: Optional[str] = None
+    material: Optional[str] = None
+    predefined_type: DistributionChamberElementType = "MANHOLE"
+    width: float = 1.20                 # Outer width / diameter (m)
+    length: float = 1.20                # Outer length (m)
+    height: float = 1.50                # Chamber depth / height (m)
+    wall_thickness: float = 0.15        # Precast wall thickness (m)
+    invert_elevation: Optional[float] = None
+    placement: DistributionChamberPlacement = Field(default_factory=DistributionChamberPlacement)
+    layer: Optional[str] = None
+
+
+IfcDistributionChamber = IfcDistributionChamberElement
+
+
 DistributionFlowElementType = Literal[
     "CULVERT", "DRAINAGE_CHANNEL", "GULLY", "INLET", "OUTLET", "MANHOLE", "USERDEFINED", "NOTDEFINED"
 ]
@@ -3792,6 +3944,9 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcRetainingWall",
     "IfcAlignment",
     "IfcRoad",
+    "IfcPavement",
+    "IfcKerb",
+    "IfcImpactProtectionDevice",
     "IfcBridge",
     "IfcRailway",
     "IfcRailwayPart",
@@ -3802,6 +3957,7 @@ KNOWN_ELEMENT_CLASSES = {
     "IfcMarinePart",
     "IfcMooringDevice",
     "IfcNavigationElement",
+    "IfcDistributionChamberElement",
     "IfcFurniture",
     "IfcFurnishingElement",
     "IfcCustomElement",
@@ -3826,9 +3982,10 @@ EXPLICIT_TYPED_ELEMENT_CLASSES = {
     "IfcLightFixture", "IfcSwitchingDevice", "IfcOutlet", "IfcAirTerminal", "IfcDamper",
     "IfcFlowController", "IfcUnitaryEquipment", "IfcEarthworksElement", "IfcEarthworksCut",
     "IfcEarthworksFill", "IfcGeotechnicalStratum", "IfcSoil", "IfcRetainingWall",
-    "IfcAlignment", "IfcRoad", "IfcBridge", "IfcRailway", "IfcRailwayPart",
+    "IfcAlignment", "IfcRoad", "IfcPavement", "IfcKerb", "IfcImpactProtectionDevice", "IfcBridge", "IfcRailway", "IfcRailwayPart",
     "IfcTrackElement", "IfcBridgePart", "IfcBearing", "IfcDiscreteAccessory", "IfcMarineFacility",
     "IfcMarinePart", "IfcMooringDevice", "IfcNavigationElement", "IfcDistributionFlowElement",
+    "IfcDistributionChamberElement", "IfcDistributionChamber",
     "IfcFurniture", "IfcFurnishingElement", "IfcChimney", "IfcEnergyConversionDevice",
     "IfcFlowMovingDevice", "IfcCustomElement", "IfcBuildingElementProxy",
     "IfcFacilityPart", "IfcRoadPart"
@@ -3891,6 +4048,9 @@ Element = Annotated[
         Annotated[IfcRetainingWall, Tag("IfcRetainingWall")],
         Annotated[IfcAlignment, Tag("IfcAlignment")],
         Annotated[IfcRoad, Tag("IfcRoad")],
+        Annotated[IfcPavement, Tag("IfcPavement")],
+        Annotated[IfcKerb, Tag("IfcKerb")],
+        Annotated[IfcImpactProtectionDevice, Tag("IfcImpactProtectionDevice")],
         Annotated[IfcBridge, Tag("IfcBridge")],
         Annotated[IfcRailway, Tag("IfcRailway")],
         Annotated[IfcRailwayPart, Tag("IfcRailwayPart")],
@@ -3903,6 +4063,7 @@ Element = Annotated[
         Annotated[IfcMooringDevice, Tag("IfcMooringDevice")],
         Annotated[IfcNavigationElement, Tag("IfcNavigationElement")],
         Annotated[IfcDistributionFlowElement, Tag("IfcDistributionFlowElement")],
+        Annotated[IfcDistributionChamberElement, Tag("IfcDistributionChamberElement")],
         Annotated[IfcFurniture, Tag("IfcFurniture")],
         Annotated[IfcFurnishingElement, Tag("IfcFurnishingElement")],
         Annotated[IfcChimney, Tag("IfcChimney")],
@@ -4366,7 +4527,7 @@ class ProjectManifest(BaseModel):
                     if gy not in grid_y_ids:
                         raise ValueError(f"Element '{elem.tag}' references unknown Y grid '{gy}'")
 
-            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcBridge, IfcBridgePart, IfcBearing, IfcDiscreteAccessory, IfcMarinePart, IfcMooringDevice, IfcNavigationElement, IfcDistributionFlowElement, IfcRailway, IfcRailwayPart, IfcTrackElement)):
+            elif isinstance(elem, (IfcAlignment, IfcRoad, IfcPavement, IfcKerb, IfcImpactProtectionDevice, IfcDistributionChamberElement, IfcBridge, IfcBridgePart, IfcBearing, IfcDiscreteAccessory, IfcMarinePart, IfcMooringDevice, IfcNavigationElement, IfcDistributionFlowElement, IfcRailway, IfcRailwayPart, IfcTrackElement)):
                 if getattr(elem.placement, "storey", None) and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
@@ -4769,6 +4930,14 @@ def derive_default_layer(elem) -> str:
         return "civil/infrastructure/alignment"
     elif cls == "IfcRoad":
         return "civil/infrastructure/roads"
+    elif cls == "IfcPavement":
+        return "civil/infrastructure/pavement"
+    elif cls == "IfcKerb":
+        return "civil/infrastructure/kerbs"
+    elif cls == "IfcImpactProtectionDevice":
+        return "civil/infrastructure/safety"
+    elif cls in ("IfcDistributionChamberElement", "IfcDistributionChamber"):
+        return "civil/infrastructure/drainage"
     elif cls == "IfcBridge":
         return "civil/infrastructure/bridges"
     elif cls == "IfcRailway":

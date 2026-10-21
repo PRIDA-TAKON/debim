@@ -41,9 +41,12 @@ from debim.resolver import (
     ResolvedFlowController,
     ResolvedFooting,
     ResolvedFurniture,
+    ResolvedImpactProtectionDevice,
+    ResolvedKerb,
     ResolvedLightFixture,
     ResolvedManifest,
     ResolvedOutlet,
+    ResolvedPavement,
     ResolvedPipeSegment,
     ResolvedPlate,
     ResolvedProxy,
@@ -54,6 +57,7 @@ from debim.resolver import (
     ResolvedRetainingWall,
     ResolvedRevolvedArea,
     ResolvedRoad,
+    ResolvedDistributionChamberElement,
     ResolvedRoof,
     ResolvedSanitaryTerminal,
     ResolvedSlab,
@@ -506,6 +510,30 @@ class RoadQTO(BaseModel):
     lanes_count: int = 2
 
 
+class PavementQTO(BaseModel):
+    surface_area: float = 0.0            # Surface area (m2)
+    pavement_volume: float = 0.0         # Volume (m3)
+    thickness: float = 0.10              # Thickness (m)
+
+
+class KerbQTO(BaseModel):
+    length: float = 0.0                  # Kerb length (m)
+    concrete_volume: float = 0.0         # Volume (m3)
+    width: float = 0.15                  # Cross section width (m)
+    height: float = 0.30                 # Cross section height (m)
+
+
+class ImpactProtectionQTO(BaseModel):
+    length: float = 0.0                  # Length (m)
+    volume: float = 0.0                  # Volume (m3)
+
+
+class DistributionChamberQTO(BaseModel):
+    concrete_volume: float = 0.0         # Precast concrete volume (m3)
+    chamber_volume: float = 0.0          # Internal chamber capacity (m3)
+    depth: float = 1.50                  # Chamber depth (m)
+
+
 class BridgeQTO(BaseModel):
     span_length: float = 0.0             # Total span length (m)
     deck_width: float = 0.0              # Bridge deck width (m)
@@ -646,6 +674,10 @@ class ElementQTO(BaseModel):
     retaining_wall: Optional[RetainingWallQTO] = None
     alignment: Optional[AlignmentQTO] = None
     road: Optional[RoadQTO] = None
+    pavement: Optional[PavementQTO] = None
+    kerb: Optional[KerbQTO] = None
+    impact_protection: Optional[ImpactProtectionQTO] = None
+    distribution_chamber: Optional[DistributionChamberQTO] = None
     bridge: Optional[BridgeQTO] = None
     marine: Optional[MarineQTO] = None
     mooring_device: Optional[MooringDeviceQTO] = None
@@ -713,6 +745,14 @@ class ProjectQTO(BaseModel):
     total_road_asphalt_volume: float = 0.0
     total_road_base_volume: float = 0.0
     total_road_subbase_volume: float = 0.0
+    total_pavement_surface_area: float = 0.0
+    total_pavement_volume: float = 0.0
+    total_kerb_length: float = 0.0
+    total_kerb_concrete_volume: float = 0.0
+    total_impact_protection_length: float = 0.0
+    total_impact_protection_volume: float = 0.0
+    total_distribution_chambers_count: int = 0
+    total_distribution_chamber_concrete_volume: float = 0.0
     total_bridge_concrete_volume: float = 0.0
     total_bridge_formwork_area: float = 0.0
     total_navigation_elements_count: int = 0

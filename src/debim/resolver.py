@@ -39,6 +39,7 @@ from debim.schema import (
     IfcCustomElement,
     IfcDamper,
     IfcDistributionBoard,
+    IfcDistributionChamberElement,
     IfcDistributionFlowElement,
     IfcDistributionPort,
     IfcDoor,
@@ -55,9 +56,12 @@ from debim.schema import (
     IfcSoil,
     IfcFlowController,
     IfcFooting,
+    IfcImpactProtectionDevice,
+    IfcKerb,
     IfcLightFixture,
     IfcMarineFacility,
     IfcOutlet,
+    IfcPavement,
     IfcPipeSegment,
     IfcPlate,
     IfcRailing,
@@ -1370,6 +1374,66 @@ class ResolvedRoad(BaseModel):
     layer: str = "civil/infrastructure/roads"
 
 
+class ResolvedPavement(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcPavement
+    predefined_type: str = "FLEXIBLE"
+    thickness: float = 0.10
+    width: float = 0.0
+    length: float = 0.0
+    surface_area: float = 0.0  # m2
+    pavement_volume: float = 0.0  # m3
+    polygon: List[Tuple[float, float]] = Field(default_factory=list)
+    centerline_points: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/infrastructure/pavement"
+
+
+class ResolvedKerb(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcKerb
+    predefined_type: str = "KERB"
+    width: float = 0.15
+    height: float = 0.30
+    length: float = 0.0
+    concrete_volume: float = 0.0  # m3
+    centerline_points: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/infrastructure/kerbs"
+
+
+class ResolvedImpactProtectionDevice(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcImpactProtectionDevice
+    predefined_type: str = "CRASHCUSHION"
+    width: float = 0.20
+    height: float = 0.80
+    length: float = 0.0
+    volume: float = 0.0  # m3
+    centerline_points: List[Tuple[float, float, float]] = Field(default_factory=list)
+    layer: str = "civil/infrastructure/safety"
+
+
+class ResolvedDistributionChamberElement(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tag: str
+    element: IfcDistributionChamberElement
+    predefined_type: str = "MANHOLE"
+    width: float = 1.20
+    length: float = 1.20
+    height: float = 1.50
+    wall_thickness: float = 0.15
+    concrete_volume: float = 0.0  # m3
+    chamber_volume: float = 0.0  # m3 internal
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    layer: str = "civil/infrastructure/drainage"
+
+
 class ResolvedBridge(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -1759,6 +1823,10 @@ class ResolvedManifest(BaseModel):
     retaining_walls: List[ResolvedRetainingWall] = []
     alignments: List[ResolvedAlignment] = []
     roads: List[ResolvedRoad] = []
+    pavements: List[ResolvedPavement] = []
+    kerbs: List[ResolvedKerb] = []
+    impact_protection_devices: List[ResolvedImpactProtectionDevice] = []
+    distribution_chamber_elements: List[ResolvedDistributionChamberElement] = []
     bridges: List[ResolvedBridge] = []
     facility_parts: List[ResolvedFacilityPart] = []
     railways: List[ResolvedRailway] = []
@@ -6143,6 +6211,178 @@ class SpatialResolver:
             layer=derive_default_layer(road),
         )
 
+    def resolve_pavement(self, pavement: IfcPavement) -> ResolvedPavement:
+        z_base = self.get_storey(pavement.placement.storey).elevation if pavement.placement.storey else 0.0
+        pts: List[Tuple[float, float, float]] = []
+        poly_2d: List[Tuple[float, float]] = []
+
+        if pavement.placement.boundary_grid:
+            poly_2d = [self.get_grid_xy(g) for g in pavement.placement.boundary_grid]
+        elif pavement.placement.boundary:
+            poly_2d = [(float(p[0]), float(p[1])) for p in pavement.placement.boundary]
+        elif pavement.placement.from_grid and pavement.placement.to_grid:
+            x1, y1 = self.get_grid_xy(pavement.placement.from_grid)
+            x2, y2 = self.get_grid_xy(pavement.placement.to_grid)
+            x1 += pavement.placement.offset_x
+            y1 += pavement.placement.offset_y
+            x2 += pavement.placement.offset_x
+            y2 += pavement.placement.offset_y
+            z = z_base + pavement.placement.offset_z
+            pts = [(x1, y1, z), (x2, y2, z)]
+        elif pavement.placement.grid:
+            gx, gy = self.get_grid_xy(pavement.placement.grid)
+            gx += pavement.placement.offset_x
+            gy += pavement.placement.offset_y
+            z = z_base + pavement.placement.offset_z
+            l_val = pavement.length or 10.0
+            pts = [(gx, gy, z), (gx + l_val, gy, z)]
+
+        if poly_2d:
+            area = shoelace_area(poly_2d)
+            xs = [p[0] for p in poly_2d]
+            ys = [p[1] for p in poly_2d]
+            w_val = max(xs) - min(xs) if xs else 0.0
+            l_val = max(ys) - min(ys) if ys else 0.0
+        else:
+            l_val = pavement.length or (sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1)) if len(pts) >= 2 else 0.0)
+            w_val = pavement.width or 7.0
+            area = pavement.area if pavement.area is not None else (w_val * l_val)
+
+        vol = pavement.volume if pavement.volume is not None else (area * pavement.thickness)
+
+        return ResolvedPavement(
+            tag=pavement.tag,
+            element=pavement,
+            predefined_type=pavement.predefined_type,
+            thickness=pavement.thickness,
+            width=w_val,
+            length=l_val,
+            surface_area=area,
+            pavement_volume=vol,
+            polygon=poly_2d,
+            centerline_points=pts,
+            layer=derive_default_layer(pavement),
+        )
+
+    def resolve_kerb(self, kerb: IfcKerb) -> ResolvedKerb:
+        z_base = self.get_storey(kerb.placement.storey).elevation if kerb.placement.storey else 0.0
+        pts: List[Tuple[float, float, float]] = []
+
+        if kerb.placement.points:
+            for pt in kerb.placement.points:
+                pts.append((pt[0] + kerb.placement.offset_x, pt[1] + kerb.placement.offset_y, z_base + pt[2] + kerb.placement.offset_z))
+        elif kerb.placement.from_grid and kerb.placement.to_grid:
+            x1, y1 = self.get_grid_xy(kerb.placement.from_grid)
+            x2, y2 = self.get_grid_xy(kerb.placement.to_grid)
+            x1 += kerb.placement.offset_x
+            y1 += kerb.placement.offset_y
+            x2 += kerb.placement.offset_x
+            y2 += kerb.placement.offset_y
+            z = z_base + kerb.placement.offset_z
+            pts = [(x1, y1, z), (x2, y2, z)]
+        elif kerb.placement.grid:
+            gx, gy = self.get_grid_xy(kerb.placement.grid)
+            gx += kerb.placement.offset_x
+            gy += kerb.placement.offset_y
+            z = z_base + kerb.placement.offset_z
+            l_val = kerb.length or 10.0
+            pts = [(gx, gy, z), (gx + l_val, gy, z)]
+
+        length = kerb.length if kerb.length is not None else (sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1)) if len(pts) >= 2 else 0.0)
+        vol = kerb.width * kerb.height * length
+
+        return ResolvedKerb(
+            tag=kerb.tag,
+            element=kerb,
+            predefined_type=kerb.predefined_type,
+            width=kerb.width,
+            height=kerb.height,
+            length=length,
+            concrete_volume=vol,
+            centerline_points=pts,
+            layer=derive_default_layer(kerb),
+        )
+
+    def resolve_impact_protection_device(self, barrier: IfcImpactProtectionDevice) -> ResolvedImpactProtectionDevice:
+        z_base = self.get_storey(barrier.placement.storey).elevation if barrier.placement.storey else 0.0
+        pts: List[Tuple[float, float, float]] = []
+
+        if barrier.placement.points:
+            for pt in barrier.placement.points:
+                pts.append((pt[0] + barrier.placement.offset_x, pt[1] + barrier.placement.offset_y, z_base + pt[2] + barrier.placement.offset_z))
+        elif barrier.placement.from_grid and barrier.placement.to_grid:
+            x1, y1 = self.get_grid_xy(barrier.placement.from_grid)
+            x2, y2 = self.get_grid_xy(barrier.placement.to_grid)
+            x1 += barrier.placement.offset_x
+            y1 += barrier.placement.offset_y
+            x2 += barrier.placement.offset_x
+            y2 += barrier.placement.offset_y
+            z = z_base + barrier.placement.offset_z
+            pts = [(x1, y1, z), (x2, y2, z)]
+        elif barrier.placement.grid:
+            gx, gy = self.get_grid_xy(barrier.placement.grid)
+            gx += barrier.placement.offset_x
+            gy += barrier.placement.offset_y
+            z = z_base + barrier.placement.offset_z
+            l_val = barrier.length or 5.0
+            pts = [(gx, gy, z), (gx + l_val, gy, z)]
+
+        length = barrier.length if barrier.length is not None else (sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1)) if len(pts) >= 2 else 0.0)
+        vol = barrier.width * barrier.height * length
+
+        return ResolvedImpactProtectionDevice(
+            tag=barrier.tag,
+            element=barrier,
+            predefined_type=barrier.predefined_type,
+            width=barrier.width,
+            height=barrier.height,
+            length=length,
+            volume=vol,
+            centerline_points=pts,
+            layer=derive_default_layer(barrier),
+        )
+
+    def resolve_distribution_chamber(self, chamber: IfcDistributionChamberElement) -> ResolvedDistributionChamberElement:
+        z_base = self.get_storey(chamber.placement.storey).elevation if chamber.placement.storey else 0.0
+        if chamber.placement.position:
+            px, py, pz = chamber.placement.position
+        elif chamber.placement.grid:
+            gx, gy = self.get_grid_xy(chamber.placement.grid)
+            px = gx + chamber.placement.offset_x
+            py = gy + chamber.placement.offset_y
+            pz = z_base + chamber.placement.offset_z
+        else:
+            px = chamber.placement.offset_x
+            py = chamber.placement.offset_y
+            pz = z_base + chamber.placement.offset_z
+
+        w = chamber.width
+        l = chamber.length
+        h = chamber.height
+        t = chamber.wall_thickness
+
+        inner_w = max(w - 2 * t, 0.0)
+        inner_l = max(l - 2 * t, 0.0)
+        inner_h = max(h - t, 0.0)
+
+        outer_vol = w * l * h
+        inner_vol = inner_w * inner_l * inner_h
+        conc_vol = outer_vol - inner_vol
+
+        return ResolvedDistributionChamberElement(
+            tag=chamber.tag,
+            element=chamber,
+            predefined_type=chamber.predefined_type,
+            width=w,
+            length=l,
+            height=h,
+            wall_thickness=t,
+            concrete_volume=conc_vol,
+            chamber_volume=inner_vol,
+            position=(px, py, pz),
+            layer=derive_default_layer(chamber),
+        )
+
     def resolve_bridge(self, bridge: IfcBridge) -> ResolvedBridge:
         z_base = self.get_storey(bridge.placement.storey).elevation if bridge.placement.storey else 0.0
 
@@ -7561,6 +7801,22 @@ class SpatialResolver:
                 r_road = self.resolve_road(elem)
                 resolved_manifest.roads.append(r_road)
                 resolved_manifest.elements.append(r_road)
+            elif isinstance(elem, IfcPavement):
+                r_pav = self.resolve_pavement(elem)
+                resolved_manifest.pavements.append(r_pav)
+                resolved_manifest.elements.append(r_pav)
+            elif isinstance(elem, IfcKerb):
+                r_kerb = self.resolve_kerb(elem)
+                resolved_manifest.kerbs.append(r_kerb)
+                resolved_manifest.elements.append(r_kerb)
+            elif isinstance(elem, IfcImpactProtectionDevice):
+                r_ip = self.resolve_impact_protection_device(elem)
+                resolved_manifest.impact_protection_devices.append(r_ip)
+                resolved_manifest.elements.append(r_ip)
+            elif isinstance(elem, IfcDistributionChamberElement):
+                r_dc = self.resolve_distribution_chamber(elem)
+                resolved_manifest.distribution_chamber_elements.append(r_dc)
+                resolved_manifest.elements.append(r_dc)
             elif isinstance(elem, (IfcFacilityPart, IfcRoadPart)):
                 r_fp = self.resolve_facility_part(elem)
                 resolved_manifest.facility_parts.append(r_fp)
