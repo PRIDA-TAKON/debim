@@ -507,6 +507,7 @@ def ingest_gis_to_debim(
     osm_file_path: Optional[Union[str, Path]] = None,
     output_path: Optional[Union[str, Path]] = None,
     crs_epsg: int = 32647,
+    timeout_sec: int = 15,
 ) -> Path:
     """
     High-level ingestion pipeline entry point.
@@ -518,7 +519,7 @@ def ingest_gis_to_debim(
     elif geojson_path:
         manifest = ingest_geojson(geojson_path, crs_epsg=crs_epsg)
     elif bbox:
-        osm_json = fetch_osm_overpass(bbox)
+        osm_json = fetch_osm_overpass(bbox, timeout_sec=timeout_sec)
         manifest = ingest_osm_data(osm_json, crs_epsg=crs_epsg)
     else:
         raise ValueError("Must provide either bbox, geojson_path, or osm_file_path")
@@ -526,7 +527,7 @@ def ingest_gis_to_debim(
     out_p = Path(output_path) if output_path else Path("urban_project.debim")
     out_p.parent.mkdir(parents=True, exist_ok=True)
 
-    dump_data = manifest.model_dump(by_alias=True, exclude_none=True)
+    dump_data = manifest.model_dump(mode="json", by_alias=True, exclude_none=True)
     header = (
         "# ==============================================================================\n"
         "# Open GIS & OSM Ingested Urban Site Manifest (.debim)\n"

@@ -52,6 +52,7 @@ def run_benchmark():
             bbox=bbox,
             output_path=debim_path,
             crs_epsg=32647, # WGS 84 / UTM zone 47N
+            timeout_sec=5,
         )
     except Exception as e:
         print(f"Notice: Online Overpass fetch note ({e}), using built-in high-density mock...")
@@ -84,9 +85,9 @@ def run_benchmark():
                 })
         manifest_obj = ingest_osm_data({"elements": mock_elements}, crs_epsg=32647, project_name="Sukhumvit-Asoke Starter Benchmark")
         import yaml
-        dump_data = manifest_obj.model_dump(by_alias=True, exclude_none=True)
+        dump_data = manifest_obj.model_dump(mode="json", by_alias=True, exclude_none=True)
         with open(debim_path, "w", encoding="utf-8") as f:
-            yaml.dump(dump_data, f, allow_unicode=True)
+            yaml.safe_dump(dump_data, f, sort_keys=False, allow_unicode=True)
 
     t_ingest = time.time() - t0
     debim_size_kb = os.path.getsize(debim_path) / 1024.0
