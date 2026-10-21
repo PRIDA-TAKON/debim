@@ -1386,6 +1386,59 @@ def cmd_ingest(args):
         sys.exit(1)
 
 
+def cmd_urban_ingest(args):
+    bbox_str = getattr(args, "bbox", None)
+    geojson_path = getattr(args, "geojson", None)
+    osm_file = getattr(args, "from_file", None) or getattr(args, "osm_file", None)
+    output_path = Path(args.output) if getattr(args, "output", None) else Path("urban_project.debim")
+    epsg = getattr(args, "crs", 32647)
+
+    if not bbox_str and not geojson_path and not osm_file:
+        console.print("[bold red]Error:[/bold red] Must specify at least one input source: --bbox, --geojson, or --from-file.")
+        sys.exit(1)
+
+    console.print(f"[bold green]Ingesting Open GIS / OSM urban data to .debim manifest:[/bold green] -> [cyan]{output_path}[/cyan]")
+
+    try:
+        from debim.civil.gis_ingester import parse_bbox_string, ingest_gis_to_debim
+
+        bbox_tuple = parse_bbox_string(bbox_str) if bbox_str else None
+
+        out_file = ingest_gis_to_debim(
+            bbox=bbox_tuple,
+            geojson_path=geojson_path,
+            osm_file_path=osm_file,
+            output_path=output_path,
+            crs_epsg=epsg,
+        )
+
+        manifest_obj = load_manifest(out_file)
+        elem_count = len(manifest_obj.elements)
+        road_count = sum(1 for e in manifest_obj.elements if getattr(e, "class_", "") == "IfcRoad")
+        drain_count = sum(1 for e in manifest_obj.elements if getattr(e, "class_", "") == "IfcDistributionFlowElement")
+        bldg_count = sum(1 for e in manifest_obj.elements if getattr(e, "class_", "") in ("IfcBuildingElementProxy", "IfcBuilding"))
+
+        file_size = out_file.stat().st_size
+
+        console.print(
+            Panel(
+                f"[bold green]Open GIS to .debim Urban Ingestion Complete![/bold green]\n"
+                f"[bold cyan]Emitted Manifest:[/bold cyan] {out_file} ({file_size:,} bytes)\n"
+                f"[bold cyan]Local CRS Projection:[/bold cyan] EPSG:{epsg} (UTM)\n"
+                f"[bold cyan]Elements Extracted:[/bold cyan] {elem_count} urban elements\n"
+                f"  • Buildings: [green]{bldg_count}[/green]\n"
+                f"  • Roads: [green]{road_count}[/green]\n"
+                f"  • Waterways / Drainage: [green]{drain_count}[/green]\n"
+                f"[dim]Run 'debim validate {out_file}' or 'debim boq -m {out_file}' to evaluate quantities.[/dim]",
+                title="[bold green]debim Urban GIS Ingest Engine[/bold green]",
+                style="green",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Urban GIS Ingestion Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
 def _resolve_target_manifest(target_str: str) -> ProjectManifest:
     resolved = resolve_default_manifest_path(target_str)
     if resolved.exists() and resolved.is_file():
@@ -2493,6 +2546,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_ingest.add_argument("-o", "--out", dest="output_dir", help="Output directory path for generated project.debim")
     p_ingest.set_defaults(func=cmd_ingest)
 
+    # urban
+    p_urban = subparsers.add_parser("urban", help="Urban GIS and OpenStreetMap site commands")
+    urban_subparsers = p_urban.add_subparsers(dest="urban_subcommand")
+
+    p_urban_ingest = urban_subparsers.add_parser("ingest", help="Ingest OpenStreetMap (Overpass API) or GeoJSON into .debim urban schema")
+    p_urban_ingest.add_argument("--bbox", help="Bounding box coordinates (e.g. '13.75,100.50,13.76,100.51' - south,west,north,east)")
+    p_urban_ingest.add_argument("--geojson", help="Path to input GeoJSON file")
+    p_urban_ingest.add_argument("--from-file", "--osm-file", dest="from_file", help="Path to input OSM JSON file")
+    p_urban_ingest.add_argument("-o", "--output", default="urban_project.debim", help="Target output .debim file path")
+    p_urban_ingest.add_argument("--crs", type=int, default=32647, help="Target EPSG UTM CRS code (default: 32647)")
+    p_urban_ingest.set_defaults(func=cmd_urban_ingest)
+
     # diff
     p_diff = subparsers.add_parser("diff", help="Git-aware manifest comparison engine")
     p_diff.add_argument("target_a", help="First target (file path or git rev)")
@@ -2708,6 +2773,9 @@ def main(args: Optional[List[str]] = None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
     elif parsed_args.subcommand == "standards" and not getattr(parsed_args, "standards_subcommand", None):
+        parser.parse_args([parsed_args.subcommand, "--help"])
+        sys.exit(0)
+    elif parsed_args.subcommand == "urban" and not getattr(parsed_args, "urban_subcommand", None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
 
