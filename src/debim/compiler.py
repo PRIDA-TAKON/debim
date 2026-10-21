@@ -4347,8 +4347,15 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             )
             align_obj.ObjectType = f"IfcAlignment.{align.predefined_type}"
 
-        if align.swept_solids:
-            rep_items = []
+        rep_items = []
+        if getattr(align, "sweeper", None) and hasattr(align.sweeper, "build_sectioned_solid_horizontal"):
+            try:
+                ssh_items = align.sweeper.build_sectioned_solid_horizontal(model=model, step_size=10.0)
+                rep_items.extend(ssh_items)
+            except Exception as ex:
+                pass
+
+        if not rep_items and align.swept_solids:
             for solid in align.swept_solids:
                 verts = solid["vertices"]
                 faces = solid["faces"]
@@ -4356,14 +4363,16 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                     pts = model.createIfcCartesianPointList3D([list(v) for v in verts])
                     tfs = model.createIfcTriangulatedFaceSet(Coordinates=pts, CoordIndex=[list(f) for f in faces])
                     rep_items.append(tfs)
-            if rep_items:
-                rep = model.createIfcShapeRepresentation(
-                    ContextOfItems=body_context,
-                    RepresentationIdentifier="Body",
-                    RepresentationType="Tessellation",
-                    Items=rep_items,
-                )
-                ifcopenshell.api.run("geometry.assign_representation", model, product=align_obj, representation=rep)
+
+        if rep_items:
+            rep_type = "AdvancedSweptSolid" if any(item.is_a("IfcSectionedSolidHorizontal") for item in rep_items) else "Tessellation"
+            rep = model.createIfcShapeRepresentation(
+                ContextOfItems=body_context,
+                RepresentationIdentifier="Body",
+                RepresentationType=rep_type,
+                Items=rep_items,
+            )
+            ifcopenshell.api.run("geometry.assign_representation", model, product=align_obj, representation=rep)
 
         st_id = align.element.placement.storey
         if st_id and st_id in storey_products:

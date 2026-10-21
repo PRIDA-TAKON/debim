@@ -1,7 +1,8 @@
 """
 Procedural 3D Curve Sweeper and Frenet-Serret Frame Engine for IFC4.3 Alignments.
 Supports linear tangents, circular arcs, clothoid spirals, vertical parabolic curves,
-cant superelevations, and arbitrary cross-section corridor sweeping.
+cant superelevations, arbitrary cross-section corridor sweeping, and native
+IfcSectionedSolidHorizontal procedural solid export (IFC4.3).
 """
 
 import math
@@ -15,6 +16,39 @@ from debim.schema import (
     CorridorCrossSection,
     IfcAlignment,
 )
+
+
+class IfcDistanceExpression:
+    """
+    Anchors station positions along the alignment directrix.
+    Maps to IFC4.3 IfcPointByDistanceExpression entity when creating IFC models.
+    """
+
+    def __init__(
+        self,
+        distance_along: float,
+        offset_lateral: float = 0.0,
+        offset_vertical: float = 0.0,
+        offset_longitudinal: float = 0.0,
+        basis_curve: Optional[Any] = None,
+    ):
+        self.distance_along = distance_along
+        self.offset_lateral = offset_lateral
+        self.offset_vertical = offset_vertical
+        self.offset_longitudinal = offset_longitudinal
+        self.basis_curve = basis_curve
+
+    def to_ifc(self, model: Any, basis_curve: Optional[Any] = None) -> Any:
+        """Instantiates IfcPointByDistanceExpression in the given ifcopenshell IFC4.3 model."""
+        curve = basis_curve or self.basis_curve
+        dist_val = model.createIfcLengthMeasure(float(self.distance_along))
+        return model.createIfcPointByDistanceExpression(
+            DistanceAlong=dist_val,
+            OffsetLateral=float(self.offset_lateral),
+            OffsetVertical=float(self.offset_vertical),
+            OffsetLongitudinal=float(self.offset_longitudinal),
+            BasisCurve=curve,
+        )
 
 
 def numerical_integration_clothoid(
@@ -475,3 +509,85 @@ class AlignmentSweeper:
             )
 
         return swept_solids
+
+    def build_sectioned_solid_horizontal(
+        self,
+        model: Optional[Any] = None,
+        step_size: float = 10.0,
+        directrix: Optional[Any] = None,
+    ) -> List[Any]:
+        """
+        Converts station profiles to IFC4.3 IfcSectionedSolidHorizontal entities.
+        Anchors cross-section stations along alignment directrix using IfcDistanceExpression
+        and IfcAxis2PlacementLinear.
+        """
+        import ifcopenshell
+
+        if model is None:
+            model = ifcopenshell.file(schema="IFC4X3")
+
+        frames = self.discretize_frames(step_size=step_size)
+
+        if directrix is None:
+            pt_objs = [
+                model.createIfcCartesianPoint(
+                    (round(f["position"][0], 6), round(f["position"][1], 6), round(f["position"][2], 6))
+                )
+                for f in frames
+            ]
+            directrix = model.createIfcPolyline(pt_objs)
+
+        sectioned_solids = []
+
+        for cs in self.cross_sections:
+            cs_pts = cs.points
+            if len(cs_pts) < 3:
+                continue
+
+            # Ensure profile polygon is closed
+            pts_2d = [
+                model.createIfcCartesianPoint((round(u, 6), round(v, 6)))
+                for u, v in cs_pts
+            ]
+            if (cs_pts[0][0] != cs_pts[-1][0]) or (cs_pts[0][1] != cs_pts[-1][1]):
+                pts_2d.append(pts_2d[0])
+
+            poly = model.createIfcPolyline(pts_2d)
+            profile = model.createIfcArbitraryClosedProfileDef("AREA", cs.name, poly)
+
+            placements = []
+            for frame in frames:
+                s_val = frame["station"]
+                dist_expr = IfcDistanceExpression(
+                    distance_along=s_val,
+                    offset_lateral=0.0,
+                    offset_vertical=0.0,
+                    offset_longitudinal=0.0,
+                )
+                ifc_dist = dist_expr.to_ifc(model, basis_curve=directrix)
+
+                T = frame["tangent"]
+                B = frame["binormal"]
+                axis = model.createIfcDirection(
+                    (round(B[0], 6), round(B[1], 6), round(B[2], 6))
+                )
+                ref_dir = model.createIfcDirection(
+                    (round(T[0], 6), round(T[1], 6), round(T[2], 6))
+                )
+
+                placement_linear = model.createIfcAxis2PlacementLinear(
+                    Location=ifc_dist, Axis=axis, RefDirection=ref_dir
+                )
+                placements.append(placement_linear)
+
+            profiles = [profile] * len(placements)
+            sectioned_solid = model.createIfcSectionedSolidHorizontal(
+                Directrix=directrix,
+                CrossSections=profiles,
+                CrossSectionPositions=placements,
+            )
+            sectioned_solids.append(sectioned_solid)
+
+        return sectioned_solids
+
+    to_sectioned_solid_horizontal = build_sectioned_solid_horizontal
