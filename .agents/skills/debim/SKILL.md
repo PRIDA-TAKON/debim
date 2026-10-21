@@ -1,13 +1,13 @@
 ---
 name: debim
-description: Deterministic BOQ generation, Quantitative Take-Off (QTO), and Declarative BIM modeling (Building-as-Code) using debim. Use when asked to generate a bill of quantities (BOQ), estimate construction costs, calculate concrete/steel/formwork quantities from architectural plans or sketches, compile IFC4 models, or produce 3D HTML web viewers.
+description: Deterministic BOQ generation, Quantitative Take-Off (QTO), and Declarative BIM modeling (Building-as-Code) using debim. Use when asked to generate a bill of quantities (BOQ), estimate construction costs, calculate concrete/steel/formwork quantities from architectural plans or sketches, compile IFC4/IFC4.3 models, ingest Open GIS/OSM data, or produce 3D HTML web viewers.
 ---
 
 # debim Skill — Deterministic BOQ & Declarative BIM Engine
-**Version:** 0.8.0 (The Engineering Productivity & High-Fidelity Release)  
-**Specification:** debim Standard Spatial & Declarative Language Specification v0.8.0
+**Version:** 1.1.0 (Urban Scale GIS Ingestion & ISO 19650 IFC4.3 Civil Infrastructure)  
+**Specification:** debim Standard Spatial & Declarative Language Specification v1.1.0
 
-This skill empowers AI agents to generate professional, deterministic **Bills of Quantities (BOQ)**, calculate structural material quantities (**QTO**), and compile international standard **IFC4 BIM models** from architectural descriptions or sketches without hallucinating numbers.
+This skill empowers AI agents to generate professional, deterministic **Bills of Quantities (BOQ)**, calculate structural material quantities (**QTO**), model **complex organic & algorithmic freeform architectures (lofts, swept columns, diagrid bracing, hexagonal facades)**, ingest **Open GIS & OSM city scale data**, and compile international standard **IFC4 / IFC4.3 BIM models** from architectural descriptions or sketches without hallucinating numbers.
 
 ---
 
@@ -457,6 +457,92 @@ elements:
       offset_y: 0.00
       base_storey: FL1
       top_storey: FL2
+```
+
+### 10. The Pure Algorithmic Architecture Engine & Organic Lofts (v1.0.0 GA)
+When tasked with modeling double-curved landmark buildings (e.g. Museo Soumaya, Guggenheim, twist towers, or organic amphitheaters):
+```yaml
+# 1. Macro-Geometry: Asymmetric Multi-Level Organic Polygon Loft
+geometry_rules:
+  type: POLYGONAL_LOFT # or HYPERBOLIC_LOFT / CYLINDRICAL_LOFT / CONICAL_LOFT
+  base_polygon:
+    - [-26.84, -3.92]
+    - [35.19, -3.92]
+    - [-0.06, 31.96]
+  waist_polygon:
+    - [-16.34, -3.35]
+    - [14.40, -3.35]
+    - [-2.17, 16.61]
+  roof_polygon:
+    - [-16.59, -3.15]
+    - [20.93, -3.15]
+    - [1.34, 21.21]
+
+# 2. Swept Curved Columns, Diagrid X-Bracing, & Compression Rings
+structures:
+  column_generator:
+    count: 28
+    distribution: UNIFORM_PERIMETER
+    profile: CIRCULAR_HOLLOW_D600
+    trajectory: LOFT_SURFACE_ISOPARAMETRIC
+    material: STEEL_WHITE
+
+# 3. Conformal Hexagonal Facade Panels
+facade:
+  envelope_skin:
+    target: POLYGONAL_LOFT
+    pattern: HEXAGONAL_CONFORMAL # or VORONOI_CENTROIDAL
+    target_panel_size: 0.85
+    joint_gap: 0.015
+    material: ALUMINUM_ANODIZED_SILVER
+    ifc_representation: IfcTriangulatedFaceSet
+```
+
+### 11. Urban Scale Ingestion & ISO 19650 IFC4.3 Civil Infrastructure (v1.1.0)
+When tasked with city-scale digital twins, municipal road networks, or open GIS ingestion:
+```yaml
+schema: IFC4-Minimal
+project:
+  id: PRJ-URBAN-001
+  name: "Asoke-Sukhumvit City Model"
+  crs:
+    epsg: 32647          # WGS 84 / UTM zone 47N
+    name: "WGS 84 / UTM zone 47N"
+    easting: 668889.88   # Local map origin
+    northing: 1519258.81
+
+elements:
+  # Civil Infrastructure: Road with Layered Pavement & Sidewalk Curbs
+  - class: IfcRoad
+    tag: RD-SUKHUMVIT-PRIMARY
+    dimensions: { width: 14.0, height: 0.30 }
+    placement:
+      coordinates: [[0.0, 0.0], [500.0, 0.0]]
+    facility_part: ROADWAY
+    pavement:
+      wearing_course_thickness: 0.05
+      base_course_thickness: 0.20
+      kerb: { width: 0.15, height: 0.30 }
+
+  # Automated 3D Extruded Building from GIS Footprint
+  - class: IfcBuildingElementProxy
+    tag: BLDG-TOWER-01
+    predefined_type: USERDEFINED
+    placement:
+      position: [120.0, 45.0, 0.0]
+    geometry:
+      type: EXTRUSION
+      height: 48.0       # Extruded from OSM building:levels
+      polygon: [[0, 0], [25, 0], [25, 30], [0, 30], [0, 0]]
+```
+
+CLI Command:
+```bash
+# Ingest OpenStreetMap Overpass Bounding Box (Lat/Lon) into native .debim
+debim urban ingest --bbox "13.734,100.558,13.742,100.566" --crs 32647 -o asoke.debim
+
+# Compile to ISO 19650 IFC4.3
+debim compile -m asoke.debim -o asoke.ifc
 ```
 
 ---

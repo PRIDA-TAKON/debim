@@ -6,7 +6,7 @@ debim's validation, QTO, cost estimation, and IFC compilation tools.
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import yaml
 from mcp.server.fastmcp import FastMCP
 
@@ -217,6 +217,52 @@ def debim_generate_viewer(
             "success": True,
             "output_html_path": str(out_path),
             "file_size_kb": round(out_path.stat().st_size / 1024, 2),
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@mcp.tool()
+def debim_urban_ingest(
+    bbox: Optional[List[float]] = None,
+    geojson_str: Optional[str] = None,
+    crs_epsg: int = 32647,
+) -> Dict[str, Any]:
+    """
+    Ingest OpenStreetMap (Overpass API) bounding box or GeoJSON string into native .debim urban manifest YAML.
+    
+    Args:
+        bbox: Optional bounding box [min_lat, min_lon, max_lat, max_lon]
+        geojson_str: Optional GeoJSON FeatureCollection string
+        crs_epsg: Metric UTM CRS code (default 32647 for Thailand WGS84/UTM Zone 47N)
+    """
+    try:
+        from debim.civil.gis_ingester import ingest_osm_data, ingest_geojson
+        import json
+        import yaml
+
+        if geojson_str:
+            data = json.loads(geojson_str)
+            manifest = ingest_geojson(data, crs_epsg=crs_epsg)
+        elif bbox:
+            from debim.civil.gis_ingester import fetch_osm_overpass
+            data = fetch_osm_overpass(tuple(bbox))
+            manifest = ingest_osm_data(data, crs_epsg=crs_epsg)
+        else:
+            return {"success": False, "error": "Must provide either bbox or geojson_str"}
+
+        dump_data = manifest.model_dump(mode="json", by_alias=True, exclude_none=True)
+        manifest_yaml = yaml.safe_dump(dump_data, sort_keys=False, allow_unicode=True)
+
+        roads_count = sum(1 for e in manifest.elements if getattr(e, "class_", "") == "IfcRoad")
+        proxies_count = sum(1 for e in manifest.elements if getattr(e, "class_", "") == "IfcBuildingElementProxy")
+
+        return {
+            "success": True,
+            "manifest_yaml": manifest_yaml,
+            "elements_count": len(manifest.elements),
+            "roads_count": roads_count,
+            "proxies_count": proxies_count,
         }
     except Exception as e:
         return {"success": False, "error": str(e)}

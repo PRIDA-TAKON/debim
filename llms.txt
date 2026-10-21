@@ -1,4 +1,4 @@
-# debim v1.0.0 — Declarative BIM & Building-as-Code Engine for AI Agents
+# debim v1.1.0 — Declarative BIM & Urban Infrastructure Engine for AI Agents
 
 > **debim** is a Git-native, declarative Building Information Modeling (BIM) compiler designed specifically for AI agents (Antigravity, Claude Code, Cursor, AutoGen, CrewAI, ChatGPT) and human engineers/architects.
 
@@ -10,6 +10,7 @@ When a user asks you to:
 - Model multi-bay modular buildings (e.g. 4-bay shophouses, townhouses) without duplicating code.
 - Model pitched or Thai-Isan vernacular roofs (Gable-Hip/Manila, Hip, Gable) without manual Euler angle math.
 - Model standard RC monolithic stairs (Dog-Leg with landings) and slab double-volume voids.
+- Ingest Open GIS (OSM Overpass BBox / GeoJSON) to compile ISO 19650 IFC4.3 civil infrastructure (`IfcRoad`, `IfcPavement`, `IfcKerb`, `IfcPipeSegment`, `IfcMapConversion`).
 - Create an IFC building model or standalone 3D interactive viewer.
 
 **DO NOT HALLUCINATE OR GUESS NUMBERS DIRECTLY IN TEXT.**
@@ -17,7 +18,7 @@ Instead, follow this deterministic Building-as-Code workflow:
 1. Install debim in your environment:
    ```bash
    pip install debim
-   # Or with full OpenBIM IFC4 compiler:
+   # Or with full OpenBIM IFC4/IFC4.3 compiler:
    pip install "debim[ifc]"
    ```
 2. Synthesize the building dimensions into a Declarative YAML manifest (`project.yaml` or `project.debim`).
@@ -26,6 +27,7 @@ Instead, follow this deterministic Building-as-Code workflow:
    debim validate -m project.yaml
    debim qto -m project.yaml
    debim boq --rules cg-v480 --province nakhon_ratchasima -m project.yaml -o boq.csv
+   debim urban ingest --bbox "13.734,100.558,13.742,100.566" -o urban.debim
    debim compile -m project.yaml -o model.ifc
    debim view -m project.yaml -e viewer.html --no-browser
    ```

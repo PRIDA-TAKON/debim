@@ -11,6 +11,7 @@ from debim.mcp import (
     debim_cost,
     debim_compile_ifc,
     debim_generate_viewer,
+    debim_urban_ingest,
 )
 
 SAMPLE_YAML = """
@@ -97,3 +98,23 @@ def test_mcp_generate_viewer(tmp_path):
     assert res["success"] is True
     assert viewer_file.exists()
     assert res["file_size_kb"] > 0
+
+
+def test_mcp_urban_ingest():
+    geojson_sample = '''{
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"highway": "primary", "name": "Sukhumvit"},
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [[100.558, 13.734], [100.560, 13.736]]
+                }
+            }
+        ]
+    }'''
+    res = debim_urban_ingest(geojson_str=geojson_sample)
+    assert res["success"] is True
+    assert "schema: IFC4-Minimal" in res["manifest_yaml"]
+    assert res["roads_count"] >= 1

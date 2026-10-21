@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/debim/"><img src="https://img.shields.io/pypi/v/debim.svg?color=blue" alt="PyPI Version" /></a>
-  <a href="https://github.com/PRIDA-TAKON/debim/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0%20GA-brightgreen.svg" alt="Release v1.0.0 GA" /></a>
+  <a href="https://github.com/PRIDA-TAKON/debim/releases/tag/v1.1.0"><img src="https://img.shields.io/badge/release-v1.1.0-brightgreen.svg" alt="Release v1.1.0" /></a>
   <a href="docs/winget.md"><img src="https://img.shields.io/badge/WinGet-Pending%20Review-orange.svg?logo=windows&logoColor=white" alt="WinGet Package (Pending Review)" /></a>
   <a href="https://github.com/PRIDA-TAKON/homebrew-debim"><img src="https://img.shields.io/badge/Homebrew-debim-FBB040.svg?logo=homebrew&logoColor=white" alt="Homebrew Tap" /></a>
   <a href="https://glama.ai/mcp/servers/PRIDA-TAKON/debim"><img src="https://glama.ai/mcp/servers/PRIDA-TAKON/debim/badges/score.svg" alt="Glama MCP Server Score" /></a>
@@ -128,6 +128,7 @@ Or run via Docker:
 | `debim_cost` | Maps QTO quantities against unit prices, calculates total project cost, and optionally exports BOQ to CSV. | `manifest_yaml: str`, `prices_yaml?: str`, `export_csv_path?: str` |
 | `debim_compile_ifc` | Compiles declarative YAML into an open, standardized buildingSMART IFC4 model (`.ifc`). | `manifest_yaml: str`, `output_ifc_path: str` |
 | `debim_generate_viewer` | Generates a standalone, zero-dependency interactive 3D WebGL HTML viewer with section cut and layer tree. | `manifest_yaml: str`, `output_html_path: str` |
+| `debim_urban_ingest` | Ingests OpenStreetMap Overpass BBox or GeoJSON into native .debim urban manifest YAML. | `bbox?: List[float]`, `geojson_str?: str`, `crs_epsg?: int` |
 
 ### Running the MCP Server Locally
 
@@ -287,6 +288,13 @@ debim view -m examples/farnsworth_house/project.debim
 
 # Compile declarative YAML to standard IFC4 building model
 debim compile -m examples/farnsworth_house/project.debim -o dist/farnsworth_house.ifc
+
+# Ingest Open GIS (Overpass BBox or GeoJSON) into native .debim urban model
+debim urban ingest --bbox "13.734,100.558,13.742,100.566" -o dist/asoke.debim
+debim urban ingest --geojson road.geojson --crs 32647 -o dist/road.debim
+
+# Compile urban & civil infrastructure to ISO 19650 IFC4.3
+debim compile -m dist/asoke.debim -o dist/asoke.ifc
 
 # Launch Model Context Protocol (MCP) server over stdio
 debim mcp
