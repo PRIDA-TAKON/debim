@@ -3254,7 +3254,7 @@ def generate_viewer_html(
                     geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.height, 32);
                     geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "CHS" || dim.shape === "CIRCLE_HOLLOW" || dim.shape === "PIPE_HOLLOW") {{
-                    const r = dim.radius || (dim.diameter ? dim.diameter / 2) || 0.05;
+                    const r = dim.radius || (dim.diameter ? dim.diameter / 2 : 0.05);
                     const t = dim.wall_thickness || 0.0032;
                     const s = new THREE.Shape();
                     s.absarc(0, 0, r, 0, Math.PI * 2, false);
@@ -3357,7 +3357,7 @@ def generate_viewer_html(
                     geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
                 }} else if (dim.shape === "CHS" || dim.shape === "CIRCLE_HOLLOW" || dim.shape === "PIPE_HOLLOW") {{
-                    const r = dim.radius || (dim.diameter ? dim.diameter / 2) || 0.05;
+                    const r = dim.radius || (dim.diameter ? dim.diameter / 2 : 0.05);
                     const t = dim.wall_thickness || 0.0032;
                     const s = new THREE.Shape();
                     s.absarc(0, 0, r, 0, Math.PI * 2, false);
