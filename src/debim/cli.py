@@ -1794,6 +1794,48 @@ def cmd_draw_export_dxf(args):
         sys.exit(1)
 
 
+def cmd_export(args):
+    manifest = resolve_default_manifest_path(args.manifest)
+    fmt = (args.format or "dxf").lower()
+    out_path = Path(args.output) if args.output else Path(f"dist/drawing.{fmt}")
+
+    if not manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest}' not found.")
+        sys.exit(1)
+
+    console.print(f"[bold green]Exporting 2D CAD ({fmt.upper()}):[/bold green] {manifest} -> [cyan]{out_path}[/cyan]")
+    try:
+        if fmt == "dxf":
+            from debim.cad2d import export_cad_dxf
+            res_path = export_cad_dxf(
+                manifest_or_resolved=manifest,
+                output_path=out_path,
+                storey_id=args.storey,
+                drawing_type=args.type,
+                units=args.units,
+            )
+        else:
+            from debim.cad2d import export_cad_svg
+            res_path = export_cad_svg(
+                manifest_or_resolved=manifest,
+                output_path=out_path,
+                storey_id=args.storey,
+                drawing_type=args.type,
+            )
+
+        console.print(
+            Panel(
+                f"[bold green]2D Multi-Discipline CAD Export Successful![/bold green]\n"
+                f"[bold cyan]Output File:[/bold cyan] {res_path}\n"
+                f"[bold cyan]Format:[/bold cyan] {fmt.upper()}",
+                title="[bold green]debim CAD Exporter[/bold green]",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]CAD Export Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
 def cmd_draw_generate_vqa(args):
     manifest = Path(args.manifest) if args.manifest else None
     output = Path(args.output)
@@ -2517,6 +2559,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_std_list = standards_subparsers.add_parser("list", help="List available standards catalogs and metrics")
     p_std_list.set_defaults(func=cmd_standards_list)
+
+    # export
+    p_export = subparsers.add_parser("export", help="Export 2D multi-discipline CAD drawings (DXF/SVG)")
+    p_export.add_argument("-m", "--manifest", help="Path to project manifest file")
+    p_export.add_argument("-f", "--format", choices=["dxf", "svg"], default="dxf", help="Export format (dxf or svg)")
+    p_export.add_argument("-o", "--output", help="Output file path")
+    p_export.add_argument("-s", "--storey", help="Target storey ID")
+    p_export.add_argument("-t", "--type", choices=["floor_plan", "section", "mep", "all"], default="all", help="Drawing type")
+    p_export.add_argument("-u", "--units", choices=["mm", "m"], default="mm", help="CAD units (mm or m)")
+    p_export.set_defaults(func=cmd_export)
 
     # compile
     p_compile = subparsers.add_parser("compile", help="Compile project.yaml to IFC4 format")
