@@ -592,6 +592,7 @@ def generate_cost_template(
         (float(qto.total_dampers_count), "MEP-DAMPER", "HVAC Duct Damper", "set", "23 33 00", "D30"),
         (float(qto.total_flow_controllers_count), "MEP-FLOW-CONTROLLER", "VAV / Air Flow Regulation Unit", "set", "23 36 00", "D30"),
         (float(qto.total_unitary_equipment_count), "MEP-HVAC-UNITARY", "Air Conditioner Unit", "set", "23 81 00", "D30"),
+        (float(qto.total_penetration_sleeves_count), "MEP-SLEEVE", "MEP Penetration Sleeve & Opening", "set", "22 05 00", "D20"),
     ]
     for amt, code, name, unit, mf, uf in mep_specs:
         if amt > 0 and code not in required_items:
@@ -1247,6 +1248,7 @@ def estimate_cost(
         (float(qto.total_conduit_fittings_count), ["conduit-fitting", "กล่องพักสาย", "อุปกรณ์ร้อยสาย"]),
         (qto.total_duct_length, ["duct", "ท่อลม", "ท่อระบาย"]),
         (float(qto.total_duct_fittings_count), ["duct-fitting", "ข้อต่อท่อลม"]),
+        (float(qto.total_penetration_sleeves_count), ["sleeve", "penetration", "ปลอกท่อ", "ช่องเจาะ"]),
     ]
     for amount, keywords in mep_maps:
         if amount > 0:

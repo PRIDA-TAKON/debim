@@ -31,6 +31,7 @@ from debim.resolver import (
 from debim.schema import (
     IFC4_DISTRIBUTION_8_ATTR_CLASSES,
     IFC4_DISTRIBUTION_9_ATTR_CLASSES,
+    IfcBuildingElementProxy,
     ProjectManifest,
     RevolvedAreaSolid,
     SweptDiskSolid,
@@ -2705,7 +2706,15 @@ class StepSerializer:
                 storey_elements[st_id].append(elem_ref)
 
         # 8. Universal Proxies
-        for proxy in resolved.proxies:
+        from debim.resolver import SpatialResolver
+        all_proxies_fallback = list(resolved.proxies)
+        spatial_res = SpatialResolver(resolved.manifest)
+        for sleeve in getattr(resolved, "penetration_sleeves", []) or []:
+            if getattr(sleeve, "proxy_element", None):
+                s_proxy = IfcBuildingElementProxy.model_validate(sleeve.proxy_element)
+                all_proxies_fallback.append(spatial_res.resolve_proxy(s_proxy))
+
+        for proxy in all_proxies_fallback:
             st_id = proxy.element.placement.storey
             ifc_cls = proxy.ifc_class or "IfcBuildingElementProxy"
 
@@ -5464,7 +5473,15 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             storey_products[st_id].append(eq_obj)
 
     # Universal Proxies in ifcopenshell
-    for proxy in resolved.proxies:
+    from debim.resolver import SpatialResolver
+    all_proxies_ifc = list(resolved.proxies)
+    spatial_res_ifc = SpatialResolver(resolved.manifest)
+    for sleeve in getattr(resolved, "penetration_sleeves", []) or []:
+        if getattr(sleeve, "proxy_element", None):
+            s_proxy = IfcBuildingElementProxy.model_validate(sleeve.proxy_element)
+            all_proxies_ifc.append(spatial_res_ifc.resolve_proxy(s_proxy))
+
+    for proxy in all_proxies_ifc:
         ifc_cls = proxy.ifc_class or "IfcBuildingElementProxy"
         try:
             proxy_obj = ifcopenshell.api.run(

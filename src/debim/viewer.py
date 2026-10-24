@@ -2590,6 +2590,39 @@ def generate_viewer_html(
             "layer": p_layer,
             "properties": p_props,
         })
+
+    # Auto-detected Penetration Sleeves
+    for sleeve in getattr(resolved, "penetration_sleeves", []) or []:
+        s_tag = sleeve.proxy_element.get("tag", "SLEEVE") if isinstance(sleeve.proxy_element, dict) else getattr(sleeve, "id", "SLEEVE")
+        s_pos = sleeve.intersection_point
+        d_sleeve = sleeve.sleeve_diameter
+        s_len = sleeve.sleeve_length
+        elements_data.append({
+            "tag": s_tag,
+            "class": "IfcBuildingElementProxy",
+            "predefined_type": "PROT_SLEEVE",
+            "layer": "mep/plumbing/sleeves",
+            "position": list(s_pos),
+            "dimensions": {
+                "shape": "CYLINDER",
+                "radius": d_sleeve / 2.0,
+                "width": d_sleeve,
+                "depth": d_sleeve,
+                "height": s_len,
+            },
+            "color": "#94A3B8",
+            "material": "Steel Sleeve",
+            "properties": {
+                "Penetration": {
+                    "Host": sleeve.host_tag,
+                    "PipeTag": sleeve.pipe_tag,
+                    "PipeDiameter": sleeve.pipe_diameter,
+                    "SleeveDiameter": sleeve.sleeve_diameter,
+                }
+            },
+            "storey": "L1",
+        })
+
     facade_tess = getattr(resolved, "facade_tessellation", None)
     if facade_tess is None and hasattr(resolved, "manifest") and resolved.manifest:
         if resolved.manifest.facade and resolved.manifest.facade.envelope_skin and resolved.manifest.geometry_rules:
