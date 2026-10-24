@@ -1511,6 +1511,47 @@
       "title": "BridgePlacement",
       "type": "object"
     },
+    "BuildingPadGrading": {
+      "properties": {
+        "elevation": {
+          "default": 0.0,
+          "title": "Elevation",
+          "type": "number"
+        },
+        "batter_slope": {
+          "default": 1.5,
+          "title": "Batter Slope",
+          "type": "number"
+        },
+        "polygon": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Polygon"
+        }
+      },
+      "title": "BuildingPadGrading",
+      "type": "object"
+    },
     "CRSConfig": {
       "additionalProperties": true,
       "properties": {
@@ -1833,6 +1874,110 @@
         }
       },
       "title": "ClearanceEnvelope",
+      "type": "object"
+    },
+    "CollectorPipeDefinition": {
+      "properties": {
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "discharge_to": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Discharge To"
+        },
+        "slope": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.01,
+          "title": "Slope"
+        },
+        "diameter": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Diameter"
+        },
+        "nominal_diameter": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nominal Diameter"
+        },
+        "from": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/PipePoint"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From"
+        },
+        "to": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/PipePoint"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To"
+        }
+      },
+      "title": "CollectorPipeDefinition",
       "type": "object"
     },
     "ColumnGenerator": {
@@ -2622,6 +2767,60 @@
       "title": "ComplianceRule",
       "type": "object"
     },
+    "ConduitDropDefinition": {
+      "properties": {
+        "to_element": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To Element"
+        },
+        "target_fixture": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Fixture"
+        },
+        "diameter": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Diameter"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        }
+      },
+      "title": "ConduitDropDefinition",
+      "type": "object"
+    },
     "CorridorCrossSection": {
       "properties": {
         "name": {
@@ -3351,6 +3550,31 @@
         }
       },
       "title": "DistributionChamberPlacement",
+      "type": "object"
+    },
+    "DistributionDefinition": {
+      "properties": {
+        "junction_box": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Junction Box"
+        },
+        "drops": {
+          "items": {
+            "$ref": "#/$defs/ConduitDropDefinition"
+          },
+          "title": "Drops",
+          "type": "array"
+        }
+      },
+      "title": "DistributionDefinition",
       "type": "object"
     },
     "EarthworksPlacement": {
@@ -4328,6 +4552,108 @@
       "title": "FurnitureVariable",
       "type": "object"
     },
+    "GatherFixtureDefinition": {
+      "properties": {
+        "fixture": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fixture"
+        },
+        "target_fixture": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Fixture"
+        },
+        "branch_diameter": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Branch Diameter"
+        },
+        "diameter": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Diameter"
+        },
+        "fitting_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fitting Type"
+        },
+        "slope": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Slope"
+        },
+        "target_port": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Port"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        }
+      },
+      "title": "GatherFixtureDefinition",
+      "type": "object"
+    },
     "GeometryRules": {
       "properties": {
         "type": {
@@ -4560,6 +4886,60 @@
         "axes_y"
       ],
       "title": "Grids",
+      "type": "object"
+    },
+    "HomeRunDefinition": {
+      "properties": {
+        "from_panel": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From Panel"
+        },
+        "to_junction_box": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To Junction Box"
+        },
+        "diameter": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Diameter"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        }
+      },
+      "title": "HomeRunDefinition",
       "type": "object"
     },
     "IShapeProfile": {
@@ -13406,6 +13786,86 @@
       "title": "LandingEdgeBeamConfig",
       "type": "object"
     },
+    "MainPipeDefinition": {
+      "properties": {
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "from": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/PipePoint"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From"
+        },
+        "to": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/PipePoint"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To"
+        },
+        "diameter": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Diameter"
+        },
+        "nominal_diameter": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nominal Diameter"
+        }
+      },
+      "title": "MainPipeDefinition",
+      "type": "object"
+    },
     "MarineFacilityPlacement": {
       "properties": {
         "storey": {
@@ -13679,6 +14139,113 @@
         "unit_cost_ref"
       ],
       "title": "Material",
+      "type": "object"
+    },
+    "MepNetworkSystem": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "system_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "DOMESTIC_COLD_WATER",
+          "title": "System Type"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "main_pipe": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MainPipeDefinition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "branches": {
+          "items": {
+            "$ref": "#/$defs/PipeBranchDefinition"
+          },
+          "title": "Branches",
+          "type": "array"
+        },
+        "collector_pipe": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CollectorPipeDefinition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "gather_fixtures": {
+          "items": {
+            "$ref": "#/$defs/GatherFixtureDefinition"
+          },
+          "title": "Gather Fixtures",
+          "type": "array"
+        },
+        "home_run": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HomeRunDefinition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "distribution": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DistributionDefinition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layer"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "MepNetworkSystem",
       "type": "object"
     },
     "ModuleDefinition": {
@@ -14336,6 +14903,125 @@
         }
       },
       "title": "PileProfile",
+      "type": "object"
+    },
+    "PipeBranchDefinition": {
+      "properties": {
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "branch_from": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Branch From"
+        },
+        "target_fixture": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Fixture"
+        },
+        "fixture": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fixture"
+        },
+        "target_port": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Port"
+        },
+        "diameter": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Diameter"
+        },
+        "branch_diameter": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Branch Diameter"
+        },
+        "auto_reducer": {
+          "default": false,
+          "title": "Auto Reducer",
+          "type": "boolean"
+        },
+        "fitting_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fitting Type"
+        },
+        "slope": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Slope"
+        }
+      },
+      "title": "PipeBranchDefinition",
       "type": "object"
     },
     "PipeConnectSpec": {
@@ -16250,6 +16936,26 @@
           "title": "Offset Z",
           "type": "number"
         },
+        "drape_to": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Drape To"
+        },
+        "camber_slope": {
+          "default": 0.02,
+          "title": "Camber Slope",
+          "type": "number"
+        },
         "points": {
           "anyOf": [
             {
@@ -16561,9 +17267,83 @@
           ],
           "default": null,
           "title": "Front Axis"
+        },
+        "terrain": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SiteTerrain"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "grading": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SiteGrading"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "title": "SiteBoundary",
+      "type": "object"
+    },
+    "SiteGrading": {
+      "properties": {
+        "building_pad": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BuildingPadGrading"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "SiteGrading",
+      "type": "object"
+    },
+    "SiteTerrain": {
+      "properties": {
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "json",
+          "title": "Format"
+        },
+        "contour_interval": {
+          "default": 0.5,
+          "title": "Contour Interval",
+          "type": "number"
+        },
+        "clip_to_boundary": {
+          "default": true,
+          "title": "Clip To Boundary",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "title": "SiteTerrain",
       "type": "object"
     },
     "SlabFinishesConfig": {
@@ -18664,6 +19444,28 @@
       },
       "title": "Systems",
       "type": "array"
+    },
+    "mep_systems": {
+      "items": {
+        "$ref": "#/$defs/MepNetworkSystem"
+      },
+      "title": "Mep Systems",
+      "type": "array"
+    },
+    "mep_network_systems": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/MepNetworkSystem"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mep Network Systems"
     },
     "connections": {
       "items": {
