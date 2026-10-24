@@ -601,18 +601,19 @@ def cmd_audit(args):
         sys.exit(1)
 
     apply_fixes = getattr(args, "fix", False)
+    jurisdiction = getattr(args, "jurisdiction", "th") or "th"
     log_dir = Path(args.log_dir) if getattr(args, "log_dir", None) else Path("dist/audit")
 
     console.print(
         Panel(
             f"[bold cyan]debim 5-Layer Architectural & Engineering Audit Matrix[/bold cyan]\n"
-            f"[dim]Manifest:[/dim] [yellow]{manifest_path}[/yellow] | [dim]Auto-Fix Mode:[/dim] [cyan]{apply_fixes}[/cyan] | [dim]Log Dir:[/dim] [magenta]{log_dir}[/magenta]",
+            f"[dim]Manifest:[/dim] [yellow]{manifest_path}[/yellow] | [dim]Jurisdiction:[/dim] [green]{jurisdiction.upper()}[/green] | [dim]Auto-Fix Mode:[/dim] [cyan]{apply_fixes}[/cyan] | [dim]Log Dir:[/dim] [magenta]{log_dir}[/magenta]",
             title="[bold green]debim Audit Matrix Engine[/bold green]",
         )
     )
 
     try:
-        report = run_5_layer_audit(manifest_path, apply_fixes=apply_fixes)
+        report = run_5_layer_audit(manifest_path, apply_fixes=apply_fixes, jurisdiction=jurisdiction)
         json_p, md_p = record_audit_telemetry(report, log_dir=log_dir)
 
         # Print Layer Summary Table
@@ -1015,6 +1016,7 @@ def cmd_boq(args):
         sys.exit(1)
 
     rules_mode = (args.rules or "cg-v480").lower()
+    jurisdiction = getattr(args, "jurisdiction", "th") or "th"
     province_name = args.province.strip() if args.province else None
     province_mult = 1.00
     if province_name:
@@ -1023,7 +1025,7 @@ def cmd_boq(args):
 
     console.print(
         f"[bold blue]Generating Bill of Quantities (BOQ) for:[/bold blue] {manifest} "
-        f"[dim](Rules: {rules_mode.upper()}, Province: {province_name or 'Bangkok Standard'}{f' [x{province_mult:.2f}]' if province_name else ''})[/dim]"
+        f"[dim](Rules: {rules_mode.upper()}, Jurisdiction: {jurisdiction.upper()}, Province: {province_name or 'Bangkok Standard'}{f' [x{province_mult:.2f}]' if province_name else ''})[/dim]"
     )
 
     try:
@@ -1069,7 +1071,7 @@ def cmd_boq(args):
                 item.labor_cost = round(item.labor_cost * province_mult, 2)
 
         use_standards = getattr(args, "standards", False)
-        estimate = estimate_cost(project_qto, price_catalog, manifest_obj, use_standards=use_standards)
+        estimate = estimate_cost(project_qto, price_catalog, manifest_obj, use_standards=use_standards, jurisdiction=jurisdiction)
         proj_name = manifest_obj.project.name or "โครงการก่อสร้าง"
 
         # Generate Thai Standard BOQ Sheets (ปร.4, ปร.4(พ), ปร.5)
@@ -2418,6 +2420,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_audit = subparsers.add_parser("audit", help="Run 5-Layer Architectural & Engineering Audit Matrix")
     p_audit.add_argument("positional_manifest", nargs="?", help="Positional path to project manifest")
     p_audit.add_argument("-m", "--manifest", help="Path to project manifest")
+    p_audit.add_argument("-j", "--jurisdiction", default="th", help="Building control regulations jurisdiction (default: 'th', e.g. 'sg', 'us', 'uk')")
     p_audit.add_argument("--fix", action="store_true", help="Apply auto-fix structured remediations")
     p_audit.add_argument("--log-dir", help="Directory path to export telemetry audit_log.json and audit_report.md")
     p_audit.set_defaults(func=cmd_audit)
@@ -2496,6 +2499,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_boq = subparsers.add_parser("boq", help="Generate Bill of Quantities (BOQ) with Thai Public Works pricing rules")
     p_boq.add_argument("positional_manifest", nargs="?", help="Positional path to project manifest")
     p_boq.add_argument("-m", "--manifest", help="Path to project manifest")
+    p_boq.add_argument("-j", "--jurisdiction", default="th", help="Pricing catalog jurisdiction (default: 'th', e.g. 'sg', 'us', 'uk')")
     p_boq.add_argument("--rules", default="cg-v480", help="Pricing rules standard (e.g. 'cg-v480' for Thai CGD v480)")
     p_boq.add_argument("-p", "--prices", help="Path to price catalog file")
     p_boq.add_argument("--standards", action="store_true", help="Populate unit pricing and embodied carbon from debim-standards CGD v480 catalog")
