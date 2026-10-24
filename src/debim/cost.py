@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from debim.qto import ProjectQTO, calculate_qto
 from debim.resolver import ResolvedDoor, ResolvedWindow, ResolvedMember, resolve_manifest
 from debim.schema import ProjectManifest, load_manifest
-from debim.standards import get_material_price
+from debim.standards_client import get_material_price, get_unit_cost
 
 
 class PriceItemStandards(BaseModel):
@@ -957,10 +957,11 @@ def estimate_cost(
     catalog: PriceCatalog,
     manifest: Optional[ProjectManifest] = None,
     use_standards: bool = False,
+    jurisdiction: str = "th",
 ) -> CostEstimate:
     """
     Calculate cost estimate by matching QTO quantities with price catalog.
-    When use_standards=True, populates unit prices and calculates embodied carbon metrics from debim-standards CGD v480.
+    When use_standards=True, populates unit prices and calculates embodied carbon metrics from debim-standards catalog.
     """
     quantities_by_code: Dict[str, float] = {}
 
@@ -1470,15 +1471,28 @@ def estimate_cost(
         if qty <= 0:
             continue
 
+        std_cost = get_unit_cost(code, jurisdiction=jurisdiction)
         std = get_material_price(code)
-        if use_standards and std:
-            mat_unit_cost = std.material_cost if std.material_cost > 0 else item.material_cost
-            lab_unit_cost = std.labor_cost if std.labor_cost > 0 else item.labor_cost
-            carbon_unit = std.embodied_carbon
+        if use_standards and std_cost:
+            mat_unit_cost = std_cost.get("material_cost", 0.0) if std_cost.get("material_cost", 0.0) > 0 else item.material_cost
+            lab_unit_cost = std_cost.get("labor_cost", 0.0) if std_cost.get("labor_cost", 0.0) > 0 else item.labor_cost
+            carbon_unit = std_cost.get("embodied_carbon", 0.0)
+        elif use_standards and std:
+            s_mat = std.get("material_cost", 0.0) if isinstance(std, dict) else getattr(std, "material_cost", 0.0)
+            s_lab = std.get("labor_cost", 0.0) if isinstance(std, dict) else getattr(std, "labor_cost", 0.0)
+            s_carb = std.get("embodied_carbon", 0.0) if isinstance(std, dict) else getattr(std, "embodied_carbon", 0.0)
+            mat_unit_cost = s_mat if s_mat > 0 else item.material_cost
+            lab_unit_cost = s_lab if s_lab > 0 else item.labor_cost
+            carbon_unit = s_carb
         else:
             mat_unit_cost = item.material_cost
             lab_unit_cost = item.labor_cost
-            carbon_unit = std.embodied_carbon if std else 0.0
+            if std_cost:
+                carbon_unit = std_cost.get("embodied_carbon", 0.0)
+            elif std:
+                carbon_unit = std.get("embodied_carbon", 0.0) if isinstance(std, dict) else getattr(std, "embodied_carbon", 0.0)
+            else:
+                carbon_unit = 0.0
 
         mat_cost = qty * mat_unit_cost
         lab_cost = qty * lab_unit_cost

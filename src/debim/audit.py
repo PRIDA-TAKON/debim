@@ -49,7 +49,7 @@ from debim.schema import (
     load_manifest,
 )
 from debim.solver import solve_manifest_furniture_fit
-from debim.standards import get_regulations
+from debim.standards_client import get_regulations
 
 
 # --- Data Models for 5-Layer Audit Matrix ---
@@ -104,7 +104,8 @@ class AuditMatrixEvaluator:
     Automated 5-Layer Architectural, Regulatory, Structural, MEP, and Physical Clash Audit Engine.
     """
 
-    def __init__(self, target: Union[ProjectManifest, ResolvedManifest, Path, str]):
+    def __init__(self, target: Union[ProjectManifest, ResolvedManifest, Path, str], jurisdiction: str = "th"):
+        self.jurisdiction = jurisdiction or "th"
         if isinstance(target, (str, Path)):
             self.manifest = load_manifest(target)
             self.resolved = resolve_manifest(self.manifest)
@@ -244,25 +245,28 @@ class AuditMatrixEvaluator:
     # --- LAYER 2: Legal & Life Safety ---
     def evaluate_layer_2(self) -> AuditLayerResult:
         """
-        Layer 2: Legal & Life Safety (Thai Building Act MR 55)
-        Hooks into get_regulations('TH') to validate rulesets dynamically:
-        - Natural ventilation window opening >= 10% of floor area
-        - Bathroom/toilet slab drop <= -0.10m
-        - Stair geometry: riser <= 0.20m & tread >= 0.22m
-        - Egress corridor clear width >= 1.00m
-        - Door clear width >= 0.80m
+        Layer 2: Legal & Life Safety (Multi-Jurisdiction Building Codes)
+        Hooks into get_regulations(jurisdiction) to validate rulesets dynamically:
+        - Natural ventilation window opening >= min_vent_ratio of floor area
+        - Bathroom/toilet slab drop <= max_slab_drop
+        - Stair geometry: riser <= max_riser & tread >= min_tread
+        - Egress corridor clear width >= min_corridor_w
+        - Door clear width >= min_door_w
         """
         items: List[AuditViolation] = []
         layer_name = "Legal & Life Safety"
 
-        # Dynamically consume Thai building control regulations from debim-standards
-        th_regs = get_regulations("TH")
-        min_vent_ratio = float(th_regs.get("natural_ventilation_ratio", 0.10))
-        max_slab_drop = float(th_regs.get("bathroom_slab_drop_max", -0.10))
-        max_riser = float(th_regs.get("stair_riser_max", 0.20))
-        min_tread = float(th_regs.get("stair_tread_min", 0.22))
-        min_corridor_w = float(th_regs.get("corridor_width_min", 1.00))
-        min_door_w = float(th_regs.get("door_clear_width_min", 0.80))
+        # Dynamically consume building control regulations for specified jurisdiction from debim-standards
+        regs = get_regulations(self.jurisdiction)
+        jur_name = regs.get("name", self.jurisdiction.upper())
+        std_title = regs.get("title", f"Building Regulations ({jur_name})")
+
+        min_vent_ratio = float(regs.get("natural_ventilation_ratio", 0.10))
+        max_slab_drop = float(regs.get("bathroom_slab_drop_max", -0.10))
+        max_riser = float(regs.get("stair_riser_max", 0.20))
+        min_tread = float(regs.get("stair_tread_min", 0.22))
+        min_corridor_w = float(regs.get("corridor_width_min", 1.00))
+        min_door_w = float(regs.get("door_clear_width_min", 0.80))
 
         # Check 1: Thai MR 55 Natural Ventilation >= 10% floor area
         for r_space in self.resolved.spaces:
@@ -816,9 +820,10 @@ class AuditMatrixEvaluator:
 def run_5_layer_audit(
     target: Union[ProjectManifest, ResolvedManifest, Path, str],
     apply_fixes: bool = False,
+    jurisdiction: str = "th",
 ) -> AuditMatrixReport:
     """
     Utility function to run the complete 5-layer audit matrix.
     """
-    evaluator = AuditMatrixEvaluator(target)
+    evaluator = AuditMatrixEvaluator(target, jurisdiction=jurisdiction)
     return evaluator.run_full_audit(apply_fixes=apply_fixes)
