@@ -26,6 +26,301 @@ from debim.standards import get_furniture
 
 
 Point2D = Tuple[float, float]
+
+# --- Gravity Drainage Slope Solver Data Models ---
+
+class InvertElevationResult(BaseModel):
+    tag: str
+    point_type: str  # "DISCHARGE_STACK", "COLLECTOR_PIPE", "FIXTURE_BRANCH", "PIPE_SEGMENT"
+    start_invert_elevation: float
+    end_invert_elevation: float
+    distance_from_discharge: float
+    calculated_slope: float
+    min_required_slope: float
+    is_valid: bool
+
+
+class DrainageSlopeWarning(BaseModel):
+    pipe_tag: str
+    warning_type: str  # "INSUFFICIENT_SLOPE", "BEAM_CLASH"
+    message: str
+    details: Dict[str, Any] = Field(default_factory=dict)
+
+
+class GravityDrainageSolverResult(BaseModel):
+    passed: bool
+    min_slope: float
+    invert_elevations: List[InvertElevationResult]
+    warnings: List[DrainageSlopeWarning]
+    solve_time_sec: float
+
+
+# --- Gravity Drainage Slope Solver Engine ---
+
+def solve_gravity_drainage_slopes(
+    manifest: Union[ProjectManifest, Any],
+    min_slope: float = 0.01,
+    discharge_stack_invert: Optional[float] = None,
+) -> GravityDrainageSolverResult:
+    """
+    Calculates required upstream invert elevations for gravity drainage systems starting from
+    the main discharge stack invert elevation.
+
+    Enforces minimum slope >= 0.01 (1:100) or user-specified gradient.
+    Flags warnings if required sloped drainage pipe path clashes with structural beams (IfcBeam).
+    """
+    start_time = time.perf_counter()
+    from debim.resolver import resolve_manifest, SpatialResolver, ResolvedManifest
+    from debim.compliance import get_element_aabb, aabb_overlap
+
+    if isinstance(manifest, ResolvedManifest):
+        resolved = manifest
+    else:
+        resolved = resolve_manifest(manifest)
+
+    invert_results: List[InvertElevationResult] = []
+    warnings: List[DrainageSlopeWarning] = []
+
+    # Map beams for clash detection
+    resolved_beams = getattr(resolved, "beams", []) or []
+
+    handled_pipe_tags = set()
+
+    # Process declarative MEP network systems
+    mep_systems = getattr(resolved.manifest, "mep_systems", []) or []
+    for sys in mep_systems:
+        raw_sys_type = str(sys.system_type or "").upper()
+        if raw_sys_type not in (
+            "SANITARY_DRAINAGE", "SOIL", "WASTE", "VENT", "DRAINAGE", "SANITARY"
+        ) and not sys.collector_pipe:
+            continue
+
+        if sys.collector_pipe:
+            c_def = sys.collector_pipe
+            c_tag = c_def.tag or f"{sys.id}_COLLECTOR"
+            handled_pipe_tags.add(c_tag)
+
+            p_from = getattr(c_def, "from_", None)
+            p_to = getattr(c_def, "to", None)
+
+            # Resolve points using resolver
+            resolver = SpatialResolver(resolved.manifest)
+            from debim.resolver import _resolve_mep_point, _resolve_fixture_port
+            pt_from = _resolve_mep_point(p_from, resolver)
+            pt_to = _resolve_mep_point(p_to, resolver)
+
+            if pt_from == (0.0, 0.0, 0.0) and pt_to == (0.0, 0.0, 0.0) and sys.gather_fixtures:
+                gf_pts = [_resolve_fixture_port(gf.fixture or gf.target_fixture, gf.target_port, resolver) for gf in sys.gather_fixtures]
+                if gf_pts:
+                    pt_from = gf_pts[0]
+                    pt_to = (gf_pts[-1][0] + 2.0, gf_pts[-1][1], gf_pts[-1][2] - 0.02)
+
+            # Discharge invert elevation
+            if discharge_stack_invert is not None:
+                z_discharge = discharge_stack_invert
+            else:
+                z_discharge = pt_to[2]
+
+            dx = pt_to[0] - pt_from[0]
+            dy = pt_to[1] - pt_from[1]
+            horiz_dist_coll = math.hypot(dx, dy)
+            if horiz_dist_coll < 1e-6:
+                horiz_dist_coll = math.dist(pt_from, pt_to)
+
+            specified_slope = c_def.slope if c_def.slope is not None else 0.01
+            effective_slope = max(specified_slope, min_slope)
+
+            if specified_slope < min_slope - 1e-5:
+                warnings.append(DrainageSlopeWarning(
+                    pipe_tag=c_tag,
+                    warning_type="INSUFFICIENT_SLOPE",
+                    message=f"Collector pipe '{c_tag}' specified slope ({specified_slope:.4f}) is below minimum required gradient ({min_slope:.4f}).",
+                    details={"specified_slope": specified_slope, "min_required_slope": min_slope},
+                ))
+
+            z_coll_to = z_discharge
+            z_coll_from = z_discharge + (horiz_dist_coll * effective_slope)
+
+            invert_results.append(InvertElevationResult(
+                tag=c_tag,
+                point_type="COLLECTOR_PIPE",
+                start_invert_elevation=round(z_coll_from, 4),
+                end_invert_elevation=round(z_coll_to, 4),
+                distance_from_discharge=round(horiz_dist_coll, 4),
+                calculated_slope=round(effective_slope, 4),
+                min_required_slope=min_slope,
+                is_valid=effective_slope >= min_slope - 1e-5,
+            ))
+
+            # Check beam clash for collector pipe
+            c_dia = c_def.diameter or c_def.nominal_diameter or 0.100
+            coll_aabb = (
+                min(pt_from[0], pt_to[0]) - c_dia / 2.0,
+                min(pt_from[1], pt_to[1]) - c_dia / 2.0,
+                min(z_coll_from, z_coll_to) - c_dia / 2.0,
+                max(pt_from[0], pt_to[0]) + c_dia / 2.0,
+                max(pt_from[1], pt_to[1]) + c_dia / 2.0,
+                max(z_coll_from, z_coll_to) + c_dia / 2.0,
+            )
+
+            for beam in resolved_beams:
+                beam_aabb = get_element_aabb(beam)
+                if aabb_overlap(coll_aabb, beam_aabb, tol=1e-3):
+                    warnings.append(DrainageSlopeWarning(
+                        pipe_tag=c_tag,
+                        warning_type="BEAM_CLASH",
+                        message=f"Sloped collector pipe '{c_tag}' clashes with structural beam '{beam.tag}'.",
+                        details={"beam_tag": beam.tag, "pipe_aabb": coll_aabb, "beam_aabb": beam_aabb},
+                    ))
+
+            # Process tributary branch gather fixtures
+            for idx, gf in enumerate(sys.gather_fixtures):
+                f_tag = gf.fixture or gf.target_fixture or f"FIXTURE_{idx + 1}"
+                b_tag = gf.tag or f"{c_tag}_BRANCH_{idx + 1}"
+                handled_pipe_tags.add(b_tag)
+
+                pt_fixture = _resolve_fixture_port(f_tag, gf.target_port, resolver)
+
+                # Project fixture onto collector pipe to find junction
+                from debim.resolver import _project_point_onto_line_segment
+                pt_junction = _project_point_onto_line_segment(pt_fixture, pt_from, pt_to)
+
+                # Distance along collector pipe from discharge end pt_to to junction
+                dist_junc_to_discharge = math.hypot(pt_to[0] - pt_junction[0], pt_to[1] - pt_junction[1])
+                z_junction = z_discharge + (dist_junc_to_discharge * effective_slope)
+
+                branch_dx = pt_fixture[0] - pt_junction[0]
+                branch_dy = pt_fixture[1] - pt_junction[1]
+                dist_branch = math.hypot(branch_dx, branch_dy)
+
+                gf_specified_slope = gf.slope if gf.slope is not None else effective_slope
+                gf_effective_slope = max(gf_specified_slope, min_slope)
+
+                if gf_specified_slope < min_slope - 1e-5:
+                    warnings.append(DrainageSlopeWarning(
+                        pipe_tag=b_tag,
+                        warning_type="INSUFFICIENT_SLOPE",
+                        message=f"Fixture branch '{b_tag}' specified slope ({gf_specified_slope:.4f}) is below minimum required gradient ({min_slope:.4f}).",
+                        details={"fixture_tag": f_tag, "specified_slope": gf_specified_slope, "min_required_slope": min_slope},
+                    ))
+
+                z_fixture_invert = z_junction + (dist_branch * gf_effective_slope)
+                total_dist = dist_junc_to_discharge + dist_branch
+
+                invert_results.append(InvertElevationResult(
+                    tag=f_tag,
+                    point_type="FIXTURE_BRANCH",
+                    start_invert_elevation=round(z_fixture_invert, 4),
+                    end_invert_elevation=round(z_junction, 4),
+                    distance_from_discharge=round(total_dist, 4),
+                    calculated_slope=round(gf_effective_slope, 4),
+                    min_required_slope=min_slope,
+                    is_valid=gf_effective_slope >= min_slope - 1e-5,
+                ))
+
+                # Check beam clash for branch pipe
+                gf_dia = gf.branch_diameter or gf.diameter or 0.050
+                branch_aabb = (
+                    min(pt_junction[0], pt_fixture[0]) - gf_dia / 2.0,
+                    min(pt_junction[1], pt_fixture[1]) - gf_dia / 2.0,
+                    min(z_junction, z_fixture_invert) - gf_dia / 2.0,
+                    max(pt_junction[0], pt_fixture[0]) + gf_dia / 2.0,
+                    max(pt_junction[1], pt_fixture[1]) + gf_dia / 2.0,
+                    max(z_junction, z_fixture_invert) + gf_dia / 2.0,
+                )
+
+                for beam in resolved_beams:
+                    beam_aabb = get_element_aabb(beam)
+                    if aabb_overlap(branch_aabb, beam_aabb, tol=1e-3):
+                        warnings.append(DrainageSlopeWarning(
+                            pipe_tag=b_tag,
+                            warning_type="BEAM_CLASH",
+                            message=f"Sloped fixture branch pipe '{b_tag}' for fixture '{f_tag}' clashes with structural beam '{beam.tag}'.",
+                            details={"fixture_tag": f_tag, "beam_tag": beam.tag, "branch_aabb": branch_aabb, "beam_aabb": beam_aabb},
+                        ))
+
+    # Process remaining resolved drainage pipes
+    resolved_pipes = getattr(resolved, "pipes", []) or []
+    for pipe in resolved_pipes:
+        if pipe.tag in handled_pipe_tags:
+            continue
+
+        sys_type = str(pipe.system_type or "").upper()
+        if sys_type in ("DRAINAGE", "SOIL", "WASTE", "SANITARY") or pipe.slope > 0:
+            handled_pipe_tags.add(pipe.tag)
+
+            p_start = pipe.start_point
+            p_end = pipe.end_point
+
+            dx = p_end[0] - p_start[0]
+            dy = p_end[1] - p_start[1]
+            horiz_dist = math.hypot(dx, dy)
+            if horiz_dist < 1e-6:
+                horiz_dist = pipe.length
+
+            specified_slope = pipe.slope if pipe.slope > 0 else 0.01
+            effective_slope = max(specified_slope, min_slope)
+
+            if specified_slope < min_slope - 1e-5:
+                warnings.append(DrainageSlopeWarning(
+                    pipe_tag=pipe.tag,
+                    warning_type="INSUFFICIENT_SLOPE",
+                    message=f"Pipe '{pipe.tag}' specified slope ({specified_slope:.4f}) is below minimum required gradient ({min_slope:.4f}).",
+                    details={"specified_slope": specified_slope, "min_required_slope": min_slope},
+                ))
+
+            if discharge_stack_invert is not None:
+                z_end = discharge_stack_invert
+            else:
+                z_end = p_end[2]
+
+            z_start = z_end + (horiz_dist * effective_slope)
+
+            invert_results.append(InvertElevationResult(
+                tag=pipe.tag,
+                point_type="PIPE_SEGMENT",
+                start_invert_elevation=round(z_start, 4),
+                end_invert_elevation=round(z_end, 4),
+                distance_from_discharge=round(horiz_dist, 4),
+                calculated_slope=round(effective_slope, 4),
+                min_required_slope=min_slope,
+                is_valid=effective_slope >= min_slope - 1e-5,
+            ))
+
+            # Beam clash detection
+            p_dia = pipe.nominal_diameter or 0.050
+            pipe_aabb = (
+                min(p_start[0], p_end[0]) - p_dia / 2.0,
+                min(p_start[1], p_end[1]) - p_dia / 2.0,
+                min(z_start, z_end) - p_dia / 2.0,
+                max(p_start[0], p_end[0]) + p_dia / 2.0,
+                max(p_start[1], p_end[1]) + p_dia / 2.0,
+                max(z_start, z_end) + p_dia / 2.0,
+            )
+
+            for beam in resolved_beams:
+                beam_aabb = get_element_aabb(beam)
+                if aabb_overlap(pipe_aabb, beam_aabb, tol=1e-3):
+                    warnings.append(DrainageSlopeWarning(
+                        pipe_tag=pipe.tag,
+                        warning_type="BEAM_CLASH",
+                        message=f"Sloped drainage pipe '{pipe.tag}' clashes with structural beam '{beam.tag}'.",
+                        details={"beam_tag": beam.tag, "pipe_aabb": pipe_aabb, "beam_aabb": beam_aabb},
+                    ))
+
+    solve_time = time.perf_counter() - start_time
+    passed = len(warnings) == 0
+
+    return GravityDrainageSolverResult(
+        passed=passed,
+        min_slope=min_slope,
+        invert_elevations=invert_results,
+        warnings=warnings,
+        solve_time_sec=round(solve_time, 6),
+    )
+
+
+# --- SAT Collision Detection & 2D Geometry Helpers ---
 Polygon2D = List[Point2D]
 
 
