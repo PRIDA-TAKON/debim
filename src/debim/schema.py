@@ -4128,11 +4128,19 @@ class Material(BaseModel):
     spec: Optional[str] = None
 
 
+class SiteTerrain(BaseModel):
+    source: str
+    format: Optional[str] = "json"
+    contour_interval: float = 0.50
+    clip_to_boundary: bool = True
+
+
 class SiteBoundary(BaseModel):
     boundary: Optional[List[Tuple[float, float]]] = None
     bounding_box: Optional[Tuple[float, float, float, float]] = None  # (min_x, min_y, max_x, max_y)
     front_road_width: Optional[float] = None  # Road width in meters
     front_axis: Optional[str] = None  # Front boundary grid axis name (e.g. "1")
+    terrain: Optional[SiteTerrain] = None
 
 
 class ComplianceRule(BaseModel):

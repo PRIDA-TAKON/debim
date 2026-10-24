@@ -2954,6 +2954,48 @@ class StepSerializer:
                     sys_ref,
                 )
 
+        # 10. Terrain Surface Mesh (IfcGeographicElement)
+        if getattr(resolved, "terrain_mesh", None):
+            try:
+                tm = resolved.terrain_mesh
+                if tm.vertex_count >= 3 and tm.face_count >= 1:
+                    coords, indices = tm.to_ifc_triangulated_face_set(one_based=True)
+                    pt_list_ref = self.create_entity("IfcCartesianPointList3D", coords)
+                    tfs_ref = self.create_entity("IfcTriangulatedFaceSet", pt_list_ref, None, ".F.", indices)
+                    shape_rep = self.create_entity(
+                        "IfcShapeRepresentation",
+                        body_context_ref,
+                        "Body",
+                        "Tessellation",
+                        [tfs_ref],
+                    )
+                    prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+                    t_origin = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                    t_axis = self.create_entity("IfcAxis2Placement3D", t_origin, None, None)
+                    t_pl = self.create_entity("IfcLocalPlacement", site_pl_ref, t_axis)
+                    geo_ref = self.create_entity(
+                        "IfcGeographicElement",
+                        generate_ifc_guid(),
+                        None,
+                        "TERRAIN_SURFACE",
+                        None,
+                        "IfcTerrainSurface",
+                        t_pl,
+                        prod_shape_ref,
+                        None,
+                    )
+                    self.create_entity(
+                        "IfcRelContainedInSpatialStructure",
+                        generate_ifc_guid(),
+                        None,
+                        None,
+                        None,
+                        [geo_ref],
+                        site_ref,
+                    )
+            except Exception:
+                pass
+
         footer = ["ENDSEC;", "END-ISO-10303-21;"]
         return "\n".join(header + self.lines + footer) + "\n"
 
@@ -5707,6 +5749,40 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
                 )
         except Exception as e:
             logger.warning(f"Failed to create IfcDistributionSystem {sys_name}: {e}")
+
+    # 9. Terrain Surface Mesh (IfcGeographicElement with IfcTriangulatedFaceSet)
+    if getattr(resolved, "terrain_mesh", None):
+        try:
+            tm = resolved.terrain_mesh
+            if tm.vertex_count >= 3 and tm.face_count >= 1:
+                geo_obj = ifcopenshell.api.run(
+                    "root.create_entity",
+                    model,
+                    ifc_class="IfcGeographicElement",
+                    name="TERRAIN_SURFACE",
+                    predefined_type="USERDEFINED",
+                )
+                geo_obj.ObjectType = "IfcTerrainSurface"
+                ifcopenshell.api.run("spatial.assign_container", model, products=[geo_obj], relating_structure=site)
+                mat_t = np.eye(4)
+                ifcopenshell.api.run("geometry.edit_object_placement", model, product=geo_obj, matrix=mat_t)
+
+                pt_list = model.createIfcCartesianPointList3D([list(v) for v in tm.vertices])
+                coord_indices = [[int(i + 1) for i in f] for f in tm.faces]
+                face_set = model.createIfcTriangulatedFaceSet(
+                    Coordinates=pt_list,
+                    CoordIndex=coord_indices,
+                    Closed=False,
+                )
+                rep = model.createIfcShapeRepresentation(
+                    ContextOfItems=body_context,
+                    RepresentationIdentifier="Body",
+                    RepresentationType="Tessellation",
+                    Items=[face_set],
+                )
+                ifcopenshell.api.run("geometry.assign_representation", model, product=geo_obj, representation=rep)
+        except Exception as ex:
+            logger.warning(f"Failed to create terrain surface in IFC: {ex}")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     model.write(str(output_path))

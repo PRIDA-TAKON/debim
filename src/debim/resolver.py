@@ -1786,6 +1786,7 @@ class ResolvedManifest(BaseModel):
 
     manifest: ProjectManifest
     facade_tessellation: Optional[Any] = None
+    terrain_mesh: Optional[Any] = None
     penetration_sleeves: List[Any] = []
     footings: List[ResolvedFooting] = []
     columns: List[ResolvedColumn] = []
@@ -7980,6 +7981,35 @@ class SpatialResolver:
             resolved_manifest.penetration_sleeves = sleeves
         except Exception:
             pass
+
+        # Resolve terrain mesh if configured under site.terrain
+        if self.manifest.site and getattr(self.manifest.site, "terrain", None):
+            try:
+                from pathlib import Path
+                from debim.terrain import SurveyData, generate_terrain_mesh
+                t_cfg = self.manifest.site.terrain
+                src_path = Path(t_cfg.source)
+                if not src_path.exists() and hasattr(self.manifest, "_source_path") and self.manifest._source_path:
+                    cand = Path(self.manifest._source_path).parent / t_cfg.source
+                    if cand.exists():
+                        src_path = cand
+
+                if src_path.exists():
+                    if src_path.suffix.lower() == ".json":
+                        survey = SurveyData.from_json(src_path)
+                    else:
+                        survey = SurveyData.from_csv(src_path)
+
+                    bnd = self.manifest.site.boundary
+                    mesh = generate_terrain_mesh(
+                        survey=survey,
+                        boundary=bnd,
+                        contour_interval=t_cfg.contour_interval,
+                        clip_to_boundary=t_cfg.clip_to_boundary,
+                    )
+                    resolved_manifest.terrain_mesh = mesh
+            except Exception:
+                pass
 
         return resolved_manifest
 
