@@ -13,6 +13,13 @@ from debim.scan.calibrator import (
     detect_door_height,
     calibrate_point_cloud,
 )
+from debim.scan.slicer import (
+    StoreyHeightResult,
+    SliceResult,
+    detect_storey_height,
+    extract_eye_level_slice,
+    slice_point_cloud,
+)
 
 __all__ = [
     "CalibrationResult",
@@ -22,4 +29,9 @@ __all__ = [
     "rodrigues_rotation_matrix",
     "detect_door_height",
     "calibrate_point_cloud",
+    "StoreyHeightResult",
+    "SliceResult",
+    "detect_storey_height",
+    "extract_eye_level_slice",
+    "slice_point_cloud",
 ]
