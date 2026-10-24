@@ -221,6 +221,38 @@ def _point_on_line_segment(
     return abs((pa_len + pb_len) - ab_len) < tol
 
 
+def _normalize_3d(v: Tuple[float, float, float]) -> Tuple[float, float, float]:
+    d = math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
+    if d < 1e-6:
+        return (0.0, 0.0, 0.0)
+    return (v[0] / d, v[1] / d, v[2] / d)
+
+
+def _is_directional_bend(pt: Tuple[float, float, float], connected_pipes: List[Any]) -> bool:
+    vectors = []
+    for pipe in connected_pipes:
+        wpts = getattr(pipe, "waypoints", None) or [pipe.start_point, pipe.end_point]
+        for i, wpt in enumerate(wpts):
+            if math.dist(pt, wpt) < 1e-3:
+                if i > 0:
+                    v_in = (pt[0] - wpts[i - 1][0], pt[1] - wpts[i - 1][1], pt[2] - wpts[i - 1][2])
+                    vectors.append(_normalize_3d(v_in))
+                if i < len(wpts) - 1:
+                    v_out = (wpts[i + 1][0] - pt[0], wpts[i + 1][1] - pt[1], wpts[i + 1][2] - pt[2])
+                    vectors.append(_normalize_3d(v_out))
+                break
+
+    if len(vectors) < 2:
+        return False
+
+    v0 = vectors[0]
+    for v in vectors[1:]:
+        dot = v0[0] * v[0] + v0[1] * v[1] + v0[2] * v[2]
+        if abs(dot - 1.0) > 0.01:
+            return True
+    return False
+
+
 def analyze_mep_junctions(
     pipes: List[Any], conduits: List[Any]
 ) -> List[Dict[str, Any]]:
@@ -296,6 +328,16 @@ def analyze_mep_junctions(
                 "ifc_class": "IfcPipeFitting",
                 "predefined_type": "TRANSITION",
                 "object_type": "CONCENTRIC_REDUCER",
+                "diameter": max(diameters) if diameters else 0.05,
+                "storey": list(storeys)[0] if storeys else None,
+                "connected_count": len(connected_pipes),
+            })
+        elif incident_count == 2 and _is_directional_bend(pt, connected_pipes):
+            fittings.append({
+                "point": pt,
+                "ifc_class": "IfcPipeFitting",
+                "predefined_type": "JUNCTION",
+                "object_type": "ELBOW",
                 "diameter": max(diameters) if diameters else 0.05,
                 "storey": list(storeys)[0] if storeys else None,
                 "connected_count": len(connected_pipes),

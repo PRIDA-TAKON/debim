@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 
+from debim.compiler import analyze_mep_junctions
 from debim.resolver import (
     ResolvedAirTerminal,
     ResolvedAlignment,
@@ -796,6 +797,14 @@ class ProjectQTO(BaseModel):
     total_refrigerant_pipe_length: float = 0.0
     total_condensate_pipe_length: float = 0.0
     total_pipe_fittings_count: int = 0
+    pipe_lengths_by_material_and_diameter: Dict[str, float] = Field(default_factory=dict)
+    pipe_lengths_by_material_diameter: Dict[str, float] = Field(default_factory=dict)
+    mep_fittings_by_type: Dict[str, int] = Field(default_factory=dict)
+    total_elbows_count: int = 0
+    total_tees_count: int = 0
+    total_reducers_count: int = 0
+    total_wyes_count: int = 0
+    total_junction_boxes_count: int = 0
     total_conduit_length: float = 0.0
     total_conduit_fittings_count: int = 0
     total_duct_length: float = 0.0
@@ -3067,6 +3076,44 @@ def calculate_qto(
         elif eqto.tag.startswith("SLAB-LOFT-") or "LOFT" in eqto.tag and eqto.element_class == "IfcSlab":
             total_loft_slab_area_val += getattr(elem, "area", 0.0)
 
+    pipes_by_mat_dia: Dict[str, float] = {}
+    for pipe in resolved.pipes:
+        mat = getattr(pipe, "material", None) or getattr(getattr(pipe, "element", None), "material", None)
+        if not mat:
+            st = getattr(pipe, "system_type", "")
+            if "CW" in st or "WATER" in st or "COLD" in st:
+                mat = "PPR"
+            else:
+                mat = "PVC"
+        dia = float(pipe.nominal_diameter or 0.05)
+        key = f"{mat}:{dia}"
+        pipes_by_mat_dia[key] = pipes_by_mat_dia.get(key, 0.0) + float(pipe.length)
+
+    auto_fittings = analyze_mep_junctions(resolved.pipes, resolved.conduits)
+    fittings_by_type: Dict[str, int] = {}
+    tot_elbows = 0
+    tot_tees = 0
+    tot_reducers = 0
+    tot_wyes = 0
+    tot_jboxes = 0
+
+    for fit in auto_fittings:
+        ftype = fit.get("object_type", "FITTING")
+        fittings_by_type[ftype] = fittings_by_type.get(ftype, 0) + 1
+        if ftype == "ELBOW":
+            tot_elbows += 1
+        elif ftype == "TEE":
+            tot_tees += 1
+        elif ftype == "CONCENTRIC_REDUCER" or "REDUCER" in ftype:
+            tot_reducers += 1
+        elif ftype == "SANITARY_WYE_45" or "WYE" in ftype:
+            tot_wyes += 1
+        elif ftype == "JUNCTION_BOX":
+            tot_jboxes += 1
+
+    pipe_fittings_count = max(total_pipe_fittings, tot_elbows + tot_tees + tot_reducers + tot_wyes)
+    conduit_fittings_count = max(total_conduit_fittings, tot_jboxes)
+
     ew = getattr(resolved, "earthwork", None)
     ew_cut = ew.cut_volume if ew else 0.0
     ew_fill = ew.fill_volume if ew else 0.0
@@ -3163,9 +3210,17 @@ def calculate_qto(
         total_drainage_pipe_length=total_drainage_len,
         total_refrigerant_pipe_length=total_refrigerant_len,
         total_condensate_pipe_length=total_condensate_len,
-        total_pipe_fittings_count=total_pipe_fittings,
+        total_pipe_fittings_count=pipe_fittings_count,
+        pipe_lengths_by_material_and_diameter=pipes_by_mat_dia,
+        pipe_lengths_by_material_diameter=pipes_by_mat_dia,
+        mep_fittings_by_type=fittings_by_type,
+        total_elbows_count=tot_elbows,
+        total_tees_count=tot_tees,
+        total_reducers_count=tot_reducers,
+        total_wyes_count=tot_wyes,
+        total_junction_boxes_count=tot_jboxes,
         total_conduit_length=total_conduit_len,
-        total_conduit_fittings_count=total_conduit_fittings,
+        total_conduit_fittings_count=conduit_fittings_count,
         total_duct_length=total_duct_len,
         total_duct_fittings_count=total_duct_fittings,
         total_sanitary_terminals_count=total_sanitary_terms,

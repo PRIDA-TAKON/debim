@@ -568,8 +568,34 @@ def generate_cost_template(
         )
         item_disciplines["ROOF-INSULATION"] = "roof"
 
-    # 7. MEP
-    mep_specs = [
+    # 7. MEP Pipe Lengths by Material & Diameter
+    for mat_dia_key, pipe_len in qto.pipe_lengths_by_material_diameter.items():
+        if pipe_len > 0:
+            parts = mat_dia_key.split(":")
+            mat_str = parts[0]
+            dia_str = parts[1] if len(parts) > 1 else "0.05"
+            try:
+                dia_mm = int(round(float(dia_str) * 1000))
+            except ValueError:
+                dia_mm = 50
+            code = f"MEP-PIPE-{mat_str.upper()}-{dia_mm}"
+            if code not in required_items:
+                required_items[code] = PriceItem(
+                    name=f"{mat_str} Pipe Ø {dia_mm}mm",
+                    unit="m",
+                    material_cost=0.0,
+                    labor_cost=0.0,
+                    standards=PriceItemStandards(masterformat="22 11 16", uniformat="D20"),
+                )
+                item_disciplines[code] = "mep"
+
+    # 8. MEP Auto-Generated Fittings
+    fitting_specs = [
+        (qto.total_elbows_count, "MEP-FITTING-ELBOW", "Pipe Fitting Elbow 90°/45°", "set", "22 11 00", "D20"),
+        (qto.total_tees_count, "MEP-FITTING-TEE", "Pipe Fitting Tee", "set", "22 11 00", "D20"),
+        (qto.total_reducers_count, "MEP-FITTING-REDUCER", "Pipe Fitting Concentric Reducer", "set", "22 11 00", "D20"),
+        (qto.total_wyes_count, "MEP-FITTING-WYE", "Sanitary Pipe Wye 45°", "set", "22 13 00", "D20"),
+        (qto.total_junction_boxes_count, "MEP-JUNCTION-BOX", "Electrical Conduit Junction Box", "set", "26 05 33", "D50"),
         (qto.total_cold_water_pipe_length, "MEP-PIPE-COLD", "Cold Water Pipe", "m", "22 11 16", "D20"),
         (qto.total_soil_pipe_length, "MEP-PIPE-SOIL", "Soil Drainage Pipe", "m", "22 13 16", "D20"),
         (qto.total_waste_pipe_length, "MEP-PIPE-WASTE", "Waste Water Pipe", "m", "22 13 16", "D20"),
@@ -594,7 +620,7 @@ def generate_cost_template(
         (float(qto.total_unitary_equipment_count), "MEP-HVAC-UNITARY", "Air Conditioner Unit", "set", "23 81 00", "D30"),
         (float(qto.total_penetration_sleeves_count), "MEP-SLEEVE", "MEP Penetration Sleeve & Opening", "set", "22 05 00", "D20"),
     ]
-    for amt, code, name, unit, mf, uf in mep_specs:
+    for amt, code, name, unit, mf, uf in fitting_specs:
         if amt > 0 and code not in required_items:
             required_items[code] = PriceItem(
                 name=name,
@@ -1235,7 +1261,64 @@ def estimate_cost(
                 )
                 break
 
-    # 7. Map MEP system totals (Cold Water, Soil, Waste, Vent, Conduits, Terminals, HVAC, Sanitary & Waste Fixtures)
+    # 7. Map MEP Pipe Lengths & Auto-Generated Fittings
+    # 7.1 Categorized pipe lengths by material & nominal diameter
+    for mat_dia_key, pipe_len in qto.pipe_lengths_by_material_diameter.items():
+        if pipe_len <= 0:
+            continue
+        parts = mat_dia_key.split(":")
+        mat_str = parts[0].upper()
+        dia_str = parts[1] if len(parts) > 1 else "0.05"
+        try:
+            dia_mm = int(round(float(dia_str) * 1000))
+        except ValueError:
+            dia_mm = 50
+
+        cand_codes = [
+            f"MEP-PIPE-{mat_str}-{dia_mm}",
+            f"MEP-PIPE-{mat_str}-{dia_str}",
+            f"MEP-PIPE-{mat_str}",
+        ]
+        matched_code = None
+        for cand in cand_codes:
+            if cand in catalog.items:
+                matched_code = cand
+                break
+        if not matched_code:
+            for c_code, c_item in catalog.items.items():
+                if mat_str.lower() in c_code.lower() or mat_str.lower() in c_item.name.lower():
+                    if str(dia_mm) in c_code or str(dia_mm) in c_item.name or dia_str in c_code or dia_str in c_item.name:
+                        matched_code = c_code
+                        break
+
+        if matched_code:
+            quantities_by_code[matched_code] = quantities_by_code.get(matched_code, 0.0) + pipe_len
+
+    # 7.2 Specific fitting counts (Elbows, Tees, Reducers, Wyes, Junction Boxes)
+    fitting_mapping = [
+        (qto.total_elbows_count, ["mep-fitting-elbow", "elbow", "ข้องอ"]),
+        (qto.total_tees_count, ["mep-fitting-tee", "tee", "สามทาง"]),
+        (qto.total_reducers_count, ["mep-fitting-reducer", "reducer", "ข้อลด"]),
+        (qto.total_wyes_count, ["mep-fitting-wye", "wye", "วาย"]),
+        (qto.total_junction_boxes_count, ["mep-junction-box", "junction-box", "junction_box", "กล่องพักสาย"]),
+    ]
+    for fit_count, keywords in fitting_mapping:
+        if fit_count <= 0:
+            continue
+        matched_code = None
+        for kw in keywords:
+            if kw.upper() in catalog.items:
+                matched_code = kw.upper()
+                break
+        if not matched_code:
+            for c_code, c_item in catalog.items.items():
+                if any(kw in c_code.lower() or kw in c_item.name.lower() for kw in keywords):
+                    matched_code = c_code
+                    break
+        if matched_code:
+            quantities_by_code[matched_code] = quantities_by_code.get(matched_code, 0.0) + float(fit_count)
+
+    # 7.3 General MEP system totals fallback
     mep_maps = [
         (qto.total_cold_water_pipe_length, ["pipe-cold", "pipe-water", "ppr", "ท่อน้ำดี"]),
         (qto.total_soil_pipe_length, ["pipe-soil", "ท่อโสโครก", "pvc-soil"]),
