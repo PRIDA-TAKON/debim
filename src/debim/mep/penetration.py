@@ -65,11 +65,19 @@ def detect_penetration_sleeves(
     walls = getattr(resolved, "walls", []) or []
     beams = getattr(resolved, "beams", []) or []
 
+    # Default storey fallback if pipe placement storey is omitted
+    default_storey = "L1"
+    if hasattr(manifest, "spatial_structure") and manifest.spatial_structure and manifest.spatial_structure.storeys:
+        default_storey = manifest.spatial_structure.storeys[0].id
+
     for pipe in pipes:
         pipe_tag = pipe.tag
         d_pipe = getattr(pipe, "nominal_diameter", 0.100) or 0.100
         d_sleeve = d_pipe + 2 * clearance_offset  # e.g. 100mm pipe -> 150mm sleeve
         waypoints = getattr(pipe, "waypoints", []) or []
+
+        pipe_storey = getattr(getattr(pipe, "element", None), "placement", None)
+        pipe_storey = getattr(pipe_storey, "storey", None) or default_storey
 
         if len(waypoints) < 2:
             continue
@@ -114,7 +122,7 @@ def detect_penetration_sleeves(
                                 "cylinder": [d_sleeve / 2.0, thickness]
                             },
                             "placement": {
-                                "storey": getattr(pipe.element.placement, "storey", "L1"),
+                                "storey": pipe_storey,
                                 "position": int_pt,
                             },
                         }
@@ -178,7 +186,7 @@ def detect_penetration_sleeves(
                             "cylinder": [d_sleeve / 2.0, thickness]
                         },
                         "placement": {
-                            "storey": getattr(pipe.element.placement, "storey", "L1"),
+                            "storey": pipe_storey,
                             "position": int_pt,
                         },
                     }
@@ -242,7 +250,7 @@ def detect_penetration_sleeves(
                             "cylinder": [d_sleeve / 2.0, width]
                         },
                         "placement": {
-                            "storey": getattr(pipe.element.placement, "storey", "L1"),
+                            "storey": pipe_storey,
                             "position": int_pt,
                         },
                     }

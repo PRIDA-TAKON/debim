@@ -7978,11 +7978,6 @@ class SpatialResolver:
             from debim.mep.penetration import detect_penetration_sleeves
             sleeves = detect_penetration_sleeves(self.manifest, resolved_manifest)
             resolved_manifest.penetration_sleeves = sleeves
-            for s in sleeves:
-                if s.proxy_element:
-                    proxy_obj = IfcBuildingElementProxy.model_validate(s.proxy_element)
-                    resolved_proxy = self.resolve_proxy(proxy_obj)
-                    resolved_manifest.proxies.append(resolved_proxy)
         except Exception:
             pass
 
