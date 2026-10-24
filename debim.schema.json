@@ -14269,11 +14269,54 @@
       "title": "PileProfile",
       "type": "object"
     },
+    "PipeConnectSpec": {
+      "properties": {
+        "from": {
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "title": "To",
+          "type": "string"
+        },
+        "wall_hugging": {
+          "default": true,
+          "title": "Wall Hugging",
+          "type": "boolean"
+        },
+        "slope": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Slope"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "title": "PipeConnectSpec",
+      "type": "object"
+    },
     "PipePlacement": {
       "properties": {
         "storey": {
-          "title": "Storey",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey"
         },
         "from_grid": {
           "anyOf": [
@@ -14393,11 +14436,24 @@
           "default": 0.0,
           "title": "Slope",
           "type": "number"
+        },
+        "connect": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PipeConnectSpec"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Connect"
         }
       },
-      "required": [
-        "storey"
-      ],
       "title": "PipePlacement",
       "type": "object"
     },

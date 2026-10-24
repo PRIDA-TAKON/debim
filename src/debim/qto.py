@@ -807,6 +807,7 @@ class ProjectQTO(BaseModel):
     total_dampers_count: int = 0
     total_flow_controllers_count: int = 0
     total_unitary_equipment_count: int = 0
+    total_penetration_sleeves_count: int = 0
     # Mooring Totals
     total_mooring_devices_count: int = 0
     total_mooring_bollards_count: int = 0
@@ -3166,6 +3167,7 @@ def calculate_qto(
         total_dampers_count=total_dampers,
         total_flow_controllers_count=total_flow_controllers,
         total_unitary_equipment_count=total_unitary_eqs,
+        total_penetration_sleeves_count=len(getattr(resolved, "penetration_sleeves", []) or []),
         total_ports_count=total_ports,
         total_connected_ports_count=total_connected_ports,
         total_dead_end_ports_count=total_dead_ends,

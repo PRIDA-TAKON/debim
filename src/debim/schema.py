@@ -2161,8 +2161,16 @@ class PipePoint(BaseModel):
         return v
 
 
+class PipeConnectSpec(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    from_tag: str = Field(alias="from")
+    to_tag: str = Field(alias="to")
+    wall_hugging: bool = True
+    slope: Optional[float] = None
+
+
 class PipePlacement(BaseModel):
-    storey: str
+    storey: Optional[str] = None
     from_grid: Optional[Tuple[str, str]] = None
     to_grid: Optional[Tuple[str, str]] = None
     from_offset: Tuple[float, float, float] = (0.0, 0.0, 0.0)
@@ -2170,6 +2178,7 @@ class PipePlacement(BaseModel):
     path: Optional[List[PipePoint]] = None
     routing: RoutingStrategy = "DIRECT"
     slope: float = 0.0  # Slope ratio, e.g. 0.01 (1:100) or 0.02 (1:50)
+    connect: Optional[Union[PipeConnectSpec, Dict[str, Any]]] = None
 
     @field_validator("from_grid", "to_grid", mode="before")
     @classmethod
@@ -4629,7 +4638,7 @@ class ProjectManifest(BaseModel):
                             raise ValueError(f"Element '{elem.tag}' boundary references unknown Y grid '{gy}'")
 
             elif isinstance(elem, (IfcPipeSegment, IfcCableCarrierSegment, IfcDuctSegment)):
-                if elem.placement.storey not in storey_ids:
+                if elem.placement.storey and elem.placement.storey not in storey_ids:
                     raise ValueError(
                         f"Element '{elem.tag}' references unknown storey '{elem.placement.storey}'"
                     )

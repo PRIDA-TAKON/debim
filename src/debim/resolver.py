@@ -1786,6 +1786,7 @@ class ResolvedManifest(BaseModel):
 
     manifest: ProjectManifest
     facade_tessellation: Optional[Any] = None
+    penetration_sleeves: List[Any] = []
     footings: List[ResolvedFooting] = []
     columns: List[ResolvedColumn] = []
     beams: List[ResolvedBeam] = []
@@ -5196,39 +5197,66 @@ class SpatialResolver:
         )
 
     def resolve_pipe(self, pipe: IfcPipeSegment) -> ResolvedPipeSegment:
-        z_base = self.storeys[pipe.placement.storey].elevation
+        st_name = pipe.placement.storey
+        z_base = self.storeys[st_name].elevation if st_name and st_name in self.storeys else 0.0
         waypoints: List[Tuple[float, float, float]] = []
 
-        if pipe.placement.path and len(pipe.placement.path) >= 2:
-            for pt in pipe.placement.path:
-                if pt.x is not None and pt.y is not None:
-                    x = float(pt.x)
-                    y = float(pt.y)
-                    z = float(pt.z) if pt.z is not None else (z_base + pt.offset_z)
-                elif pt.grid:
-                    gx, gy = pt.grid
-                    x = self.axes_x[gx] + pt.offset_x
-                    y = self.axes_y[gy] + pt.offset_y
-                    z = z_base + pt.offset_z
-                else:
-                    x, y, z = (0.0, 0.0, z_base + pt.offset_z)
-                waypoints.append((x, y, z))
-        else:
-            gx1, gy1 = pipe.placement.from_grid or ("1", "A")
-            gx2, gy2 = pipe.placement.to_grid or ("1", "A")
-            fo = pipe.placement.from_offset
-            to = pipe.placement.to_offset
-            p1 = (self.axes_x[gx1] + fo[0], self.axes_y[gy1] + fo[1], z_base + fo[2])
-            p2 = (self.axes_x[gx2] + to[0], self.axes_y[gy2] + to[1], z_base + to[2])
-            if pipe.placement.slope != 0.0:
-                dist_xy = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
-                p2 = (p2[0], p2[1], p2[2] - dist_xy * pipe.placement.slope)
-
-            routing_strat = getattr(pipe.placement, "routing", "DIRECT")
-            if routing_strat != "DIRECT":
-                waypoints = _generate_orthogonal_waypoints(p1, p2, routing_strat)
+        if getattr(pipe.placement, "connect", None):
+            conn = pipe.placement.connect
+            if isinstance(conn, dict):
+                from_tag = conn.get("from") or conn.get("from_tag")
+                to_tag = conn.get("to") or conn.get("to_tag")
+                wall_hugging = conn.get("wall_hugging", True)
+                slope = conn.get("slope", pipe.placement.slope)
             else:
-                waypoints = [p1, p2]
+                from_tag = getattr(conn, "from_tag", "")
+                to_tag = getattr(conn, "to_tag", "")
+                wall_hugging = getattr(conn, "wall_hugging", True)
+                slope = getattr(conn, "slope", None) or pipe.placement.slope
+
+            if from_tag and to_tag:
+                from debim.mep.router import MEPRouter
+                router = MEPRouter(self.manifest, self)
+                waypoints = router.route(
+                    from_tag=from_tag,
+                    to_tag=to_tag,
+                    system_type=pipe.system_type,
+                    slope=slope or pipe.placement.slope,
+                    wall_hugging=wall_hugging,
+                    nominal_diameter=pipe.nominal_diameter,
+                )
+
+        if not waypoints:
+            if pipe.placement.path and len(pipe.placement.path) >= 2:
+                for pt in pipe.placement.path:
+                    if pt.x is not None and pt.y is not None:
+                        x = float(pt.x)
+                        y = float(pt.y)
+                        z = float(pt.z) if pt.z is not None else (z_base + pt.offset_z)
+                    elif pt.grid:
+                        gx, gy = pt.grid
+                        x = self.axes_x[gx] + pt.offset_x
+                        y = self.axes_y[gy] + pt.offset_y
+                        z = z_base + pt.offset_z
+                    else:
+                        x, y, z = (0.0, 0.0, z_base + pt.offset_z)
+                    waypoints.append((x, y, z))
+            else:
+                gx1, gy1 = pipe.placement.from_grid or ("1", "A")
+                gx2, gy2 = pipe.placement.to_grid or ("1", "A")
+                fo = pipe.placement.from_offset
+                to = pipe.placement.to_offset
+                p1 = (self.axes_x[gx1] + fo[0], self.axes_y[gy1] + fo[1], z_base + fo[2])
+                p2 = (self.axes_x[gx2] + to[0], self.axes_y[gy2] + to[1], z_base + to[2])
+                if pipe.placement.slope != 0.0:
+                    dist_xy = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+                    p2 = (p2[0], p2[1], p2[2] - dist_xy * pipe.placement.slope)
+
+                routing_strat = getattr(pipe.placement, "routing", "DIRECT")
+                if routing_strat != "DIRECT":
+                    waypoints = _generate_orthogonal_waypoints(p1, p2, routing_strat)
+                else:
+                    waypoints = [p1, p2]
 
         total_length = sum(
             math.dist(waypoints[i], waypoints[i + 1]) for i in range(len(waypoints) - 1)
@@ -7944,6 +7972,19 @@ class SpatialResolver:
 
         resolved_manifest.resolved_ports = all_resolved_ports
         resolved_manifest.topology_graph = self._build_topology_graph(all_resolved_ports)
+
+        # Auto-detect MEP penetration sleeves for floor slabs, walls, and beams
+        try:
+            from debim.mep.penetration import detect_penetration_sleeves
+            sleeves = detect_penetration_sleeves(self.manifest, resolved_manifest)
+            resolved_manifest.penetration_sleeves = sleeves
+            for s in sleeves:
+                if s.proxy_element:
+                    proxy_obj = IfcBuildingElementProxy.model_validate(s.proxy_element)
+                    resolved_proxy = self.resolve_proxy(proxy_obj)
+                    resolved_manifest.proxies.append(resolved_proxy)
+        except Exception:
+            pass
 
         return resolved_manifest
 
