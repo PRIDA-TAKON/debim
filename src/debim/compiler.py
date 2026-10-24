@@ -201,6 +201,160 @@ def generate_fallback_solid_step(
     )
 
 
+def _round_pt(pt: Tuple[float, float, float], precision: int = 4) -> Tuple[float, float, float]:
+    """Round 3D point coordinates to given decimal precision."""
+    return (round(float(pt[0]), precision), round(float(pt[1]), precision), round(float(pt[2]), precision))
+
+
+def _point_on_line_segment(
+    p: Tuple[float, float, float],
+    a: Tuple[float, float, float],
+    b: Tuple[float, float, float],
+    tol: float = 1e-4,
+) -> bool:
+    """Check if 3D point p lies along line segment ab."""
+    ab_len = math.dist(a, b)
+    if ab_len < tol:
+        return math.dist(p, a) < tol
+    pa_len = math.dist(p, a)
+    pb_len = math.dist(p, b)
+    return abs((pa_len + pb_len) - ab_len) < tol
+
+
+def analyze_mep_junctions(
+    pipes: List[Any], conduits: List[Any]
+) -> List[Dict[str, Any]]:
+    """
+    Analyze shared waypoints and segment connections across all pipe and conduit elements.
+    Returns auto-generated fitting definitions (IfcPipeFitting, IfcJunctionBox).
+    """
+    fittings: List[Dict[str, Any]] = []
+
+    # 1. Pipe Fittings (Tee, Sanitary Wye, Reducer)
+    pipe_candidates: Set[Tuple[float, float, float]] = set()
+    for pipe in pipes:
+        wpts = getattr(pipe, "waypoints", None) or [pipe.start_point, pipe.end_point]
+        for pt in wpts:
+            pipe_candidates.add(_round_pt(pt))
+
+    for pt in sorted(pipe_candidates):
+        connected_pipes = []
+        incident_count = 0
+        diameters: Set[float] = set()
+        system_types: Set[str] = set()
+        storeys: Set[str] = set()
+
+        for pipe in pipes:
+            wpts = getattr(pipe, "waypoints", None) or [pipe.start_point, pipe.end_point]
+            dia = float(getattr(pipe, "nominal_diameter", 0.05) or 0.05)
+            stype = str(getattr(pipe, "system_type", "COLD_WATER") or "COLD_WATER")
+            st_id = getattr(getattr(pipe, "element", None), "placement", None)
+            st_id_str = getattr(st_id, "storey", None) if st_id else None
+
+            is_wpt = False
+            for wpt in wpts:
+                if math.dist(pt, wpt) < 1e-3:
+                    is_wpt = True
+                    break
+
+            if is_wpt:
+                connected_pipes.append(pipe)
+                diameters.add(dia)
+                system_types.add(stype)
+                if st_id_str:
+                    storeys.add(st_id_str)
+                if math.dist(pt, wpts[0]) < 1e-3 or math.dist(pt, wpts[-1]) < 1e-3:
+                    incident_count += 1
+                else:
+                    incident_count += 2
+            else:
+                for i in range(len(wpts) - 1):
+                    if _point_on_line_segment(pt, wpts[i], wpts[i + 1]):
+                        connected_pipes.append(pipe)
+                        diameters.add(dia)
+                        system_types.add(stype)
+                        if st_id_str:
+                            storeys.add(st_id_str)
+                        incident_count += 2
+                        break
+
+        if incident_count >= 3:
+            is_drainage = any(st in ("SANITARY_DRAINAGE", "DRAINAGE", "SOIL", "WASTE") for st in system_types)
+            fitting_obj_type = "SANITARY_WYE_45" if is_drainage else "TEE"
+            fittings.append({
+                "point": pt,
+                "ifc_class": "IfcPipeFitting",
+                "predefined_type": "JUNCTION",
+                "object_type": fitting_obj_type,
+                "diameter": max(diameters) if diameters else 0.05,
+                "storey": list(storeys)[0] if storeys else None,
+                "connected_count": len(connected_pipes),
+            })
+        elif incident_count == 2 and len(diameters) > 1:
+            fittings.append({
+                "point": pt,
+                "ifc_class": "IfcPipeFitting",
+                "predefined_type": "TRANSITION",
+                "object_type": "CONCENTRIC_REDUCER",
+                "diameter": max(diameters) if diameters else 0.05,
+                "storey": list(storeys)[0] if storeys else None,
+                "connected_count": len(connected_pipes),
+            })
+
+    # 2. Conduit Junction Boxes
+    conduit_candidates: Set[Tuple[float, float, float]] = set()
+    for conduit in conduits:
+        wpts = getattr(conduit, "waypoints", None) or [conduit.start_point, conduit.end_point]
+        for pt in wpts:
+            conduit_candidates.add(_round_pt(pt))
+
+    for pt in sorted(conduit_candidates):
+        connected_conduits = []
+        incident_count = 0
+        storeys: Set[str] = set()
+
+        for conduit in conduits:
+            wpts = getattr(conduit, "waypoints", None) or [conduit.start_point, conduit.end_point]
+            st_id = getattr(getattr(conduit, "element", None), "placement", None)
+            st_id_str = getattr(st_id, "storey", None) if st_id else None
+
+            is_wpt = False
+            for wpt in wpts:
+                if math.dist(pt, wpt) < 1e-3:
+                    is_wpt = True
+                    break
+
+            if is_wpt:
+                connected_conduits.append(conduit)
+                if st_id_str:
+                    storeys.add(st_id_str)
+                if math.dist(pt, wpts[0]) < 1e-3 or math.dist(pt, wpts[-1]) < 1e-3:
+                    incident_count += 1
+                else:
+                    incident_count += 2
+            else:
+                for i in range(len(wpts) - 1):
+                    if _point_on_line_segment(pt, wpts[i], wpts[i + 1]):
+                        connected_conduits.append(conduit)
+                        if st_id_str:
+                            storeys.add(st_id_str)
+                        incident_count += 2
+                        break
+
+        if incident_count >= 2 and len(connected_conduits) >= 2:
+            fittings.append({
+                "point": pt,
+                "ifc_class": "IfcJunctionBox",
+                "predefined_type": "DATA",
+                "object_type": "JUNCTION_BOX",
+                "diameter": 0.020,
+                "storey": list(storeys)[0] if storeys else None,
+                "connected_count": len(connected_conduits),
+            })
+
+    return fittings
+
+
 def bind_default_psets_step(
     serializer: "StepSerializer",
     product_ref: str,
@@ -2506,6 +2660,42 @@ class StepSerializer:
             element_tag_refs[conduit.tag] = elem_ref
             if st_id and st_id in storey_elements:
                 storey_elements[st_id].append(elem_ref)
+
+        # 7.1 Auto-generated MEP Fittings & Junction Boxes
+        auto_fittings = analyze_mep_junctions(resolved.pipes, resolved.conduits)
+        for idx, fit in enumerate(auto_fittings):
+            fit_tag = f"FIT_{fit['ifc_class']}_{idx + 1}"
+            st_id = fit.get("storey")
+            if not st_id and storey_elevations:
+                st_id = min(storey_elevations.keys(), key=lambda s: abs(storey_elevations[s] - fit["point"][2]))
+            st_pl = storey_pl_refs.get(st_id)
+            st_elev = storey_elevations.get(st_id, 0.0) if st_id else 0.0
+
+            px, py, pz = fit["point"]
+            dia = fit.get("diameter", 0.05)
+            rad = dia / 2.0
+            w, d, h = dia, dia, dia
+
+            elem_pl, prod_shape = self._create_mep_terminal_shape(
+                px, py, pz, 0.0, st_pl, st_elev, w, d, h, body_context_ref
+            )
+
+            ptype_arg = f".{fit['predefined_type']}."
+            fit_ref = self.create_entity(
+                fit["ifc_class"],
+                generate_ifc_guid(),
+                None,
+                fit_tag,
+                None,
+                fit["object_type"],
+                elem_pl,
+                prod_shape,
+                None,
+                ptype_arg,
+            )
+            element_tag_refs[fit_tag] = fit_ref
+            if st_id and st_id in storey_elements:
+                storey_elements[st_id].append(fit_ref)
 
         for duct in resolved.ducts:
             st_id = duct.element.placement.storey
@@ -5330,6 +5520,34 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
         st_id = conduit.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(conduit_obj)
+
+    # 7.1 Auto-generated MEP Fittings & Junction Boxes
+    auto_fittings = analyze_mep_junctions(resolved.pipes, resolved.conduits)
+    for idx, fit in enumerate(auto_fittings):
+        fit_tag = f"FIT_{fit['ifc_class']}_{idx + 1}"
+        fit_obj = ifcopenshell.api.run(
+            "root.create_entity",
+            model,
+            ifc_class=fit["ifc_class"],
+            name=fit_tag,
+            predefined_type=fit["predefined_type"],
+        )
+        fit_obj.ObjectType = fit["object_type"]
+        ifcopenshell_elem_objs[fit_tag] = fit_obj
+
+        dia = fit.get("diameter", 0.05)
+        _add_ifcopenshell_terminal_geometry(
+            fit_obj, fit["point"], 0.0, (dia, dia, dia)
+        )
+
+        st_id = fit.get("storey")
+        if not st_id and storey_objs:
+            st_id = min(
+                storey_objs.keys(),
+                key=lambda s: abs((storey_objs[s].Elevation or 0.0) - fit["point"][2])
+            )
+        if st_id and st_id in storey_products:
+            storey_products[st_id].append(fit_obj)
 
     for duct in resolved.ducts:
         duct_obj = ifcopenshell.api.run(
