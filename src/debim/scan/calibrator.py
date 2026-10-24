@@ -238,6 +238,7 @@ def estimate_floor_plane(
     max_iterations: int = 1000,
     distance_threshold: float = 0.05,
     vertical_normal_min_z: float = 0.7,
+    floor_search_range: tuple[float, float] = (-0.5, 0.5),
 ) -> tuple[np.ndarray, float, np.ndarray]:
     """
     RANSAC plane estimation for horizontal floor plane detection.
@@ -251,15 +252,30 @@ def estimate_floor_plane(
     if num_pts < 3:
         raise ValueError("Need at least 3 points to estimate floor plane.")
 
+    # Identify floor candidate sample pool using 1D Z histogram peak in floor_search_range
+    z_vals = points[:, 2]
+    f_min, f_max = floor_search_range
+    floor_mask = (z_vals >= f_min) & (z_vals <= f_max)
+
+    if np.any(floor_mask) and np.sum(floor_mask) >= 3:
+        counts, edges = np.histogram(z_vals[floor_mask], bins=20)
+        centers = (edges[:-1] + edges[1:]) / 2.0
+        floor_peak_z = float(centers[np.argmax(counts)])
+        sample_pool = np.where(np.abs(z_vals - floor_peak_z) <= 0.30)[0]
+        if len(sample_pool) < 3:
+            sample_pool = np.arange(num_pts)
+    else:
+        sample_pool = np.arange(num_pts)
+
     best_inliers = np.array([], dtype=int)
     best_normal = np.array([0.0, 0.0, 1.0])
     best_d = 0.0
 
-    # Deterministic seed for reproducible RANSAC if needed
+    # Deterministic seed for reproducible RANSAC
     rng = np.random.default_rng(42)
 
     for _ in range(max_iterations):
-        idx = rng.choice(num_pts, size=3, replace=False)
+        idx = rng.choice(sample_pool, size=3, replace=False)
         p1, p2, p3 = points[idx]
         v1 = p2 - p1
         v2 = p3 - p1
@@ -338,7 +354,7 @@ def rodrigues_rotation_matrix(normal: np.ndarray) -> np.ndarray:
 def detect_door_height(
     points: np.ndarray,
     floor_z: float = 0.0,
-    cell_size: float = 0.10,
+    cell_size: float = 0.15,
 ) -> float:
     """
     Detects door opening lintel height relative to floor_z.
@@ -353,6 +369,7 @@ def detect_door_height(
 
     pts_valid = points[valid_idx]
     z_valid = z_rel[valid_idx]
+    z_ceil_approx = float(np.percentile(z_valid, 95))
 
     grid_x = np.floor(pts_valid[:, 0] / cell_size).astype(int)
     grid_y = np.floor(pts_valid[:, 1] / cell_size).astype(int)
@@ -365,17 +382,18 @@ def detect_door_height(
         cell_dict[key].append(z_valid[i])
 
     lintel_candidates = []
+    max_lintel_z = max(1.00, z_ceil_approx - 0.35)
+
     for key, z_vals in cell_dict.items():
         z_arr = np.array(z_vals)
-        has_low = np.any(z_arr < 0.20)
-        high_pts = z_arr[z_arr >= 0.50]
+        high_pts = z_arr[z_arr >= 1.00]
         if len(high_pts) == 0:
             continue
 
         min_high = float(np.min(high_pts))
         # Door cutout condition: points exist above min_high, but no/few points between 0.30 and min_high - 0.05
         mid_pts = z_arr[(z_arr >= 0.30) & (z_arr < min_high - 0.05)]
-        if len(mid_pts) < 2 and 0.80 <= min_high <= 3.50:
+        if len(mid_pts) < 2 and 1.00 <= min_high <= max_lintel_z:
             lintel_candidates.append(min_high)
 
     if len(lintel_candidates) > 0:

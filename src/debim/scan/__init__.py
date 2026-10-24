@@ -1,7 +1,7 @@
 """
 debim.scan
 
-Point cloud scan processing, calibration, slicing, and extraction.
+Point cloud scan processing, calibration, slicing, extraction, and manifest compilation.
 """
 
 from debim.scan.calibrator import (
@@ -34,6 +34,10 @@ from debim.scan.opening_detector import (
     detect_openings_along_wall,
     detect_openings,
 )
+from debim.scan.compiler import (
+    compile_scan_to_manifest,
+    scan_ingest,
+)
 
 __all__ = [
     "CalibrationResult",
@@ -58,4 +62,6 @@ __all__ = [
     "OpeningDetectionResult",
     "detect_openings_along_wall",
     "detect_openings",
+    "compile_scan_to_manifest",
+    "scan_ingest",
 ]
