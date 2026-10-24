@@ -1,0 +1,47 @@
+[
+  {
+    "step": 1,
+    "match_keywords": ["mep-schema", "mep schema", "branch_from", "network topology"],
+    "next_issue": {
+      "title": "feat(schema): add declarative MEP network topology and branching models",
+      "body": "### Overview\nIntroduce declarative MEP network graph models in `debim.schema.json` and `src/debim/schema.py` supporting branching (1-to-N supply) and converging (N-to-1 drainage) topology.\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/schema.py`:**\n   - Define `MepNetworkSystem` supporting `main_pipe`, `branches: List[PipeBranchDefinition]`, `collector_pipe`, and `gather_fixtures`.\n   - Support `branch_from: str`, `target_fixture: str`, `target_port: str`, `diameter: float`, and `auto_reducer: bool`.\n   - Ensure backward compatibility with existing standalone `IfcPipeSegment`.\n2. **In `debim.schema.json`:**\n   - Export updated Pydantic models to JSON Schema.\n3. **Tests:**\n   - Add `tests/test_mep_schema.py` verifying valid manifests with branching plumbing and electrical conduits.\n\n---\n\n### Acceptance Criteria\n1. Pydantic validates valid MEP branching manifests without error.\n2. `pytest tests/test_mep_schema.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "step": 2,
+    "match_keywords": ["mep-resolver", "mep resolver", "snapping", "branch projection"],
+    "next_issue": {
+      "title": "feat(resolver): implement topological MEP router with automatic orthogonal branch projection",
+      "body": "### Overview\nImplement automatic branch resolution in `src/debim/resolver.py` that projects target fixtures onto the main pipe and generates orthogonal waypoints.\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/resolver.py`:**\n   - Implement `resolve_mep_network(system: MepNetworkSystem)`.\n   - For each branch, compute perpendicular projection point onto main pipe line segment.\n   - Generate connected 3D waypoints with zero disconnection gap (Coordinate Snapping).\n   - Create resolved pipe segments linked by shared junction coordinates.\n2. **Tests:**\n   - Add `tests/test_mep_resolver.py` verifying snapped coordinates between main pipe and branches.\n\n---\n\n### Acceptance Criteria\n1. Branch start coordinates strictly match projected point on main pipe.\n2. `pytest tests/test_mep_resolver.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "step": 3,
+    "match_keywords": ["auto-fitting", "pipe fitting", "tee", "reducer", "junction box"],
+    "next_issue": {
+      "title": "feat(compiler): auto-generate IfcPipeFitting (Tee, Wye, Reducer) and IfcJunctionBox",
+      "body": "### Overview\nImplement junction analysis in `src/debim/compiler.py` to auto-instantiate native OpenBIM IFC4 fittings at branch intersections.\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/compiler.py`:**\n   - Analyze shared waypoints across all pipe segments:\n     - 3-way intersection $\\rightarrow$ `IfcPipeFitting` with `PredefinedType=\"TEE\"` or `\"JUNCTION\"`.\n     - Diameter change $\\rightarrow$ `IfcPipeFitting` with `PredefinedType=\"CONCENTRIC_REDUCER\"`.\n     - Drainage intersection $\\rightarrow$ 45-degree Sanitary Wye.\n     - Conduit intersection $\\rightarrow$ `IfcJunctionBox`.\n2. **Tests:**\n   - Add `tests/test_mep_fittings.py` verifying exported IFC4 entities and types.\n\n---\n\n### Acceptance Criteria\n1. Compiled IFC model contains valid `IfcPipeFitting` entities connecting adjacent segments.\n2. `pytest tests/test_mep_fittings.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "step": 4,
+    "match_keywords": ["gravity", "drainage slope", "soil waste", "slope propagation"],
+    "next_issue": {
+      "title": "feat(solver): implement gravity drainage slope solver and invert elevation calculation",
+      "body": "### Overview\nImplement gravity drainage slope calculation in `src/debim/solver.py` for sanitary and waste systems ensuring 1:100 (1%) minimum gradient.\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/solver.py`:**\n   - Starting from main discharge stack invert elevation, calculate required upstream invert elevations for each tributary branch.\n   - Ensure slope $\\ge 0.01$ (1:100) or user-specified gradient.\n   - Flag warnings if required slope clashes with structural beams (`IfcBeam`).\n2. **Tests:**\n   - Add `tests/test_mep_slope_solver.py`.\n\n---\n\n### Acceptance Criteria\n1. Upstream drainage fixture inverts are higher than discharge points by `distance * slope`.\n2. `pytest tests/test_mep_slope_solver.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "step": 5,
+    "match_keywords": ["mep-qto", "fitting boq", "mep cost", "take-off"],
+    "next_issue": {
+      "title": "feat(qto): integrate MEP pipe lengths and automated fitting counts into BOQ",
+      "body": "### Overview\nIntegrate automated MEP quantities (pipe meters by diameter, fitting counts by type, junction boxes) into debim QTO and BOQ reporting.\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/qto.py`:**\n   - Aggregate pipe lengths categorized by material and nominal diameter.\n   - Count auto-generated fittings (Elbows, Tees, Reducers, Wyes, Junction Boxes).\n2. **In `src/debim/cost.py`:**\n   - Map MEP quantities to standard Thai CGD/วสท. unit price items in BOQ ปร.4.\n3. **Tests:**\n   - Add `tests/test_mep_qto.py`.\n\n---\n\n### Acceptance Criteria\n1. BOQ summary contains accurate pipe lengths and fitting quantities matching the 3D model.\n2. `pytest tests/test_mep_qto.py` passes 100%.",
+      "label": "jules"
+    }
+  }
+]
