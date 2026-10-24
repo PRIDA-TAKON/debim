@@ -699,6 +699,9 @@ class ProjectQTO(BaseModel):
     total_weld_touchup_area: float = 0.0
     total_timber_volume: float = 0.0
     total_excavation_volume: float = 0.0
+    earthwork_cut_volume: float = 0.0
+    earthwork_fill_volume: float = 0.0
+    earthwork_net_volume: float = 0.0
     total_lean_concrete_volume: float = 0.0
     total_sand_bedding_volume: float = 0.0
     total_pile_count: int = 0
@@ -3064,6 +3067,11 @@ def calculate_qto(
         elif eqto.tag.startswith("SLAB-LOFT-") or "LOFT" in eqto.tag and eqto.element_class == "IfcSlab":
             total_loft_slab_area_val += getattr(elem, "area", 0.0)
 
+    ew = getattr(resolved, "earthwork", None)
+    ew_cut = ew.cut_volume if ew else 0.0
+    ew_fill = ew.fill_volume if ew else 0.0
+    ew_net = ew.net_balance if ew else 0.0
+
     return ProjectQTO(
         elements=qto_elements,
         total_concrete_volume=total_conc_vol,
@@ -3077,6 +3085,9 @@ def calculate_qto(
         total_lean_concrete_volume=total_lean_vol,
         total_sand_bedding_volume=total_sand_vol,
         total_excavation_volume=total_excav_vol,
+        earthwork_cut_volume=ew_cut,
+        earthwork_fill_volume=ew_fill,
+        earthwork_net_volume=ew_net,
         total_pile_count=total_piles_count,
         total_pile_length=total_piles_len,
         total_pile_chipping_count=total_piles_chip,

@@ -1787,6 +1787,7 @@ class ResolvedManifest(BaseModel):
     manifest: ProjectManifest
     facade_tessellation: Optional[Any] = None
     terrain_mesh: Optional[Any] = None
+    earthwork: Optional[Any] = None
     penetration_sleeves: List[Any] = []
     footings: List[ResolvedFooting] = []
     columns: List[ResolvedColumn] = []
@@ -8008,6 +8009,27 @@ class SpatialResolver:
                         clip_to_boundary=t_cfg.clip_to_boundary,
                     )
                     resolved_manifest.terrain_mesh = mesh
+            except Exception:
+                pass
+
+        # Resolve earthwork cut & fill if site.grading is defined
+        if self.manifest.site and getattr(self.manifest.site, "grading", None) and resolved_manifest.terrain_mesh:
+            try:
+                from debim.earthwork import calculate_cut_fill
+                g_cfg = self.manifest.site.grading
+                if g_cfg.building_pad:
+                    pad = g_cfg.building_pad
+                    pad_poly = pad.polygon
+                    if not pad_poly:
+                        pad_poly = self.manifest.site.boundary
+                    if pad_poly:
+                        res = calculate_cut_fill(
+                            original_tin=resolved_manifest.terrain_mesh,
+                            graded_pad_polygon=pad_poly,
+                            pad_elevation=pad.elevation,
+                            batter_slope=pad.batter_slope,
+                        )
+                        resolved_manifest.earthwork = res
             except Exception:
                 pass
 

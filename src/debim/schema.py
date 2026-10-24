@@ -4135,12 +4135,23 @@ class SiteTerrain(BaseModel):
     clip_to_boundary: bool = True
 
 
+class BuildingPadGrading(BaseModel):
+    elevation: float = 0.0
+    batter_slope: float = 1.5
+    polygon: Optional[List[Tuple[float, float]]] = None
+
+
+class SiteGrading(BaseModel):
+    building_pad: Optional[BuildingPadGrading] = None
+
+
 class SiteBoundary(BaseModel):
     boundary: Optional[List[Tuple[float, float]]] = None
     bounding_box: Optional[Tuple[float, float, float, float]] = None  # (min_x, min_y, max_x, max_y)
     front_road_width: Optional[float] = None  # Road width in meters
     front_axis: Optional[str] = None  # Front boundary grid axis name (e.g. "1")
     terrain: Optional[SiteTerrain] = None
+    grading: Optional[SiteGrading] = None
 
 
 class ComplianceRule(BaseModel):
