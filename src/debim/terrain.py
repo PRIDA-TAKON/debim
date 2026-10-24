@@ -10,7 +10,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-from scipy.spatial import Delaunay
+try:
+    from scipy.spatial import Delaunay
+except ImportError:
+    Delaunay = None
 from shapely.geometry import Polygon, MultiPolygon, Point, LineString, MultiLineString
 from shapely.ops import polygonize, unary_union
 
@@ -257,6 +260,10 @@ def generate_terrain_mesh(
     """
     Generate a 3D TIN terrain mesh from survey points, optionally clipped to a property boundary.
     """
+    if Delaunay is None:
+        raise ImportError(
+            "scipy is required for terrain mesh Delaunay triangulation. Install with 'pip install scipy'."
+        )
     pts = survey.points
     if len(pts) < 3:
         raise ValueError("At least 3 survey points are required to generate a terrain mesh.")
