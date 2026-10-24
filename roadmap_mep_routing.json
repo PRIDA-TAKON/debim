@@ -34,5 +34,50 @@
       "body": "### Overview\nIntegrate automated MEP quantities (pipe meters by diameter, fitting counts by type, junction boxes) into debim QTO and BOQ reporting.\n\nReference: `ROADMAP_MEP_ROUTING.md`\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/qto.py`:**\n   - Aggregate pipe lengths categorized by material and nominal diameter.\n   - Count auto-generated fittings (Elbows, Tees, Reducers, Wyes, Junction Boxes).\n2. **In `src/debim/cost.py`:**\n   - Map MEP quantities to standard Thai CGD/วสท. unit price items in BOQ ปร.4.\n3. **Tests:**\n   - Add `tests/test_mep_qto.py`.\n\n---\n\n### Acceptance Criteria\n1. BOQ summary contains accurate pipe lengths and fitting quantities matching the 3D model.\n2. `pytest tests/test_mep_qto.py` passes 100%.",
       "label": "jules"
     }
+  },
+  {
+    "step": 6,
+    "match_keywords": ["qto", "mep-qto", "fitting boq", "mep cost", "take-off", "pipe lengths"],
+    "next_issue": {
+      "title": "feat(scan): point cloud ingestion, floor RANSAC and gravity-metric calibration",
+      "body": "### Overview\nImplement point cloud (.ply) ingestion with RANSAC horizontal floor plane detection, Rodrigues rotation gravity alignment (+Z up), and door reference (2.00m) metric rescaling in `src/debim/scan/calibrator.py`.\n\nReference: `ROADMAP_V2_TO_V4_PHYSICAL_AI.md` Milestone 2.0.0\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/scan/calibrator.py`:**\n   - Load XYZ points and colors from .ply files using pure NumPy / plyfile.\n   - Estimate floor plane via RANSAC and compute 3x3 Rodrigues rotation matrix aligning floor normal with +Z.\n   - Detect floor level and door lintel / ceiling opening height.\n   - Compute scale factor `s = 2.00 / h_door_raw` and rescale coordinates to true 1:1 metric meters.\n2. **Tests:**\n   - Add `tests/test_scan_calibrator.py` verifying metric scaled points with door = 2.00m.\n\n---\n\n### Acceptance Criteria\n1. Calibrated point clouds have floor at Z=0 and door opening height at exactly 2.00m.\n2. `pytest tests/test_scan_calibrator.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "step": 7,
+    "match_keywords": ["calibrator", "gravity-metric", "metric scale", "point cloud ingestion"],
+    "next_issue": {
+      "title": "feat(scan): Z-histogram floor-ceiling detector and eye-level wall slicer",
+      "body": "### Overview\nImplement Z-histogram peak analysis for storey height extraction and eye-level (+1.20m) 2D horizontal slice extraction in `src/debim/scan/slicer.py`.\n\nReference: `ROADMAP_V2_TO_V4_PHYSICAL_AI.md` Milestone 2.0.0\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/scan/slicer.py`:**\n   - Analyze Z-density histogram to find floor peak (Z=0.0m) and ceiling peak (height H).\n   - Extract horizontal 2D slice at Z = +1.20m (thickness +-0.10m) filtering out low furniture.\n2. **Tests:**\n   - Add `tests/test_scan_slicer.py`.\n\n---\n\n### Acceptance Criteria\n1. Slicer extracts clean 2D points representing room perimeters at eye level.\n2. `pytest tests/test_scan_slicer.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "step": 8,
+    "match_keywords": ["slicer", "eye-level", "wall slicer", "z-histogram"],
+    "next_issue": {
+      "title": "feat(scan): 2D RANSAC wall centerline extractor and Manhattan rectifier",
+      "body": "### Overview\nImplement wall centerline extraction using vectorized 2D RANSAC and orthogonal Manhattan 90-degree alignment with corner snapping in `src/debim/scan/wall_extractor.py`.\n\nReference: `ROADMAP_V2_TO_V4_PHYSICAL_AI.md` Milestone 2.0.0\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/scan/wall_extractor.py`:**\n   - Fit 2D line segments across dense clusters in the eye-level slice.\n   - Align lines to dominant orthogonal grid (0 deg, 90 deg, 45 deg).\n   - Snap intersecting wall endpoints creating closed wall loops (Topology Closure).\n2. **Tests:**\n   - Add `tests/test_scan_wall_extractor.py`.\n\n---\n\n### Acceptance Criteria\n1. Extracted walls form closed orthogonal polygons with thickness and height attributes.\n2. `pytest tests/test_scan_wall_extractor.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "step": 9,
+    "match_keywords": ["manhattan", "wall extractor", "centerline", "rectifier"],
+    "next_issue": {
+      "title": "feat(scan): opening gap detector for doors and windows along wall lines",
+      "body": "### Overview\nImplement opening gap detection along wall centerlines distinguishing doors (floor-to-2m opening) and windows (0.8m-2m opening) in `src/debim/scan/opening_detector.py`.\n\nReference: `ROADMAP_V2_TO_V4_PHYSICAL_AI.md` Milestone 2.0.0\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/scan/opening_detector.py`:**\n   - Sample vertical point density profiles along each extracted wall segment.\n   - Classify voids: void from Z=0.0 to 2.0m -> Door (D1); void from Z=0.8 to 2.0m -> Window (W1).\n2. **Tests:**\n   - Add `tests/test_scan_openings.py`.\n\n---\n\n### Acceptance Criteria\n1. Detected openings contain correct sill height, head height, and width.\n2. `pytest tests/test_scan_openings.py` passes 100%.",
+      "label": "jules"
+    }
+  },
+  {
+    "step": 10,
+    "match_keywords": ["opening", "door and window", "opening detector", "opening gap"],
+    "next_issue": {
+      "title": "feat(scan): declarative .debim manifest compiler and CLI integration",
+      "body": "### Overview\nSerialize extracted architectural geometry into declarative `.debim` (project.yaml) and add CLI command `debim scan ingest` in `src/debim/scan/compiler.py`.\n\nReference: `ROADMAP_V2_TO_V4_PHYSICAL_AI.md` Milestone 2.0.0\n\n---\n\n### Detailed Tasks\n1. **In `src/debim/scan/compiler.py`:**\n   - Assemble storeys, walls, doors, windows into standard debim manifest YAML.\n   - Expose CLI command `debim scan ingest <pointcloud.ply> --out project.yaml`.\n2. **Tests:**\n   - Add `tests/test_scan_compiler.py` verifying compiled YAML can be rendered to IFC4 without error.\n\n---\n\n### Acceptance Criteria\n1. Running `debim scan ingest input.ply` produces a valid `project.yaml` ready for `debim compile`.\n2. `pytest tests/test_scan_compiler.py` passes 100%.",
+      "label": "jules"
+    }
   }
 ]
