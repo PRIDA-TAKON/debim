@@ -4008,6 +4008,130 @@ KNOWN_ELEMENT_CLASSES = {
 } | IFC4_DISTRIBUTION_CLASSES
 
 
+class MainPipeDefinition(BaseModel):
+    tag: Optional[str] = None
+    from_: Optional[Union[Dict[str, Any], PipePoint, str]] = Field(default=None, alias="from")
+    to: Optional[Union[Dict[str, Any], PipePoint, str]] = Field(default=None, alias="to")
+    diameter: Optional[float] = None
+    nominal_diameter: Optional[float] = None
+
+    @model_validator(mode="after")
+    def sync_diameter(self) -> "MainPipeDefinition":
+        if self.diameter is None and self.nominal_diameter is not None:
+            self.diameter = self.nominal_diameter
+        elif self.nominal_diameter is None and self.diameter is not None:
+            self.nominal_diameter = self.diameter
+        return self
+
+
+class PipeBranchDefinition(BaseModel):
+    tag: Optional[str] = None
+    branch_from: Optional[str] = None
+    target_fixture: Optional[str] = None
+    fixture: Optional[str] = None
+    target_port: Optional[str] = None
+    diameter: Optional[float] = None
+    branch_diameter: Optional[float] = None
+    auto_reducer: bool = False
+    fitting_type: Optional[str] = None
+    slope: Optional[float] = None
+
+    @model_validator(mode="after")
+    def sync_branch_fields(self) -> "PipeBranchDefinition":
+        if self.target_fixture is None and self.fixture is not None:
+            self.target_fixture = self.fixture
+        elif self.fixture is None and self.target_fixture is not None:
+            self.fixture = self.target_fixture
+
+        if self.diameter is None and self.branch_diameter is not None:
+            self.diameter = self.branch_diameter
+        elif self.branch_diameter is None and self.diameter is not None:
+            self.branch_diameter = self.diameter
+        return self
+
+
+class CollectorPipeDefinition(BaseModel):
+    tag: Optional[str] = None
+    discharge_to: Optional[str] = None
+    slope: Optional[float] = 0.01
+    diameter: Optional[float] = None
+    nominal_diameter: Optional[float] = None
+    from_: Optional[Union[Dict[str, Any], PipePoint, str]] = Field(default=None, alias="from")
+    to: Optional[Union[Dict[str, Any], PipePoint, str]] = Field(default=None, alias="to")
+
+    @model_validator(mode="after")
+    def sync_diameter(self) -> "CollectorPipeDefinition":
+        if self.diameter is None and self.nominal_diameter is not None:
+            self.diameter = self.nominal_diameter
+        elif self.nominal_diameter is None and self.diameter is not None:
+            self.nominal_diameter = self.diameter
+        return self
+
+
+class GatherFixtureDefinition(BaseModel):
+    fixture: Optional[str] = None
+    target_fixture: Optional[str] = None
+    branch_diameter: Optional[float] = None
+    diameter: Optional[float] = None
+    fitting_type: Optional[str] = None
+    slope: Optional[float] = None
+    target_port: Optional[str] = None
+    tag: Optional[str] = None
+
+    @model_validator(mode="after")
+    def sync_gather_fields(self) -> "GatherFixtureDefinition":
+        if self.fixture is None and self.target_fixture is not None:
+            self.fixture = self.target_fixture
+        elif self.target_fixture is None and self.fixture is not None:
+            self.target_fixture = self.fixture
+
+        if self.branch_diameter is None and self.diameter is not None:
+            self.branch_diameter = self.diameter
+        elif self.diameter is None and self.branch_diameter is not None:
+            self.diameter = self.branch_diameter
+        return self
+
+
+class HomeRunDefinition(BaseModel):
+    from_panel: Optional[str] = None
+    to_junction_box: Optional[str] = None
+    diameter: Optional[float] = None
+    tag: Optional[str] = None
+
+
+class ConduitDropDefinition(BaseModel):
+    to_element: Optional[str] = None
+    target_fixture: Optional[str] = None
+    diameter: Optional[float] = None
+    tag: Optional[str] = None
+
+    @model_validator(mode="after")
+    def sync_drop_fields(self) -> "ConduitDropDefinition":
+        if self.to_element is None and self.target_fixture is not None:
+            self.to_element = self.target_fixture
+        elif self.target_fixture is None and self.to_element is not None:
+            self.target_fixture = self.to_element
+        return self
+
+
+class DistributionDefinition(BaseModel):
+    junction_box: Optional[str] = None
+    drops: List[ConduitDropDefinition] = Field(default_factory=list)
+
+
+class MepNetworkSystem(BaseModel):
+    id: str
+    system_type: Optional[str] = "DOMESTIC_COLD_WATER"
+    material: Optional[str] = None
+    main_pipe: Optional[MainPipeDefinition] = None
+    branches: List[PipeBranchDefinition] = Field(default_factory=list)
+    collector_pipe: Optional[CollectorPipeDefinition] = None
+    gather_fixtures: List[GatherFixtureDefinition] = Field(default_factory=list)
+    home_run: Optional[HomeRunDefinition] = None
+    distribution: Optional[DistributionDefinition] = None
+    layer: Optional[str] = None
+
+
 class IfcDistributionSystem(BaseModel):
     class_: Literal["IfcDistributionSystem"] = Field(alias="class", default="IfcDistributionSystem")
     tag: Optional[str] = None
@@ -4346,6 +4470,8 @@ class ProjectManifest(BaseModel):
     marine_facilities: Optional[List[IfcMarineFacility]] = None
     proxies: List[IfcBuildingElementProxy] = Field(default_factory=list)
     systems: List[Union[IfcDistributionSystem, IfcBuiltSystem]] = Field(default_factory=list)
+    mep_systems: List[MepNetworkSystem] = Field(default_factory=list)
+    mep_network_systems: Optional[List[MepNetworkSystem]] = None
     connections: List[Tuple[str, str]] = Field(default_factory=list)
     includes: List[str] = Field(default_factory=list)
     site: Optional[SiteBoundary] = None
@@ -4365,6 +4491,8 @@ class ProjectManifest(BaseModel):
     @classmethod
     def pre_expand_modules(cls, data: Any) -> Any:
         if isinstance(data, dict):
+            if data.get("mep_network_systems") and not data.get("mep_systems"):
+                data["mep_systems"] = data["mep_network_systems"]
             if data.get("macro_elements") and not data.get("_macro_elements_expanded"):
                 from debim.modular import expand_macro_elements
                 data = expand_macro_elements(data)
