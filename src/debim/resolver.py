@@ -1371,6 +1371,8 @@ class ResolvedRoad(BaseModel):
     base_volume: float = 0.0  # m3
     subbase_volume: float = 0.0  # m3
     centerline_points: List[Tuple[float, float, float]] = Field(default_factory=list)
+    frames_3d: List[Dict[str, Any]] = Field(default_factory=list)
+    swept_mesh: Optional[Dict[str, Any]] = None
     layer: str = "civil/infrastructure/roads"
 
 
@@ -1873,6 +1875,7 @@ class SpatialResolver:
         self.axes_x: Dict[str, float] = manifest.grids.axes_x
         self.axes_y: Dict[str, float] = manifest.grids.axes_y
         self.walls_by_tag: Dict[str, ResolvedWall] = {}
+        self.terrain_mesh: Optional[Any] = None
 
     def parse_coordinate_expression(self, expr: str, is_x: bool) -> float:
         """Parses a coordinate string like 'GX_1', '1', 'GX_1 + 0.10', 'GY_2 - 0.25', '1 - 0.60', 'B + 1.20', or raw float."""
@@ -6216,6 +6219,29 @@ class SpatialResolver:
             len_val = road.corridor_length or 10.0
             pts = [(road.placement.offset_x, road.placement.offset_y, z), (road.placement.offset_x + len_val, road.placement.offset_y, z)]
 
+        # Check for drape_to terrain
+        if road.placement.drape_to and getattr(self, "terrain_mesh", None) is not None:
+            from debim.geometry.drape import drape_points_to_terrain
+            off_z = road.placement.offset_z if road.placement.offset_z != 0.0 else 0.05
+            pts = drape_points_to_terrain(pts, self.terrain_mesh, offset_z=off_z)
+
+        # Compute 3D RMF Frames and swept cross-section
+        from debim.geometry.sweep3d import compute_rmf_frames, create_road_camber_profile, sweep_cross_section_rmf
+
+        frames_3d = compute_rmf_frames(pts)
+        pavement_thick = (
+            road.pavement_surface_thickness
+            + road.pavement_base_thickness
+            + road.pavement_subbase_thickness
+        )
+        camber_slope = getattr(road.placement, "camber_slope", 0.02)
+        camber_profile = create_road_camber_profile(
+            width=road.road_width,
+            thickness=pavement_thick,
+            camber_slope=camber_slope,
+        )
+        swept_mesh = sweep_cross_section_rmf(camber_profile, frames_3d, one_based=True)
+
         corr_len = sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1))
         if road.corridor_length is not None and len(pts) <= 2 and corr_len < 1e-4:
             corr_len = road.corridor_length
@@ -6238,6 +6264,8 @@ class SpatialResolver:
             base_volume=base_vol,
             subbase_volume=subbase_vol,
             centerline_points=pts,
+            frames_3d=frames_3d,
+            swept_mesh=swept_mesh,
             layer=derive_default_layer(road),
         )
 
@@ -7627,6 +7655,36 @@ class SpatialResolver:
             facade_tess = generate_facade_tessellation(self.manifest)
 
         resolved_manifest = ResolvedManifest(manifest=self.manifest, facade_tessellation=facade_tess)
+
+        # Resolve terrain mesh if configured under site.terrain
+        if self.manifest.site and getattr(self.manifest.site, "terrain", None):
+            try:
+                from pathlib import Path
+                from debim.terrain import SurveyData, generate_terrain_mesh
+                t_cfg = self.manifest.site.terrain
+                src_path = Path(t_cfg.source)
+                if not src_path.exists() and hasattr(self.manifest, "_source_path") and self.manifest._source_path:
+                    cand = Path(self.manifest._source_path).parent / t_cfg.source
+                    if cand.exists():
+                        src_path = cand
+
+                if src_path.exists():
+                    if src_path.suffix.lower() == ".json":
+                        survey = SurveyData.from_json(src_path)
+                    else:
+                        survey = SurveyData.from_csv(src_path)
+
+                    bnd = self.manifest.site.boundary
+                    mesh = generate_terrain_mesh(
+                        survey=survey,
+                        boundary=bnd,
+                        contour_interval=t_cfg.contour_interval,
+                        clip_to_boundary=t_cfg.clip_to_boundary,
+                    )
+                    self.terrain_mesh = mesh
+                    resolved_manifest.terrain_mesh = mesh
+            except Exception:
+                pass
 
         # Top-level standalone doors / windows mapped by host_wall
         standalone_openings_by_wall: Dict[str, List[Union[IfcDoor, IfcWindow]]] = {}
