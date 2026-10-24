@@ -1825,6 +1825,25 @@ class IfcCustomElement(BaseModel):
     layer: Optional[str] = None
 
 
+class AssetReference(BaseModel):
+    file: str  # Path to external .gltf, .glb, or .obj file
+    scale: Tuple[float, float, float] = (1.0, 1.0, 1.0)
+    rotation_offset: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    material_override: Optional[str] = None
+
+    @field_validator("scale", "rotation_offset", mode="before")
+    @classmethod
+    def convert_float_tuple_3d(cls, v):
+        if isinstance(v, (int, float)):
+            return (float(v), float(v), float(v))
+        if isinstance(v, (list, tuple)):
+            if len(v) == 1:
+                return (float(v[0]), float(v[0]), float(v[0]))
+            elif len(v) >= 3:
+                return (float(v[0]), float(v[1]), float(v[2]))
+        return v
+
+
 # Universal Proxy Geometry & Placement
 class ProxyGeometry(BaseModel):
     box: Optional[Union[List[float], Tuple[float, float, float], Dict[str, float]]] = None
@@ -1833,6 +1852,7 @@ class ProxyGeometry(BaseModel):
     profile: Optional[Profile] = None
     extrusion: Optional[float] = None
     solid: Optional[Union[SweptDiskSolid, RevolvedAreaSolid]] = None
+    asset: Optional[AssetReference] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -1849,6 +1869,19 @@ class ProxyGeometry(BaseModel):
         if self.dimensions:
             d = self.dimensions.depth if self.dimensions.depth is not None else self.dimensions.width
             return Dimensions(width=self.dimensions.width, depth=d, height=self.dimensions.height)
+
+        if self.asset and self.asset.file:
+            try:
+                from debim.assets import get_mesh_dimensions
+                asset_dims = get_mesh_dimensions(
+                    self.asset.file,
+                    scale=self.asset.scale,
+                    rotation_offset=self.asset.rotation_offset,
+                )
+                if asset_dims:
+                    return asset_dims
+            except Exception:
+                pass
 
         if self.box:
             if isinstance(self.box, (list, tuple)) and len(self.box) >= 3:

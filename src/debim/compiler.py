@@ -2726,23 +2726,51 @@ class StepSerializer:
                 elem_axis = self.create_entity("IfcAxis2Placement3D", elem_pt, None, None)
             elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref, elem_axis)
 
-            w, d, h = proxy.dimensions
-            pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
-            axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
-            rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(w), float(d))
+            # Check if geometry has external asset reference (.gltf, .glb, .obj)
+            asset_ref = getattr(proxy.element.geometry, "asset", None) if getattr(proxy.element, "geometry", None) else None
+            if asset_ref and asset_ref.file:
+                try:
+                    from debim.assets import parse_mesh_file
+                    mesh_verts, mesh_faces = parse_mesh_file(
+                        asset_ref.file,
+                        scale=asset_ref.scale,
+                        rotation_offset=asset_ref.rotation_offset,
+                    )
+                    pt_list_ref = self.create_entity("IfcCartesianPointList3D", mesh_verts)
+                    tfs_ref = self.create_entity(
+                        "IfcTriangulatedFaceSet", pt_list_ref, None, ".F.", mesh_faces
+                    )
+                    shape_rep = self.create_entity(
+                        "IfcShapeRepresentation",
+                        body_context_ref,
+                        "Body",
+                        "Tessellation",
+                        [tfs_ref],
+                    )
+                except Exception as ex:
+                    shape_rep = None
+            else:
+                shape_rep = None
 
-            pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
-            axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
-            ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
-            solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(h))
+            if not shape_rep:
+                w, d, h = proxy.dimensions
+                pos2d = self.create_entity("IfcCartesianPoint", (0.0, 0.0))
+                axis2d = self.create_entity("IfcAxis2Placement2D", pos2d, None)
+                rec_prof = self.create_entity("IfcRectangleProfileDef", ".AREA.", None, axis2d, float(w), float(d))
 
-            shape_rep = self.create_entity(
-                "IfcShapeRepresentation",
-                body_context_ref,
-                "Body",
-                "SweptSolid",
-                [solid],
-            )
+                pos3d = self.create_entity("IfcCartesianPoint", (0.0, 0.0, 0.0))
+                axis3d = self.create_entity("IfcAxis2Placement3D", pos3d, None, None)
+                ext_dir = self.create_entity("IfcDirection", (0.0, 0.0, 1.0))
+                solid = self.create_entity("IfcExtrudedAreaSolid", rec_prof, axis3d, ext_dir, float(h))
+
+                shape_rep = self.create_entity(
+                    "IfcShapeRepresentation",
+                    body_context_ref,
+                    "Body",
+                    "SweptSolid",
+                    [solid],
+                )
+
             prod_shape_ref = self.create_entity(
                 "IfcProductDefinitionShape", None, None, [shape_rep]
             )
@@ -5483,35 +5511,75 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             matrix=mat,
         )
 
-        w, d, h = proxy.dimensions
-        profile = model.createIfcRectangleProfileDef(
-            "AREA",
-            None,
-            model.createIfcAxis2Placement2D(
-                model.createIfcCartesianPoint((0.0, 0.0))
-            ),
-            float(w),
-            float(d),
-        )
-        solid = model.createIfcExtrudedAreaSolid(
-            profile,
-            model.createIfcAxis2Placement3D(
-                model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+        asset_ref = getattr(proxy.element.geometry, "asset", None) if getattr(proxy.element, "geometry", None) else None
+        rep = None
+        if asset_ref and asset_ref.file:
+            try:
+                from debim.assets import parse_mesh_file
+                mesh_verts, mesh_faces = parse_mesh_file(
+                    asset_ref.file,
+                    scale=asset_ref.scale,
+                    rotation_offset=asset_ref.rotation_offset,
+                )
+                pt_list = model.createIfcCartesianPointList3D([list(v) for v in mesh_verts])
+                face_set = model.createIfcTriangulatedFaceSet(Coordinates=pt_list, CoordIndex=[list(f) for f in mesh_faces], Closed=False)
+                rep = model.createIfcShapeRepresentation(
+                    ContextOfItems=body_context,
+                    RepresentationIdentifier="Body",
+                    RepresentationType="Tessellation",
+                    Items=[face_set],
+                )
+            except Exception:
+                rep = None
+
+        if not rep:
+            w, d, h = proxy.dimensions
+            profile = model.createIfcRectangleProfileDef(
+                "AREA",
+                None,
+                model.createIfcAxis2Placement2D(
+                    model.createIfcCartesianPoint((0.0, 0.0))
+                ),
+                float(w),
+                float(d),
+            )
+            solid = model.createIfcExtrudedAreaSolid(
+                profile,
+                model.createIfcAxis2Placement3D(
+                    model.createIfcCartesianPoint((0.0, 0.0, 0.0)),
+                    model.createIfcDirection((0.0, 0.0, 1.0)),
+                    model.createIfcDirection((1.0, 0.0, 0.0)),
+                ),
                 model.createIfcDirection((0.0, 0.0, 1.0)),
-                model.createIfcDirection((1.0, 0.0, 0.0)),
-            ),
-            model.createIfcDirection((0.0, 0.0, 1.0)),
-            float(h),
-        )
-        rep = model.createIfcShapeRepresentation(
-            body_context, "Body", "SweptSolid", [solid]
-        )
+                float(h),
+            )
+            rep = model.createIfcShapeRepresentation(
+                body_context, "Body", "SweptSolid", [solid]
+            )
+
         ifcopenshell.api.run(
             "geometry.assign_representation",
             model,
             product=proxy_obj,
             representation=rep,
         )
+
+        # Assign material override if present
+        effective_mat_id = asset_ref.material_override if (asset_ref and asset_ref.material_override) else proxy.element.material
+        if effective_mat_id:
+            try:
+                mat_obj = ifcopenshell.api.run(
+                    "material.add_material", model, name=effective_mat_id
+                )
+                ifcopenshell.api.run(
+                    "material.assign_material",
+                    model,
+                    products=[proxy_obj],
+                    type="IfcMaterial",
+                    material=mat_obj,
+                )
+            except Exception:
+                pass
 
         # Automatically bind default bSDD Psets + custom properties
         bind_default_psets_ifcopenshell(model, proxy_obj, ifc_cls, proxy.properties)

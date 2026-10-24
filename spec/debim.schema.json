@@ -395,6 +395,75 @@
       "title": "ArbitraryProfile",
       "type": "object"
     },
+    "AssetReference": {
+      "properties": {
+        "file": {
+          "title": "File",
+          "type": "string"
+        },
+        "scale": {
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Scale",
+          "type": "array"
+        },
+        "rotation_offset": {
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Rotation Offset",
+          "type": "array"
+        },
+        "material_override": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material Override"
+        }
+      },
+      "required": [
+        "file"
+      ],
+      "title": "AssetReference",
+      "type": "object"
+    },
     "BeamBay": {
       "description": "Macro specification for structural beam array generation along grid lines between bays.",
       "properties": {
@@ -14960,6 +15029,17 @@
           ],
           "default": null,
           "title": "Solid"
+        },
+        "asset": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AssetReference"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "title": "ProxyGeometry",
