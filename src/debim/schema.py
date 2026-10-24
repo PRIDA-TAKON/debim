@@ -2285,6 +2285,20 @@ class TerminalPlacement(BaseModel):
             return tuple(str(x) for x in v)
         return v
 
+    @model_validator(mode="before")
+    @classmethod
+    def handle_offset_list(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            off = data.get("offset")
+            if off and isinstance(off, (list, tuple)) and len(off) >= 3:
+                if "offset_x" not in data:
+                    data["offset_x"] = float(off[0])
+                if "offset_y" not in data:
+                    data["offset_y"] = float(off[1])
+                if "offset_z" not in data:
+                    data["offset_z"] = float(off[2])
+        return data
+
     @model_validator(mode="after")
     def check_grid_or_wall(self) -> "TerminalPlacement":
         if not self.grid and not self.wall:

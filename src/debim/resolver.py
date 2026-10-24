@@ -84,6 +84,7 @@ from debim.schema import (
     IfcWall,
     IfcWasteTerminal,
     IfcWindow,
+    MepNetworkSystem,
     Profile,
     ProjectManifest,
     RevolvedAreaSolid,
@@ -177,6 +178,189 @@ def _generate_orthogonal_waypoints(
         if math.dist(cleaned[-1], pt) > 1e-4:
             cleaned.append(pt)
     return cleaned
+
+
+def _project_point_onto_line_segment(
+    p: Tuple[float, float, float],
+    a: Tuple[float, float, float],
+    b: Tuple[float, float, float],
+) -> Tuple[float, float, float]:
+    """
+    Computes perpendicular projection point of p onto 3D line segment ab.
+    Clamps parameter t to [0, 1] to guarantee the junction point remains on segment ab.
+    """
+    px, py, pz = p
+    ax, ay, az = a
+    bx, by, bz = b
+
+    vx, vy, vz = bx - ax, by - ay, bz - az
+    len_sq = vx * vx + vy * vy + vz * vz
+
+    if len_sq < 1e-12:
+        return (round(ax, 6), round(ay, 6), round(az, 6))
+
+    t = ((px - ax) * vx + (py - ay) * vy + (pz - az) * vz) / len_sq
+    t_clamped = max(0.0, min(1.0, t))
+
+    jx = ax + t_clamped * vx
+    jy = ay + t_clamped * vy
+    jz = az + t_clamped * vz
+
+    return (round(jx, 6), round(jy, 6), round(jz, 6))
+
+
+def _find_manifest_element(resolver: Optional["SpatialResolver"], tag: str) -> Any:
+    if not resolver or not tag:
+        return None
+    for elem in getattr(resolver.manifest, "elements", []) or []:
+        if getattr(elem, "tag", None) == tag:
+            return elem
+    for proxy in getattr(resolver.manifest, "proxies", []) or []:
+        if getattr(proxy, "tag", None) == tag:
+            return proxy
+    return None
+
+
+def _resolve_mep_point(
+    pt_spec: Any,
+    resolver: Optional["SpatialResolver"] = None,
+) -> Tuple[float, float, float]:
+    """
+    Converts a point specifier (tuple, list, PipePoint, dict, or string tag) into 3D world coordinates.
+    """
+    if pt_spec is None:
+        return (0.0, 0.0, 0.0)
+
+    if isinstance(pt_spec, (tuple, list)) and len(pt_spec) >= 3:
+        try:
+            return (float(pt_spec[0]), float(pt_spec[1]), float(pt_spec[2]))
+        except (ValueError, TypeError):
+            pass
+
+    if isinstance(pt_spec, str):
+        if resolver:
+            elem = _find_manifest_element(resolver, pt_spec)
+            if elem:
+                pl = getattr(elem, "placement", None)
+                if pl:
+                    if hasattr(resolver, "resolve_terminal") and (hasattr(pl, "offset_z") or hasattr(pl, "distance")):
+                        try:
+                            r_t = resolver.resolve_terminal(elem)
+                            return r_t.position
+                        except Exception:
+                            pass
+                    if hasattr(resolver, "resolve_proxy") and isinstance(elem, IfcBuildingElementProxy):
+                        try:
+                            r_p = resolver.resolve_proxy(elem)
+                            return r_p.position
+                        except Exception:
+                            pass
+                    if getattr(pl, "grid", None):
+                        gx, gy = resolver.get_grid_xy(pl.grid)
+                        off_x = getattr(pl, "offset_x", 0.0) or 0.0
+                        off_y = getattr(pl, "offset_y", 0.0) or 0.0
+                        off_z = getattr(pl, "offset_z", 0.0) or 0.0
+                        st = getattr(pl, "storey", None)
+                        st_elev = resolver.get_storey(st).elevation if (st and st in resolver.storeys) else 0.0
+                        return (gx + off_x, gy + off_y, st_elev + off_z)
+                    elif getattr(pl, "position", None):
+                        px, py, pz = pl.position
+                        st = getattr(pl, "storey", None)
+                        st_elev = resolver.get_storey(st).elevation if (st and st in resolver.storeys) else 0.0
+                        return (px, py, st_elev + pz)
+            try:
+                gx = resolver.parse_coordinate_expression(pt_spec, is_x=True)
+                return (gx, 0.0, 0.0)
+            except Exception:
+                pass
+        return (0.0, 0.0, 0.0)
+
+    grid = None
+    offset_x = 0.0
+    offset_y = 0.0
+    offset_z = 0.0
+    x_val = None
+    y_val = None
+    z_val = None
+    st_id = None
+
+    if isinstance(pt_spec, dict):
+        grid = pt_spec.get("grid")
+        offset = pt_spec.get("offset")
+        if offset and isinstance(offset, (list, tuple)) and len(offset) >= 3:
+            offset_x, offset_y, offset_z = float(offset[0]), float(offset[1]), float(offset[2])
+        else:
+            offset_x = float(pt_spec.get("offset_x", 0.0) or 0.0)
+            offset_y = float(pt_spec.get("offset_y", 0.0) or 0.0)
+            offset_z = float(pt_spec.get("offset_z", 0.0) or 0.0)
+        x_val = pt_spec.get("x")
+        y_val = pt_spec.get("y")
+        z_val = pt_spec.get("z")
+        st_id = pt_spec.get("storey")
+    elif hasattr(pt_spec, "grid"):
+        grid = getattr(pt_spec, "grid", None)
+        offset_x = float(getattr(pt_spec, "offset_x", 0.0) or 0.0)
+        offset_y = float(getattr(pt_spec, "offset_y", 0.0) or 0.0)
+        offset_z = float(getattr(pt_spec, "offset_z", 0.0) or 0.0)
+        x_val = getattr(pt_spec, "x", None)
+        y_val = getattr(pt_spec, "y", None)
+        z_val = getattr(pt_spec, "z", None)
+        st_id = getattr(pt_spec, "storey", None)
+
+    if grid and len(grid) >= 2:
+        if resolver:
+            gx, gy = resolver.get_grid_xy((str(grid[0]), str(grid[1])))
+        else:
+            try:
+                gx, gy = float(grid[0]), float(grid[1])
+            except (ValueError, TypeError):
+                gx, gy = 0.0, 0.0
+        st_elev = resolver.get_storey(st_id).elevation if (resolver and st_id and st_id in resolver.storeys) else 0.0
+        return (round(gx + offset_x, 6), round(gy + offset_y, 6), round(st_elev + offset_z, 6))
+
+    if x_val is not None and y_val is not None:
+        st_elev = resolver.get_storey(st_id).elevation if (resolver and st_id and st_id in resolver.storeys) else 0.0
+        zv = float(z_val) if z_val is not None else offset_z
+        return (round(float(x_val), 6), round(float(y_val), 6), round(st_elev + zv, 6))
+
+    return (0.0, 0.0, 0.0)
+
+
+def _resolve_fixture_port(
+    fixture_tag: Optional[str],
+    target_port: Optional[str] = None,
+    resolver: Optional["SpatialResolver"] = None,
+) -> Tuple[float, float, float]:
+    """
+    Finds 3D world position of a target fixture (and specific port if provided).
+    """
+    if not fixture_tag:
+        return (0.0, 0.0, 0.0)
+
+    if resolver:
+        if target_port:
+            for p in getattr(resolver, "resolved_ports", []) or []:
+                if p.host_tag == fixture_tag and (p.port_id == target_port or p.global_port_id == f"{fixture_tag}:{target_port}"):
+                    return p.world_position
+
+        elem = _find_manifest_element(resolver, fixture_tag)
+        if elem:
+            if target_port and hasattr(elem, "ports") and elem.ports:
+                pl = getattr(elem, "placement", None)
+                host_pos = _resolve_mep_point(elem.tag, resolver)
+                rot_deg = 0.0
+                if pl and getattr(pl, "rotation", None) is not None:
+                    rot = pl.rotation
+                    rot_deg = float(rot) if isinstance(rot, (int, float)) else float(rot[2]) if len(rot) >= 3 else 0.0
+                ports = resolver._resolve_element_ports(elem, host_pos, rot_deg)
+                for port in ports:
+                    if port.port_id == target_port or port.global_port_id == f"{fixture_tag}:{target_port}":
+                        return port.world_position
+
+            return _resolve_mep_point(elem.tag, resolver)
+
+    return (0.0, 0.0, 0.0)
+
 
 
 
@@ -1010,6 +1194,261 @@ class ResolvedCableCarrierSegment(BaseModel):
     color: str
     fittings_count: int = 0
     layer: str = "mep/electrical/conduits"
+
+
+MEP_PIPE_SYSTEM_MAPPING: Dict[str, str] = {
+    "DOMESTIC_COLD_WATER": "COLD_WATER",
+    "DOMESTIC_HOT_WATER": "HOT_WATER",
+    "COLD_WATER": "COLD_WATER",
+    "HOT_WATER": "HOT_WATER",
+    "SANITARY_DRAINAGE": "DRAINAGE",
+    "SOIL": "SOIL",
+    "WASTE": "WASTE",
+    "VENT": "VENT",
+    "DRAINAGE": "DRAINAGE",
+    "REFRIGERANT": "REFRIGERANT",
+    "CONDENSATE": "CONDENSATE",
+    "GAS": "GAS",
+    "FIRE_PROTECTION": "FIRE_PROTECTION",
+}
+
+MEP_CONDUIT_SYSTEM_MAPPING: Dict[str, str] = {
+    "ELECTRICAL_CONDUIT": "POWER",
+    "POWER": "POWER",
+    "LIGHTING": "LIGHTING",
+    "MAIN_FEEDER": "MAIN_FEEDER",
+    "COMMUNICATION": "COMMUNICATION",
+    "SOLAR": "SOLAR",
+}
+
+
+def resolve_mep_network(
+    system: MepNetworkSystem,
+    resolver: Optional["SpatialResolver"] = None,
+) -> List[Union[ResolvedPipeSegment, ResolvedCableCarrierSegment]]:
+    """
+    Resolves topological MEP network graph (tree/DAG) into discrete pipe and conduit segments.
+    For supply branching and drainage converging, projects target fixtures perpendicularly onto
+    the main/collector pipe segment and generates connected orthogonal waypoints with 100%
+    exact coordinate snapping.
+    """
+    resolved_segments: List[Union[ResolvedPipeSegment, ResolvedCableCarrierSegment]] = []
+    raw_sys_type = system.system_type or "DOMESTIC_COLD_WATER"
+    pipe_sys_type = MEP_PIPE_SYSTEM_MAPPING.get(raw_sys_type, "COLD_WATER")
+    conduit_sys_type = MEP_CONDUIT_SYSTEM_MAPPING.get(raw_sys_type, "POWER")
+
+    # 1. Supply Branching (1-to-N) & General Main Pipe Systems
+    if system.main_pipe:
+        main_def = system.main_pipe
+        p_from = _resolve_mep_point(main_def.from_, resolver)
+        p_to = _resolve_mep_point(main_def.to, resolver)
+        m_tag = main_def.tag or f"{system.id}_MAIN"
+        m_dia = main_def.diameter or 0.025
+        color = MEP_PIPE_COLORS.get(pipe_sys_type, "#0284C7")
+
+        dummy_main = IfcPipeSegment(
+            tag=m_tag,
+            system_type=pipe_sys_type,
+            material=system.material or "PPR",
+            nominal_diameter=m_dia,
+            placement={"from_offset": p_from, "to_offset": p_to},
+        )
+
+        r_main = ResolvedPipeSegment(
+            tag=m_tag,
+            element=dummy_main,
+            system_type=pipe_sys_type,
+            nominal_diameter=m_dia,
+            length=math.dist(p_from, p_to),
+            slope=0.0,
+            start_point=p_from,
+            end_point=p_to,
+            waypoints=[p_from, p_to],
+            color=color,
+            fittings_count=0,
+            layer=system.layer or "mep/plumbing/pipes",
+        )
+        resolved_segments.append(r_main)
+
+        for idx, branch in enumerate(system.branches):
+            f_tag = branch.target_fixture or branch.fixture
+            p_fixture = _resolve_fixture_port(f_tag, branch.target_port, resolver)
+            p_junction = _project_point_onto_line_segment(p_fixture, p_from, p_to)
+
+            b_wpts = _generate_orthogonal_waypoints(p_junction, p_fixture, strategy="ORTHOGONAL")
+            b_tag = branch.tag or f"{m_tag}_BRANCH_{idx + 1}"
+            b_dia = branch.diameter or branch.branch_diameter or m_dia or 0.015
+            b_len = sum(math.dist(b_wpts[i], b_wpts[i + 1]) for i in range(len(b_wpts) - 1))
+
+            dummy_branch = IfcPipeSegment(
+                tag=b_tag,
+                system_type=pipe_sys_type,
+                material=system.material or "PPR",
+                nominal_diameter=b_dia,
+                placement={"path": [{"x": pt[0], "y": pt[1], "z": pt[2]} for pt in b_wpts]},
+            )
+
+            r_branch = ResolvedPipeSegment(
+                tag=b_tag,
+                element=dummy_branch,
+                system_type=pipe_sys_type,
+                nominal_diameter=b_dia,
+                length=b_len,
+                slope=branch.slope or 0.0,
+                start_point=b_wpts[0],
+                end_point=b_wpts[-1],
+                waypoints=b_wpts,
+                color=color,
+                fittings_count=max(1, len(b_wpts) - 1),
+                layer=system.layer or "mep/plumbing/pipes",
+            )
+            resolved_segments.append(r_branch)
+
+    # 2. Drainage & Soil Converging Systems (N-to-1)
+    if system.collector_pipe:
+        c_def = system.collector_pipe
+        p_from = _resolve_mep_point(c_def.from_, resolver)
+        p_to = _resolve_mep_point(c_def.to, resolver)
+
+        if p_from == (0.0, 0.0, 0.0) and p_to == (0.0, 0.0, 0.0) and system.gather_fixtures:
+            gf_pts = [_resolve_fixture_port(gf.fixture or gf.target_fixture, gf.target_port, resolver) for gf in system.gather_fixtures]
+            if gf_pts:
+                p_from = gf_pts[0]
+                p_to = (gf_pts[-1][0] + 2.0, gf_pts[-1][1], gf_pts[-1][2] - 0.02)
+
+        c_tag = c_def.tag or f"{system.id}_COLLECTOR"
+        c_dia = c_def.diameter or 0.100
+        slope = c_def.slope or 0.01
+        color = MEP_PIPE_COLORS.get("DRAINAGE", "#78350F")
+
+        dummy_coll = IfcPipeSegment(
+            tag=c_tag,
+            system_type="DRAINAGE",
+            material=system.material or "PVC_CLASS_8.5",
+            nominal_diameter=c_dia,
+            placement={"from_offset": p_from, "to_offset": p_to, "slope": slope},
+        )
+
+        r_coll = ResolvedPipeSegment(
+            tag=c_tag,
+            element=dummy_coll,
+            system_type="DRAINAGE",
+            nominal_diameter=c_dia,
+            length=math.dist(p_from, p_to),
+            slope=slope,
+            start_point=p_from,
+            end_point=p_to,
+            waypoints=[p_from, p_to],
+            color=color,
+            fittings_count=0,
+            layer=system.layer or "mep/plumbing/drainage",
+        )
+        resolved_segments.append(r_coll)
+
+        for idx, gf in enumerate(system.gather_fixtures):
+            f_tag = gf.fixture or gf.target_fixture
+            p_fixture = _resolve_fixture_port(f_tag, gf.target_port, resolver)
+            p_junction = _project_point_onto_line_segment(p_fixture, p_from, p_to)
+
+            b_wpts = _generate_orthogonal_waypoints(p_junction, p_fixture, strategy="ORTHOGONAL")
+            gf_tag = gf.tag or f"{c_tag}_BRANCH_{idx + 1}"
+            gf_dia = gf.branch_diameter or gf.diameter or 0.050
+            gf_slope = gf.slope or slope
+            b_len = sum(math.dist(b_wpts[i], b_wpts[i + 1]) for i in range(len(b_wpts) - 1))
+
+            dummy_gf = IfcPipeSegment(
+                tag=gf_tag,
+                system_type="DRAINAGE",
+                material=system.material or "PVC_CLASS_8.5",
+                nominal_diameter=gf_dia,
+                placement={"path": [{"x": pt[0], "y": pt[1], "z": pt[2]} for pt in b_wpts]},
+            )
+
+            r_gf = ResolvedPipeSegment(
+                tag=gf_tag,
+                element=dummy_gf,
+                system_type="DRAINAGE",
+                nominal_diameter=gf_dia,
+                length=b_len,
+                slope=gf_slope,
+                start_point=b_wpts[0],
+                end_point=b_wpts[-1],
+                waypoints=b_wpts,
+                color=color,
+                fittings_count=max(1, len(b_wpts) - 1),
+                layer=system.layer or "mep/plumbing/drainage",
+            )
+            resolved_segments.append(r_gf)
+
+    # 3. Electrical Conduit Distribution (Home Run & Distribution Drops)
+    if system.home_run:
+        hr = system.home_run
+        p_panel = _resolve_mep_point(hr.from_panel, resolver)
+        p_jb = _resolve_mep_point(hr.to_junction_box, resolver)
+        wpts = _generate_orthogonal_waypoints(p_panel, p_jb, strategy="ORTHOGONAL")
+
+        hr_tag = hr.tag or f"{system.id}_HOMERUN"
+        hr_dia = hr.diameter or 0.020
+        c_color = MEP_CONDUIT_COLORS.get(conduit_sys_type, "#F97316")
+
+        dummy_hr = IfcCableCarrierSegment(
+            tag=hr_tag,
+            system_type=conduit_sys_type,
+            nominal_diameter=hr_dia,
+            placement={"path": [{"x": pt[0], "y": pt[1], "z": pt[2]} for pt in wpts]},
+        )
+
+        r_hr = ResolvedCableCarrierSegment(
+            tag=hr_tag,
+            element=dummy_hr,
+            system_type=conduit_sys_type,
+            nominal_diameter=hr_dia,
+            length=sum(math.dist(wpts[i], wpts[i + 1]) for i in range(len(wpts) - 1)),
+            start_point=wpts[0],
+            end_point=wpts[-1],
+            waypoints=wpts,
+            color=c_color,
+            fittings_count=max(1, len(wpts) - 1),
+            layer=system.layer or "mep/electrical/conduits",
+        )
+        resolved_segments.append(r_hr)
+
+    if system.distribution:
+        dist = system.distribution
+        p_jb = _resolve_mep_point(dist.junction_box, resolver)
+        c_color = MEP_CONDUIT_COLORS.get(conduit_sys_type, "#F97316")
+
+        for idx, drop in enumerate(dist.drops):
+            target_elem = drop.to_element or drop.target_fixture
+            p_target = _resolve_fixture_port(target_elem, None, resolver)
+            wpts = _generate_orthogonal_waypoints(p_jb, p_target, strategy="ORTHOGONAL")
+
+            d_tag = drop.tag or f"{system.id}_DROP_{idx + 1}"
+            d_dia = drop.diameter or 0.020
+
+            dummy_drop = IfcCableCarrierSegment(
+                tag=d_tag,
+                system_type=conduit_sys_type,
+                nominal_diameter=d_dia,
+                placement={"path": [{"x": pt[0], "y": pt[1], "z": pt[2]} for pt in wpts]},
+            )
+
+            r_drop = ResolvedCableCarrierSegment(
+                tag=d_tag,
+                element=dummy_drop,
+                system_type=conduit_sys_type,
+                nominal_diameter=d_dia,
+                length=sum(math.dist(wpts[i], wpts[i + 1]) for i in range(len(wpts) - 1)),
+                start_point=wpts[0],
+                end_point=wpts[-1],
+                waypoints=wpts,
+                color=c_color,
+                fittings_count=max(1, len(wpts) - 1),
+                layer=system.layer or "mep/electrical/conduits",
+            )
+            resolved_segments.append(r_drop)
+
+    return resolved_segments
 
 
 class ResolvedSanitaryTerminal(BaseModel):
@@ -8006,6 +8445,17 @@ class SpatialResolver:
             resolved_manifest.facility_parts.append(r_fp)
             resolved_manifest.elements.append(r_fp)
 
+        # Resolve topological MEP network systems
+        for mep_sys in getattr(self.manifest, "mep_systems", []) or []:
+            resolved_segs = self.resolve_mep_network(mep_sys)
+            for seg in resolved_segs:
+                if isinstance(seg, ResolvedPipeSegment):
+                    resolved_manifest.pipes.append(seg)
+                    resolved_manifest.elements.append(seg)
+                elif isinstance(seg, ResolvedCableCarrierSegment):
+                    resolved_manifest.conduits.append(seg)
+                    resolved_manifest.elements.append(seg)
+
         # Resolve ports for all elements and proxies
         all_resolved_ports: List[ResolvedPort] = []
         all_manifest_elems = list(self.manifest.elements) + list(self.manifest.proxies)
@@ -8092,6 +8542,11 @@ class SpatialResolver:
                 pass
 
         return resolved_manifest
+
+    def resolve_mep_network(
+        self, system: MepNetworkSystem
+    ) -> List[Union[ResolvedPipeSegment, ResolvedCableCarrierSegment]]:
+        return resolve_mep_network(system, resolver=self)
 
     def resolve_facility_part(self, elem: Any) -> ResolvedFacilityPart:
         pos = (0.0, 0.0, 0.0)
