@@ -1388,6 +1388,46 @@ def cmd_ingest(args):
         sys.exit(1)
 
 
+def cmd_scan_ingest(args):
+    pointcloud_file = Path(args.pointcloud)
+    if not pointcloud_file.exists():
+        console.print(f"[bold red]Error:[/bold red] Point cloud file '{pointcloud_file}' not found.")
+        sys.exit(1)
+
+    out_path = Path(args.output) if getattr(args, "output", None) else Path("project.yaml")
+    console.print(f"[bold green]Ingesting 3D point cloud scan geometry from:[/bold green] {pointcloud_file}")
+
+    try:
+        from debim.scan.compiler import scan_ingest
+
+        res_file = scan_ingest(pointcloud_file, output_path=out_path)
+        manifest_obj = load_manifest(res_file)
+        elem_count = len(manifest_obj.elements)
+        wall_count = sum(1 for e in manifest_obj.elements if getattr(e, "class_", "") == "IfcWall")
+        door_count = sum(len([c for c in getattr(e, "children", []) if getattr(c, "class_", "") == "IfcDoor"]) for e in manifest_obj.elements)
+        window_count = sum(len([c for c in getattr(e, "children", []) if getattr(c, "class_", "") == "IfcWindow"]) for e in manifest_obj.elements)
+
+        file_size = res_file.stat().st_size
+
+        console.print(
+            Panel(
+                f"[bold green]3D Scan Point Cloud to .debim Ingestion Complete![/bold green]\n"
+                f"[bold cyan]Input PLY File:[/bold cyan] {pointcloud_file}\n"
+                f"[bold cyan]Emitted Manifest:[/bold cyan] {res_file} ({file_size:,} bytes)\n"
+                f"[bold cyan]Elements Extracted:[/bold cyan] {elem_count} wall segments\n"
+                f"  • Walls: [green]{wall_count}[/green]\n"
+                f"  • Doors: [green]{door_count}[/green]\n"
+                f"  • Windows: [green]{window_count}[/green]\n"
+                f"[dim]Run 'debim validate {res_file}' or 'debim compile -m {res_file}' to render IFC4.[/dim]",
+                title="[bold green]debim Point Cloud Scan Assistant[/bold green]",
+                style="green",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Scan Ingestion Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
 def cmd_urban_ingest(args):
     bbox_str = getattr(args, "bbox", None)
     geojson_path = getattr(args, "geojson", None)
@@ -2602,6 +2642,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_ingest.add_argument("-o", "--out", dest="output_dir", help="Output directory path for generated project.debim")
     p_ingest.set_defaults(func=cmd_ingest)
 
+    # scan
+    p_scan = subparsers.add_parser("scan", help="Point cloud scan processing & ingestion commands")
+    scan_subparsers = p_scan.add_subparsers(dest="scan_subcommand")
+
+    p_scan_ingest = scan_subparsers.add_parser("ingest", help="Ingest .ply point cloud scan into declarative .debim project manifest")
+    p_scan_ingest.add_argument("pointcloud", help="Path to input point cloud file (.ply)")
+    p_scan_ingest.add_argument("-o", "--out", "--output", dest="output", default="project.yaml", help="Output project manifest path")
+    p_scan_ingest.set_defaults(func=cmd_scan_ingest)
+
     # urban
     p_urban = subparsers.add_parser("urban", help="Urban GIS and OpenStreetMap site commands")
     urban_subparsers = p_urban.add_subparsers(dest="urban_subcommand")
@@ -2829,6 +2878,9 @@ def main(args: Optional[List[str]] = None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
     elif parsed_args.subcommand == "standards" and not getattr(parsed_args, "standards_subcommand", None):
+        parser.parse_args([parsed_args.subcommand, "--help"])
+        sys.exit(0)
+    elif parsed_args.subcommand == "scan" and not getattr(parsed_args, "scan_subcommand", None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
     elif parsed_args.subcommand == "urban" and not getattr(parsed_args, "urban_subcommand", None):

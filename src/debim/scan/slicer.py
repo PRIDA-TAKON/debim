@@ -32,7 +32,7 @@ class SliceResult:
 def detect_storey_height(
     points: np.ndarray,
     bin_size: float = 0.05,
-    min_height: float = 2.0,
+    min_height: float = 2.20,
     max_height: float = 5.0,
     floor_search_range: tuple[float, float] = (-0.5, 0.5),
 ) -> StoreyHeightResult:
