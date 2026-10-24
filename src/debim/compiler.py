@@ -898,6 +898,25 @@ class StepSerializer:
 
         for road in resolved.roads:
             st_id = road.element.placement.storey
+            st_pl_ref = storey_pl_refs.get(st_id) if st_id else None
+
+            prod_shape_ref = None
+            if road.swept_mesh and road.swept_mesh.get("vertices") and road.swept_mesh.get("faces"):
+                verts = road.swept_mesh["vertices"]
+                faces = road.swept_mesh["faces"]
+                pt_list_ref = self.create_entity("IfcCartesianPointList3D", verts)
+                tfs_ref = self.create_entity("IfcTriangulatedFaceSet", pt_list_ref, None, ".F.", faces)
+                shape_rep = self.create_entity(
+                    "IfcShapeRepresentation",
+                    body_context_ref,
+                    "Body",
+                    "Tessellation",
+                    [tfs_ref],
+                )
+                prod_shape_ref = self.create_entity("IfcProductDefinitionShape", None, None, [shape_rep])
+
+            elem_pl = self.create_entity("IfcLocalPlacement", st_pl_ref or site_pl_ref, axis_3d_zero)
+
             elem_ref = self.create_entity(
                 "IfcRoad",
                 generate_ifc_guid(),
@@ -905,8 +924,8 @@ class StepSerializer:
                 road.tag,
                 None,
                 f"IfcRoad.{road.predefined_type}",
-                None,
-                None,
+                elem_pl,
+                prod_shape_ref,
                 f".{road.predefined_type.upper()}.",
             )
             element_tag_refs[road.tag] = elem_ref
@@ -4482,6 +4501,22 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             if st_id and st_id in storey_products:
                 storey_products[st_id].append(road_obj)
         road_objs[road.tag] = road_obj
+
+        ifcopenshell.api.run("geometry.edit_object_placement", model, product=road_obj, matrix=np.eye(4))
+
+        if road.swept_mesh and road.swept_mesh.get("vertices") and road.swept_mesh.get("faces"):
+            verts = road.swept_mesh["vertices"]
+            faces = road.swept_mesh["faces"]
+            pt_list = model.createIfcCartesianPointList3D([list(v) for v in verts])
+            coord_indices = [[int(idx) for idx in f] for f in faces]
+            face_set = model.createIfcTriangulatedFaceSet(Coordinates=pt_list, CoordIndex=coord_indices, Closed=True)
+            rep = model.createIfcShapeRepresentation(
+                ContextOfItems=body_context,
+                RepresentationIdentifier="Body",
+                RepresentationType="Tessellation",
+                Items=[face_set],
+            )
+            ifcopenshell.api.run("geometry.assign_representation", model, product=road_obj, representation=rep)
 
     bridge_objs: Dict[str, Any] = {}
     for bridge in resolved.bridges:

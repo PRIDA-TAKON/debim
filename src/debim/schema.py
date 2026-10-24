@@ -2937,6 +2937,8 @@ class RoadPlacement(BaseModel):
     offset_x: float = 0.0
     offset_y: float = 0.0
     offset_z: float = 0.0
+    drape_to: Optional[Union[str, bool]] = None
+    camber_slope: float = 0.02
     points: Optional[List[AlignmentPoint]] = None
 
     @field_validator("grid", "from_grid", "to_grid", mode="before")
