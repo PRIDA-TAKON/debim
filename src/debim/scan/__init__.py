@@ -28,6 +28,12 @@ from debim.scan.wall_extractor import (
     snap_corners_and_close_loops,
     extract_walls,
 )
+from debim.scan.opening_detector import (
+    DetectedOpening,
+    OpeningDetectionResult,
+    detect_openings_along_wall,
+    detect_openings,
+)
 
 __all__ = [
     "CalibrationResult",
@@ -48,4 +54,8 @@ __all__ = [
     "rectify_manhattan",
     "snap_corners_and_close_loops",
     "extract_walls",
+    "DetectedOpening",
+    "OpeningDetectionResult",
+    "detect_openings_along_wall",
+    "detect_openings",
 ]
