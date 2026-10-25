@@ -4,6 +4,8 @@ Payment Milestones, and S-Curve Progress Tracking.
 """
 
 from debim.schedule.builder import extract_activities_from_manifest
+from debim.schedule.scurve import compute_s_curves, evaluate_milestones
+from debim.schedule.solver import solve_schedule
 from debim.schedule.schema import (
     ActivityScheduleResult,
     CrashingActivity,
@@ -26,7 +28,10 @@ __all__ = [
     "ProgressLogEntry",
     "SCurveData",
     "ScheduleResult",
+    "compute_s_curves",
     "dump_schedule_json",
+    "evaluate_milestones",
     "extract_activities_from_manifest",
     "load_schedule_yaml",
+    "solve_schedule",
 ]
