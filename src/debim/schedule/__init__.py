@@ -25,6 +25,7 @@ from debim.schedule.reporter import (
     render_schedule_table,
     render_scurve_summary,
 )
+from debim.schedule.viewer_html import generate_schedule_html
 
 __all__ = [
     "ActivityScheduleResult",
@@ -39,6 +40,7 @@ __all__ = [
     "dump_schedule_json",
     "evaluate_milestones",
     "extract_activities_from_manifest",
+    "generate_schedule_html",
     "get_scurve_variance",
     "load_schedule_json",
     "load_schedule_yaml",
