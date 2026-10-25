@@ -2422,6 +2422,128 @@ def cmd_standards_list(args):
         sys.exit(1)
 
 
+def cmd_schedule_init(args):
+    manifest_target = getattr(args, "manifest", None) or getattr(args, "positional_manifest", None)
+    manifest_path = resolve_default_manifest_path(manifest_target)
+    if not manifest_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Manifest '{manifest_path}' not found.")
+        sys.exit(1)
+
+    out_path = Path(args.output) if getattr(args, "output", None) else Path("schedule.yaml")
+
+    console.print(
+        f"[bold green]Extracting construction schedule & milestones from:[/bold green] {manifest_path} -> [cyan]{out_path}[/cyan]"
+    )
+
+    try:
+        from debim.schedule import extract_activities_from_manifest
+
+        manifest_obj = load_manifest(manifest_path)
+        crashing_manifest = extract_activities_from_manifest(manifest_obj)
+
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        dump_data = crashing_manifest.model_dump(by_alias=True, exclude_none=True)
+        with open(out_path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(dump_data, f, allow_unicode=True, sort_keys=False)
+
+        act_count = len(crashing_manifest.activities)
+        ms_count = len(crashing_manifest.milestones)
+        total_baseline_cost = sum(a.normal_cost for a in crashing_manifest.activities)
+
+        console.print(
+            Panel(
+                f"[bold green]4D Schedule Manifest Scaffolding Complete![/bold green]\n"
+                f"[bold cyan]Input BIM Manifest:[/bold cyan] {manifest_path}\n"
+                f"[bold cyan]Emitted Schedule YAML:[/bold cyan] {out_path}\n"
+                f"[bold cyan]Activities Extracted:[/bold cyan] {act_count} construction tasks\n"
+                f"[bold cyan]Payment Milestones Generated:[/bold cyan] {ms_count} milestones\n"
+                f"[bold cyan]Total Baseline Cost:[/bold cyan] {total_baseline_cost:,.2f} THB\n"
+                f"[bold cyan]Daily Overhead Cost:[/bold cyan] {crashing_manifest.overhead_per_day:,.2f} THB/day\n"
+                f"[dim]Run 'debim schedule solve {out_path}' to perform CPM time-cost crashing.[/dim]",
+                title="[bold green]debim Schedule Scaffolder[/bold green]",
+                style="green",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Schedule Scaffolding Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
+def cmd_schedule_solve(args):
+    schedule_target = getattr(args, "schedule_file", None) or getattr(args, "positional_schedule", None) or "schedule.yaml"
+    schedule_path = Path(schedule_target)
+    if not schedule_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Schedule file '{schedule_path}' not found.")
+        sys.exit(1)
+
+    out_path = Path(args.output) if getattr(args, "output", None) else Path("schedule.json")
+
+    console.print(
+        f"[bold green]Solving CPM Time-Cost Trade-Off (Crashing) for:[/bold green] {schedule_path} -> [cyan]{out_path}[/cyan]"
+    )
+
+    try:
+        from debim.schedule import load_schedule_yaml, solve_schedule, dump_schedule_json
+
+        crashing_manifest = load_schedule_yaml(schedule_path)
+        result = solve_schedule(crashing_manifest)
+
+        dump_schedule_json(result, out_path)
+
+        ready_ms_count = sum(1 for m in result.milestones if m.billing_status in ("READY_FOR_BILLING", "PAID"))
+
+        console.print(
+            Panel(
+                f"[bold green]CPM Schedule Solution & Optimization Complete![/bold green]\n"
+                f"[bold cyan]Input Schedule YAML:[/bold cyan] {schedule_path}\n"
+                f"[bold cyan]Emitted Result JSON:[/bold cyan] {out_path}\n"
+                f"[bold cyan]Solver Status:[/bold cyan] [bold green]{result.status}[/bold green]\n"
+                f"[bold cyan]Total Project Duration:[/bold cyan] {result.total_duration} days\n"
+                f"[bold cyan]Direct Construction Cost:[/bold cyan] {result.total_direct_cost:,.2f} THB\n"
+                f"[bold cyan]Indirect Overhead Cost:[/bold cyan] {result.total_indirect_cost:,.2f} THB\n"
+                f"[bold green]Grand Total Cost:[/bold green] {result.total_cost:,.2f} THB\n"
+                f"[bold cyan]Critical Path Activities:[/bold cyan] {len(result.critical_path)} tasks\n"
+                f"[bold cyan]Milestones Ready for Billing:[/bold cyan] {ready_ms_count} / {len(result.milestones)}\n"
+                f"[dim]Run 'debim schedule report {out_path}' to render Rich terminal reports.[/dim]",
+                title="[bold green]debim Schedule Solver[/bold green]",
+                style="green",
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]Schedule Solver Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
+def cmd_schedule_report(args):
+    result_target = getattr(args, "schedule_result", None) or getattr(args, "positional_result", None) or "schedule.json"
+    result_path = Path(result_target)
+    if not result_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Schedule result file '{result_path}' not found.")
+        sys.exit(1)
+
+    try:
+        from debim.schedule import (
+            load_schedule_json,
+            render_schedule_table,
+            render_milestone_table,
+            render_scurve_summary,
+        )
+
+        result = load_schedule_json(result_path)
+
+        sched_panel = render_schedule_table(result)
+        ms_panel = render_milestone_table(result)
+        sc_panel = render_scurve_summary(result)
+
+        console.print(sched_panel)
+        console.print(ms_panel)
+        console.print(sc_panel)
+
+    except Exception as e:
+        console.print(f"[bold red]Schedule Report Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
 def cmd_docs_export_data(args):
     output_dir = Path(args.output_dir)
     try:
@@ -2784,6 +2906,27 @@ def build_parser() -> argparse.ArgumentParser:
     p_spec_list.add_argument("-s", "--specs-dir", default="specs", help="Directory containing installed packages")
     p_spec_list.set_defaults(func=cmd_spec_list)
 
+    # schedule
+    p_schedule = subparsers.add_parser("schedule", help="4D BIM scheduling, CPM crashing, milestones, and S-Curve reporting")
+    schedule_subparsers = p_schedule.add_subparsers(dest="schedule_subcommand")
+
+    p_sched_init = schedule_subparsers.add_parser("init", help="Extract activities and generate schedule.yaml from project manifest")
+    p_sched_init.add_argument("positional_manifest", nargs="?", help="Positional path to project manifest file")
+    p_sched_init.add_argument("-m", "--manifest", help="Path to project manifest file")
+    p_sched_init.add_argument("-o", "--output", default="schedule.yaml", help="Target output schedule.yaml path")
+    p_sched_init.set_defaults(func=cmd_schedule_init)
+
+    p_sched_solve = schedule_subparsers.add_parser("solve", help="Solve CPM time-cost crashing and evaluate milestones & S-curve")
+    p_sched_solve.add_argument("positional_schedule", nargs="?", help="Positional path to schedule.yaml file")
+    p_sched_solve.add_argument("-s", "--schedule-file", help="Path to schedule.yaml file")
+    p_sched_solve.add_argument("-o", "--output", default="schedule.json", help="Target output schedule.json path")
+    p_sched_solve.set_defaults(func=cmd_schedule_solve)
+
+    p_sched_report = schedule_subparsers.add_parser("report", help="Display rich terminal schedule, milestone, and S-curve report")
+    p_sched_report.add_argument("positional_result", nargs="?", help="Positional path to schedule.json file")
+    p_sched_report.add_argument("-r", "--schedule-result", help="Path to schedule.json file")
+    p_sched_report.set_defaults(func=cmd_schedule_report)
+
     # mcp
     p_mcp = subparsers.add_parser("mcp", help="Start Model Context Protocol (MCP) server")
     p_mcp.set_defaults(func=cmd_mcp)
@@ -2884,6 +3027,9 @@ def main(args: Optional[List[str]] = None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
     elif parsed_args.subcommand == "urban" and not getattr(parsed_args, "urban_subcommand", None):
+        parser.parse_args([parsed_args.subcommand, "--help"])
+        sys.exit(0)
+    elif parsed_args.subcommand == "schedule" and not getattr(parsed_args, "schedule_subcommand", None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
 
