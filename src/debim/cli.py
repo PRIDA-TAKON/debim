@@ -2544,6 +2544,56 @@ def cmd_schedule_report(args):
         sys.exit(1)
 
 
+def cmd_schedule_view(args):
+    result_target = getattr(args, "schedule_json", None) or getattr(args, "positional_schedule", None) or "schedule.json"
+    result_path = Path(result_target)
+    if not result_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Schedule result file '{result_path}' not found.")
+        sys.exit(1)
+
+    out_path = Path(args.output) if getattr(args, "output", None) else Path("schedule.html")
+    model_path = Path(args.model) if getattr(args, "model", None) else None
+
+    console.print(
+        f"[bold green]Generating Standalone Interactive 4D Schedule Viewer HTML for:[/bold green] {result_path} -> [cyan]{out_path}[/cyan]"
+    )
+
+    try:
+        from debim.schedule import load_schedule_json, generate_schedule_html
+
+        schedule_res = load_schedule_json(result_path)
+
+        manifest_obj = None
+        if model_path and model_path.exists():
+            manifest_obj = model_path
+
+        html_str = generate_schedule_html(schedule_res, manifest_obj=manifest_obj)
+
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(html_str, encoding="utf-8")
+        file_size = out_path.stat().st_size
+
+        console.print(
+            Panel(
+                f"[bold green]4D Schedule HTML Viewer Generation Complete![/bold green]\n"
+                f"[bold cyan]Input Schedule Result:[/bold cyan] {result_path}\n"
+                f"[bold cyan]3D BIM Model:[/bold cyan] {model_path or 'N/A'}\n"
+                f"[bold cyan]Emitted HTML Viewer:[/bold cyan] {out_path} ({file_size:,} bytes)\n"
+                f"[dim]Includes Interactive Gantt Chart, Dynamic S-Curve, Payment Cards, and 4D Three.js WebGL Player.[/dim]",
+                title="[bold green]debim 4D Schedule Viewer Generator[/bold green]",
+                style="green",
+            )
+        )
+
+        if getattr(args, "open_browser", False) or getattr(args, "open", False):
+            import webbrowser
+            webbrowser.open(f"file://{out_path.resolve()}")
+
+    except Exception as e:
+        console.print(f"[bold red]Schedule Viewer Generation Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
 def cmd_docs_export_data(args):
     output_dir = Path(args.output_dir)
     try:
@@ -2926,6 +2976,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_sched_report.add_argument("positional_result", nargs="?", help="Positional path to schedule.json file")
     p_sched_report.add_argument("-r", "--schedule-result", help="Path to schedule.json file")
     p_sched_report.set_defaults(func=cmd_schedule_report)
+
+    p_sched_view = schedule_subparsers.add_parser("view", help="Generate standalone interactive HTML 4D schedule viewer")
+    p_sched_view.add_argument("positional_schedule", nargs="?", help="Positional path to schedule.json file")
+    p_sched_view.add_argument("-s", "--schedule-json", help="Path to schedule.json file")
+    p_sched_view.add_argument("-m", "--model", help="Path to project.debim or project.yaml 3D BIM model file")
+    p_sched_view.add_argument("-o", "--output", default="schedule.html", help="Target output schedule.html path")
+    p_sched_view.add_argument("--open", dest="open_browser", action="store_true", help="Open generated HTML viewer in default browser")
+    p_sched_view.set_defaults(func=cmd_schedule_view)
 
     # mcp
     p_mcp = subparsers.add_parser("mcp", help="Start Model Context Protocol (MCP) server")
