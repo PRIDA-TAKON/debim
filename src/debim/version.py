@@ -11,7 +11,7 @@ import urllib.request
 from pathlib import Path
 from typing import Optional, Any
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 PYPI_URL = "https://pypi.org/pypi/debim/json"
 DEFAULT_CACHE_TTL = 86400  # 24 hours in seconds

@@ -1,0 +1,38 @@
+[
+  {
+    "step": 1,
+    "match_keywords": ["step 1", "schedule schema", "crashing schema", "schedule.yaml"],
+    "next_issue": {
+      "title": "feat(schedule): Step 2 - Activity & Milestone Extractor from debim Storeys & QTO",
+      "body": "### Overview\nImplement an automated construction activity and milestone extractor from debim spatial structure and QTO quantities, generating a baseline `schedule.yaml` manifest.",
+      "label": "jules,enhancement,schedule"
+    }
+  },
+  {
+    "step": 2,
+    "match_keywords": ["step 2", "extractor", "builder", "milestone extractor", "activity & milestone"],
+    "next_issue": {
+      "title": "feat(schedule): Step 3 - One-Shot MILP Solver, S-Curve Engine & Milestone Evaluator",
+      "body": "### Overview\nImplement the core One-Shot Time-Cost Trade-Off MILP solver, S-Curve generator (Early/Late and Actual from progress_log), and Payment Milestone evaluator.",
+      "label": "jules,enhancement,schedule"
+    }
+  },
+  {
+    "step": 3,
+    "match_keywords": ["step 3", "solver", "milp", "scurve", "milestone evaluator"],
+    "next_issue": {
+      "title": "feat(schedule): Step 4 - CLI Integration & Rich Terminal Reporting (Milestones & S-Curve)",
+      "body": "### Overview\nIntegrate the scheduling engine into the main debim CLI (`debim schedule`) with beautiful Rich terminal reports showing milestone billing status, S-Curve progress, and critical paths.\n\n### Key Deliverables\n1. `src/debim/schedule/reporter.py`:\n   - `render_schedule_table(result: ScheduleResult) -> Panel`: Rich tables detailing activities, progress badges, and critical path.\n   - `render_milestone_table(result: ScheduleResult) -> Panel`: Formatted table showing milestones, required activities, completion dates, and billing readiness status.\n   - S-Curve variance summary (e.g. `Ahead by +3.5%` or `Delayed by -5.0%`).\n2. `src/debim/cli.py` Integration:\n   - `debim schedule init <project.debim> [-o schedule.yaml]`\n   - `debim schedule solve <schedule.yaml> [-o schedule.json]`\n   - `debim schedule report <schedule.json>`\n3. Tests:\n   - Unit tests in `tests/test_cli_schedule.py` verifying CLI commands.\n\n### Acceptance Criteria\n- `debim schedule init`, `solve`, and `report` execute cleanly via CLI.\n- `pytest tests/test_cli_schedule.py` passes 100%.",
+      "label": "jules,enhancement,schedule"
+    }
+  },
+  {
+    "step": 4,
+    "match_keywords": ["step 4", "schedule cli", "reporting", "reporter", "render_schedule_table"],
+    "next_issue": {
+      "title": "feat(schedule): Step 5 - Standalone Interactive HTML Gantt, S-Curve, Milestone Cards & 4D Viewer",
+      "body": "### Overview\nCreate a self-contained, standalone HTML Schedule & 4D Progress Viewer (`schedule.html`) featuring an Interactive Gantt chart, dynamic S-Curve with milestone pins, payment billing cards, and 3D progress visualization.\n\n### Key Deliverables\n1. `src/debim/schedule/viewer_html.py`:\n   - `generate_schedule_html(schedule_result: ScheduleResult, manifest_obj=None) -> str`:\n     - Dynamic S-Curve Chart (SVG/Canvas): Displays Planned Early S-Curve (cyan dashed), Planned Late S-Curve (gray dashed), and Actual S-Curve (emerald solid) with clickable Milestone Pins.\n     - Milestone Payment Cards: Cards summarizing each milestone, billing percentage, amount, completion checklist, and 'Ready to Bill' badge.\n     - Interactive Gantt Chart: Planned vs Actual dual-bars with Data Date line.\n     - 4D BIM Integration (Three.js): Color-coded 3D elements by milestone and progress status (Completed, In Progress, Ghost wireframe) with an interactive Time Slider.\n2. CLI Integration in `src/debim/cli.py`:\n   - `debim schedule view <schedule.json> [--model project.debim] [-o schedule.html] [--open]`\n3. Tests:\n   - Unit tests in `tests/test_schedule_viewer.py` verifying HTML generation.\n\n### Acceptance Criteria\n- Generates a standalone, zero-external-server HTML viewer that opens cleanly in any browser.\n- `pytest tests/test_schedule_viewer.py` passes 100%.",
+      "label": "jules,enhancement,schedule"
+    }
+  }
+]
