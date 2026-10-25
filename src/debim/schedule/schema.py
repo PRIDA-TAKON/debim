@@ -101,6 +101,7 @@ class MilestoneResult(BaseModel):
     actual_completion_day: Optional[int] = None
     is_completed: bool = False
     billing_status: Literal["PENDING", "READY_FOR_BILLING", "PAID"] = "PENDING"
+    required_activities: List[str] = Field(default_factory=list)
 
 
 class SCurveData(BaseModel):
@@ -146,6 +147,15 @@ def load_schedule_yaml(path: Union[Path, str]) -> CrashingManifest:
     with open(p, "r", encoding="utf-8") as f:
         data = parse_debim(f) or {}
     return CrashingManifest.model_validate(data)
+
+
+def load_schedule_json(path: Union[Path, str]) -> ScheduleResult:
+    """Load and parse a schedule.json file into a ScheduleResult instance."""
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(f"Schedule result file not found: {p}")
+    data = p.read_text(encoding="utf-8")
+    return ScheduleResult.model_validate_json(data)
 
 
 def dump_schedule_json(result: ScheduleResult, path: Union[Path, str]) -> Path:

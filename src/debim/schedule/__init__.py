@@ -16,7 +16,14 @@ from debim.schedule.schema import (
     SCurveData,
     ScheduleResult,
     dump_schedule_json,
+    load_schedule_json,
     load_schedule_yaml,
+)
+from debim.schedule.reporter import (
+    get_scurve_variance,
+    render_milestone_table,
+    render_schedule_table,
+    render_scurve_summary,
 )
 
 __all__ = [
@@ -32,6 +39,11 @@ __all__ = [
     "dump_schedule_json",
     "evaluate_milestones",
     "extract_activities_from_manifest",
+    "get_scurve_variance",
+    "load_schedule_json",
     "load_schedule_yaml",
+    "render_milestone_table",
+    "render_schedule_table",
+    "render_scurve_summary",
     "solve_schedule",
 ]

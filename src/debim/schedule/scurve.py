@@ -288,6 +288,7 @@ def evaluate_milestones(
                 actual_completion_day=actual_day,
                 is_completed=is_comp,
                 billing_status=billing_status,
+                required_activities=req_ids,
             )
         )
 

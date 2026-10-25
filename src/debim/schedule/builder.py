@@ -470,11 +470,15 @@ def extract_activities_from_manifest(
 
     proj_id = manifest.project.id if manifest.project and manifest.project.id else "PROJECT-SCHEDULE"
 
+    est_duration = sum(a.normal_duration for a in activities)
+    est_indirect = est_duration * 2000.0
+    calc_max_budget = round((total_project_cost + est_indirect) * 1.5, 2) if total_project_cost > 0 else None
+
     return CrashingManifest(
         project_id=proj_id,
         as_of_date=None,
         overhead_per_day=2000.0,
-        max_budget=round(total_project_cost * 1.25, 2) if total_project_cost > 0 else None,
+        max_budget=calc_max_budget,
         milestones=milestones,
         activities=activities,
     )
