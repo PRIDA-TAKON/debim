@@ -1,0 +1,38 @@
+[
+  {
+    "step": 1,
+    "match_keywords": ["step 1", "ci", "github actions", "pr bot", "diff_reporter", "cost diff", "ci/cd"],
+    "next_issue": {
+      "title": "feat(diff): Step 2 - Point-to-Mesh & Point-to-Plane Distance Calculation Engine",
+      "body": "### Overview\nImplement an ultra-fast vectorized distance calculation engine between real-world 3D point clouds (As-built from `.ply`) and compiled debim geometry/mesh (As-planned).\n\n### Key Deliverables\n1. `src/debim/diff/distance.py`:\n   - `compute_point_to_plane_distance(points: np.ndarray, plane_origin: np.ndarray, plane_normal: np.ndarray) -> np.ndarray`: Signed and perpendicular distance computation.\n   - `compute_point_to_mesh_distance(points: np.ndarray, vertices: np.ndarray, faces: np.ndarray) -> Tuple[np.ndarray, np.ndarray]`: Distance to polygonal triangles/faces using vectorized KD-tree / SciPy.\n   - `calculate_element_deviations(scan_points: np.ndarray, elements: List[ResolvedElement]) -> DeviationResult`: Computes signed deviation (mm) and absolute error per architectural/structural element.\n2. CLI Integration in `src/debim/cli.py`:\n   - `debim diff calculate --scan <scan.ply> --model <project.debim> [-o deviations.json]`\n3. Tests:\n   - Unit tests in `tests/test_diff_distance.py` validating distance calculation against known geometric ground truths.\n\n### Acceptance Criteria\n- Clean execution with zero regression.\n- `pytest tests/test_diff_distance.py` passes 100%.",
+      "label": "jules,enhancement,diff"
+    }
+  },
+  {
+    "step": 2,
+    "match_keywords": ["step 2", "point-to-mesh", "point-to-plane", "distance", "deviation calculation", "deviations.json"],
+    "next_issue": {
+      "title": "feat(diff): Step 3 - ICP Fine Alignment & Deviation Tolerance Heatmap (Color Mapping & 3D Viewer)",
+      "body": "### Overview\nImplement automated Fine Coordinate Alignment (Iterative Closest Point / ICP) between point clouds and debim origin, plus a Deviation Tolerance Heatmap engine and interactive 3D visualizer.\n\n### Key Deliverables\n1. `src/debim/diff/aligner.py`:\n   - `icp_fine_align(scan_points: np.ndarray, model_surface_points: np.ndarray, max_iterations=50, tolerance=1e-4) -> Tuple[np.ndarray, np.ndarray, float]`: Computes optimal 4x4 rigid transformation matrix (R, t) to register as-built scan to as-planned debim coordinate origin.\n2. `src/debim/diff/heatmap.py`:\n   - `generate_deviation_heatmap(points: np.ndarray, deviations: np.ndarray, tolerance_mm: float = 10.0) -> HeatmapResult`:\n     - Maps deviations to RGB colors: Green for within tolerance (|dev| <= 10mm), Red for protrusion/tilt (+dev > 10mm), Blue for missing/recessed (-dev < -10mm).\n     - Exports colorized PLY (`colored_deviation.ply`) and statistical report (Pass percentage, RMSE, Max/Min deviation).\n3. Standalone 3D HTML Heatmap Viewer (`src/debim/diff/viewer_html.py`):\n   - Standalone Three.js interactive viewer showing debim wireframe overlayed with colored deviation point cloud and interactive tolerance threshold slider.\n4. CLI Integration:\n   - `debim diff view --scan <scan.ply> --model <project.debim> [--tolerance 10] [-o heatmap.html]`\n5. Tests:\n   - Unit tests in `tests/test_diff_heatmap.py`.\n\n### Acceptance Criteria\n- `debim diff view` generates self-contained 3D HTML heatmap.\n- `pytest tests/test_diff_heatmap.py` passes 100%.",
+      "label": "jules,enhancement,diff"
+    }
+  },
+  {
+    "step": 3,
+    "match_keywords": ["step 3", "icp", "aligner", "heatmap", "tolerance", "color mapping", "heatmap.html"],
+    "next_issue": {
+      "title": "feat(progress): Step 4 - 4D Time-series Site Progress Tracking & Earned Value Scan Sync",
+      "body": "### Overview\nConnect time-series weekly site scans (4D As-built) directly with `debim.schedule` to automatically detect construction progress, populate EVM metrics, and evaluate payment billing milestones.\n\n### Key Deliverables\n1. `src/debim/progress/tracker.py`:\n   - `evaluate_element_presence(element_bounding_box: BoundingBox, scan_points: np.ndarray, min_point_density: float = 100.0) -> float`: Evaluates physical presence/completion ratio (0.0 - 1.0) of building components (e.g. Columns, Walls, Slabs) from spatial scan density.\n   - `sync_scan_to_schedule(manifest: CrashingManifest, scan_ply_path: str, scan_date: str) -> CrashingManifest`:\n     - Updates `CrashingActivity.progress_percent` and appends `ProgressLogEntry(date=scan_date, actual_percent=...)` based on detected elements.\n     - Re-evaluates payment milestones and updates S-Curve actual series.\n2. CLI Integration in `src/debim/cli.py`:\n   - `debim progress sync --schedule <schedule.yaml> --scan <week.ply> --date <YYYY-MM-DD> [-o updated_schedule.yaml]`\n3. Tests:\n   - Unit tests in `tests/test_progress_tracker.py`.\n\n### Acceptance Criteria\n- Automatically populates activity actual progress from point cloud data without manual data entry.\n- `pytest tests/test_progress_tracker.py` passes 100%.",
+      "label": "jules,enhancement,progress"
+    }
+  },
+  {
+    "step": 4,
+    "match_keywords": ["step 4", "progress tracking", "4d timeline", "earned value", "scan sync", "volumetric", "tracker"],
+    "next_issue": {
+      "title": "feat(sync): Step 5 - As-built Change Detection & Smart debim AST Patcher",
+      "body": "### Overview\nImplement an automated As-built Synchronization engine that detects spatial discrepancies (e.g. relocated columns, wall offsets) from scans and safely creates a surgical AST patch updating the source `.debim` file while preserving comments and structure.\n\n### Key Deliverables\n1. `src/debim/sync/detector.py`:\n   - `detect_asbuilt_discrepancies(model_elements: List[ResolvedElement], scan_deviations: DeviationResult, threshold_mm: float = 30.0) -> List[ChangeProposal]`: Detects components that have moved beyond acceptable tolerance and proposes coordinate updates.\n2. `src/debim/sync/patcher.py`:\n   - `apply_asbuilt_patch(source_debim_path: str, proposals: List[ChangeProposal]) -> str`: Performs surgical updates on coordinates (e.g. updating column grid offsets or boundary points) using round-trip YAML (ruamel.yaml or regex AST preservation), keeping comments and structure intact.\n3. CLI Integration in `src/debim/cli.py`:\n   - `debim sync propose --model <project.debim> --scan <scan.ply> [-o patch.json]`\n   - `debim sync apply --model <project.debim> --patch <patch.json> [-o updated.debim]`\n4. Tests:\n   - Unit tests in `tests/test_sync_patcher.py` verifying comment preservation and accurate coordinate synchronization.\n\n### Acceptance Criteria\n- Successfully syncs as-built variations into `.debim` without syntax degradation or losing existing comments.\n- `pytest tests/test_sync_patcher.py` passes 100%.",
+      "label": "jules,enhancement,sync"
+    }
+  }
+]
