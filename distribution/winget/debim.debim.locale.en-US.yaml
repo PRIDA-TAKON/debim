@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
 PackageIdentifier: debim.debim
-PackageVersion: 0.3.1
+PackageVersion: 1.2.0
 PackageLocale: en-US
 Publisher: PRIDA-TAKON
 PublisherUrl: https://github.com/PRIDA-TAKON/debim
@@ -12,7 +12,7 @@ LicenseUrl: https://github.com/PRIDA-TAKON/debim/blob/main/LICENSE
 ShortDescription: Minimal Git-native Declarative BIM engine & MCP Server for AI agents and humans.
 Description: |-
   debim (Declarative BIM / Building-as-Code) is a minimal, Git-native, declarative BIM compiler designed for AI agents and human architects/engineers.
-  It provides deterministic BOQ calculation, Quantitative Take-Off (QTO), building law compliance verification via unit testing, IFC4 compilation, and zero-license lightweight 3D visualization.
+  It provides deterministic BOQ calculation, Quantitative Take-Off (QTO), building law compliance verification via unit testing, 4D BIM construction scheduling, IFC4/IFC4.3 compilation, and zero-license lightweight 3D visualization.
 Moniker: debim
 Tags:
   - bim
@@ -23,9 +23,10 @@ Tags:
   - construction
   - boq
   - qto
-  - ai-agents
-  - mcp
+  - 4d-bim
   - architecture
-ReleaseNotesUrl: https://github.com/PRIDA-TAKON/debim/releases
+ReleaseNotes: |-
+  v1.2.0: 4D BIM Scheduling, One-Shot MILP Crashing, S-Curve & Scan-to-BIM Engine.
+ReleaseNotesUrl: https://github.com/PRIDA-TAKON/debim/releases/tag/v1.2.0
 ManifestType: defaultLocale
 ManifestVersion: 1.9.0
