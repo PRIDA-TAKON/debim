@@ -43,6 +43,7 @@ from debim.docs.exemplar import (
 )
 from debim.docs.thai_specs import get_thai_spec_clause, THAI_SPEC_LIBRARY
 from debim.standards import sync_standards, list_standards
+from debim.ci import compare_manifest_costs, run_pr_compliance_check, generate_pr_markdown_report
 
 # --- Pure-Python Rich-like formatting helpers ---
 
@@ -2283,6 +2284,45 @@ def cmd_spec_audit(args):
         sys.exit(1)
 
 
+def cmd_ci_report(args):
+    base_manifest = Path(args.base)
+    head_manifest = Path(args.head)
+
+    if not base_manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] Base manifest '{base_manifest}' not found.")
+        sys.exit(1)
+    if not head_manifest.exists():
+        console.print(f"[bold red]Error:[/bold red] PR Head manifest '{head_manifest}' not found.")
+        sys.exit(1)
+
+    rules = getattr(args, "rules", "cg-v480") or "cg-v480"
+    jurisdiction = getattr(args, "jurisdiction", "th") or "th"
+
+    cost_diff = compare_manifest_costs(base_manifest, head_manifest, rules=rules)
+    compliance = run_pr_compliance_check(head_manifest, jurisdiction=jurisdiction)
+
+    md_report = generate_pr_markdown_report(cost_diff, compliance)
+
+    output_path = Path(args.output) if args.output else None
+    if output_path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(md_report, encoding="utf-8")
+        console.print(
+            Panel(
+                f"[bold green]PR Markdown Report Generated Successfully![/bold green]\n"
+                f"[bold cyan]Base Manifest:[/bold cyan] {base_manifest}\n"
+                f"[bold cyan]Head Manifest:[/bold cyan] {head_manifest}\n"
+                f"[bold cyan]Output File:[/bold cyan] {output_path} ({output_path.stat().st_size:,} bytes)\n"
+                f"[bold cyan]Compliance Status:[/bold cyan] [bold]{compliance.status}[/bold]\n"
+                f"[bold cyan]Cost Variance:[/bold cyan] {cost_diff.delta_cost:+,.2f} {cost_diff.currency}",
+                title="[bold green]debim CI PR Report Engine[/bold green]",
+                style="green",
+            )
+        )
+    else:
+        sys.stdout.write(md_report + "\n")
+
+
 def cmd_mcp(args):
     from debim.mcp import run_mcp_server
     run_mcp_server()
@@ -3155,6 +3195,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_sched_view.add_argument("--open", dest="open_browser", action="store_true", help="Open generated HTML viewer in default browser")
     p_sched_view.set_defaults(func=cmd_schedule_view)
 
+    # ci
+    p_ci = subparsers.add_parser("ci", help="GitHub Actions & PR Bot CI reporting commands")
+    ci_subparsers = p_ci.add_subparsers(dest="ci_subcommand")
+
+    p_ci_rep = ci_subparsers.add_parser("report", help="Generate PR compliance and QTO/Cost diff Markdown report")
+    p_ci_rep.add_argument("--base", required=True, help="Path to Base branch project manifest (.debim / project.yaml)")
+    p_ci_rep.add_argument("--head", required=True, help="Path to PR Head branch project manifest (.debim / project.yaml)")
+    p_ci_rep.add_argument("-o", "--output", help="Target output file path to write PR Markdown report")
+    p_ci_rep.add_argument("--rules", default="cg-v480", help="Pricing & QTO rules standard (default: 'cg-v480')")
+    p_ci_rep.add_argument("-j", "--jurisdiction", default="th", help="Building control regulations jurisdiction (default: 'th')")
+    p_ci_rep.set_defaults(func=cmd_ci_report)
+
     # mcp
     p_mcp = subparsers.add_parser("mcp", help="Start Model Context Protocol (MCP) server")
     p_mcp.set_defaults(func=cmd_mcp)
@@ -3261,6 +3313,9 @@ def main(args: Optional[List[str]] = None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
     elif parsed_args.subcommand == "schedule" and not getattr(parsed_args, "schedule_subcommand", None):
+        parser.parse_args([parsed_args.subcommand, "--help"])
+        sys.exit(0)
+    elif parsed_args.subcommand == "ci" and not getattr(parsed_args, "ci_subcommand", None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
 
