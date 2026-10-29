@@ -2494,6 +2494,98 @@ def cmd_spec_audit(args):
         sys.exit(1)
 
 
+def cmd_progress_sync(args):
+    schedule_target = getattr(args, "schedule", None) or getattr(args, "positional_schedule", None) or "schedule.yaml"
+    schedule_path = Path(schedule_target)
+    if not schedule_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Schedule file '{schedule_path}' not found.")
+        sys.exit(1)
+
+    scan_path = Path(args.scan)
+    if not scan_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Scan file '{scan_path}' not found.")
+        sys.exit(1)
+
+    scan_date = args.date
+    out_path = Path(args.output) if getattr(args, "output", None) else schedule_path
+    model_path = Path(args.model) if getattr(args, "model", None) else None
+
+    console.print(
+        f"[bold green]Syncing 4D Site Scan with Schedule:[/bold green] {schedule_path} vs {scan_path} "
+        f"[dim](Scan Date: {scan_date})[/dim] -> [cyan]{out_path}[/cyan]"
+    )
+
+    try:
+        from debim.progress import sync_scan_to_schedule, calculate_evm_metrics
+        from debim.schedule.solver import solve_schedule
+
+        updated_manifest = sync_scan_to_schedule(
+            manifest=schedule_path,
+            scan_ply_path=scan_path,
+            scan_date=scan_date,
+            model_manifest=model_path,
+        )
+
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        dump_data = updated_manifest.model_dump(by_alias=True, exclude_none=True)
+        with open(out_path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(dump_data, f, allow_unicode=True, sort_keys=False)
+
+        result = solve_schedule(updated_manifest)
+        evm = calculate_evm_metrics(updated_manifest, schedule_res=result)
+
+        act_table = Table(
+            title=f"Activity Actual Progress Updates (As of {scan_date})",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        act_table.add_column("Activity ID", style="bold yellow")
+        act_table.add_column("Activity Name", style="white")
+        act_table.add_column("Status", justify="center")
+        act_table.add_column("Progress %", justify="right", style="bold green")
+
+        for a in updated_manifest.activities:
+            st_color = "green" if a.status == "COMPLETED" else ("yellow" if a.status == "IN_PROGRESS" else "dim")
+            act_table.add_row(
+                a.id,
+                a.name,
+                f"[{st_color}]{a.status}[/{st_color}]",
+                f"{a.progress_percent:.1f}%",
+            )
+
+        console.print(act_table)
+
+        evm_text = (
+            f"[bold cyan]As-Of Date:[/bold cyan] {evm.as_of_date}\n"
+            f"[bold cyan]Budget at Completion (BAC):[/bold cyan] {evm.budget_at_completion:,.2f} THB\n"
+            f"[bold cyan]Planned Value (PV):[/bold cyan] {evm.planned_value:,.2f} THB\n"
+            f"[bold cyan]Earned Value (EV):[/bold cyan] {evm.earned_value:,.2f} THB\n"
+            f"[bold cyan]Actual Cost (AC):[/bold cyan] {evm.actual_cost:,.2f} THB\n"
+            f"[bold cyan]Schedule Variance (SV):[/bold cyan] {evm.schedule_variance:+,.2f} THB\n"
+            f"[bold cyan]Cost Variance (CV):[/bold cyan] {evm.cost_variance:+,.2f} THB\n"
+            f"[bold cyan]Schedule Performance Index (SPI):[/bold cyan] [bold green]{evm.schedule_performance_index:.2f}[/bold green]\n"
+            f"[bold cyan]Cost Performance Index (CPI):[/bold cyan] [bold green]{evm.cost_performance_index:.2f}[/bold green]"
+        )
+        console.print(Panel(evm_text, title="[bold green]Earned Value Management (EVM) Metrics Snapshot[/bold green]", style="green"))
+
+        ready_ms = [m for m in result.milestones if m.billing_status == "READY_FOR_BILLING"]
+        console.print(
+            Panel(
+                f"[bold green]4D As-Built Progress Sync Complete![/bold green]\n"
+                f"[bold cyan]Input Scan:[/bold cyan] {scan_path}\n"
+                f"[bold cyan]Updated Schedule YAML:[/bold cyan] {out_path}\n"
+                f"[bold cyan]Overall Progress:[/bold cyan] [bold green]{result.overall_progress_percent:.1f}%[/bold green]\n"
+                f"[bold cyan]Milestones Ready for Billing:[/bold cyan] {len(ready_ms)} / {len(result.milestones)}",
+                title="[bold green]debim 4D Progress Sync Engine[/bold green]",
+                style="green",
+            )
+        )
+
+    except Exception as e:
+        console.print(f"[bold red]Progress Sync Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
 def cmd_ci_report(args):
     base_manifest = Path(args.base)
     head_manifest = Path(args.head)
@@ -3409,6 +3501,19 @@ def build_parser() -> argparse.ArgumentParser:
     p_sched_view.add_argument("--open", dest="open_browser", action="store_true", help="Open generated HTML viewer in default browser")
     p_sched_view.set_defaults(func=cmd_schedule_view)
 
+    # progress
+    p_progress = subparsers.add_parser("progress", help="4D site scan progress tracking & EVM sync")
+    progress_subparsers = p_progress.add_subparsers(dest="progress_subcommand")
+
+    p_prog_sync = progress_subparsers.add_parser("sync", help="Synchronize 4D site scan point cloud with construction schedule")
+    p_prog_sync.add_argument("positional_schedule", nargs="?", help="Positional path to schedule.yaml file")
+    p_prog_sync.add_argument("-s", "--schedule", help="Path to schedule.yaml file")
+    p_prog_sync.add_argument("--scan", required=True, help="Path to weekly site scan file (.ply)")
+    p_prog_sync.add_argument("-d", "--date", required=True, help="Scan capture date (YYYY-MM-DD)")
+    p_prog_sync.add_argument("-o", "--output", help="Output path for updated schedule.yaml")
+    p_prog_sync.add_argument("-m", "--model", help="Path to 3D BIM model manifest file (.debim / project.yaml)")
+    p_prog_sync.set_defaults(func=cmd_progress_sync)
+
     # ci
     p_ci = subparsers.add_parser("ci", help="GitHub Actions & PR Bot CI reporting commands")
     ci_subparsers = p_ci.add_subparsers(dest="ci_subcommand")
@@ -3527,6 +3632,9 @@ def main(args: Optional[List[str]] = None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
     elif parsed_args.subcommand == "schedule" and not getattr(parsed_args, "schedule_subcommand", None):
+        parser.parse_args([parsed_args.subcommand, "--help"])
+        sys.exit(0)
+    elif parsed_args.subcommand == "progress" and not getattr(parsed_args, "progress_subcommand", None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
     elif parsed_args.subcommand == "ci" and not getattr(parsed_args, "ci_subcommand", None):
