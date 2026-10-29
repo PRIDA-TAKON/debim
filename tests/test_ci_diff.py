@@ -17,12 +17,11 @@ from debim.ci import (
 from debim.cli import app
 
 runner = CliRunner()
-REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_compare_manifest_costs(tmp_path: Path):
-    base_file = REPO_ROOT / "tests" / "fixtures" / "townhouse" / "project.yaml"
-    prices_file = REPO_ROOT / "tests" / "fixtures" / "townhouse" / "prices.json"
+    base_file = Path("tests/fixtures/townhouse/project.yaml")
+    prices_file = Path("tests/fixtures/townhouse/prices.json")
 
     # Read base manifest and create modified head manifest with added columns/beams
     with open(base_file, "r", encoding="utf-8") as f:
@@ -57,7 +56,7 @@ def test_compare_manifest_costs(tmp_path: Path):
 
 
 def test_run_pr_compliance_check():
-    head_file = REPO_ROOT / "examples" / "farnsworth_house" / "project.debim"
+    head_file = Path("examples/farnsworth_house/project.debim")
     comp_res = run_pr_compliance_check(head_file, jurisdiction="th")
 
     assert isinstance(comp_res, ComplianceSummary)
@@ -126,7 +125,7 @@ def test_generate_pr_markdown_report():
 
 
 def test_cli_ci_report_command(tmp_path: Path):
-    base_file = REPO_ROOT / "tests" / "fixtures" / "townhouse" / "project.yaml"
+    base_file = Path("tests/fixtures/townhouse/project.yaml")
     out_md = tmp_path / "pr_comment.md"
 
     res = runner.invoke(app, [
