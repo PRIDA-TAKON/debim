@@ -24,6 +24,12 @@ class ElementDeviation(CompatBaseModel):
     delta_x: Optional[float] = None
     delta_y: Optional[float] = None
     delta_z: Optional[float] = None
+    mean_deviation_mm: Optional[float] = None
+    signed_deviation_mm: Optional[float] = None
+    absolute_error_mm: Optional[float] = None
+    rms_error_mm: Optional[float] = None
+    max_error_mm: Optional[float] = None
+    point_count: Optional[int] = None
 
 
 class DeviationResult(CompatBaseModel):
