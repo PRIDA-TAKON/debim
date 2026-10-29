@@ -40,7 +40,11 @@ runs:
       shell: bash
       run: |
         python -m pip install --upgrade pip
-        pip install -e ".[all]"
+        if [ -f "pyproject.toml" ]; then
+          pip install -e .
+        else
+          pip install "debim[all]"
+        fi
 
     - name: Checkout Base Branch Manifest
       shell: bash
