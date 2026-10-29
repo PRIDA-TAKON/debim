@@ -1428,6 +1428,159 @@ def cmd_scan_ingest(args):
         sys.exit(1)
 
 
+def cmd_sync_propose(args):
+    model_path = resolve_default_manifest_path(args.model)
+    if not model_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Model file '{model_path}' not found.")
+        sys.exit(1)
+
+    scan_path = Path(args.scan)
+    if not scan_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Scan / deviation file '{scan_path}' not found.")
+        sys.exit(1)
+
+    out_patch = Path(args.output) if args.output else Path("patch.json")
+    threshold_mm = getattr(args, "threshold", 30.0)
+
+    console.print(
+        f"[bold green]Detecting As-built Spatial Discrepancies:[/bold green] {model_path} vs {scan_path} "
+        f"[dim](Threshold: {threshold_mm:.1f}mm)[/dim]"
+    )
+
+    try:
+        from debim.sync import detect_asbuilt_discrepancies, DeviationResult
+        import json
+
+        manifest_obj = load_manifest(model_path)
+        resolved = resolve_manifest(manifest_obj)
+
+        if scan_path.suffix.lower() == ".json":
+            with open(scan_path, "r", encoding="utf-8") as f:
+                scan_data = json.load(f)
+        elif scan_path.suffix.lower() in (".yaml", ".yml"):
+            with open(scan_path, "r", encoding="utf-8") as f:
+                scan_data = yaml.safe_load(f)
+        else:
+            # Point cloud scan file (.ply / .xyz)
+            from debim.scan.compiler import compile_scan_to_manifest
+            scan_m = compile_scan_to_manifest(scan_path)
+            scan_rm = resolve_manifest(scan_m)
+            # Build deviation map matching tags or relative geometry
+            scan_data = {"deviations": []}
+            scan_elem_map = {e.tag: e for e in scan_rm.elements if hasattr(e, "tag")}
+            for elem in resolved.elements:
+                tag = getattr(elem, "tag", None)
+                if tag and tag in scan_elem_map:
+                    sc_e = scan_elem_map[tag]
+                    m_pos = getattr(sc_e, "start_point", None) or getattr(sc_e, "center", None)
+                    if m_pos:
+                        scan_data["deviations"].append({"tag": tag, "measured_position": list(m_pos)})
+
+        proposals = detect_asbuilt_discrepancies(
+            model_elements=resolved.elements,
+            scan_deviations=scan_data,
+            threshold_mm=threshold_mm,
+        )
+
+        out_patch.parent.mkdir(parents=True, exist_ok=True)
+        dump_proposals = [p.model_dump(by_alias=True, exclude_none=True) for p in proposals]
+        with open(out_patch, "w", encoding="utf-8") as f:
+            json.dump(dump_proposals, f, indent=2, ensure_ascii=False)
+
+        prop_table = Table(
+            title=f"As-built Discrepancy Proposals ({len(proposals)} detected)",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        prop_table.add_column("Tag", style="bold yellow")
+        prop_table.add_column("Class", style="white")
+        prop_table.add_column("Field", style="magenta")
+        prop_table.add_column("Current", justify="right")
+        prop_table.add_column("Proposed", justify="right", style="bold green")
+        prop_table.add_column("Deviation (mm)", justify="right", style="bold red")
+
+        for p in proposals:
+            prop_table.add_row(
+                p.tag,
+                p.element_class,
+                p.field_name,
+                str(p.current_value),
+                str(p.proposed_value),
+                f"{p.deviation_mm:.1f}",
+            )
+
+        console.print(prop_table)
+
+        console.print(
+            Panel(
+                f"[bold green]Change Proposals Generated Successfully![/bold green]\n"
+                f"[bold cyan]Input Model:[/bold cyan] {model_path}\n"
+                f"[bold cyan]Input Scan:[/bold cyan] {scan_path}\n"
+                f"[bold cyan]Discrepancies Detected:[/bold cyan] {len(proposals)} proposals\n"
+                f"[bold cyan]Patch File Saved:[/bold cyan] {out_patch}\n"
+                f"[dim]Run 'debim sync apply --model {model_path} --patch {out_patch}' to surgically update .debim file.[/dim]",
+                title="[bold green]debim As-built Sync Propose[/bold green]",
+                style="green",
+            )
+        )
+
+    except Exception as e:
+        console.print(f"[bold red]Sync Propose Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
+def cmd_sync_apply(args):
+    model_path = resolve_default_manifest_path(args.model)
+    if not model_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Model file '{model_path}' not found.")
+        sys.exit(1)
+
+    patch_path = Path(args.patch)
+    if not patch_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Patch file '{patch_path}' not found.")
+        sys.exit(1)
+
+    out_path = Path(args.output) if args.output else model_path
+
+    console.print(
+        f"[bold green]Applying As-built Surgical AST Patch:[/bold green] {patch_path} -> [cyan]{out_path}[/cyan]"
+    )
+
+    try:
+        from debim.sync import apply_asbuilt_patch, ChangeProposal
+        import json
+
+        with open(patch_path, "r", encoding="utf-8") as f:
+            raw_proposals = json.load(f)
+
+        proposals = [
+            p if isinstance(p, ChangeProposal) else ChangeProposal(**p)
+            for p in raw_proposals
+        ]
+
+        updated_content = apply_asbuilt_patch(
+            source_debim_path=model_path,
+            proposals=proposals,
+            output_path=out_path,
+        )
+
+        console.print(
+            Panel(
+                f"[bold green]As-built AST Patch Applied Successfully![/bold green]\n"
+                f"[bold cyan]Source Model:[/bold cyan] {model_path}\n"
+                f"[bold cyan]Proposals Applied:[/bold cyan] {len(proposals)} updates\n"
+                f"[bold cyan]Updated .debim File:[/bold cyan] {out_path}\n"
+                f"[dim]All comments, whitespace, and structural elements remain 100% preserved.[/dim]",
+                title="[bold green]debim As-built Sync Apply[/bold green]",
+                style="green",
+            )
+        )
+
+    except Exception as e:
+        console.print(f"[bold red]Sync Apply Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
 def cmd_urban_ingest(args):
     bbox_str = getattr(args, "bbox", None)
     geojson_path = getattr(args, "geojson", None)
@@ -2823,6 +2976,23 @@ def build_parser() -> argparse.ArgumentParser:
     p_scan_ingest.add_argument("-o", "--out", "--output", dest="output", default="project.yaml", help="Output project manifest path")
     p_scan_ingest.set_defaults(func=cmd_scan_ingest)
 
+    # sync
+    p_sync = subparsers.add_parser("sync", help="As-built change detection and smart AST patcher commands")
+    sync_subparsers = p_sync.add_subparsers(dest="sync_subcommand")
+
+    p_sync_prop = sync_subparsers.add_parser("propose", help="Detect as-built spatial discrepancies and generate patch proposals")
+    p_sync_prop.add_argument("-m", "--model", default="project.yaml", help="Path to source project.debim or model file")
+    p_sync_prop.add_argument("-s", "--scan", required=True, help="Path to point cloud scan or deviation JSON/YAML file")
+    p_sync_prop.add_argument("-o", "--output", default="patch.json", help="Target output patch proposals JSON file path")
+    p_sync_prop.add_argument("-t", "--threshold", type=float, default=30.0, help="Spatial discrepancy tolerance threshold in mm (default: 30.0)")
+    p_sync_prop.set_defaults(func=cmd_sync_propose)
+
+    p_sync_apply = sync_subparsers.add_parser("apply", help="Apply surgical AST patch updating .debim file coordinates")
+    p_sync_apply.add_argument("-m", "--model", default="project.yaml", help="Path to source project.debim file to update")
+    p_sync_apply.add_argument("-p", "--patch", required=True, help="Path to input patch.json file")
+    p_sync_apply.add_argument("-o", "--output", help="Output file path (default: update source model in-place)")
+    p_sync_apply.set_defaults(func=cmd_sync_apply)
+
     # urban
     p_urban = subparsers.add_parser("urban", help="Urban GIS and OpenStreetMap site commands")
     urban_subparsers = p_urban.add_subparsers(dest="urban_subcommand")
@@ -3082,6 +3252,9 @@ def main(args: Optional[List[str]] = None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
     elif parsed_args.subcommand == "scan" and not getattr(parsed_args, "scan_subcommand", None):
+        parser.parse_args([parsed_args.subcommand, "--help"])
+        sys.exit(0)
+    elif parsed_args.subcommand == "sync" and not getattr(parsed_args, "sync_subcommand", None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
     elif parsed_args.subcommand == "urban" and not getattr(parsed_args, "urban_subcommand", None):
