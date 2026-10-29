@@ -1660,7 +1660,102 @@ def _resolve_target_manifest(target_str: str) -> ProjectManifest:
         raise ValueError(f"Could not load manifest from '{target_str}': {e}")
 
 
+def cmd_diff_calculate(args):
+    scan_file = getattr(args, "scan", None)
+    if not scan_file and getattr(args, "target_b", None):
+        scan_file = args.target_b
+    if not scan_file:
+        console.print("[bold red]Error:[/bold red] Missing --scan parameter for distance calculation.")
+        sys.exit(1)
+
+    scan_path = Path(scan_file)
+    if not scan_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Scan file '{scan_path}' not found.")
+        sys.exit(1)
+
+    manifest_target = getattr(args, "model", None) or "project.yaml"
+    model_path = resolve_default_manifest_path(manifest_target)
+    if not model_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Model file '{model_path}' not found.")
+        sys.exit(1)
+
+    out_json = Path(args.output) if getattr(args, "output", None) else Path("deviations.json")
+
+    console.print(
+        f"[bold green]Calculating Point-to-Mesh Geometric Deviations:[/bold green] {scan_path} vs {model_path} -> [cyan]{out_json}[/cyan]"
+    )
+
+    try:
+        from debim.diff.distance import calculate_element_deviations
+        from debim.scan.calibrator import load_ply
+        import json
+
+        pts, _ = load_ply(scan_path)
+        manifest_obj = load_manifest(model_path)
+        resolved = resolve_manifest(manifest_obj)
+
+        dev_res = calculate_element_deviations(
+            scan_points=pts,
+            elements=resolved.elements,
+        )
+
+        out_json.parent.mkdir(parents=True, exist_ok=True)
+        dump_data = dev_res.model_dump(by_alias=True, exclude_none=True)
+        with open(out_json, "w", encoding="utf-8") as f:
+            json.dump(dump_data, f, indent=2, ensure_ascii=False)
+
+        dev_table = Table(
+            title=f"Element Geometric Deviations ({len(dev_res.deviations)} evaluated)",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        dev_table.add_column("Tag", style="bold yellow")
+        dev_table.add_column("Points", justify="right", style="cyan")
+        dev_table.add_column("Signed Dev (mm)", justify="right", style="bold green")
+        dev_table.add_column("Abs Error (mm)", justify="right", style="bold yellow")
+        dev_table.add_column("RMS Error (mm)", justify="right", style="magenta")
+        dev_table.add_column("Max Error (mm)", justify="right", style="bold red")
+
+        for d in dev_res.deviations:
+            dev_table.add_row(
+                d.tag,
+                str(d.point_count or 0),
+                f"{d.signed_deviation_mm or 0.0:.2f}",
+                f"{d.absolute_error_mm or 0.0:.2f}",
+                f"{d.rms_error_mm or 0.0:.2f}",
+                f"{d.max_error_mm or 0.0:.2f}",
+            )
+
+        console.print(dev_table)
+
+        console.print(
+            Panel(
+                f"[bold green]Geometric Point-to-Mesh Distance Calculation Complete![/bold green]\n"
+                f"[bold cyan]Input Point Cloud Scan:[/bold cyan] {scan_path} ({len(pts):,} points)\n"
+                f"[bold cyan]As-Planned Model:[/bold cyan] {model_path} ({len(resolved.elements)} elements)\n"
+                f"[bold cyan]Deviations Output JSON:[/bold cyan] {out_json}\n"
+                f"[dim]Run 'debim sync propose --model {model_path} --scan {out_json}' to derive AST patch proposals.[/dim]",
+                title="[bold green]debim Point-to-Mesh Distance Engine[/bold green]",
+                style="green",
+            )
+        )
+
+    except Exception as e:
+        console.print(f"[bold red]Distance Calculation Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
 def cmd_diff(args):
+    if getattr(args, "target_a", None) == "calculate" or getattr(args, "scan", None) is not None:
+        return cmd_diff_calculate(args)
+
+    if not getattr(args, "target_a", None) or not getattr(args, "target_b", None):
+        console.print(
+            "[bold red]Error:[/bold red] Revision diff requires two targets (e.g. 'debim diff target_a target_b') "
+            "or distance calculation flag (e.g. 'debim diff calculate --scan <file.ply>')."
+        )
+        sys.exit(1)
+
     prices = Path(args.prices)
     try:
         manifest_a = _resolve_target_manifest(args.target_a)
@@ -3046,10 +3141,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_urban_ingest.set_defaults(func=cmd_urban_ingest)
 
     # diff
-    p_diff = subparsers.add_parser("diff", help="Git-aware manifest comparison engine")
-    p_diff.add_argument("target_a", help="First target (file path or git rev)")
-    p_diff.add_argument("target_b", help="Second target (file path or git rev)")
+    p_diff = subparsers.add_parser("diff", help="Git-aware manifest comparison and point-to-mesh geometric distance engine")
+    p_diff.add_argument("target_a", nargs="?", help="First target (file path or git rev for revision diff, or 'calculate')")
+    p_diff.add_argument("target_b", nargs="?", help="Second target (file path or git rev for revision diff)")
     p_diff.add_argument("-p", "--prices", default="prices.json", help="Path to price catalog")
+    p_diff.add_argument("--scan", help="Path to real-world point cloud scan file (.ply)")
+    p_diff.add_argument("-m", "--model", help="Path to as-planned debim project manifest file (.debim / project.yaml)")
+    p_diff.add_argument("-o", "--output", default="deviations.json", help="Target output JSON file path for calculated element deviations (default: deviations.json)")
     p_diff.set_defaults(func=cmd_diff)
 
     # scaffold
