@@ -1660,6 +1660,118 @@ def _resolve_target_manifest(target_str: str) -> ProjectManifest:
         raise ValueError(f"Could not load manifest from '{target_str}': {e}")
 
 
+def cmd_diff_view(args):
+    scan_file = getattr(args, "scan", None)
+    if not scan_file:
+        console.print("[bold red]Error:[/bold red] Missing --scan parameter for heatmap view.")
+        sys.exit(1)
+
+    scan_path = Path(scan_file)
+    if not scan_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Scan file '{scan_path}' not found.")
+        sys.exit(1)
+
+    manifest_target = getattr(args, "model", None) or "project.yaml"
+    model_path = resolve_default_manifest_path(manifest_target)
+    if not model_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Model file '{model_path}' not found.")
+        sys.exit(1)
+
+    out_html = Path(args.output) if getattr(args, "output", None) else Path("heatmap.html")
+    tolerance_mm = float(getattr(args, "tolerance", 10.0))
+
+    console.print(
+        f"[bold green]Generating Standalone 3D Heatmap Viewer:[/bold green] {scan_path} vs {model_path} "
+        f"[dim](Tolerance: ±{tolerance_mm:.1f}mm)[/dim] -> [cyan]{out_html}[/cyan]"
+    )
+
+    try:
+        from debim.diff.aligner import icp_fine_align
+        from debim.diff.distance import calculate_element_deviations, compute_point_to_mesh_distance, get_element_mesh
+        from debim.diff.heatmap import generate_deviation_heatmap
+        from debim.diff.viewer_html import generate_heatmap_html
+        from debim.scan.calibrator import load_ply, save_ply
+        import numpy as np
+
+        pts, _ = load_ply(scan_path)
+        manifest_obj = load_manifest(model_path)
+        resolved = resolve_manifest(manifest_obj)
+
+        # 1. Extract surface points from model for ICP fine alignment
+        model_surface_pts_list = []
+        for elem in resolved.elements:
+            verts, faces = get_element_mesh(elem)
+            if verts.shape[0] > 0 and faces.shape[0] > 0:
+                tri_a = verts[faces[:, 0]]
+                tri_b = verts[faces[:, 1]]
+                tri_c = verts[faces[:, 2]]
+                centroids = (tri_a + tri_b + tri_c) / 3.0
+                model_surface_pts_list.append(centroids)
+
+        if model_surface_pts_list:
+            model_surface_pts = np.vstack(model_surface_pts_list)
+        else:
+            model_surface_pts = np.zeros((1, 3), dtype=np.float64)
+
+        # ICP Fine Alignment
+        aligned_pts, T_matrix, icp_rmse = icp_fine_align(pts, model_surface_pts)
+
+        # 2. Compute signed point-to-mesh deviations
+        all_verts = []
+        all_faces = []
+        v_offset = 0
+        for elem in resolved.elements:
+            verts, faces = get_element_mesh(elem)
+            if verts.shape[0] > 0 and faces.shape[0] > 0:
+                all_verts.append(verts)
+                all_faces.append(faces + v_offset)
+                v_offset += verts.shape[0]
+
+        if all_verts:
+            cat_verts = np.vstack(all_verts)
+            cat_faces = np.vstack(all_faces)
+            dists, closest_pts = compute_point_to_mesh_distance(aligned_pts, cat_verts, cat_faces)
+
+            # Determine signed deviation (+dev: protrusion, -dev: recess)
+            vec_diff = aligned_pts - closest_pts
+            # Simple sign heuristic based on distance vector direction relative to origin/centroid
+            sign_dir = np.sign(np.sum(vec_diff * closest_pts, axis=1))
+            sign_dir[sign_dir == 0] = 1.0
+            signed_devs_mm = dists * sign_dir * 1000.0
+        else:
+            signed_devs_mm = np.zeros(aligned_pts.shape[0], dtype=np.float64)
+
+        # 3. Generate heatmap result & export colorized PLY
+        heatmap_res = generate_deviation_heatmap(aligned_pts, signed_devs_mm, tolerance_mm=tolerance_mm)
+        colored_ply_path = out_html.parent / "colored_deviation.ply"
+        heatmap_res.export_ply(colored_ply_path, binary=True)
+
+        # 4. Generate 3D HTML heatmap viewer
+        html_str = generate_heatmap_html(resolved, aligned_pts, signed_devs_mm, tolerance_mm=tolerance_mm)
+        out_html.parent.mkdir(parents=True, exist_ok=True)
+        out_html.write_text(html_str, encoding="utf-8")
+        file_size = out_html.stat().st_size
+
+        console.print(
+            Panel(
+                f"[bold green]3D Heatmap Viewer & ICP Alignment Complete![/bold green]\n"
+                f"[bold cyan]Input Scan:[/bold cyan] {scan_path} ({len(pts):,} points)\n"
+                f"[bold cyan]ICP Registration RMSE:[/bold cyan] {icp_rmse:.4f} m\n"
+                f"[bold cyan]Tolerance Threshold:[/bold cyan] ±{tolerance_mm:.1f} mm\n"
+                f"[bold cyan]Tolerance Pass Rate:[/bold cyan] [bold green]{heatmap_res.pass_percentage:.1f}%[/bold green]\n"
+                f"[bold cyan]Colorized PLY Emitted:[/bold cyan] {colored_ply_path}\n"
+                f"[bold cyan]HTML Viewer Emitted:[/bold cyan] {out_html} ({file_size:,} bytes)\n"
+                f"[dim]Includes Interactive WebGL Viewer, Tolerance Slider & Compliance Dashboard.[/dim]",
+                title="[bold green]debim 3D Heatmap Viewer Generator[/bold green]",
+                style="green",
+            )
+        )
+
+    except Exception as e:
+        console.print(f"[bold red]Heatmap Viewer Generation Error:[/bold red]\n{e}")
+        sys.exit(1)
+
+
 def cmd_diff_calculate(args):
     scan_file = getattr(args, "scan", None)
     if not scan_file and getattr(args, "target_b", None):
@@ -1746,7 +1858,10 @@ def cmd_diff_calculate(args):
 
 
 def cmd_diff(args):
-    if getattr(args, "target_a", None) == "calculate" or getattr(args, "scan", None) is not None:
+    if getattr(args, "target_a", None) == "view":
+        return cmd_diff_view(args)
+
+    if getattr(args, "target_a", None) == "calculate" or (getattr(args, "scan", None) is not None and getattr(args, "target_a", None) != "view"):
         return cmd_diff_calculate(args)
 
     if not getattr(args, "target_a", None) or not getattr(args, "target_b", None):
@@ -3142,12 +3257,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     # diff
     p_diff = subparsers.add_parser("diff", help="Git-aware manifest comparison and point-to-mesh geometric distance engine")
-    p_diff.add_argument("target_a", nargs="?", help="First target (file path or git rev for revision diff, or 'calculate')")
+    p_diff.add_argument("target_a", nargs="?", help="First target (file path or git rev for revision diff, 'calculate', or 'view')")
     p_diff.add_argument("target_b", nargs="?", help="Second target (file path or git rev for revision diff)")
     p_diff.add_argument("-p", "--prices", default="prices.json", help="Path to price catalog")
     p_diff.add_argument("--scan", help="Path to real-world point cloud scan file (.ply)")
     p_diff.add_argument("-m", "--model", help="Path to as-planned debim project manifest file (.debim / project.yaml)")
-    p_diff.add_argument("-o", "--output", default="deviations.json", help="Target output JSON file path for calculated element deviations (default: deviations.json)")
+    p_diff.add_argument("-t", "--tolerance", type=float, default=10.0, help="Deviation tolerance threshold in mm for heatmap visualization (default: 10.0)")
+    p_diff.add_argument("-o", "--output", help="Target output file path for calculated element deviations JSON or 3D HTML heatmap viewer")
     p_diff.set_defaults(func=cmd_diff)
 
     # scaffold
