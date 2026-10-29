@@ -1,0 +1,45 @@
+name: Building-as-Code CI Workflow
+
+on:
+  pull_request:
+    paths:
+      - '**.debim'
+      - '**.debim.yaml'
+      - 'project.yaml'
+      - 'src/**'
+      - '.github/workflows/building-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '**.debim'
+      - '**.debim.yaml'
+      - 'project.yaml'
+
+jobs:
+  building-ci:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run debim Building CI Action
+        uses: ./.github/actions/debim-ci
+        with:
+          base_manifest: "house.debim"
+          head_manifest: "house.debim"
+          rules: "cg-v480"
+          jurisdiction: "th"
+          comment_pr: "true"
+
+      - name: Upload PR Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-ci-report
+          path: pr_report.md
