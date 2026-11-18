@@ -333,6 +333,67 @@ def generate_viewer_html(
             "storey": st,
         })
 
+    # Spaces / Functional Blocks
+    for space in getattr(resolved, "spaces", []):
+        st = _get_element_storey(space)
+        if not getattr(space, "polygon", None) or len(space.polygon) < 3:
+            continue
+        xs = [pt[0] for pt in space.polygon]
+        ys = [pt[1] for pt in space.polygon]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+        w = max_x - min_x
+        d = max_y - min_y
+        h = getattr(space, "height", 2.8) or 2.8
+        cx = (min_x + max_x) / 2.0
+        cy = (min_y + max_y) / 2.0
+        base_z = space.polygon[0][2] if len(space.polygon[0]) > 2 else 0.0
+        cz = base_z + h / 2.0
+
+        # Space color coding by room type
+        s_name = (getattr(space, "tag", "") + " " + (getattr(space, "name", "") or "")).lower()
+        if any(k in s_name for k in ["bed", "นอน"]):
+            sp_color = "#A78BFA"  # Light Purple
+        elif any(k in s_name for k in ["bath", "toilet", "น้ำ"]):
+            sp_color = "#38BDF8"  # Cyan/Sky
+        elif any(k in s_name for k in ["living", "พักผ่อน", "นั่งเล่น"]):
+            sp_color = "#FBBF24"  # Amber
+        elif any(k in s_name for k in ["dining", "ทานอาหาร"]):
+            sp_color = "#F59E0B"  # Orange
+        elif any(k in s_name for k in ["kitchen", "ครัว"]):
+            sp_color = "#FB7185"  # Rose
+        elif any(k in s_name for k in ["carport", "จอดรถ"]):
+            sp_color = "#34D399"  # Mint Green
+        elif any(k in s_name for k in ["porch", "balcony", "เฉลียง", "ระเบียง"]):
+            sp_color = "#A3E635"  # Lime
+        elif any(k in s_name for k in ["stair", "บันได"]):
+            sp_color = "#E879F9"  # Fuchsia
+        elif any(k in s_name for k in ["hall", "โถง"]):
+            sp_color = "#94A3B8"  # Slate
+        else:
+            sp_color = "#60A5FA"
+
+        elements_data.append({
+            "tag": space.tag,
+            "class": "IfcSpace",
+            "member_name": space.name or space.tag,
+            "material": "Functional Space Block",
+            "position": [cx, cy, cz],
+            "rotation": [0, 0, 0],
+            "dimensions": {
+                "width": w,
+                "depth": d,
+                "height": h,
+                "polygon": [[pt[0], pt[1]] for pt in space.polygon],
+                "area": getattr(space, "net_floor_area", 0.0),
+            },
+            "color": sp_color,
+            "transparent": True,
+            "opacity": 0.28,
+            "layer": getattr(space.element, "layer", "architecture/spaces") if hasattr(space, "element") and hasattr(space.element, "layer") and space.element.layer else "architecture/spaces",
+            "storey": st,
+        })
+
     # Stairs Assembly
     for stair in resolved.stairs:
         for step in stair.steps:
@@ -2698,15 +2759,32 @@ def generate_viewer_html(
             top: 16px;
             left: 16px;
             width: 310px;
-            max-height: calc(100vh - 120px);
+            max-height: calc(100vh - 32px);
             display: flex;
             flex-direction: column;
         }}
         #layer-tree-container {{
             overflow-y: auto;
-            max-height: calc(100vh - 280px);
+            overflow-x: hidden;
+            max-height: calc(100vh - 160px);
             margin-top: 8px;
-            padding-right: 4px;
+            padding-right: 6px;
+            scrollbar-width: thin;
+            scrollbar-color: #3b82f6 rgba(15, 23, 42, 0.6);
+        }}
+        #layer-tree-container::-webkit-scrollbar {{
+            width: 6px;
+        }}
+        #layer-tree-container::-webkit-scrollbar-track {{
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 4px;
+        }}
+        #layer-tree-container::-webkit-scrollbar-thumb {{
+            background: #3b82f6;
+            border-radius: 4px;
+        }}
+        #layer-tree-container::-webkit-scrollbar-thumb:hover {{
+            background: #60a5fa;
         }}
         .search-box {{
             width: 100%;
@@ -2787,13 +2865,6 @@ def generate_viewer_html(
         }}
         .tree-children.collapsed {{
             display: none;
-        }}
-        #info-panel {{
-            bottom: 16px;
-            left: 16px;
-            width: 310px;
-            max-height: 200px;
-            overflow-y: auto;
         }}
         #inspector-panel {{
             top: 16px;
@@ -2977,14 +3048,6 @@ def generate_viewer_html(
         <div><span style="color:#4da6ff; font-weight:bold;">🔵 Axis Z:</span> Elevation</div>
     </div>
 
-    <div id="info-panel" class="ui-panel">
-        <h1>{proj.name}</h1>
-        <div class="subtitle">Project ID: <span id="project-id">{proj.id}</span></div>
-
-        <div class="section-title">Storeys</div>
-        <div id="storeys-list"></div>
-    </div>
-
     <div id="inspector-panel" class="ui-panel">
         <h1>Element Inspector</h1>
         <div class="subtitle">Click on any 3D element to inspect</div>
@@ -3156,15 +3219,6 @@ def generate_viewer_html(
         const dirLight2 = new THREE.DirectionalLight(0xaaccff, 0.4);
         dirLight2.position.set(70, 60, 80);
         scene.add(dirLight2);
-
-        // Build UI - Storeys list
-        const storeysListEl = document.getElementById('storeys-list');
-        sceneData.storeys.forEach(s => {{
-            const row = document.createElement('div');
-            row.className = 'data-row';
-            row.innerHTML = `<span class="data-label">${{s.name}} (${{s.id}})</span><span class="data-value">+${{s.elevation.toFixed(2)}}m (h: ${{s.height.toFixed(2)}}m)</span>`;
-            storeysListEl.appendChild(row);
-        }});
 
         // Helper to create circular grid bubble sprites
         function makeGridSprite(name, color) {{
@@ -3402,6 +3456,7 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false, curveSegments: 32 }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                    geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "ELLIPSE") {{
                     geometry = new THREE.CylinderGeometry(1, 1, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
@@ -3418,6 +3473,7 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                    geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "ISHAPE" || dim.shape === "I" || dim.shape === "H") {{
                     const w = dim.overall_width || dim.width || 0.2;
                     const d = dim.overall_depth || dim.depth || 0.2;
@@ -3433,6 +3489,7 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                    geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "LSHAPE" || dim.shape === "L") {{
                     const d = dim.depth || 0.05, w = dim.width || 0.05, t = dim.thickness || 0.005;
                     const s = new THREE.Shape();
@@ -3442,6 +3499,7 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                    geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "USHAPE" || dim.shape === "U" || dim.shape === "CSHAPE" || dim.shape === "C") {{
                     const d = dim.depth || 0.15, bf = dim.flange_width || dim.width || 0.075;
                     const tw = dim.web_thickness || 0.0065, tf = dim.flange_thickness || 0.01;
@@ -3453,6 +3511,7 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                    geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "TSHAPE" || dim.shape === "T") {{
                     const d = dim.depth || 0.15, bf = dim.flange_width || dim.width || 0.15;
                     const tw = dim.web_thickness || 0.006, tf = dim.flange_thickness || 0.009;
@@ -3464,14 +3523,10 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                    geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "BOX" || dim.shape === "RECTANGLE" || dim.shape === "SQUARE") {{
                     const w = dim.width || 0.2, d = dim.depth || 0.4;
-                    const s = new THREE.Shape();
-                    s.moveTo(-w/2, -d/2); s.lineTo(w/2, -d/2); s.lineTo(w/2, d/2); s.lineTo(-w/2, d/2);
-                    s.closePath();
-                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
-                    geometry.center();
-                    geometry.rotateY(Math.PI / 2);
+                    geometry = new THREE.BoxGeometry(dim.length, w, d);
                 }} else if (dim.shape === "ARBITRARY" || dim.shape === "ARBITRARY_CLOSED" || dim.shape === "POLYGON" || dim.shape === "ARBITRARY_WITH_VOIDS") {{
                     const pts = dim.points || [];
                     if (pts.length >= 3) {{
@@ -3497,13 +3552,14 @@ def generate_viewer_html(
                         geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                         geometry.center();
                         geometry.rotateY(Math.PI / 2);
+                        geometry.rotateX(Math.PI / 2);
                     }} else {{
                         geometry = new THREE.BoxGeometry(dim.length, dim.width || 0.05, dim.depth || 0.15);
                     }}
                 }} else {{
                     geometry = new THREE.BoxGeometry(dim.length, dim.width || dim.thickness || 0.02, dim.height || dim.depth || 0.20);
                 }}
-            }} else if (data.class === "IfcSlab" || data.class === "IfcCovering") {{
+            }} else if (data.class === "IfcSlab" || data.class === "IfcCovering" || data.class === "IfcSpace") {{
                 if (dim.polygon && dim.polygon.length >= 3) {{
                     const s = new THREE.Shape();
                     s.moveTo(dim.polygon[0][0] - data.position[0], dim.polygon[0][1] - data.position[1]);
@@ -3644,6 +3700,10 @@ def generate_viewer_html(
             if (data.transparent) {{
                 matOptions.transparent = true;
                 matOptions.opacity = data.opacity || 0.6;
+                if (data.class === "IfcSpace") {{
+                    matOptions.depthWrite = false;
+                    matOptions.side = THREE.DoubleSide;
+                }}
             }}
 
             const material = new THREE.MeshStandardMaterial(matOptions);
@@ -3669,7 +3729,7 @@ def generate_viewer_html(
             const edges = new THREE.EdgesGeometry(geometry);
             const line = new THREE.LineSegments(
                 edges,
-                new THREE.LineBasicMaterial({{ color: 0x000000, linewidth: 1 }})
+                new THREE.LineBasicMaterial({{ color: data.class === "IfcSpace" ? 0x0284c7 : 0x000000, linewidth: data.class === "IfcSpace" ? 2 : 1 }})
             );
             mesh.add(line);
             mesh.userData = data;

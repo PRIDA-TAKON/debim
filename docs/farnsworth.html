@@ -1490,6 +1490,7 @@
                     geometry = new THREE.ExtrudeGeometry(s, { depth: dim.length, bevelEnabled: false, curveSegments: 32 });
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                    geometry.rotateX(Math.PI / 2);
                 } else if (dim.shape === "ELLIPSE") {
                     geometry = new THREE.CylinderGeometry(1, 1, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
@@ -1506,6 +1507,7 @@
                     geometry = new THREE.ExtrudeGeometry(s, { depth: dim.length, bevelEnabled: false });
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                    geometry.rotateX(Math.PI / 2);
                 } else if (dim.shape === "ISHAPE" || dim.shape === "I" || dim.shape === "H") {
                     const w = dim.overall_width || dim.width || 0.2;
                     const d = dim.overall_depth || dim.depth || 0.2;
@@ -1521,6 +1523,7 @@
                     geometry = new THREE.ExtrudeGeometry(s, { depth: dim.length, bevelEnabled: false });
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                    geometry.rotateX(Math.PI / 2);
                 } else if (dim.shape === "LSHAPE" || dim.shape === "L") {
                     const d = dim.depth || 0.05, w = dim.width || 0.05, t = dim.thickness || 0.005;
                     const s = new THREE.Shape();
@@ -1530,6 +1533,7 @@
                     geometry = new THREE.ExtrudeGeometry(s, { depth: dim.length, bevelEnabled: false });
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                    geometry.rotateX(Math.PI / 2);
                 } else if (dim.shape === "USHAPE" || dim.shape === "U" || dim.shape === "CSHAPE" || dim.shape === "C") {
                     const d = dim.depth || 0.15, bf = dim.flange_width || dim.width || 0.075;
                     const tw = dim.web_thickness || 0.0065, tf = dim.flange_thickness || 0.01;
@@ -1541,6 +1545,7 @@
                     geometry = new THREE.ExtrudeGeometry(s, { depth: dim.length, bevelEnabled: false });
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                    geometry.rotateX(Math.PI / 2);
                 } else if (dim.shape === "TSHAPE" || dim.shape === "T") {
                     const d = dim.depth || 0.15, bf = dim.flange_width || dim.width || 0.15;
                     const tw = dim.web_thickness || 0.006, tf = dim.flange_thickness || 0.009;
@@ -1552,14 +1557,10 @@
                     geometry = new THREE.ExtrudeGeometry(s, { depth: dim.length, bevelEnabled: false });
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
+                    geometry.rotateX(Math.PI / 2);
                 } else if (dim.shape === "BOX" || dim.shape === "RECTANGLE" || dim.shape === "SQUARE") {
                     const w = dim.width || 0.2, d = dim.depth || 0.4;
-                    const s = new THREE.Shape();
-                    s.moveTo(-w/2, -d/2); s.lineTo(w/2, -d/2); s.lineTo(w/2, d/2); s.lineTo(-w/2, d/2);
-                    s.closePath();
-                    geometry = new THREE.ExtrudeGeometry(s, { depth: dim.length, bevelEnabled: false });
-                    geometry.center();
-                    geometry.rotateY(Math.PI / 2);
+                    geometry = new THREE.BoxGeometry(dim.length, w, d);
                 } else if (dim.shape === "ARBITRARY" || dim.shape === "ARBITRARY_CLOSED" || dim.shape === "POLYGON" || dim.shape === "ARBITRARY_WITH_VOIDS") {
                     const pts = dim.points || [];
                     if (pts.length >= 3) {
@@ -1585,6 +1586,7 @@
                         geometry = new THREE.ExtrudeGeometry(s, { depth: dim.length, bevelEnabled: false });
                         geometry.center();
                         geometry.rotateY(Math.PI / 2);
+                        geometry.rotateX(Math.PI / 2);
                     } else {
                         geometry = new THREE.BoxGeometry(dim.length, dim.width || 0.05, dim.depth || 0.15);
                     }
