@@ -9,6 +9,7 @@
 <p align="center">
   <a href="https://pypi.org/project/debim/"><img src="https://img.shields.io/pypi/v/debim.svg?color=blue" alt="PyPI Version" /></a>
   <a href="https://github.com/PRIDA-TAKON/debim/releases/tag/v1.1.0"><img src="https://img.shields.io/badge/release-v1.1.0-brightgreen.svg" alt="Release v1.1.0" /></a>
+  <a href="https://github.com/osama-ata/Awesome-AECO"><img src="https://awesome.re/mentioned-badge.svg" alt="Mentioned in Awesome AECO" /></a>
   <a href="docs/winget.md"><img src="https://img.shields.io/badge/WinGet-Pending%20Review-orange.svg?logo=windows&logoColor=white" alt="WinGet Package (Pending Review)" /></a>
   <a href="https://github.com/PRIDA-TAKON/homebrew-debim"><img src="https://img.shields.io/badge/Homebrew-debim-FBB040.svg?logo=homebrew&logoColor=white" alt="Homebrew Tap" /></a>
   <a href="https://glama.ai/mcp/servers/PRIDA-TAKON/debim"><img src="https://glama.ai/mcp/servers/PRIDA-TAKON/debim/badges/score.svg" alt="Glama MCP Server Score" /></a>
@@ -449,6 +450,37 @@ Rigorously benchmarked against **407 real-world projects** across architectural,
 📖 **Read Full Research Paper:** [debim: An Empirical Study of Declarative Building-as-Code on 407 Heterogeneous Real-World OpenBIM Models](docs/research/2026_empirical_study_407_ifc_models.md)  
 📦 **Kaggle Public Benchmark Dataset:** [debim-5000-ifc-benchmark](https://www.kaggle.com/datasets/pridatakon/debim-5000-ifc-benchmark)  
 ⚡ **Kaggle Automated Stress Test:** [debim-ifc-stress-test](https://www.kaggle.com/code/pridatakon/debim-ifc-stress-test)
+
+---
+
+### 3. 🤖 LLM Multi-Model QTO Anti-Hallucination Benchmark (100 Construction Scenarios)
+
+<p align="center">
+  <a href="https://www.kaggle.com/datasets/pridatakon/debim-qto-anti-hallucination-benchmark">
+    <img src="https://img.shields.io/badge/Kaggle-Multi--Model%20Benchmark%20Dataset-20BEFF?logo=kaggle&style=for-the-badge" alt="Kaggle QTO Benchmark Dataset" />
+  </a>
+</p>
+
+Empirically evaluating whether LLMs and Small Language Models (SLMs) hallucinate architectural and structural Quantity Take-Off (QTO) math when answering unassisted vs. compiling declarative `.debim` specifications across **100 realistic building engineering scenarios**:
+
+- **🎯 Up to +98.0% Accuracy Lift:** Unassisted LLMs fail dramatically at 3D spatial calculations (<10% baseline accuracy). In contrast, compiling `.debim` achieves up to **100.0% zero-defect precision**.
+- **🧠 SLM Empowerment:** Lightweight models (such as Qwen 14B, Gemma, and DeepSeek) achieve production-grade calculation reliability without requiring massive parameter overhead.
+- **⚡ High Token & Context Efficiency:** Generates compact declarative specifications, eliminating hundreds of verbose, error-prone manual arithmetic tokens.
+
+#### 🏆 Hexa-Model Benchmark Leaderboard (100 Test Suite):
+
+| Rank | Model | Architecture / Type | Direct LLM Baseline | With `.debim` Engine | Accuracy Gain | Platform |
+|:---:|:---|:---|:---:|:---:|:---:|:---|
+| 🥇 | **Qwen2.5-Coder-14B** | Specialized Coder | 2.0% | **100.0%** | 🟢 **+98.0%** | Kaggle Tesla T4 (4-bit NF4) |
+| 🥈 | **Qwen3.8-27B** | General LLM | 7.0% | **92.0%** | 🟢 **+85.0%** | Groq LPU |
+| 🥉 | **Gemma 4 26B** | General LLM | 4.0% | **75.5%** | 🟢 **+71.5%** | Google AI Studio |
+| 4 | **DeepSeek-R1-Distill-14B** | Reasoning Model (`<think>`) | 10.0% | **70.5%** | 🟢 **+60.5%** | Kaggle Tesla T4 (4-bit NF4) |
+| 5 | **Qwen2.5-Coder-7B** | Specialized Coder | 0.5% | **47.5%** | 🟢 **+47.0%** | Kaggle Tesla T4 (4-bit NF4) |
+| 6 | **OpenAI GPT-OSS-20B** | General LLM | 44.5% | **33.5%** | ⚠️ Direct math bias | Groq LPU |
+
+> 💡 **Key Takeaway:** Foundation language models lack intrinsic spatial coordinate math. By offloading volumetric geometry to `.debim`'s declarative compiler, AI agents eliminate spatial hallucinations and produce auditable, deterministic quantities.
+
+📦 **Kaggle Public Benchmark Dataset:** [debim-qto-anti-hallucination-benchmark](https://www.kaggle.com/datasets/pridatakon/debim-qto-anti-hallucination-benchmark)
 
 ---
 

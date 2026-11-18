@@ -44,6 +44,8 @@ from debim.docs.exemplar import (
 from debim.docs.thai_specs import get_thai_spec_clause, THAI_SPEC_LIBRARY
 from debim.standards import sync_standards, list_standards
 from debim.ci import compare_manifest_costs, run_pr_compliance_check, generate_pr_markdown_report
+from debim.calc_cli import register_calc_parser
+from debim.resolution.cli import register_resolution_parser
 
 # --- Pure-Python Rich-like formatting helpers ---
 
@@ -3563,6 +3565,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_docs_exp.add_argument("-o", "--output-dir", default="dist/docs", help="Target output directory")
     p_docs_exp.set_defaults(func=cmd_docs_export_data)
 
+    # calc (physical engineering calculations)
+    register_calc_parser(subparsers)
+
+    # resolution (AI-driven clash resolution & visual funnel engine)
+    register_resolution_parser(subparsers)
+
     return parser
 
 
@@ -3638,6 +3646,9 @@ def main(args: Optional[List[str]] = None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
     elif parsed_args.subcommand == "ci" and not getattr(parsed_args, "ci_subcommand", None):
+        parser.parse_args([parsed_args.subcommand, "--help"])
+        sys.exit(0)
+    elif parsed_args.subcommand == "calc" and not getattr(parsed_args, "calc_subcommand", None):
         parser.parse_args([parsed_args.subcommand, "--help"])
         sys.exit(0)
 
