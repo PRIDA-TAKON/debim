@@ -1738,6 +1738,17 @@ def generate_viewer_html(
             "color": color,
             "layer": custom.layer,
         }
+        if "furniture" in layer_lower or any(kw in tag_lower for kw in ["chair", "desk", "table", "bed", "sofa", "cabinet"]):
+            furn_type = "furniture"
+            if any(kw in tag_lower for kw in ["desk", "table"]):
+                furn_type = "table"
+            elif any(kw in tag_lower for kw in ["chair", "seat", "bench"]):
+                furn_type = "chair"
+            elif any(kw in tag_lower for kw in ["sofa", "couch"]):
+                furn_type = "sofa"
+            elif "bed" in tag_lower:
+                furn_type = "bed"
+            elem_dict["furniture_type"] = furn_type
         if "glass" in tag_lower or "glass" in layer_lower:
             elem_dict["transparent"] = True
             elem_dict["opacity"] = 0.45
