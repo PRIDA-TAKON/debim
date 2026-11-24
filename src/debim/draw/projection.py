@@ -86,6 +86,7 @@ class CutElement(BaseModel):
     polygon_coords: List[List[Tuple[float, float]]] = Field(default_factory=list)
     centerline: Optional[Union[LineString, Point]] = None
     layer: Optional[str] = None
+    hatch_pattern: Optional[str] = None
     properties: Dict[str, Any] = Field(default_factory=dict)
 
     def model_post_init(self, __context: Any) -> None:
@@ -278,30 +279,91 @@ def slice_storey(
                 frame_poly = _create_rotated_box(c_center_x, c_center_y, w_child, f_thick, wall_angle_deg)
 
                 elem_cls = "IfcDoor" if isinstance(child, ResolvedDoor) else "IfcWindow"
+                op_raw = getattr(child.element, "operation_type", None) or getattr(child, "operation_type", None) or ""
+                op_upper = str(op_raw).upper()
 
                 # For doors, generate door leaf line and 90-degree swing arc projection
                 if isinstance(child, ResolvedDoor):
-                    hinge_x = x1 + d1 * ux
-                    hinge_y = y1 + d1 * uy
                     door_w = child.width
+                    is_double = "DOUBLE" in op_upper or "DOUBLE" in child.tag.upper() or door_w >= 1.60
+                    is_sliding = "SLID" in op_upper or "SLID" in child.tag.upper()
 
-                    # Open leaf line at 90 deg relative to wall direction
-                    leaf_x = hinge_x + door_w * (-uy)
-                    leaf_y = hinge_y + door_w * ux
-                    door_leaf_geom = LineString([(hinge_x, hinge_y), (leaf_x, leaf_y)])
+                    if is_double:
+                        # Double swing door: two leaves swinging from opposite jambs
+                        w_half = door_w / 2.0
+                        # Left leaf
+                        h1_x = x1 + d1 * ux
+                        h1_y = y1 + d1 * uy
+                        l1_x = h1_x + w_half * (-uy)
+                        l1_y = h1_y + w_half * ux
+                        # Right leaf
+                        h2_x = x1 + d2 * ux
+                        h2_y = y1 + d2 * uy
+                        l2_x = h2_x + w_half * (-uy)
+                        l2_y = h2_y + w_half * ux
 
-                    projection_elements.append(ProjectionElement(
-                        tag=f"{child.tag}-Leaf",
-                        element_class="IfcDoorLeaf",
-                        category="low_projection",
-                        geometry=door_leaf_geom,
-                        layer=f"{child.layer}/leaf",
-                        properties={
-                            "host_door": child.tag,
-                            "width": child.width,
-                            "hinge_point": (hinge_x, hinge_y),
-                        },
-                    ))
+                        projection_elements.append(ProjectionElement(
+                            tag=f"{child.tag}-Leaf-Left",
+                            element_class="IfcDoorLeaf",
+                            category="low_projection",
+                            geometry=LineString([(h1_x, h1_y), (l1_x, l1_y)]),
+                            layer=f"{child.layer}/leaf",
+                            properties={
+                                "host_door": child.tag,
+                                "is_double": True,
+                                "leaf_side": "left",
+                                "width": w_half,
+                                "hinge_point": (h1_x, h1_y),
+                                "swing_vector": (-uy, ux),
+                            },
+                        ))
+                        projection_elements.append(ProjectionElement(
+                            tag=f"{child.tag}-Leaf-Right",
+                            element_class="IfcDoorLeaf",
+                            category="low_projection",
+                            geometry=LineString([(h2_x, h2_y), (l2_x, l2_y)]),
+                            layer=f"{child.layer}/leaf",
+                            properties={
+                                "host_door": child.tag,
+                                "is_double": True,
+                                "leaf_side": "right",
+                                "width": w_half,
+                                "hinge_point": (h2_x, h2_y),
+                                "swing_vector": (-uy, ux),
+                            },
+                        ))
+                    elif is_sliding:
+                        # Sliding door: leaf lines parallel to wall
+                        pass
+                    else:
+                        # Single swing door: one leaf
+                        hinge_x = x1 + d1 * ux
+                        hinge_y = y1 + d1 * uy
+                        leaf_x = hinge_x + door_w * (-uy)
+                        leaf_y = hinge_y + door_w * ux
+                        door_leaf_geom = LineString([(hinge_x, hinge_y), (leaf_x, leaf_y)])
+
+                        projection_elements.append(ProjectionElement(
+                            tag=f"{child.tag}-Leaf",
+                            element_class="IfcDoorLeaf",
+                            category="low_projection",
+                            geometry=door_leaf_geom,
+                            layer=f"{child.layer}/leaf",
+                            properties={
+                                "host_door": child.tag,
+                                "is_double": False,
+                                "width": child.width,
+                                "hinge_point": (hinge_x, hinge_y),
+                                "swing_vector": (-uy, ux),
+                            },
+                        ))
+
+                # Identify window type
+                win_sliding = False
+                win_awning = False
+                if elem_cls == "IfcWindow":
+                    win_sliding = "SLID" in op_upper or "SLID" in child.tag.upper()
+                    win_awning = "AWN" in op_upper or "CASE" in op_upper or "กระทุ้ง" in getattr(child.element, "name", "").lower()
 
                 cut_elements.append(CutElement(
                     tag=child.tag,
@@ -317,12 +379,20 @@ def slice_storey(
                         "sill_height": child.sill_height,
                         "frame_thickness": f_thick,
                         "has_leaf": isinstance(child, ResolvedDoor),
+                        "operation_type": op_upper or ("DOUBLE_SWING" if (isinstance(child, ResolvedDoor) and (child.width >= 1.6 or "DOUBLE" in child.tag.upper())) else "SINGLE_SWING"),
+                        "is_double": isinstance(child, ResolvedDoor) and (child.width >= 1.6 or "DOUBLE" in child.tag.upper() or "DOUBLE" in op_upper),
+                        "is_sliding": (isinstance(child, ResolvedDoor) and ("SLID" in op_upper or "SLID" in child.tag.upper())) or win_sliding,
+                        "is_awning": win_awning,
+                        "wall_angle_deg": wall_angle_deg,
+                        "center": (c_center_x, c_center_y),
                     },
                 ))
 
         category: Literal["heavy_cut", "medium_cut"] = (
             "heavy_cut" if _is_load_bearing_wall(wall) else "medium_cut"
         )
+        mat_lower = (wall.element.material or "").lower()
+        w_hatch = "concrete" if ("conc" in mat_lower or "คอนกรีต" in mat_lower or _is_load_bearing_wall(wall)) else "wall"
 
         cut_elements.append(CutElement(
             tag=wall.tag,
@@ -331,10 +401,12 @@ def slice_storey(
             geometry=wall_poly,
             centerline=LineString([(x1, y1), (x2, y2)]),
             layer=wall.layer,
+            hatch_pattern=w_hatch,
             properties={
                 "material": wall.element.material,
                 "thickness": wall.thickness,
                 "height": wall.height,
+                "hatch_pattern": w_hatch,
             },
         ))
 
@@ -391,9 +463,11 @@ def slice_storey(
             geometry=poly,
             centerline=Point(cx, cy),
             layer=col.layer,
+            hatch_pattern="concrete",
             properties={
                 "material": col.element.material,
                 "height": col.height,
+                "hatch_pattern": "concrete",
             },
         ))
 
@@ -517,6 +591,54 @@ def slice_storey(
                         "flight": step.flight_tag,
                         "riser": step.riser,
                         "tread": step.tread,
+                        "step_index": step.step_index,
+                    },
+                ))
+
+        # Add Walking Line, Up Arrow and Break Line for each flight
+        for flight in getattr(stair, "flights", []) or []:
+            sx, sy = flight.start_point[0], flight.start_point[1]
+            ex, ey = flight.end_point[0], flight.end_point[1]
+            dx, dy = ex - sx, ey - sy
+            flen = math.hypot(dx, dy)
+            if flen > 1e-4:
+                ux, uy = dx / flen, dy / flen
+                # Walking line along flight centerline
+                walk_geom = LineString([(sx, sy), (ex, ey)])
+                projection_elements.append(ProjectionElement(
+                    tag=f"{flight.tag}-WalkLine",
+                    element_class="IfcStairWalkingLine",
+                    category="low_projection",
+                    geometry=walk_geom,
+                    layer=f"{stair.layer}/walkline",
+                    properties={
+                        "start": (sx, sy),
+                        "end": (ex, ey),
+                        "direction": (ux, uy),
+                        "length": flen,
+                        "flight_width": flight.width,
+                        "label": "UP",
+                    },
+                ))
+
+                # Architectural zigzag break line across flight
+                mx, my = (sx + ex) / 2.0, (sy + ey) / 2.0
+                px, py = -uy, ux  # perpendicular normal
+                hw = flight.width * 0.60
+                b0 = (mx - px * hw, my - py * hw)
+                b1 = (mx - px * (hw * 0.20) - ux * 0.15, my - py * (hw * 0.20) - uy * 0.15)
+                b2 = (mx + px * (hw * 0.20) + ux * 0.15, my + py * (hw * 0.20) + uy * 0.15)
+                b3 = (mx + px * hw, my + py * hw)
+                break_geom = LineString([b0, b1, b2, b3])
+                projection_elements.append(ProjectionElement(
+                    tag=f"{flight.tag}-BreakLine",
+                    element_class="IfcStairBreakLine",
+                    category="low_projection",
+                    geometry=break_geom,
+                    layer=f"{stair.layer}/breakline",
+                    properties={
+                        "center": (mx, my),
+                        "flight_width": flight.width,
                     },
                 ))
 
@@ -531,6 +653,25 @@ def slice_storey(
         all_2d_points.append((px, py))
         proxy_poly = _create_rotated_box(px, py, w, d, rot_z)
 
+        # Detect if proxy represents stage, counter, or furniture
+        proxy_tag_u = (proxy.tag or "").upper()
+        proxy_pt_u = str(proxy.predefined_type or "").upper()
+        if "STAGE" in proxy_tag_u or "STAGE" in proxy_pt_u:
+            sym = "STAGE"
+        elif "COUNTER" in proxy_tag_u or "COUNTER" in proxy_pt_u or "BAR" in proxy_tag_u:
+            sym = "COUNTER"
+        else:
+            sym = proxy_pt_u or "GENERIC"
+
+        proxy_props = {
+            "ifc_class": proxy.ifc_class,
+            "predefined_type": proxy.predefined_type,
+            "symbol_type": sym,
+            "dimensions": proxy.dimensions,
+            "center": (px, py),
+            "rotation_deg": rot_z,
+        }
+
         if p_base_z <= cut_elev <= p_top_z:
             cut_elements.append(CutElement(
                 tag=proxy.tag,
@@ -539,11 +680,7 @@ def slice_storey(
                 geometry=proxy_poly,
                 centerline=Point(px, py),
                 layer=proxy.layer,
-                properties={
-                    "ifc_class": proxy.ifc_class,
-                    "predefined_type": proxy.predefined_type,
-                    "dimensions": proxy.dimensions,
-                },
+                properties=proxy_props,
             ))
         elif p_top_z <= cut_elev:
             projection_elements.append(ProjectionElement(
@@ -552,11 +689,7 @@ def slice_storey(
                 category="low_projection",
                 geometry=proxy_poly,
                 layer=proxy.layer,
-                properties={
-                    "ifc_class": proxy.ifc_class,
-                    "predefined_type": proxy.predefined_type,
-                    "dimensions": proxy.dimensions,
-                },
+                properties=proxy_props,
             ))
 
     # 6. Process Furniture (Low Projection / Medium Cut)
@@ -574,6 +707,27 @@ def slice_storey(
             rot_z_deg = rot_raw if abs(rot_raw) > 2.0 * math.pi else math.degrees(rot_raw)
             furn_poly = _create_rotated_box(fx, fy, w, d, rot_z_deg)
 
+            # Classify Architectural 2D Symbol Type
+            p_type = getattr(furn, "predefined_type", None) or getattr(furn.element, "predefined_type", None) or ""
+            name = getattr(furn.element, "name", "") or ""
+            tag = furn.tag or ""
+            combined_text = f"{p_type} {tag} {name}".upper()
+
+            if "CHAIR" in combined_text or "เก้าอี้" in name or "STOOL" in combined_text or "SEAT" in combined_text:
+                sym_type = "CHAIR"
+            elif "SOFA" in combined_text or "โซฟา" in name or "COUCH" in combined_text:
+                sym_type = "SOFA"
+            elif "BED" in combined_text or "เตียง" in name:
+                sym_type = "BED"
+            elif "COUNTER" in combined_text or "เคาน์เตอร์" in name or "เคาเตอร์" in name or "CASHIER" in combined_text or "BAR" in combined_text:
+                sym_type = "COUNTER"
+            elif "DESK" in combined_text:
+                sym_type = "DESK"
+            elif "TABLE" in combined_text or "โต๊ะ" in name:
+                sym_type = "TABLE"
+            else:
+                sym_type = "GENERIC"
+
             projection_elements.append(ProjectionElement(
                 tag=furn.tag,
                 element_class=furn.ifc_class,
@@ -581,6 +735,12 @@ def slice_storey(
                 geometry=furn_poly,
                 layer=furn.layer,
                 properties={
+                    "furniture_type": sym_type,
+                    "symbol_type": sym_type,
+                    "predefined_type": p_type or sym_type,
+                    "name": name,
+                    "center": (fx, fy),
+                    "rotation_deg": rot_z_deg,
                     "dimensions": furn.dimensions,
                 },
             ))
@@ -633,6 +793,22 @@ def slice_storey(
             w, d, _ = term.dimensions
             term_poly = _create_rotated_box(tx, ty, w, d, term.rotation)
 
+            tag_u = term.tag.upper()
+            name_u = getattr(term.element, "name", "").upper() if hasattr(term, "element") else ""
+            term_u = str(getattr(term, "terminal_type", "")).upper()
+            comb = f"{tag_u} {name_u} {term_u}"
+
+            if "WC" in comb or "TOILET" in comb or "สุขภัณฑ์" in name_u or "ชักโครก" in name_u:
+                s_type = "WC"
+            elif "BASIN" in comb or "SINK" in comb or "อ่างล้าง" in name_u or "LAVATORY" in comb:
+                s_type = "WASHBASIN"
+            elif "BATH" in comb or "TUB" in comb or "อ่างอาบน้ำ" in name_u:
+                s_type = "BATHTUB"
+            elif "URINAL" in comb or "โถปัสสาวะ" in name_u:
+                s_type = "URINAL"
+            else:
+                s_type = "GENERIC"
+
             projection_elements.append(ProjectionElement(
                 tag=term.tag,
                 element_class="IfcSanitaryTerminal",
@@ -640,7 +816,11 @@ def slice_storey(
                 geometry=term_poly,
                 layer=term.layer,
                 properties={
+                    "sanitary_type": s_type,
+                    "symbol_type": s_type,
                     "terminal_type": term.terminal_type,
+                    "center": (tx, ty),
+                    "rotation_deg": term.rotation,
                     "dimensions": term.dimensions,
                 },
             ))

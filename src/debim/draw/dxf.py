@@ -40,6 +40,7 @@ def _setup_dxf_layers_and_styles(doc: Drawing) -> None:
     # ACI Colors: 1=Red, 2=Yellow, 3=Green, 4=Cyan, 5=Blue, 6=Magenta, 7=White/Black, 8=Dark Gray
     layers_def = [
         ("A-WALL", 7, "Continuous", 50),     # Wall cut lines (0.50mm)
+        ("A-HATCH", 8, "Continuous", 13),    # Wall/Column cut hatching (0.13mm Gray)
         ("S-COLS", 3, "Continuous", 50),     # Column profiles (0.50mm Green)
         ("S-BEAM", 4, "DASHED", 25),         # Structural beam framing (0.25mm Cyan)
         ("A-DOOR", 2, "Continuous", 25),     # Door frames, leaf & swing arc (0.25mm Yellow)
@@ -50,6 +51,7 @@ def _setup_dxf_layers_and_styles(doc: Drawing) -> None:
         ("GRID-ANNO", 1, "CENTER", 18),      # Grid centerlines & bubbles (0.18mm Red, CENTER)
         ("A-GRID", 1, "CENTER", 18),         # Grid centerlines (legacy alias)
         ("A-FLOR", 8, "Continuous", 18),     # Floor slabs & steps (0.18mm Gray)
+        ("A-FURN", 30, "Continuous", 18),    # Furniture elements & symbols (0.18mm Orange)
         ("A-SANR", 6, "Continuous", 25),     # Sanitary fixtures (0.25mm Magenta)
     ]
 
@@ -59,7 +61,7 @@ def _setup_dxf_layers_and_styles(doc: Drawing) -> None:
 
 
 def _setup_reusable_dxf_blocks(doc: Drawing, is_mm: bool) -> None:
-    """Define reusable 2D CAD blocks for doors (D1, D2), windows (W1, W2), columns (C1), sanitary, and grid bubbles."""
+    """Define reusable 2D CAD blocks for doors (D1, D2, D_SLIDE), windows, columns, furniture, sanitary, and grids."""
     blocks = doc.blocks
 
     # 1. Door D1 (Single Leaf Door)
@@ -85,6 +87,14 @@ def _setup_reusable_dxf_blocks(doc: Drawing, is_mm: bool) -> None:
         # Right leaf line & arc
         d2.add_line((1.0, 0.0), (1.0, 0.5), dxfattribs={"layer": "A-DOOR"})
         d2.add_arc(center=(1.0, 0.0), radius=0.5, start_angle=180.0, end_angle=90.0, dxfattribs={"layer": "A-DOOR"})
+
+    # 2b. Door D_SLIDE (Sliding Door)
+    if "D_SLIDE" not in blocks:
+        ds = blocks.new("D_SLIDE")
+        ds.add_lwpolyline([(0, -0.04), (0.55, -0.04), (0.55, -0.01), (0, -0.01)], close=True, dxfattribs={"layer": "A-DOOR"})
+        ds.add_lwpolyline([(0.45, 0.01), (1.0, 0.01), (1.0, 0.04), (0.45, 0.04)], close=True, dxfattribs={"layer": "A-DOOR"})
+        ds.add_line((0.20, 0.0), (0.35, 0.0), dxfattribs={"layer": "A-DOOR"})
+        ds.add_line((0.65, 0.0), (0.80, 0.0), dxfattribs={"layer": "A-DOOR"})
 
     # 3. Window W1 (Single Window)
     if "W1" not in blocks:
@@ -128,10 +138,55 @@ def _setup_reusable_dxf_blocks(doc: Drawing, is_mm: bool) -> None:
         bs.add_lwpolyline([(-0.30, -0.25), (0.30, -0.25), (0.30, 0.25), (-0.30, 0.25)], close=True, dxfattribs={"layer": "A-SANR"})
         bs.add_circle((0.0, 0.0), radius=0.18, dxfattribs={"layer": "A-SANR"})
 
+    # 7b. Sanitary Bathtub Fixture
+    if "SANR_BATH" not in blocks:
+        bt = blocks.new("SANR_BATH")
+        bt.add_lwpolyline([(-0.80, -0.35), (0.80, -0.35), (0.80, 0.35), (-0.80, 0.35)], close=True, dxfattribs={"layer": "A-SANR"})
+        bt.add_lwpolyline([(-0.70, -0.25), (0.70, -0.25), (0.70, 0.25), (-0.70, 0.25)], close=True, dxfattribs={"layer": "A-SANR"})
+
     # 8. Generic Sanitary Fixture
     if "SANR_FIXTURE" not in blocks:
         sf = blocks.new("SANR_FIXTURE")
         sf.add_lwpolyline([(-0.25, -0.25), (0.25, -0.25), (0.25, 0.25), (-0.25, 0.25)], close=True, dxfattribs={"layer": "A-SANR"})
+
+    # 8b. Furniture CHAIR Block (Chair with curved backrest)
+    if "FURN_CHAIR" not in blocks:
+        fc = blocks.new("FURN_CHAIR")
+        fc.add_lwpolyline([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)], close=True, dxfattribs={"layer": "A-FURN"})
+        # Curved backrest arc at bottom (-0.5 Y)
+        fc.add_arc(center=(0.0, -0.2), radius=0.45, start_angle=200.0, end_angle=340.0, dxfattribs={"layer": "A-FURN"})
+
+    # 8c. Furniture TABLE Block (Dining / Work table with beveled rim)
+    if "FURN_TABLE" not in blocks:
+        ft = blocks.new("FURN_TABLE")
+        ft.add_lwpolyline([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)], close=True, dxfattribs={"layer": "A-FURN"})
+        ft.add_lwpolyline([(-0.45, -0.45), (0.45, -0.45), (0.45, 0.45), (-0.45, 0.45)], close=True, dxfattribs={"layer": "A-FURN"})
+
+    # 8d. Furniture SOFA Block (Sofa with backrest & armrests)
+    if "FURN_SOFA" not in blocks:
+        fs = blocks.new("FURN_SOFA")
+        fs.add_lwpolyline([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)], close=True, dxfattribs={"layer": "A-FURN"})
+        # Backrest bar
+        fs.add_lwpolyline([(-0.5, -0.5), (0.5, -0.5), (0.5, -0.25), (-0.5, -0.25)], close=True, dxfattribs={"layer": "A-FURN"})
+        # Left and right armrests
+        fs.add_lwpolyline([(-0.5, -0.25), (-0.35, -0.25), (-0.35, 0.5), (-0.5, 0.5)], close=True, dxfattribs={"layer": "A-FURN"})
+        fs.add_lwpolyline([(0.35, -0.25), (0.5, -0.25), (0.5, 0.5), (0.35, 0.5)], close=True, dxfattribs={"layer": "A-FURN"})
+
+    # 8e. Furniture BED Block (Bed with pillows & blanket fold)
+    if "FURN_BED" not in blocks:
+        fb = blocks.new("FURN_BED")
+        fb.add_lwpolyline([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)], close=True, dxfattribs={"layer": "A-FURN"})
+        # Pillows at top (0.5 Y)
+        fb.add_lwpolyline([(-0.45, 0.25), (-0.05, 0.25), (-0.05, 0.45), (-0.45, 0.45)], close=True, dxfattribs={"layer": "A-FURN"})
+        fb.add_lwpolyline([(0.05, 0.25), (0.45, 0.25), (0.45, 0.45), (0.05, 0.45)], close=True, dxfattribs={"layer": "A-FURN"})
+        # Blanket fold line
+        fb.add_line((-0.5, -0.15), (0.5, -0.15), dxfattribs={"layer": "A-FURN"})
+
+    # 8f. Furniture COUNTER Block (Bar / Cashier counter)
+    if "FURN_COUNTER" not in blocks:
+        fco = blocks.new("FURN_COUNTER")
+        fco.add_lwpolyline([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)], close=True, dxfattribs={"layer": "A-FURN"})
+        fco.add_line((-0.5, -0.2), (0.5, -0.2), dxfattribs={"layer": "A-FURN"})
 
     # 9. Grid Axis Bubble Block
     if "GRID_BUBBLE" not in blocks:
@@ -216,7 +271,7 @@ def export_2d_dxf(
     _setup_reusable_dxf_blocks(doc, is_mm=is_mm)
     msp = doc.modelspace()
 
-    # 1. Render Walls (`A-WALL`)
+    # 1. Render Walls (`A-WALL`) and Hatching (`A-HATCH`)
     for elem in cut_plane.cut_elements:
         if elem.element_class == "IfcWall":
             for ring in elem.polygon_coords:
@@ -224,6 +279,13 @@ def export_2d_dxf(
                     continue
                 scaled_pts = [(x * scale, y * scale) for x, y in ring]
                 msp.add_lwpolyline(scaled_pts, close=True, dxfattribs={"layer": "A-WALL"})
+                try:
+                    hatch = msp.add_hatch(color=8, dxfattribs={"layer": "A-HATCH"})
+                    hatch_pat = "ANSI31" if elem.hatch_pattern != "concrete" else "SOLID"
+                    hatch.set_pattern_fill(hatch_pat, scale=(100.0 if is_mm else 0.1))
+                    hatch.paths.add_polyline_path(scaled_pts, is_closed=True)
+                except Exception:
+                    pass
 
     # 2. Render Columns (`S-COLS`) using Reusable Block C1
     for elem in cut_plane.cut_elements:
@@ -258,12 +320,14 @@ def export_2d_dxf(
                 scaled_pts = [(x * scale, y * scale) for x, y in ring]
                 msp.add_lwpolyline(scaled_pts, close=True, dxfattribs={"layer": "S-BEAM", "linetype": "DASHED"})
 
-    # 3. Render Doors (`A-DOOR`) using Reusable Block (D1/D2)
+    # 3. Render Doors (`A-DOOR`) using Reusable Block (D1/D2/D_SLIDE)
     for elem in cut_plane.cut_elements:
         if elem.element_class == "IfcDoor":
             width = elem.properties.get("width", 0.90) * scale
             coords = elem.polygon_coords[0] if elem.polygon_coords else []
-            door_blk = "D2" if width > 1.1 * scale or elem.properties.get("is_double", False) else "D1"
+            is_slide = elem.properties.get("is_sliding", False)
+            is_dbl = elem.properties.get("is_double", False) or width >= 1.6 * scale
+            door_blk = "D_SLIDE" if is_slide else ("D2" if is_dbl else "D1")
 
             if len(coords) >= 4:
                 p0, p1, p2, p3 = coords[0], coords[1], coords[2], coords[3]
@@ -279,7 +343,7 @@ def export_2d_dxf(
                     base_angle_rad = math.atan2(dy, dx)
                     base_angle_deg = math.degrees(base_angle_rad)
 
-                    # Insert Reusable Door Block (D1 or D2)
+                    # Insert Reusable Door Block (D1, D2, or D_SLIDE)
                     msp.add_blockref(
                         door_blk,
                         (h_x, h_y),
@@ -320,9 +384,13 @@ def export_2d_dxf(
                         },
                     )
 
-    # 5. Render Floor Slabs (`A-FLOR`) and Sanitary Fixtures (`A-SANR`) with Blocks
+    # 5. Render Floor Slabs, Sanitary, Furniture, and Stairs
     for elem in cut_plane.projection_elements:
         is_terminal = "Terminal" in elem.element_class
+        is_furn = elem.element_class in ("IfcFurniture", "IfcFurnishingElement") or elem.properties.get("furniture_type") is not None
+        is_stair_walk = elem.element_class == "IfcStairWalkingLine"
+        is_stair_break = elem.element_class == "IfcStairBreakLine"
+
         if is_terminal:
             coords = elem.polygon_coords[0] if elem.polygon_coords else []
             if coords:
@@ -332,10 +400,13 @@ def export_2d_dxf(
 
                 tag_u = elem.tag.upper()
                 term_u = str(elem.properties.get("terminal_type", "")).upper()
-                if "WC" in tag_u or "TOILET" in tag_u or "WC" in term_u:
+                san_u = str(elem.properties.get("sanitary_type", "")).upper()
+                if "WC" in tag_u or "TOILET" in tag_u or "WC" in term_u or "WC" in san_u:
                     sanr_blk = "SANR_WC"
-                elif "BASIN" in tag_u or "SINK" in tag_u or "BASIN" in term_u:
+                elif "BASIN" in tag_u or "SINK" in tag_u or "BASIN" in term_u or "WASHBASIN" in san_u:
                     sanr_blk = "SANR_BASIN"
+                elif "BATH" in tag_u or "TUB" in tag_u or "BATHTUB" in san_u:
+                    sanr_blk = "SANR_BATH"
                 else:
                     sanr_blk = "SANR_FIXTURE"
 
@@ -348,6 +419,46 @@ def export_2d_dxf(
                         "layer": "A-SANR",
                     },
                 )
+        elif is_furn:
+            sym_type = elem.properties.get("symbol_type") or elem.properties.get("furniture_type") or "TABLE"
+            cx, cy = elem.properties.get("center", (0.0, 0.0))
+            rot_deg = elem.properties.get("rotation_deg", 0.0)
+            dims = elem.properties.get("dimensions", (1.0, 1.0, 0.8))
+            w, d = dims[0] * scale, dims[1] * scale
+
+            blk_map = {
+                "CHAIR": "FURN_CHAIR",
+                "TABLE": "FURN_TABLE",
+                "DESK": "FURN_TABLE",
+                "SOFA": "FURN_SOFA",
+                "BED": "FURN_BED",
+                "COUNTER": "FURN_COUNTER",
+                "STAGE": "FURN_TABLE",
+            }
+            f_blk = blk_map.get(sym_type, "FURN_TABLE")
+            try:
+                msp.add_blockref(
+                    f_blk,
+                    (cx * scale, cy * scale),
+                    dxfattribs={
+                        "rotation": rot_deg,
+                        "xscale": w,
+                        "yscale": d,
+                        "layer": "A-FURN",
+                    },
+                )
+            except Exception:
+                pass
+        elif is_stair_walk:
+            sx, sy = elem.properties.get("start", (0, 0))
+            ex, ey = elem.properties.get("end", (0, 0))
+            msp.add_line((sx * scale, sy * scale), (ex * scale, ey * scale), dxfattribs={"layer": "A-FLOR"})
+            msp.add_circle((sx * scale, sy * scale), radius=(200.0 if is_mm else 0.2), dxfattribs={"layer": "A-FLOR"})
+        elif is_stair_break:
+            for ring in elem.polygon_coords:
+                if len(ring) >= 2:
+                    scaled_pts = [(x * scale, y * scale) for x, y in ring]
+                    msp.add_lwpolyline(scaled_pts, close=False, dxfattribs={"layer": "A-WALL"})
         else:
             for ring in elem.polygon_coords:
                 if len(ring) < 2:

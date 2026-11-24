@@ -23,8 +23,11 @@ from debim.draw.projection import (
     CutPlaneResult,
     GridLine2D,
     ProjectionElement,
+    _create_rotated_box,
+    coords_from_geometry,
     slice_storey,
 )
+from shapely.geometry import Point, LineString
 from debim.draw.section import (
     SectionCutElement,
     SectionCutPlaneResult,
@@ -563,6 +566,14 @@ class SheetRenderer:
             '    <style type="text/css"><![CDATA[',
             f'{embedded_css}',
             '    ]]></style>',
+            '    <!-- CAD Hatch Patterns -->',
+            '    <pattern id="hatch-concrete" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">',
+            '      <line x1="0" y1="0" x2="0" y2="6" stroke="#475569" stroke-width="0.30" />',
+            '      <circle cx="3" cy="3" r="0.45" fill="#475569" />',
+            '    </pattern>',
+            '    <pattern id="hatch-wall" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">',
+            '      <line x1="0" y1="0" x2="0" y2="6" stroke="#94a3b8" stroke-width="0.25" />',
+            '    </pattern>',
             '  </defs>',
             '  <!-- Background -->',
             f'  <rect x="0" y="0" width="{paper_w:.1f}" height="{paper_h:.1f}" fill="#ffffff" />',
@@ -579,34 +590,241 @@ class SheetRenderer:
         # Group for Model Geometry
         svg_lines.append('  <g id="drawing-viewport">')
 
-        # 6. Render Low Projection Elements (.projection)
+        # 6. Render Low Projection Elements (.projection / Symbols)
         if cfg.visibility.show_projection:
-            svg_lines.append('    <!-- Projection Elements -->')
+            svg_lines.append('    <!-- Low Projection Elements & Architectural Symbols -->')
             for pe in cut_result.projection_elements:
-                d_str = transformer.polygon_to_paper_path(pe.polygon_coords)
-                if d_str:
-                    svg_lines.append(
-                        f'    <path d="{d_str}" class="projection" fill-rule="evenodd" data-tag="{pe.tag}" data-class="{pe.element_class}" />'
-                    )
+                e_cls = pe.element_class
+                props = pe.properties or {}
+                sym_type = props.get("symbol_type") or props.get("furniture_type") or props.get("sanitary_type")
 
-        # 7. Render Cut Medium Elements (.cut-medium)
+                if e_cls in ("IfcFurniture", "IfcFurnishingElement") or sym_type in ("CHAIR", "TABLE", "DESK", "SOFA", "BED", "COUNTER", "STAGE"):
+                    # Architectural Furniture Symbols
+                    cx, cy = props.get("center", (0.0, 0.0))
+                    rot_deg = props.get("rotation_deg", 0.0)
+                    dims = props.get("dimensions", (0.8, 0.8, 0.8))
+                    w, d = dims[0], dims[1]
+                    rad = math.radians(rot_deg)
+                    cos_a, sin_a = math.cos(rad), math.sin(rad)
+                    ux, uy = cos_a, sin_a
+                    vx, vy = -sin_a, cos_a
+
+                    d_str = transformer.polygon_to_paper_path(pe.polygon_coords)
+
+                    if sym_type == "CHAIR":
+                        if d_str:
+                            svg_lines.append(f'    <path d="{d_str}" class="symbol-furniture" data-tag="{pe.tag}" data-class="IfcFurniture" data-sym="chair" />')
+                        # Curved backrest at rear edge (-vy)
+                        r_hw = (w / 2.0) * 0.85
+                        p1 = (cx - vy * (d * 0.42) - ux * r_hw, cy + vx * (d * 0.42) - uy * r_hw)
+                        p2 = (cx - vy * (d * 0.42) + ux * r_hw, cy + vx * (d * 0.42) + uy * r_hw)
+                        pm = (cx - vy * (d * 0.28), cy + vx * (d * 0.28))
+                        pp1 = transformer.to_paper(p1[0], p1[1])
+                        pp2 = transformer.to_paper(p2[0], p2[1])
+                        ppm = transformer.to_paper(pm[0], pm[1])
+                        svg_lines.append(f'    <path d="M {pp1[0]:.2f} {pp1[1]:.2f} Q {ppm[0]:.2f} {ppm[1]:.2f} {pp2[0]:.2f} {pp2[1]:.2f}" class="symbol-chair-back" />')
+
+                    elif sym_type in ("TABLE", "DESK"):
+                        if d_str:
+                            svg_lines.append(f'    <path d="{d_str}" class="symbol-furniture" data-tag="{pe.tag}" data-class="IfcFurniture" data-sym="{sym_type.lower()}" />')
+                        # Inner beveled/inset line
+                        m_dist = 0.06
+                        if w > 2 * m_dist and d > 2 * m_dist:
+                            in_poly = _create_rotated_box(cx, cy, w - 2 * m_dist, d - 2 * m_dist, rot_deg)
+                            in_d_str = transformer.polygon_to_paper_path(coords_from_geometry(in_poly))
+                            if in_d_str:
+                                svg_lines.append(f'    <path d="{in_d_str}" class="projection" stroke-dasharray="1.0,0.8" opacity="0.6" />')
+
+                    elif sym_type == "SOFA":
+                        if d_str:
+                            svg_lines.append(f'    <path d="{d_str}" class="symbol-furniture" data-tag="{pe.tag}" data-class="IfcFurniture" data-sym="sofa" />')
+                        # Backrest bar
+                        back_poly = _create_rotated_box(cx - vy * (d * 0.36), cy + vx * (d * 0.36), w * 0.95, d * 0.28, rot_deg)
+                        b_str = transformer.polygon_to_paper_path(coords_from_geometry(back_poly))
+                        if b_str:
+                            svg_lines.append(f'    <path d="{b_str}" class="symbol-furniture" fill="#e2e8f0" />')
+                        # Left and right armrests
+                        arm_l = _create_rotated_box(cx - ux * (w * 0.40) + vy * (d * 0.05), cy - uy * (w * 0.40) - vx * (d * 0.05), w * 0.18, d * 0.65, rot_deg)
+                        arm_r = _create_rotated_box(cx + ux * (w * 0.40) + vy * (d * 0.05), cy + uy * (w * 0.40) - vx * (d * 0.05), w * 0.18, d * 0.65, rot_deg)
+                        ls = transformer.polygon_to_paper_path(coords_from_geometry(arm_l))
+                        rs = transformer.polygon_to_paper_path(coords_from_geometry(arm_r))
+                        if ls:
+                            svg_lines.append(f'    <path d="{ls}" class="symbol-furniture" fill="#cbd5e1" />')
+                        if rs:
+                            svg_lines.append(f'    <path d="{rs}" class="symbol-furniture" fill="#cbd5e1" />')
+
+                    elif sym_type == "BED":
+                        if d_str:
+                            svg_lines.append(f'    <path d="{d_str}" class="symbol-furniture" data-tag="{pe.tag}" data-class="IfcFurniture" data-sym="bed" />')
+                        # Pillows
+                        p_w = min(0.60, (w * 0.42))
+                        p_d = min(0.40, (d * 0.22))
+                        h_off = d * 0.33
+                        p1_x = cx - ux * (w * 0.24) + vy * h_off
+                        p1_y = cy - uy * (w * 0.24) - vx * h_off
+                        p2_x = cx + ux * (w * 0.24) + vy * h_off
+                        p2_y = cy + uy * (w * 0.24) - vx * h_off
+                        pil1 = _create_rotated_box(p1_x, p1_y, p_w, p_d, rot_deg)
+                        pil2 = _create_rotated_box(p2_x, p2_y, p_w, p_d, rot_deg)
+                        ps1 = transformer.polygon_to_paper_path(coords_from_geometry(pil1))
+                        ps2 = transformer.polygon_to_paper_path(coords_from_geometry(pil2))
+                        if ps1:
+                            svg_lines.append(f'    <path d="{ps1}" class="symbol-furniture" fill="#ffffff" stroke="#94a3b8" />')
+                        if ps2:
+                            svg_lines.append(f'    <path d="{ps2}" class="symbol-furniture" fill="#ffffff" stroke="#94a3b8" />')
+                        # Blanket fold line
+                        fc_x = cx - vy * (d * 0.15)
+                        fc_y = cy + vx * (d * 0.15)
+                        f_p1 = (fc_x - ux * (w * 0.48), fc_y - uy * (w * 0.48))
+                        f_p2 = (fc_x + ux * (w * 0.48), fc_y + uy * (w * 0.48))
+                        pf1 = transformer.to_paper(f_p1[0], f_p1[1])
+                        pf2 = transformer.to_paper(f_p2[0], f_p2[1])
+                        svg_lines.append(f'    <line x1="{pf1[0]:.2f}" y1="{pf1[1]:.2f}" x2="{pf2[0]:.2f}" y2="{pf2[1]:.2f}" class="projection" stroke="#94a3b8" stroke-width="0.22" />')
+
+                    elif sym_type == "COUNTER":
+                        if d_str:
+                            svg_lines.append(f'    <path d="{d_str}" class="symbol-furniture" data-tag="{pe.tag}" data-class="IfcFurniture" data-sym="counter" fill="#f1f5f9" stroke-width="0.30" />')
+                        c_off = min(0.20, d * 0.25)
+                        in_poly = _create_rotated_box(cx, cy - vy * (c_off / 2.0), w * 0.96, d - c_off, rot_deg)
+                        in_str = transformer.polygon_to_paper_path(coords_from_geometry(in_poly))
+                        if in_str:
+                            svg_lines.append(f'    <path d="{in_str}" class="projection" stroke="#64748b" stroke-dasharray="2.0,1.2" />')
+                    else:
+                        if d_str:
+                            svg_lines.append(f'    <path d="{d_str}" class="symbol-furniture" data-tag="{pe.tag}" data-class="{pe.element_class}" />')
+
+                elif e_cls == "IfcDoorLeaf":
+                    d_str = transformer.polygon_to_paper_path(pe.polygon_coords)
+                    if d_str:
+                        svg_lines.append(f'    <path d="{d_str}" class="symbol-door-leaf" data-tag="{pe.tag}" />')
+                    # 90-degree swing arc
+                    h_pt = props.get("hinge_point")
+                    leaf_w = props.get("width", 0.90)
+                    s_vec = props.get("swing_vector", (0, 1))
+                    if h_pt:
+                        hp_paper = transformer.to_paper(h_pt[0], h_pt[1])
+                        r_paper = leaf_w * (1000.0 / float(cfg.scale))
+                        # Draw dotted swing arc
+                        coords = pe.polygon_coords[0] if pe.polygon_coords else []
+                        if len(coords) >= 2:
+                            p_end = transformer.to_paper(coords[1][0], coords[1][1])
+                            # Start of swing along wall
+                            # Wall direction is orthogonal to swing vector
+                            p_start_model = (h_pt[0] + leaf_w * s_vec[1], h_pt[1] - leaf_w * s_vec[0])
+                            p_start_paper = transformer.to_paper(p_start_model[0], p_start_model[1])
+                            svg_lines.append(f'    <path d="M {p_start_paper[0]:.2f} {p_start_paper[1]:.2f} A {r_paper:.2f} {r_paper:.2f} 0 0 1 {p_end[0]:.2f} {p_end[1]:.2f}" class="symbol-door-swing" />')
+
+                elif e_cls == "IfcSanitaryTerminal":
+                    # Architectural Sanitary Terminal Symbols
+                    stype = props.get("sanitary_type") or "GENERIC"
+                    cx, cy = props.get("center", (0.0, 0.0))
+                    rot_deg = props.get("rotation_deg", 0.0)
+                    dims = props.get("dimensions", (0.6, 0.6, 0.8))
+                    w, d = dims[0], dims[1]
+                    rad = math.radians(rot_deg)
+                    cos_a, sin_a = math.cos(rad), math.sin(rad)
+                    ux, uy = cos_a, sin_a
+                    vx, vy = -sin_a, cos_a
+                    d_str = transformer.polygon_to_paper_path(pe.polygon_coords)
+
+                    if stype == "WC":
+                        c_w, c_d = min(w, 0.50), min(d * 0.35, 0.22)
+                        cis_poly = _create_rotated_box(cx - vy * (d * 0.32), cy + vx * (d * 0.32), c_w, c_d, rot_deg)
+                        cis_d = transformer.polygon_to_paper_path(coords_from_geometry(cis_poly))
+                        if cis_d:
+                            svg_lines.append(f'    <path d="{cis_d}" class="symbol-sanitary" />')
+                        bowl_poly = Point(cx + vy * (d * 0.15), cy - vx * (d * 0.15)).buffer(min(w, d) * 0.35)
+                        bowl_d = transformer.polygon_to_paper_path(coords_from_geometry(bowl_poly))
+                        if bowl_d:
+                            svg_lines.append(f'    <path d="{bowl_d}" class="symbol-sanitary" fill="#ffffff" />')
+
+                    elif stype == "WASHBASIN":
+                        if d_str:
+                            svg_lines.append(f'    <path d="{d_str}" class="symbol-sanitary" />')
+                        in_poly = Point(cx, cy).buffer(min(w, d) * 0.32)
+                        in_d = transformer.polygon_to_paper_path(coords_from_geometry(in_poly))
+                        if in_d:
+                            svg_lines.append(f'    <path d="{in_d}" class="symbol-sanitary" fill="#ffffff" />')
+                        fc_p = transformer.to_paper(cx - vy * (d * 0.28), cy + vx * (d * 0.28))
+                        svg_lines.append(f'    <circle cx="{fc_p[0]:.2f}" cy="{fc_p[1]:.2f}" r="0.6" class="symbol-sanitary" fill="#0284c7" />')
+
+                    elif stype == "BATHTUB":
+                        if d_str:
+                            svg_lines.append(f'    <path d="{d_str}" class="symbol-sanitary" fill="#f8fafc" />')
+                        in_poly = _create_rotated_box(cx, cy, w * 0.82, d * 0.82, rot_deg)
+                        in_d = transformer.polygon_to_paper_path(coords_from_geometry(in_poly))
+                        if in_d:
+                            svg_lines.append(f'    <path d="{in_d}" class="symbol-sanitary" fill="#ffffff" />')
+                    else:
+                        if d_str:
+                            svg_lines.append(f'    <path d="{d_str}" class="symbol-sanitary" />')
+
+                elif e_cls == "IfcStairWalkingLine":
+                    sx, sy = props.get("start", (0, 0))
+                    ex, ey = props.get("end", (0, 0))
+                    p1 = transformer.to_paper(sx, sy)
+                    p2 = transformer.to_paper(ex, ey)
+                    svg_lines.append(f'    <line x1="{p1[0]:.2f}" y1="{p1[1]:.2f}" x2="{p2[0]:.2f}" y2="{p2[1]:.2f}" class="symbol-stair-path" />')
+                    svg_lines.append(f'    <circle cx="{p1[0]:.2f}" cy="{p1[1]:.2f}" r="1.2" class="symbol-stair-path" fill="#ffffff" stroke="#2563eb" stroke-width="0.30" />')
+                    p_dx = p2[0] - p1[0]
+                    p_dy = p2[1] - p1[1]
+                    p_l = math.hypot(p_dx, p_dy)
+                    if p_l > 1e-4:
+                        pux, puy = p_dx / p_l, p_dy / p_l
+                        arr_len = 2.5
+                        arr_w = 1.6
+                        a1_x = p2[0] - pux * arr_len - puy * arr_w
+                        a1_y = p2[1] - puy * arr_len + pux * arr_w
+                        a2_x = p2[0] - pux * arr_len + puy * arr_w
+                        a2_y = p2[1] - puy * arr_len - pux * arr_w
+                        svg_lines.append(f'    <polygon points="{p2[0]:.2f},{p2[1]:.2f} {a1_x:.2f},{a1_y:.2f} {a2_x:.2f},{a2_y:.2f}" class="symbol-stair-arrow" />')
+                    mid_p = ((p1[0] + p2[0]) / 2.0, (p1[1] + p2[1]) / 2.0)
+                    svg_lines.append(f'    <rect x="{mid_p[0] - 2.8:.2f}" y="{mid_p[1] - 1.5:.2f}" width="5.6" height="3.0" fill="#ffffff" stroke="none" />')
+                    svg_lines.append(f'    <text x="{mid_p[0]:.2f}" y="{mid_p[1]:.2f}" class="symbol-stair-text">UP</text>')
+
+                elif e_cls == "IfcStairBreakLine":
+                    d_str = transformer.polygon_to_paper_path(pe.polygon_coords)
+                    if d_str:
+                        svg_lines.append(f'    <path d="{d_str}" class="symbol-break-line" />')
+
+                else:
+                    d_str = transformer.polygon_to_paper_path(pe.polygon_coords)
+                    if d_str:
+                        svg_lines.append(f'    <path d="{d_str}" class="projection" fill-rule="evenodd" data-tag="{pe.tag}" data-class="{pe.element_class}" />')
+
+        # 7. Render Cut Medium Elements (.cut-medium / Door/Window frames)
         if cfg.visibility.show_cut_medium:
-            svg_lines.append('    <!-- Cut Medium Elements -->')
+            svg_lines.append('    <!-- Cut Medium Elements (Doors, Windows, Frames) -->')
             for ce in cut_result.medium_cut_elements:
                 d_str = transformer.polygon_to_paper_path(ce.polygon_coords)
-                if d_str:
-                    svg_lines.append(
-                        f'    <path d="{d_str}" class="cut-medium" fill-rule="evenodd" data-tag="{ce.tag}" data-class="{ce.element_class}" />'
-                    )
+                if not d_str:
+                    continue
 
-        # 8. Render Cut Heavy Elements (.cut-heavy)
+                if ce.element_class == "IfcWindow":
+                    svg_lines.append(f'    <path d="{d_str}" class="symbol-window-frame" data-tag="{ce.tag}" data-class="IfcWindow" />')
+                    # Double glazing line along centerline
+                    if ce.centerline and isinstance(ce.centerline, LineString):
+                        c_pts = list(ce.centerline.coords)
+                        if len(c_pts) >= 2:
+                            p_start = transformer.to_paper(c_pts[0][0], c_pts[0][1])
+                            p_end = transformer.to_paper(c_pts[1][0], c_pts[1][1])
+                            svg_lines.append(f'    <line x1="{p_start[0]:.2f}" y1="{p_start[1]:.2f}" x2="{p_end[0]:.2f}" y2="{p_end[1]:.2f}" class="symbol-window-glaz" />')
+                elif ce.element_class == "IfcDoor":
+                    svg_lines.append(f'    <path d="{d_str}" class="cut-medium" fill-rule="evenodd" data-tag="{ce.tag}" data-class="IfcDoor" />')
+                elif ce.hatch_pattern:
+                    svg_lines.append(f'    <path d="{d_str}" class="cut-medium" style="fill: url(#hatch-{ce.hatch_pattern});" fill-rule="evenodd" data-tag="{ce.tag}" data-class="{ce.element_class}" />')
+                else:
+                    svg_lines.append(f'    <path d="{d_str}" class="cut-medium" fill-rule="evenodd" data-tag="{ce.tag}" data-class="{ce.element_class}" />')
+
+        # 8. Render Cut Heavy Elements (.cut-heavy / Hatched Walls & Columns)
         if cfg.visibility.show_cut_heavy:
-            svg_lines.append('    <!-- Cut Heavy Elements -->')
+            svg_lines.append('    <!-- Cut Heavy Elements (Hatched Walls & Columns) -->')
             for ce in cut_result.heavy_cut_elements:
                 d_str = transformer.polygon_to_paper_path(ce.polygon_coords)
                 if d_str:
+                    hatch_style = f' style="fill: url(#hatch-{ce.hatch_pattern});"' if ce.hatch_pattern else ""
                     svg_lines.append(
-                        f'    <path d="{d_str}" class="cut-heavy" fill-rule="evenodd" data-tag="{ce.tag}" data-class="{ce.element_class}" />'
+                        f'    <path d="{d_str}" class="cut-heavy"{hatch_style} fill-rule="evenodd" data-tag="{ce.tag}" data-class="{ce.element_class}" />'
                     )
 
         # 9. Render Grid Lines & Bubbles (.grid-line, .grid-bubble, .grid-text)

@@ -61,6 +61,77 @@ svg:not(#measurement-layer) {
   stroke-width: 0.35px;
 }
 
+/* 2D Architectural Plan Symbols */
+.symbol-furniture {
+  stroke: #334155;
+  fill: #f8fafc;
+  stroke-width: 0.20px;
+  stroke-linejoin: round;
+}
+
+.symbol-chair-back {
+  stroke: #1e293b;
+  fill: none;
+  stroke-width: 0.28px;
+  stroke-linecap: round;
+}
+
+.symbol-door-swing {
+  stroke: #64748b;
+  stroke-width: 0.18px;
+  stroke-dasharray: 1.5px 1.0px;
+  fill: none;
+}
+
+.symbol-door-leaf {
+  stroke: #0f172a;
+  stroke-width: 0.35px;
+  stroke-linecap: round;
+}
+
+.symbol-window-glaz {
+  stroke: #3b82f6;
+  stroke-width: 0.20px;
+}
+
+.symbol-window-frame {
+  stroke: #0f172a;
+  fill: #f1f5f9;
+  stroke-width: 0.30px;
+}
+
+.symbol-sanitary {
+  stroke: #0284c7;
+  fill: #f0f9ff;
+  stroke-width: 0.22px;
+}
+
+.symbol-stair-path {
+  stroke: #2563eb;
+  stroke-width: 0.25px;
+  fill: none;
+}
+
+.symbol-stair-arrow {
+  fill: #2563eb;
+  stroke: none;
+}
+
+.symbol-stair-text {
+  fill: #2563eb;
+  font-family: 'Prompt', 'Sarabun', sans-serif;
+  font-size: 2.0px;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.symbol-break-line {
+  stroke: #0f172a;
+  stroke-width: 0.35px;
+  fill: none;
+}
+
 .projection {
   stroke: #475569;
   fill: none;
