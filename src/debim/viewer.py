@@ -92,28 +92,7 @@ def parse_framing_profile(profile: Optional[str], length: float) -> Dict[str, An
     }
 
 
-def _get_element_storey(resolved_obj: Any) -> Optional[str]:
-    if hasattr(resolved_obj, "element") and resolved_obj.element:
-        elem = resolved_obj.element
-        if hasattr(elem, "placement") and elem.placement:
-            pl = elem.placement
-            if hasattr(pl, "storey") and pl.storey:
-                return str(pl.storey)
-            if hasattr(pl, "base_storey") and pl.base_storey:
-                return str(pl.base_storey)
-            if hasattr(pl, "from_storey") and pl.from_storey:
-                return str(pl.from_storey)
-    return None
-
-
 def extract_profile_viewer_dim(prof: Any, length_or_height: float, is_column: bool = True) -> Dict[str, Any]:
-    if prof is None:
-        return {
-            "shape": "BOX",
-            ("height" if is_column else "length"): length_or_height,
-            "width": 0.3,
-            "depth": 0.3,
-        }
     shape = getattr(prof, "shape", "BOX")
     len_key = "height" if is_column else "length"
     dim: Dict[str, Any] = {
@@ -123,44 +102,44 @@ def extract_profile_viewer_dim(prof: Any, length_or_height: float, is_column: bo
         "depth": getattr(prof, "depth", 0.3),
     }
     if shape == "CIRCULAR":
-        dim["radius"] = getattr(prof, "radius", getattr(prof, "diameter", 0.3) / 2.0)
-        dim["diameter"] = getattr(prof, "diameter", dim["radius"] * 2.0)
+        dim["radius"] = prof.radius
+        dim["diameter"] = prof.diameter
     elif shape == "ELLIPSE":
-        dim["semi_major_axis"] = getattr(prof, "semi_major_axis", 0.15)
-        dim["semi_minor_axis"] = getattr(prof, "semi_minor_axis", 0.10)
+        dim["semi_major_axis"] = prof.semi_major_axis
+        dim["semi_minor_axis"] = prof.semi_minor_axis
     elif shape in ("ISHAPE", "I", "H"):
-        dim["overall_width"] = getattr(prof, "overall_width", getattr(prof, "width", 0.2))
-        dim["overall_depth"] = getattr(prof, "overall_depth", getattr(prof, "depth", 0.2))
-        dim["web_thickness"] = getattr(prof, "web_thickness", 0.008)
-        dim["flange_thickness"] = getattr(prof, "flange_thickness", 0.012)
-        dim["width"] = dim["overall_width"]
-        dim["depth"] = dim["overall_depth"]
+        dim["overall_width"] = prof.overall_width
+        dim["overall_depth"] = prof.overall_depth
+        dim["web_thickness"] = prof.web_thickness
+        dim["flange_thickness"] = prof.flange_thickness
+        dim["width"] = prof.overall_width
+        dim["depth"] = prof.overall_depth
     elif shape in ("LSHAPE", "L"):
-        dim["width"] = getattr(prof, "width", 0.05)
-        dim["depth"] = getattr(prof, "depth", 0.05)
-        dim["thickness"] = getattr(prof, "thickness", 0.005)
+        dim["width"] = prof.width
+        dim["depth"] = prof.depth
+        dim["thickness"] = prof.thickness
     elif shape in ("USHAPE", "U", "CSHAPE", "C"):
-        dim["flange_width"] = getattr(prof, "flange_width", getattr(prof, "width", 0.075))
-        dim["depth"] = getattr(prof, "depth", 0.15)
-        dim["web_thickness"] = getattr(prof, "web_thickness", 0.0065)
-        dim["flange_thickness"] = getattr(prof, "flange_thickness", 0.01)
-        dim["width"] = dim["flange_width"]
+        dim["flange_width"] = prof.flange_width
+        dim["depth"] = prof.depth
+        dim["web_thickness"] = prof.web_thickness
+        dim["flange_thickness"] = prof.flange_thickness
+        dim["width"] = prof.flange_width
     elif shape in ("TSHAPE", "T"):
-        dim["flange_width"] = getattr(prof, "flange_width", getattr(prof, "width", 0.15))
-        dim["depth"] = getattr(prof, "depth", 0.15)
-        dim["web_thickness"] = getattr(prof, "web_thickness", 0.006)
-        dim["flange_thickness"] = getattr(prof, "flange_thickness", 0.009)
-        dim["width"] = dim["flange_width"]
+        dim["flange_width"] = prof.flange_width
+        dim["depth"] = prof.depth
+        dim["web_thickness"] = prof.web_thickness
+        dim["flange_thickness"] = prof.flange_thickness
+        dim["width"] = prof.flange_width
     elif shape in ("RHS", "RECTANGLE_HOLLOW", "BOX_HOLLOW"):
-        dim["width"] = getattr(prof, "width", 0.10)
-        dim["depth"] = getattr(prof, "depth", 0.05)
-        dim["wall_thickness"] = getattr(prof, "wall_thickness", getattr(prof, "thickness", 0.0032))
+        dim["width"] = prof.width
+        dim["depth"] = prof.depth
+        dim["wall_thickness"] = prof.wall_thickness
     elif shape in ("CHS", "CIRCLE_HOLLOW", "PIPE_HOLLOW"):
-        dim["radius"] = getattr(prof, "radius", getattr(prof, "diameter", 0.10) / 2.0)
-        dim["diameter"] = getattr(prof, "diameter", dim["radius"] * 2.0)
-        dim["wall_thickness"] = getattr(prof, "wall_thickness", getattr(prof, "thickness", 0.0032))
-        dim["width"] = dim["diameter"]
-        dim["depth"] = dim["diameter"]
+        dim["radius"] = prof.radius
+        dim["diameter"] = prof.diameter
+        dim["wall_thickness"] = prof.wall_thickness
+        dim["width"] = prof.diameter
+        dim["depth"] = prof.diameter
     elif shape in ("ARBITRARY", "ARBITRARY_CLOSED", "POLYGON", "ARBITRARY_WITH_VOIDS"):
         dim["points"] = getattr(prof, "outer_curve", None) or getattr(prof, "points", None) or []
         dim["voids"] = getattr(prof, "inner_curves", None) or getattr(prof, "voids", None) or []
@@ -198,7 +177,6 @@ def generate_viewer_html(
 
     # Footings & Piles
     for footing in resolved.footings:
-        st = _get_element_storey(footing)
         elements_data.append({
             "tag": footing.tag,
             "class": "IfcFooting",
@@ -216,7 +194,6 @@ def generate_viewer_html(
             },
             "color": "#6A6A6A",
             "layer": footing.layer,
-            "storey": st,
         })
 
         for pile in footing.piles:
@@ -237,12 +214,10 @@ def generate_viewer_html(
                 },
                 "color": "#4F4F4F",
                 "layer": pile.layer,
-                "storey": st,
             })
 
     # Columns
     for col in resolved.columns:
-        st = _get_element_storey(col)
         prof = col.element.profile
         dim = extract_profile_viewer_dim(prof, col.height, is_column=True)
 
@@ -258,12 +233,10 @@ def generate_viewer_html(
             "dimensions": dim,
             "color": "#808080",
             "layer": col.layer,
-            "storey": st,
         })
 
     # Beams
     for beam in resolved.beams:
-        st = _get_element_storey(beam)
         prof = beam.element.profile
         dim = extract_profile_viewer_dim(prof, beam.span_length, is_column=False)
 
@@ -278,7 +251,6 @@ def generate_viewer_html(
                 "layer": beam.layer,
                 "material": beam.element.material,
                 "dimensions": dim,
-                "storey": st,
             })
         else:
             cx = (beam.start_point[0] + beam.end_point[0]) / 2.0
@@ -295,12 +267,10 @@ def generate_viewer_html(
                 "dimensions": dim,
                 "color": "#9A9A9A",
                 "layer": beam.layer,
-                "storey": st,
             })
 
     # Slabs
     for slab in resolved.slabs:
-        st = _get_element_storey(slab)
         xs = [pt[0] for pt in slab.polygon]
         ys = [pt[1] for pt in slab.polygon]
         min_x, max_x = min(xs), max(xs)
@@ -330,68 +300,6 @@ def generate_viewer_html(
             "transparent": True,
             "opacity": 0.85,
             "layer": slab.layer,
-            "storey": st,
-        })
-
-    # Spaces / Functional Blocks
-    for space in getattr(resolved, "spaces", []):
-        st = _get_element_storey(space)
-        if not getattr(space, "polygon", None) or len(space.polygon) < 3:
-            continue
-        xs = [pt[0] for pt in space.polygon]
-        ys = [pt[1] for pt in space.polygon]
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
-        w = max_x - min_x
-        d = max_y - min_y
-        h = getattr(space, "height", 2.8) or 2.8
-        cx = (min_x + max_x) / 2.0
-        cy = (min_y + max_y) / 2.0
-        base_z = space.polygon[0][2] if len(space.polygon[0]) > 2 else 0.0
-        cz = base_z + h / 2.0
-
-        # Space color coding by room type
-        s_name = (getattr(space, "tag", "") + " " + (getattr(space, "name", "") or "")).lower()
-        if any(k in s_name for k in ["bed", "นอน"]):
-            sp_color = "#A78BFA"  # Light Purple
-        elif any(k in s_name for k in ["bath", "toilet", "น้ำ"]):
-            sp_color = "#38BDF8"  # Cyan/Sky
-        elif any(k in s_name for k in ["living", "พักผ่อน", "นั่งเล่น"]):
-            sp_color = "#FBBF24"  # Amber
-        elif any(k in s_name for k in ["dining", "ทานอาหาร"]):
-            sp_color = "#F59E0B"  # Orange
-        elif any(k in s_name for k in ["kitchen", "ครัว"]):
-            sp_color = "#FB7185"  # Rose
-        elif any(k in s_name for k in ["carport", "จอดรถ"]):
-            sp_color = "#34D399"  # Mint Green
-        elif any(k in s_name for k in ["porch", "balcony", "เฉลียง", "ระเบียง"]):
-            sp_color = "#A3E635"  # Lime
-        elif any(k in s_name for k in ["stair", "บันได"]):
-            sp_color = "#E879F9"  # Fuchsia
-        elif any(k in s_name for k in ["hall", "โถง"]):
-            sp_color = "#94A3B8"  # Slate
-        else:
-            sp_color = "#60A5FA"
-
-        elements_data.append({
-            "tag": space.tag,
-            "class": "IfcSpace",
-            "member_name": space.name or space.tag,
-            "material": "Functional Space Block",
-            "position": [cx, cy, cz],
-            "rotation": [0, 0, 0],
-            "dimensions": {
-                "width": w,
-                "depth": d,
-                "height": h,
-                "polygon": [[pt[0], pt[1]] for pt in space.polygon],
-                "area": getattr(space, "net_floor_area", 0.0),
-            },
-            "color": sp_color,
-            "transparent": True,
-            "opacity": 0.28,
-            "layer": getattr(space.element, "layer", "architecture/spaces") if hasattr(space, "element") and hasattr(space.element, "layer") and space.element.layer else "architecture/spaces",
-            "storey": st,
         })
 
     # Stairs Assembly
@@ -603,7 +511,6 @@ def generate_viewer_html(
 
     # Walls & Children
     for wall in resolved.walls:
-        st = _get_element_storey(wall)
         dx = wall.end_point[0] - wall.start_point[0]
         dy = wall.end_point[1] - wall.start_point[1]
         angle = math.atan2(dy, dx)
@@ -611,11 +518,7 @@ def generate_viewer_html(
         cy = (wall.start_point[1] + wall.end_point[1]) / 2.0
         cz = wall.start_point[2] + wall.height / 2.0
 
-        mat_str = str(wall.element.material or "").lower()
-        tag_str = str(wall.tag or "").lower()
-        is_glass = "glass" in mat_str or "glass" in tag_str or "กระจก" in mat_str or "กระจก" in tag_str
-
-        wall_dict = {
+        elements_data.append({
             "tag": wall.tag,
             "class": "IfcWall",
             "material": wall.element.material,
@@ -626,18 +529,11 @@ def generate_viewer_html(
                 "thickness": wall.thickness,
                 "height": wall.height,
             },
-            "color": "#00FFFF" if is_glass else "#D3D3D3",
+            "color": "#D3D3D3",
             "layer": wall.layer,
-            "storey": st,
-        }
-        if is_glass:
-            wall_dict["transparent"] = True
-            wall_dict["opacity"] = 0.35
-
-        elements_data.append(wall_dict)
+        })
 
         for child in wall.children:
-            ch_st = _get_element_storey(child) or st
             if isinstance(child, ResolvedDoor):
                 elements_data.append({
                     "tag": child.tag,
@@ -662,7 +558,6 @@ def generate_viewer_html(
                     },
                     "color": "#8B4513",
                     "layer": child.layer,
-                    "storey": ch_st,
                 })
             elif isinstance(child, ResolvedWindow):
                 elements_data.append({
@@ -684,7 +579,6 @@ def generate_viewer_html(
                     "transparent": True,
                     "opacity": 0.6,
                     "layer": child.layer,
-                    "storey": ch_st,
                 })
 
     # Roofs
@@ -1325,24 +1219,6 @@ def generate_viewer_html(
             "layer": md.layer,
         })
 
-    # Discrete Accessories (IfcDiscreteAccessory)
-    for da in getattr(resolved, "discrete_accessories", []) or []:
-        elements_data.append({
-            "tag": da.tag,
-            "class": "IfcDiscreteAccessory",
-            "predefined_type": da.predefined_type,
-            "material": da.element.material or "Steel Accessory",
-            "position": [da.position[0], da.position[1], da.position[2] + da.height / 2.0],
-            "rotation": list(da.rotation) if da.rotation else [0, 0, 0],
-            "dimensions": {
-                "width": da.width,
-                "depth": da.depth,
-                "height": da.height,
-            },
-            "color": "#475569",
-            "layer": da.layer,
-        })
-
     # Civil Infrastructure Bearings (IFC4.3)
     for br in getattr(resolved, "bearings", []) or []:
         elements_data.append({
@@ -1663,44 +1539,6 @@ def generate_viewer_html(
                 "layer": plate.layer,
             })
 
-    # Furniture & Furnishing Elements
-    for furn in getattr(resolved, "furniture", []) or []:
-        w, d, h = furn.dimensions
-        cz = furn.position[2] + h / 2.0
-        rot = [0.0, 0.0, 0.0]
-        if furn.rotation:
-            rot = [math.radians(furn.rotation[0]), math.radians(furn.rotation[1]), math.radians(furn.rotation[2])]
-
-        tag_lower = furn.tag.lower()
-        if "bed" in tag_lower:
-            color = "#C5A880"
-        elif any(kw in tag_lower for kw in ["desk", "table"]):
-            color = "#D4A373"
-        elif "chair" in tag_lower:
-            color = "#8D99AE"
-        elif any(kw in tag_lower for kw in ["sofa", "couch"]):
-            color = "#6C757D"
-        elif any(kw in tag_lower for kw in ["cabinet", "credenza", "shelf"]):
-            color = "#8C6D53"
-        else:
-            color = "#B58A63"
-
-        elements_data.append({
-            "tag": furn.tag,
-            "class": furn.ifc_class,
-            "material": furn.element.material or "Furniture Material",
-            "position": [furn.position[0], furn.position[1], cz],
-            "rotation": rot,
-            "dimensions": {
-                "width": w,
-                "depth": d,
-                "height": h,
-            },
-            "color": color,
-            "layer": furn.layer,
-            "properties": furn.element.properties or {},
-        })
-
     # Custom Elements
     for custom in resolved.custom_elements:
         tag_upper = custom.tag.upper()
@@ -1711,17 +1549,16 @@ def generate_viewer_html(
         if custom.resolved_solid:
             s = custom.resolved_solid
             if isinstance(s, ResolvedSweptDisk):
-                is_fit = "fitting" in layer_lower or "fitting" in tag_lower or any(kw in tag_lower for kw in ["elbow", "tee", "transition", "bend", "reducer", "cross"])
                 elem_dict = {
                     "tag": custom.tag,
-                    "class": "IfcFlowFitting" if is_fit else "IfcCustomElement",
+                    "class": "IfcCustomElement",
                     "geometry_type": "swept_disk",
                     "material": "Swept Disk Asset",
                     "position": list(s.centroid),
                     "points": list(s.directrix),
                     "radius": s.radius,
                     "inner_radius": s.inner_radius,
-                    "color": "#0284C7" if is_fit else "#38BDF8",
+                    "color": "#38BDF8",
                     "layer": custom.layer,
                     "dimensions": s.bounding_box,
                 }
@@ -2601,6 +2438,53 @@ def generate_viewer_html(
                     "p2_pos": list(p2.world_position),
                 })
 
+    # Furniture & Furnishing Elements
+    for furn in getattr(resolved, "furniture", []) or []:
+        f_class = getattr(furn, "ifc_class", None) or "IfcFurniture"
+        f_tag = furn.tag
+        f_layer = getattr(furn, "layer", None) or "interior/furniture"
+        f_mat = getattr(furn.element, "material", None) or "Furniture Asset"
+        w, d, h = furn.dimensions
+        f_dims = {
+            "width": w,
+            "depth": d,
+            "height": h,
+        }
+        cz = furn.position[2] + h / 2.0
+
+        tag_lower = f_tag.lower()
+        furn_type = "furniture"
+        if any(kw in tag_lower for kw in ["desk", "table"]):
+            color = "#C18C5D"
+            furn_type = "table"
+        elif any(kw in tag_lower for kw in ["chair", "seat", "bench", "stool"]):
+            color = "#4B5563"
+            furn_type = "chair"
+        elif any(kw in tag_lower for kw in ["sofa", "couch"]):
+            color = "#64748B"
+            furn_type = "sofa"
+        elif "bed" in tag_lower:
+            color = "#C5A880"
+            furn_type = "bed"
+        else:
+            color = "#B58A63"
+
+        elements_data.append({
+            "tag": f_tag,
+            "class": f_class,
+            "furniture_type": furn_type,
+            "material": f_mat,
+            "position": [furn.position[0], furn.position[1], cz],
+            "rotation": [
+                math.radians(furn.rotation[0]),
+                math.radians(furn.rotation[1]),
+                math.radians(furn.rotation[2]),
+            ],
+            "dimensions": f_dims,
+            "color": color,
+            "layer": f_layer,
+        })
+
     # Declarative Proxies (Universal Proxy Engine)
     for proxy in resolved.proxies:
         p_class = proxy.ifc_class or "IfcBuildingElementProxy"
@@ -2633,9 +2517,40 @@ def generate_viewer_html(
 
         cz = proxy.position[2] + h / 2.0
 
-        color = "#10B981" if any(kw in p_class for kw in ["Energy", "Chiller", "Compressor", "Unitary", "Burner", "Solar"]) else "#8B5CF6"
+        tag_lower = p_tag.lower()
+        layer_lower = (p_layer or "").lower()
+        class_lower = p_class.lower()
+        is_furn = (
+            "furn" in class_lower
+            or "furn" in layer_lower
+            or any(kw in tag_lower for kw in ["chair", "desk", "table", "bed", "sofa", "cabinet", "shelf", "bench", "seat"])
+        )
 
-        elements_data.append({
+        furn_type = None
+        if is_furn:
+            if not p_layer or "proxy" in p_layer:
+                p_layer = "interior/furniture"
+            if any(kw in tag_lower for kw in ["desk", "table"]):
+                color = "#C18C5D"
+                furn_type = "table"
+            elif any(kw in tag_lower for kw in ["chair", "seat", "bench"]):
+                color = "#4B5563"
+                furn_type = "chair"
+            elif any(kw in tag_lower for kw in ["sofa", "couch"]):
+                color = "#64748B"
+                furn_type = "sofa"
+            elif "bed" in tag_lower:
+                color = "#C5A880"
+                furn_type = "bed"
+            else:
+                color = "#B58A63"
+                furn_type = "furniture"
+        elif any(kw in p_class for kw in ["Energy", "Chiller", "Compressor", "Unitary", "Burner", "Solar"]):
+            color = "#10B981"
+        else:
+            color = "#8B5CF6"
+
+        elem_entry = {
             "tag": p_tag,
             "class": p_class,
             "predefined_type": proxy.predefined_type,
@@ -2650,57 +2565,11 @@ def generate_viewer_html(
             "color": color,
             "layer": p_layer,
             "properties": p_props,
-        })
-
-    # Auto-detected Penetration Sleeves
-    for sleeve in getattr(resolved, "penetration_sleeves", []) or []:
-        s_tag = sleeve.proxy_element.get("tag", "SLEEVE") if isinstance(sleeve.proxy_element, dict) else getattr(sleeve, "id", "SLEEVE")
-        s_pos = sleeve.intersection_point
-        d_sleeve = sleeve.sleeve_diameter
-        s_len = sleeve.sleeve_length
-        elements_data.append({
-            "tag": s_tag,
-            "class": "IfcBuildingElementProxy",
-            "predefined_type": "PROT_SLEEVE",
-            "layer": "mep/plumbing/sleeves",
-            "position": list(s_pos),
-            "dimensions": {
-                "shape": "CYLINDER",
-                "radius": d_sleeve / 2.0,
-                "width": d_sleeve,
-                "depth": d_sleeve,
-                "height": s_len,
-            },
-            "color": "#94A3B8",
-            "material": "Steel Sleeve",
-            "properties": {
-                "Penetration": {
-                    "Host": sleeve.host_tag,
-                    "PipeTag": sleeve.pipe_tag,
-                    "PipeDiameter": sleeve.pipe_diameter,
-                    "SleeveDiameter": sleeve.sleeve_diameter,
-                }
-            },
-            "storey": "L1",
-        })
-
-    facade_tess = getattr(resolved, "facade_tessellation", None)
-    if facade_tess is None and hasattr(resolved, "manifest") and resolved.manifest:
-        if resolved.manifest.facade and resolved.manifest.facade.envelope_skin and resolved.manifest.geometry_rules:
-            from debim.geometry.tessellation import generate_facade_tessellation
-            facade_tess = generate_facade_tessellation(resolved.manifest)
-
-    facade_data = None
-    if facade_tess and facade_tess.panels:
-        facade_data = {
-            "target_panel_size": facade_tess.target_panel_size,
-            "joint_gap": facade_tess.joint_gap,
-            "material": facade_tess.material,
-            "pattern": facade_tess.pattern,
-            "panel_count": facade_tess.total_panel_count,
-            "panels": [p.to_dict() for p in facade_tess.panels],
         }
+        if furn_type:
+            elem_entry["furniture_type"] = furn_type
 
+        elements_data.append(elem_entry)
     scene_json = json.dumps({
         "project": {
             "id": proj.id,
@@ -2712,7 +2581,6 @@ def generate_viewer_html(
         "elements": elements_data,
         "ports": ports_data,
         "topology_connections": topology_conns,
-        "facade": facade_data,
     }, indent=2, ensure_ascii=False)
 
     html_content = f"""<!DOCTYPE html>
@@ -2759,32 +2627,15 @@ def generate_viewer_html(
             top: 16px;
             left: 16px;
             width: 310px;
-            max-height: calc(100vh - 32px);
+            max-height: calc(100vh - 120px);
             display: flex;
             flex-direction: column;
         }}
         #layer-tree-container {{
             overflow-y: auto;
-            overflow-x: hidden;
-            max-height: calc(100vh - 160px);
+            max-height: calc(100vh - 280px);
             margin-top: 8px;
-            padding-right: 6px;
-            scrollbar-width: thin;
-            scrollbar-color: #3b82f6 rgba(15, 23, 42, 0.6);
-        }}
-        #layer-tree-container::-webkit-scrollbar {{
-            width: 6px;
-        }}
-        #layer-tree-container::-webkit-scrollbar-track {{
-            background: rgba(15, 23, 42, 0.6);
-            border-radius: 4px;
-        }}
-        #layer-tree-container::-webkit-scrollbar-thumb {{
-            background: #3b82f6;
-            border-radius: 4px;
-        }}
-        #layer-tree-container::-webkit-scrollbar-thumb:hover {{
-            background: #60a5fa;
+            padding-right: 4px;
         }}
         .search-box {{
             width: 100%;
@@ -2865,6 +2716,13 @@ def generate_viewer_html(
         }}
         .tree-children.collapsed {{
             display: none;
+        }}
+        #info-panel {{
+            bottom: 16px;
+            left: 16px;
+            width: 310px;
+            max-height: 200px;
+            overflow-y: auto;
         }}
         #inspector-panel {{
             top: 16px;
@@ -2999,10 +2857,6 @@ def generate_viewer_html(
         <button id="section-btn" class="view-btn" onclick="toggleSectionPlaneUI()">Section</button>
         <button id="measure-btn" class="view-btn" onclick="toggleMeasureTool()">Measure</button>
         <button id="clear-measure-btn" class="view-btn" onclick="clearMeasurements()" style="display:none;">Clear</button>
-        <span style="display:inline-block; width:1px; height:16px; background:rgba(255,255,255,0.2); margin:0 4px;"></span>
-        <span style="font-size:0.7rem; color:#94a3b8; font-weight:600; margin-right:2px;">Storey:</span>
-        <button class="view-btn storey-btn active" data-storey="all" onclick="filterStorey('all')">All Storeys</button>
-        <span id="storey-toolbar-btns" style="display:inline-flex; gap:4px;"></span>
     </div>
 
     <div id="section-plane-panel" class="ui-panel" style="display: none; top: 60px; left: 50%; transform: translateX(-50%); width: 380px; z-index: 1000;">
@@ -3046,6 +2900,14 @@ def generate_viewer_html(
         <div><span style="color:#ff4d4d; font-weight:bold;">🔴 Axis X:</span> Width (E-W)</div>
         <div><span style="color:#4dff4d; font-weight:bold;">🟢 Axis Y:</span> Depth (N-S)</div>
         <div><span style="color:#4da6ff; font-weight:bold;">🔵 Axis Z:</span> Elevation</div>
+    </div>
+
+    <div id="info-panel" class="ui-panel">
+        <h1>{proj.name}</h1>
+        <div class="subtitle">Project ID: <span id="project-id">{proj.id}</span></div>
+
+        <div class="section-title">Storeys</div>
+        <div id="storeys-list"></div>
     </div>
 
     <div id="inspector-panel" class="ui-panel">
@@ -3146,22 +3008,7 @@ def generate_viewer_html(
             }}
         }}
 
-        // Storey isolation filter state
-        let activeStoreyFilter = "all";
-
-        window.filterStorey = function(storeyId) {{
-            activeStoreyFilter = storeyId;
-            document.querySelectorAll('.storey-btn').forEach(btn => {{
-                if (btn.dataset.storey === storeyId) {{
-                    btn.classList.add('active');
-                }} else {{
-                    btn.classList.remove('active');
-                }}
-            }});
-            update3DVisibility();
-        }};
-
-        // Setup Section Plane slider & quick buttons & storey toolbar buttons
+        // Setup Section Plane slider & quick buttons
         setTimeout(() => {{
             const slider = document.getElementById('cut-height-slider');
             if (slider) {{
@@ -3172,10 +3019,8 @@ def generate_viewer_html(
                 document.getElementById('cut-z-display').textContent = currentCutZ.toFixed(2) + ' m';
             }}
             const quickBtnsContainer = document.getElementById('storey-quick-btns');
-            const storeyToolbarContainer = document.getElementById('storey-toolbar-btns');
-
-            sceneData.storeys.forEach(s => {{
-                if (quickBtnsContainer) {{
+            if (quickBtnsContainer) {{
+                sceneData.storeys.forEach(s => {{
                     const btn = document.createElement('button');
                     btn.className = 'batch-btn';
                     btn.textContent = `${{s.name}} (+${{s.elevation.toFixed(1)}}m)`;
@@ -3187,17 +3032,8 @@ def generate_viewer_html(
                         onSectionSliderChange(targetZ);
                     }};
                     quickBtnsContainer.appendChild(btn);
-                }}
-
-                if (storeyToolbarContainer) {{
-                    const btn = document.createElement('button');
-                    btn.className = 'view-btn storey-btn';
-                    btn.dataset.storey = s.id;
-                    btn.textContent = s.name || s.id;
-                    btn.onclick = () => filterStorey(s.id);
-                    storeyToolbarContainer.appendChild(btn);
-                }}
-            }});
+                }});
+            }}
         }}, 100);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -3219,6 +3055,15 @@ def generate_viewer_html(
         const dirLight2 = new THREE.DirectionalLight(0xaaccff, 0.4);
         dirLight2.position.set(70, 60, 80);
         scene.add(dirLight2);
+
+        // Build UI - Storeys list
+        const storeysListEl = document.getElementById('storeys-list');
+        sceneData.storeys.forEach(s => {{
+            const row = document.createElement('div');
+            row.className = 'data-row';
+            row.innerHTML = `<span class="data-label">${{s.name}} (${{s.id}})</span><span class="data-value">+${{s.elevation.toFixed(2)}}m (h: ${{s.height.toFixed(2)}}m)</span>`;
+            storeysListEl.appendChild(row);
+        }});
 
         // Helper to create circular grid bubble sprites
         function makeGridSprite(name, color) {{
@@ -3337,36 +3182,13 @@ def generate_viewer_html(
             let geometry;
             const dim = data.dimensions || {{ width: 1, depth: 1, height: 1 }};
             if (data.class === "IfcColumn") {{
-                if (dim.shape === "CIRCULAR") {{
+                if (dim.shape === "CIRCULAR" || dim.shape === "CHS") {{
                     geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.height, 32);
                     geometry.rotateX(Math.PI / 2);
-                }} else if (dim.shape === "CHS" || dim.shape === "CIRCLE_HOLLOW" || dim.shape === "PIPE_HOLLOW") {{
-                    const r = dim.radius || (dim.diameter ? dim.diameter / 2 : 0.05);
-                    const t = dim.wall_thickness || 0.0032;
-                    const s = new THREE.Shape();
-                    s.absarc(0, 0, r, 0, Math.PI * 2, false);
-                    if (t > 0 && t < r) {{
-                        const hole = new THREE.Path();
-                        hole.absarc(0, 0, r - t, 0, Math.PI * 2, true);
-                        s.holes.push(hole);
-                    }}
-                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.height, bevelEnabled: false, curveSegments: 32 }});
-                    geometry.center();
                 }} else if (dim.shape === "ELLIPSE") {{
                     geometry = new THREE.CylinderGeometry(1, 1, dim.height, 32);
                     geometry.rotateX(Math.PI / 2);
                     geometry.scale(dim.semi_major_axis, dim.semi_minor_axis, 1);
-                }} else if (dim.shape === "RHS" || dim.shape === "SHS" || dim.shape === "RECTANGLE_HOLLOW" || dim.shape === "BOX_HOLLOW") {{
-                    const d = dim.depth || 0.10, w = dim.width || 0.05, t = dim.wall_thickness || dim.thickness || 0.0032;
-                    const s = new THREE.Shape();
-                    s.moveTo(-w/2, -d/2); s.lineTo(w/2, -d/2); s.lineTo(w/2, d/2); s.lineTo(-w/2, d/2); s.closePath();
-                    if (t > 0 && t < Math.min(w, d) / 2) {{
-                        const hole = new THREE.Path();
-                        hole.moveTo(-w/2 + t, -d/2 + t); hole.lineTo(w/2 - t, -d/2 + t); hole.lineTo(w/2 - t, d/2 - t); hole.lineTo(-w/2 + t, d/2 - t); hole.closePath();
-                        s.holes.push(hole);
-                    }}
-                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.height, bevelEnabled: false }});
-                    geometry.center();
                 }} else if (dim.shape === "ISHAPE" || dim.shape === "I" || dim.shape === "H") {{
                     const w = dim.overall_width || dim.width || 0.2;
                     const d = dim.overall_depth || dim.depth || 0.2;
@@ -3440,23 +3262,9 @@ def generate_viewer_html(
                     geometry = new THREE.BoxGeometry(dim.width, dim.depth, dim.height);
                 }}
             }} else if (data.class === "IfcBeam" || data.class === "IfcRoofFraming" || data.class === "IfcFasciaBoard") {{
-                if (dim.shape === "CIRCULAR") {{
+                if (dim.shape === "CIRCULAR" || dim.shape === "CHS") {{
                     geometry = new THREE.CylinderGeometry(dim.radius, dim.radius, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
-                }} else if (dim.shape === "CHS" || dim.shape === "CIRCLE_HOLLOW" || dim.shape === "PIPE_HOLLOW") {{
-                    const r = dim.radius || (dim.diameter ? dim.diameter / 2 : 0.05);
-                    const t = dim.wall_thickness || 0.0032;
-                    const s = new THREE.Shape();
-                    s.absarc(0, 0, r, 0, Math.PI * 2, false);
-                    if (t > 0 && t < r) {{
-                        const hole = new THREE.Path();
-                        hole.absarc(0, 0, r - t, 0, Math.PI * 2, true);
-                        s.holes.push(hole);
-                    }}
-                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false, curveSegments: 32 }});
-                    geometry.center();
-                    geometry.rotateY(Math.PI / 2);
-                    geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "ELLIPSE") {{
                     geometry = new THREE.CylinderGeometry(1, 1, dim.length, 32);
                     geometry.rotateZ(-Math.PI / 2);
@@ -3473,7 +3281,6 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
-                    geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "ISHAPE" || dim.shape === "I" || dim.shape === "H") {{
                     const w = dim.overall_width || dim.width || 0.2;
                     const d = dim.overall_depth || dim.depth || 0.2;
@@ -3489,7 +3296,6 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
-                    geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "LSHAPE" || dim.shape === "L") {{
                     const d = dim.depth || 0.05, w = dim.width || 0.05, t = dim.thickness || 0.005;
                     const s = new THREE.Shape();
@@ -3499,7 +3305,6 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
-                    geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "USHAPE" || dim.shape === "U" || dim.shape === "CSHAPE" || dim.shape === "C") {{
                     const d = dim.depth || 0.15, bf = dim.flange_width || dim.width || 0.075;
                     const tw = dim.web_thickness || 0.0065, tf = dim.flange_thickness || 0.01;
@@ -3511,7 +3316,6 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
-                    geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "TSHAPE" || dim.shape === "T") {{
                     const d = dim.depth || 0.15, bf = dim.flange_width || dim.width || 0.15;
                     const tw = dim.web_thickness || 0.006, tf = dim.flange_thickness || 0.009;
@@ -3523,10 +3327,14 @@ def generate_viewer_html(
                     geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                     geometry.center();
                     geometry.rotateY(Math.PI / 2);
-                    geometry.rotateX(Math.PI / 2);
                 }} else if (dim.shape === "BOX" || dim.shape === "RECTANGLE" || dim.shape === "SQUARE") {{
                     const w = dim.width || 0.2, d = dim.depth || 0.4;
-                    geometry = new THREE.BoxGeometry(dim.length, w, d);
+                    const s = new THREE.Shape();
+                    s.moveTo(-w/2, -d/2); s.lineTo(w/2, -d/2); s.lineTo(w/2, d/2); s.lineTo(-w/2, d/2);
+                    s.closePath();
+                    geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
+                    geometry.center();
+                    geometry.rotateY(Math.PI / 2);
                 }} else if (dim.shape === "ARBITRARY" || dim.shape === "ARBITRARY_CLOSED" || dim.shape === "POLYGON" || dim.shape === "ARBITRARY_WITH_VOIDS") {{
                     const pts = dim.points || [];
                     if (pts.length >= 3) {{
@@ -3552,14 +3360,13 @@ def generate_viewer_html(
                         geometry = new THREE.ExtrudeGeometry(s, {{ depth: dim.length, bevelEnabled: false }});
                         geometry.center();
                         geometry.rotateY(Math.PI / 2);
-                        geometry.rotateX(Math.PI / 2);
                     }} else {{
                         geometry = new THREE.BoxGeometry(dim.length, dim.width || 0.05, dim.depth || 0.15);
                     }}
                 }} else {{
                     geometry = new THREE.BoxGeometry(dim.length, dim.width || dim.thickness || 0.02, dim.height || dim.depth || 0.20);
                 }}
-            }} else if (data.class === "IfcSlab" || data.class === "IfcCovering" || data.class === "IfcSpace") {{
+            }} else if (data.class === "IfcSlab" || data.class === "IfcCovering") {{
                 if (dim.polygon && dim.polygon.length >= 3) {{
                     const s = new THREE.Shape();
                     s.moveTo(dim.polygon[0][0] - data.position[0], dim.polygon[0][1] - data.position[1]);
@@ -3675,10 +3482,121 @@ def generate_viewer_html(
                 let layerPath = data.layer || "general/other";
                 if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
                 doorGroup.userData.layer = layerPath;
-                if (data.storey) doorGroup.userData.storey = data.storey;
 
                 scene.add(doorGroup);
                 pickableObjects.push(doorGroup);
+                return;
+            }} else if (data.furniture_type === "table" || ((data.class === "IfcFurnishingElement" || data.class === "IfcFurniture") && (data.tag || "").toLowerCase().includes("table"))) {{
+                const w = dim.width || 1.4;
+                const d = dim.depth || 0.8;
+                const h = dim.height || 0.75;
+                const topThick = Math.min(0.04, h * 0.08);
+                const legThick = Math.min(0.06, Math.min(w, d) * 0.1);
+                const legH = h - topThick;
+
+                const tableGroup = new THREE.Group();
+                const woodMat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color(data.color || "#C18C5D"),
+                    roughness: 0.6,
+                    metalness: 0.1
+                }});
+                const legMat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color("#27272A"),
+                    roughness: 0.4,
+                    metalness: 0.3
+                }});
+
+                // Top
+                const topGeom = new THREE.BoxGeometry(w, d, topThick);
+                const topMesh = new THREE.Mesh(topGeom, woodMat);
+                topMesh.position.set(0, 0, h/2 - topThick/2);
+                const topEdges = new THREE.LineSegments(new THREE.EdgesGeometry(topGeom), new THREE.LineBasicMaterial({{ color: 0x222222 }}));
+                topMesh.add(topEdges);
+                tableGroup.add(topMesh);
+
+                // 4 Legs
+                const offX = w/2 - legThick/2 - 0.04;
+                const offY = d/2 - legThick/2 - 0.04;
+                const legGeom = new THREE.BoxGeometry(legThick, legThick, legH);
+                const legEdgesGeom = new THREE.EdgesGeometry(legGeom);
+
+                [[-offX, -offY], [offX, -offY], [-offX, offY], [offX, offY]].forEach(pt => {{
+                    const legMesh = new THREE.Mesh(legGeom, legMat);
+                    legMesh.position.set(pt[0], pt[1], -h/2 + legH/2);
+                    legMesh.add(new THREE.LineSegments(legEdgesGeom, new THREE.LineBasicMaterial({{ color: 0x111111 }})));
+                    tableGroup.add(legMesh);
+                }});
+
+                if (data.position) tableGroup.position.set(...data.position);
+                if (data.rotation) tableGroup.rotation.set(data.rotation[0], data.rotation[1], data.rotation[2]);
+
+                tableGroup.userData = data;
+                let layerPath = data.layer || "interior/furniture";
+                if (!layerPath.includes("/")) layerPath = "interior/" + layerPath;
+                tableGroup.userData.layer = layerPath;
+
+                scene.add(tableGroup);
+                pickableObjects.push(tableGroup);
+                return;
+            }} else if (data.furniture_type === "chair" || ((data.class === "IfcFurnishingElement" || data.class === "IfcFurniture") && (data.tag || "").toLowerCase().includes("chair"))) {{
+                const w = dim.width || 0.45;
+                const d = dim.depth || 0.45;
+                const h = dim.height || 0.85;
+                const seatH = Math.min(0.48, h * 0.55);
+                const seatThick = 0.04;
+                const legThick = 0.035;
+                const legH = seatH - seatThick;
+                const backH = h - seatH;
+
+                const chairGroup = new THREE.Group();
+                const seatMat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color(data.color || "#4B5563"),
+                    roughness: 0.7,
+                    metalness: 0.1
+                }});
+                const frameMat = new THREE.MeshStandardMaterial({{
+                    color: new THREE.Color("#1E293B"),
+                    roughness: 0.4,
+                    metalness: 0.3
+                }});
+
+                // Seat
+                const seatGeom = new THREE.BoxGeometry(w, d, seatThick);
+                const seatMesh = new THREE.Mesh(seatGeom, seatMat);
+                seatMesh.position.set(0, 0, -h/2 + seatH - seatThick/2);
+                seatMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(seatGeom), new THREE.LineBasicMaterial({{ color: 0x222222 }})));
+                chairGroup.add(seatMesh);
+
+                // 4 Legs
+                const offX = w/2 - legThick/2 - 0.02;
+                const offY = d/2 - legThick/2 - 0.02;
+                const legGeom = new THREE.BoxGeometry(legThick, legThick, legH);
+                const legEdges = new THREE.EdgesGeometry(legGeom);
+
+                [[-offX, -offY], [offX, -offY], [-offX, offY], [offX, offY]].forEach(pt => {{
+                    const legMesh = new THREE.Mesh(legGeom, frameMat);
+                    legMesh.position.set(pt[0], pt[1], -h/2 + legH/2);
+                    legMesh.add(new THREE.LineSegments(legEdges, new THREE.LineBasicMaterial({{ color: 0x111111 }})));
+                    chairGroup.add(legMesh);
+                }});
+
+                // Backrest (at rear of seat)
+                const backGeom = new THREE.BoxGeometry(w * 0.9, 0.03, backH);
+                const backMesh = new THREE.Mesh(backGeom, seatMat);
+                backMesh.position.set(0, -d/2 + 0.015, -h/2 + seatH + backH/2);
+                backMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(backGeom), new THREE.LineBasicMaterial({{ color: 0x222222 }})));
+                chairGroup.add(backMesh);
+
+                if (data.position) chairGroup.position.set(...data.position);
+                if (data.rotation) chairGroup.rotation.set(data.rotation[0], data.rotation[1], data.rotation[2]);
+
+                chairGroup.userData = data;
+                let layerPath = data.layer || "interior/furniture";
+                if (!layerPath.includes("/")) layerPath = "interior/" + layerPath;
+                chairGroup.userData.layer = layerPath;
+
+                scene.add(chairGroup);
+                pickableObjects.push(chairGroup);
                 return;
             }} else if (data.class === "IfcWindow") {{
                 geometry = new THREE.BoxGeometry(dim.width, dim.thickness, dim.height);
@@ -3700,10 +3618,6 @@ def generate_viewer_html(
             if (data.transparent) {{
                 matOptions.transparent = true;
                 matOptions.opacity = data.opacity || 0.6;
-                if (data.class === "IfcSpace") {{
-                    matOptions.depthWrite = false;
-                    matOptions.side = THREE.DoubleSide;
-                }}
             }}
 
             const material = new THREE.MeshStandardMaterial(matOptions);
@@ -3729,7 +3643,7 @@ def generate_viewer_html(
             const edges = new THREE.EdgesGeometry(geometry);
             const line = new THREE.LineSegments(
                 edges,
-                new THREE.LineBasicMaterial({{ color: data.class === "IfcSpace" ? 0x0284c7 : 0x000000, linewidth: data.class === "IfcSpace" ? 2 : 1 }})
+                new THREE.LineBasicMaterial({{ color: 0x000000, linewidth: 1 }})
             );
             mesh.add(line);
             mesh.userData = data;
@@ -3739,7 +3653,6 @@ def generate_viewer_html(
                 layerPath = "general/" + layerPath;
             }}
             mesh.userData.layer = layerPath;
-            if (data.storey) mesh.userData.storey = data.storey;
 
             scene.add(mesh);
             pickableObjects.push(mesh);
@@ -3759,13 +3672,11 @@ def generate_viewer_html(
                         let layerPath = data.layer || "general/other";
                         if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
                         model.userData.layer = layerPath;
-                        if (data.storey) model.userData.storey = data.storey;
 
                         model.traverse((child) => {{
                             if (child.isMesh) {{
                                 child.userData = data;
                                 child.userData.layer = layerPath;
-                                if (data.storey) child.userData.storey = data.storey;
                             }}
                         }});
 
@@ -3882,7 +3793,6 @@ def generate_viewer_html(
                 layerPath = "general/" + layerPath;
             }}
             object3D.userData.layer = layerPath;
-            if (data.storey) object3D.userData.storey = data.storey;
 
             scene.add(object3D);
             pickableObjects.push(object3D);
@@ -4126,11 +4036,6 @@ def generate_viewer_html(
 
         function update3DVisibility() {{
             function checkObjectVisible(obj) {{
-                if (activeStoreyFilter !== "all") {{
-                    if (obj.userData && obj.userData.storey && obj.userData.storey !== activeStoreyFilter) {{
-                        return false;
-                    }}
-                }}
                 let layerPath = obj.userData.layer || "general/other";
                 if (!layerPath.includes("/")) layerPath = "general/" + layerPath;
                 const parts = layerPath.split("/");
@@ -4235,57 +4140,6 @@ def generate_viewer_html(
                 flowGroup.add(line);
             }});
             scene.add(flowGroup);
-        }}
-
-        // Render Facade Envelope Skin Hexagonal Panels via InstancedMesh / Tessellation
-        if (sceneData.facade && sceneData.facade.panels && sceneData.facade.panels.length > 0) {{
-            const facadeGroup = new THREE.Group();
-            const panelCount = sceneData.facade.panels.length;
-            const rOuter = (sceneData.facade.target_panel_size || 0.55) / 2.0;
-            const rPanel = Math.max(rOuter - (sceneData.facade.joint_gap || 0.02) / 2.0, 0.01);
-
-            const hexShape = new THREE.Shape();
-            for (let k = 0; k < 6; k++) {{
-                const angle = Math.PI / 6.0 + k * (Math.PI / 3.0);
-                const x = rPanel * Math.cos(angle);
-                const y = rPanel * Math.sin(angle);
-                if (k === 0) hexShape.moveTo(x, y);
-                else hexShape.lineTo(x, y);
-            }}
-            hexShape.closePath();
-
-            const hexGeom = new THREE.ShapeGeometry(hexShape);
-            const hexMat = new THREE.MeshStandardMaterial({{
-                color: 0xd1d5db,
-                metalness: 0.85,
-                roughness: 0.25,
-                side: THREE.DoubleSide
-            }});
-
-            const instancedMesh = new THREE.InstancedMesh(hexGeom, hexMat, panelCount);
-            instancedMesh.userData = {{
-                tag: "FACADE-ENVELOPE-SKIN",
-                class: "IfcCurtainWall",
-                layer: "architecture/facades/curtain_walls",
-                material: sceneData.facade.material || "ALUMINUM_ANODIZED_SILVER",
-                panels_count: panelCount
-            }};
-
-            const dummy = new THREE.Object3D();
-            sceneData.facade.panels.forEach((p, idx) => {{
-                dummy.position.set(p.center[0], p.center[1], p.center[2]);
-                const normal = new THREE.Vector3(p.normal[0], p.normal[1], p.normal[2]);
-                const defaultNormal = new THREE.Vector3(0, 0, 1);
-                const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultNormal, normal);
-                dummy.quaternion.copy(quaternion);
-                dummy.updateMatrix();
-                instancedMesh.setMatrixAt(idx, dummy.matrix);
-            }});
-            instancedMesh.instanceMatrix.needsUpdate = true;
-
-            facadeGroup.add(instancedMesh);
-            scene.add(facadeGroup);
-            pickableObjects.push(instancedMesh);
         }}
 
         buildLayerTree();
