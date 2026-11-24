@@ -2484,6 +2484,15 @@ def generate_viewer_html(
         else:
             color = "#B58A63"
 
+        def _to_rad(a):
+            if not a:
+                return 0.0
+            if abs(a) > 2.0 * math.pi:
+                return math.radians(a)
+            if abs(abs(a) - math.pi) < 0.05 or abs(abs(a) - math.pi / 2.0) < 0.05:
+                return a
+            return math.radians(a)
+
         elements_data.append({
             "tag": f_tag,
             "class": f_class,
@@ -2492,9 +2501,9 @@ def generate_viewer_html(
             "material": f_mat,
             "position": [furn.position[0], furn.position[1], cz],
             "rotation": [
-                math.radians(furn.rotation[0]),
-                math.radians(furn.rotation[1]),
-                math.radians(furn.rotation[2]),
+                _to_rad(furn.rotation[0]),
+                _to_rad(furn.rotation[1]),
+                _to_rad(furn.rotation[2]),
             ],
             "dimensions": f_dims,
             "color": color,
@@ -3544,7 +3553,12 @@ def generate_viewer_html(
                 }});
 
                 if (data.position) tableGroup.position.set(...data.position);
-                if (data.rotation) tableGroup.rotation.set(data.rotation[0], data.rotation[1], data.rotation[2]);
+                if (data.rotation) {{
+                    const rx = Math.abs(data.rotation[0]) > 6.29 ? data.rotation[0] * Math.PI / 180 : data.rotation[0];
+                    const ry = Math.abs(data.rotation[1]) > 6.29 ? data.rotation[1] * Math.PI / 180 : data.rotation[1];
+                    const rz = Math.abs(data.rotation[2]) > 6.29 ? data.rotation[2] * Math.PI / 180 : data.rotation[2];
+                    tableGroup.rotation.set(rx, ry, rz);
+                }}
 
                 tableGroup.userData = data;
                 let layerPath = data.layer || "interior/furniture";
@@ -3604,7 +3618,12 @@ def generate_viewer_html(
                 chairGroup.add(backMesh);
 
                 if (data.position) chairGroup.position.set(...data.position);
-                if (data.rotation) chairGroup.rotation.set(data.rotation[0], data.rotation[1], data.rotation[2]);
+                if (data.rotation) {{
+                    const rx = Math.abs(data.rotation[0]) > 6.29 ? data.rotation[0] * Math.PI / 180 : data.rotation[0];
+                    const ry = Math.abs(data.rotation[1]) > 6.29 ? data.rotation[1] * Math.PI / 180 : data.rotation[1];
+                    const rz = Math.abs(data.rotation[2]) > 6.29 ? data.rotation[2] * Math.PI / 180 : data.rotation[2];
+                    chairGroup.rotation.set(rx, ry, rz);
+                }}
 
                 chairGroup.userData = data;
                 let layerPath = data.layer || "interior/furniture";
