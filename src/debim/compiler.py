@@ -4064,6 +4064,24 @@ def _compile_with_ifcopenshell(resolved: ResolvedManifest, output_path: Path) ->
             ifc_class=ifc_cls,
             name=furn.tag,
         )
+        pt = getattr(furn.element, "predefined_type", None) or getattr(furn, "predefined_type", None)
+        if not pt:
+            tag_u = furn.tag.upper()
+            if any(k in tag_u for k in ("TABLE", "DESK")):
+                pt = "TABLE" if "TABLE" in tag_u else "DESK"
+            elif any(k in tag_u for k in ("CHAIR", "STOOL", "SEAT")):
+                pt = "CHAIR"
+            elif "SOFA" in tag_u:
+                pt = "SOFA"
+            elif "BED" in tag_u:
+                pt = "BED"
+            elif "SHELF" in tag_u or "CABINET" in tag_u:
+                pt = "SHELF"
+        if pt and hasattr(furn_obj, "PredefinedType"):
+            try:
+                furn_obj.PredefinedType = pt.upper()
+            except Exception:
+                pass
         st_id = furn.element.placement.storey
         if st_id in storey_products:
             storey_products[st_id].append(furn_obj)

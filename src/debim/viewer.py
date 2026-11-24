@@ -2463,26 +2463,31 @@ def generate_viewer_html(
         }
         cz = furn.position[2] + h / 2.0
 
+        pt = (getattr(furn, "predefined_type", None) or getattr(furn.element, "predefined_type", None) or "").upper()
         tag_lower = f_tag.lower()
         furn_type = "furniture"
-        if any(kw in tag_lower for kw in ["desk", "table"]):
+        if pt in ("TABLE", "DESK") or any(kw in tag_lower for kw in ["desk", "table"]):
             color = "#C18C5D"
             furn_type = "table"
-        elif any(kw in tag_lower for kw in ["chair", "seat", "bench", "stool"]):
+        elif pt in ("CHAIR", "STOOL") or any(kw in tag_lower for kw in ["chair", "seat", "bench", "stool"]):
             color = "#4B5563"
             furn_type = "chair"
-        elif any(kw in tag_lower for kw in ["sofa", "couch"]):
+        elif pt in ("SOFA", "COUCH") or any(kw in tag_lower for kw in ["sofa", "couch"]):
             color = "#64748B"
             furn_type = "sofa"
-        elif "bed" in tag_lower:
+        elif pt in ("BED",) or "bed" in tag_lower:
             color = "#C5A880"
             furn_type = "bed"
+        elif pt in ("SHELF", "FILECABINET") or any(kw in tag_lower for kw in ["shelf", "cabinet", "credenza"]):
+            color = "#8C6D53"
+            furn_type = "shelf"
         else:
             color = "#B58A63"
 
         elements_data.append({
             "tag": f_tag,
             "class": f_class,
+            "predefined_type": pt or None,
             "furniture_type": furn_type,
             "material": f_mat,
             "position": [furn.position[0], furn.position[1], cz],

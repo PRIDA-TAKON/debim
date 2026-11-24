@@ -382,12 +382,14 @@ def generate_exemplar_element(class_name: str, tag_suffix: str = "01") -> Dict[s
         }
 
     elif norm_cls in ("IfcFurniture", "IfcFurnishingElement"):
+        is_chair = "element" in norm_cls.lower() or "chair" in tag_suffix.lower()
         return {
             "class": norm_cls,
-            "tag": f"FURN-{tag_suffix}",
-            "name": f"Exemplar {norm_cls}",
+            "tag": f"CHAIR-{tag_suffix}" if is_chair else f"TABLE-{tag_suffix}",
+            "name": f"Exemplar {'Chair' if is_chair else 'Dining Table'}",
+            "predefined_type": "CHAIR" if is_chair else "TABLE",
             "material": "WOOD",
-            "dimensions": {"width": 1.0, "depth": 0.8, "height": 0.75},
+            "dimensions": {"width": 0.45, "depth": 0.45, "height": 0.85} if is_chair else {"width": 1.40, "depth": 0.85, "height": 0.75},
             "placement": {
                 "storey": "L1",
                 "position": [0.0, 0.0, 0.0],

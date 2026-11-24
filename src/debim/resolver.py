@@ -617,6 +617,7 @@ class ResolvedFurniture(BaseModel):
     tag: str
     element: Union[IfcFurniture, IfcFurnishingElement]
     ifc_class: str = "IfcFurniture"
+    predefined_type: Optional[str] = None
     position: Tuple[float, float, float]
     rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     dimensions: Tuple[float, float, float]
@@ -2826,6 +2827,7 @@ class SpatialResolver:
             tag=furn.tag,
             element=furn,
             ifc_class=ifc_cls,
+            predefined_type=getattr(furn, "predefined_type", None),
             position=world_pos,
             rotation=rot,
             dimensions=(w, d, h),

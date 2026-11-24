@@ -1782,6 +1782,7 @@ class IfcFurniture(BaseModel):
     class_: Literal["IfcFurniture"] = Field(alias="class", default="IfcFurniture")
     tag: str
     name: Optional[str] = None
+    predefined_type: Optional[str] = None
     material: Optional[str] = None
     dimensions: Optional[Dimensions] = None
     placement: FurniturePlacement
