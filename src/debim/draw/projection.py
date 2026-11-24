@@ -565,7 +565,13 @@ def slice_storey(
             fx, fy, _ = furn.position
             all_2d_points.append((fx, fy))
             w, d, _ = furn.dimensions
-            rot_z_deg = math.degrees(furn.rotation[2]) if (furn.rotation and len(furn.rotation) >= 3) else 0.0
+            rot_raw = 0.0
+            if furn.rotation:
+                if isinstance(furn.rotation, (int, float)):
+                    rot_raw = float(furn.rotation)
+                elif len(furn.rotation) >= 3:
+                    rot_raw = float(furn.rotation[2])
+            rot_z_deg = rot_raw if abs(rot_raw) > 2.0 * math.pi else math.degrees(rot_raw)
             furn_poly = _create_rotated_box(fx, fy, w, d, rot_z_deg)
 
             projection_elements.append(ProjectionElement(
