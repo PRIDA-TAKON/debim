@@ -29,6 +29,7 @@ def _load_template_html() -> str:
 def generate_2d_viewer_html(
     manifest_or_resolved: Union[ProjectManifest, ResolvedManifest, Path, str],
     sheets_dir_or_configs: Optional[Union[Path, str, List[Union[SheetConfig, dict, Path]]]] = None,
+    scale: Optional[Union[int, str]] = None,
 ) -> str:
     """
     Generate a self-contained, standalone 2D web viewer HTML string
@@ -60,6 +61,29 @@ def generate_2d_viewer_html(
             sheets_dir_or_configs = Path("sheets")
 
     if sheets_dir_or_configs is None:
+        # Determine drawing scale (custom scale, manifest explicit scale, or auto-fit)
+        proj_extra = getattr(manifest_obj.project, "model_extra", {}) or {}
+        explicit_scale = (
+            scale
+            or getattr(manifest_obj.project, "drawing_scale", None)
+            or getattr(manifest_obj.project, "scale", None)
+            or proj_extra.get("drawing_scale")
+            or proj_extra.get("scale")
+        )
+        if explicit_scale:
+            from debim.draw.layout import parse_scale_arg
+            chosen_scale = parse_scale_arg(explicit_scale)
+        else:
+            from debim.draw.renderer import select_architectural_scale
+            xs = [float(v) for v in (manifest_obj.grids.axes_x.values() if manifest_obj.grids and manifest_obj.grids.axes_x else [])]
+            ys = [float(v) for v in (manifest_obj.grids.axes_y.values() if manifest_obj.grids and manifest_obj.grids.axes_y else [])]
+            if xs and ys:
+                model_w = max(xs) - min(xs)
+                model_h = max(ys) - min(ys)
+                chosen_scale = select_architectural_scale(model_w, model_h, 330.0, 230.0, annotation_margin_mm=40.0)
+            else:
+                chosen_scale = 100
+
         # Fallback: auto-generate sheet configs for floor plans, elevations & sections
         configs = []
         storeys = manifest_obj.spatial_structure.storeys or []
@@ -72,13 +96,13 @@ def generate_2d_viewer_html(
                         title=f"{storey.name} Plan",
                         view_type="plan",
                         storey_id=storey.id,
-                        scale=100,
+                        scale=chosen_scale,
                         paper_size="A3",
                         orientation="landscape",
                     )
                 )
         else:
-            configs.append(SheetConfig(id="A-101", title="Floor Plan", view_type="plan"))
+            configs.append(SheetConfig(id="A-101", title="Floor Plan", view_type="plan", scale=chosen_scale))
 
         # Add default elevation sheets (A-201..A-204)
         elevation_specs = [
@@ -94,7 +118,7 @@ def generate_2d_viewer_html(
                     title=elev_title,
                     view_type="ELEVATION",
                     elevation_direction=elev_dir,
-                    scale=100,
+                    scale=chosen_scale,
                     paper_size="A3",
                     orientation="landscape",
                 )
@@ -108,7 +132,7 @@ def generate_2d_viewer_html(
                 view_type="section",
                 section_id="A-A",
                 section_axis="Y",
-                scale=100,
+                scale=chosen_scale,
                 paper_size="A3",
                 orientation="landscape",
             )
@@ -120,7 +144,7 @@ def generate_2d_viewer_html(
                 view_type="section",
                 section_id="B-B",
                 section_axis="X",
-                scale=100,
+                scale=chosen_scale,
                 paper_size="A3",
                 orientation="landscape",
             )
@@ -161,12 +185,13 @@ def export_2d_viewer(
     manifest_or_resolved: Union[ProjectManifest, ResolvedManifest, Path, str],
     output_path: Union[Path, str] = "dist/viewer_2d.html",
     sheets_dir_or_configs: Optional[Union[Path, str, List[Union[SheetConfig, dict, Path]]]] = None,
+    scale: Optional[Union[int, str]] = None,
 ) -> Path:
     """
     Export 2D interactive HTML viewer to output file path.
     """
     out_p = Path(output_path)
     out_p.parent.mkdir(parents=True, exist_ok=True)
-    html_content = generate_2d_viewer_html(manifest_or_resolved, sheets_dir_or_configs)
+    html_content = generate_2d_viewer_html(manifest_or_resolved, sheets_dir_or_configs, scale=scale)
     out_p.write_text(html_content, encoding="utf-8")
     return out_p

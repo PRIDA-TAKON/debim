@@ -2140,6 +2140,7 @@ def cmd_draw_view(args):
             manifest_or_resolved=manifest,
             output_path=output,
             sheets_dir_or_configs=sheets,
+            scale=getattr(args, "scale", None),
         )
 
         file_size = out_path.stat().st_size
@@ -3399,6 +3400,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_draw_view = draw_subparsers.add_parser("view", help="Generate standalone interactive 2D HTML blueprint viewer")
     p_draw_view.add_argument("-m", "--manifest", default="project.yaml", help="Path to project manifest")
     p_draw_view.add_argument("--sheets", help="Directory containing sheet configs or single sheet file")
+    p_draw_view.add_argument("--scale", help="Standard drawing scale ratio e.g. '1:100', '1:200' or '200'")
     p_draw_view.add_argument("-o", "--output", default="dist/viewer_2d.html", help="Output 2D HTML viewer file path")
     p_draw_view.set_defaults(func=cmd_draw_view)
 

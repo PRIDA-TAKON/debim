@@ -257,7 +257,7 @@ def _get_embedded_css() -> str:
     return "/* Fallback Sheet CSS */"
 
 
-STANDARD_ARCHITECTURAL_SCALES: List[int] = [50, 75, 100]
+STANDARD_ARCHITECTURAL_SCALES: List[int] = [50, 75, 100, 125, 150, 200, 250, 300, 400, 500]
 
 
 def select_architectural_scale(
